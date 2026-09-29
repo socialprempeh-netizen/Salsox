@@ -13,4 +13,5 @@ export const MIGRATIONS = [
   "20260906080000_better_auth_173_account_identity",
   "20260911120000_two_factor",
   "20260915104106_trials",
+  "20260929173111_esign",
 ] as const

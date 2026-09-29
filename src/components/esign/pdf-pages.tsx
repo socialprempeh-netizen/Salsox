@@ -1,0 +1,173 @@
+"use client"
+
+/**
+ * Renders a PDF as a vertical stack of page images, each with an overlay slot
+ * for fields, used by both the field editor and the signing view.
+ *
+ * - pdf.js (Apache-2.0) is loaded lazily in the browser, never on the server.
+ * - Pages render at the container's width × devicePixelRatio, so text stays
+ *   sharp on phones without rendering a desktop-sized bitmap.
+ * - Pages are only rendered when they scroll near the viewport, which keeps a
+ *   long contract usable on a low-end phone.
+ * - `extraPages` adds blank pages after the PDF's own (Quick Send may place a
+ *   signature block on an appended page that only exists after sealing).
+ *
+ * Overlays are positioned in percentages (see src/lib/esign/pdf/coords.ts), so
+ * they line up at any rendered size with no recalculation.
+ */
+import { useEffect, useRef, useState, type ReactNode } from "react"
+import type { PDFDocumentProxy } from "pdfjs-dist"
+import { useTranslations } from "next-intl"
+import { Spinner } from "@/components/ui/spinner"
+
+type Props = {
+  url: string
+  extraPages?: number
+  renderOverlay?: (page: number) => ReactNode
+  /** Called with the page element so callers can convert pointer positions. */
+  onPageRef?: (page: number, el: HTMLDivElement | null) => void
+  className?: string
+}
+
+/** Starts loading; the returned task is what gets destroyed on unmount. */
+async function loadPdf(url: string) {
+  const pdfjs = await import("pdfjs-dist")
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
+  return pdfjs.getDocument({ url })
+}
+
+export function PdfPages({ url, extraPages = 0, renderOverlay, onPageRef, className }: Props) {
+  const t = useTranslations("esign.viewer")
+  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null)
+  const [error, setError] = useState(false)
+  // Aspect ratio (height / width) of each page, known before it renders so the
+  // stack does not jump as pages come in.
+  const [ratios, setRatios] = useState<number[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    let task: Awaited<ReturnType<typeof loadPdf>> | null = null
+    loadPdf(url)
+      .then(async (loadingTask) => {
+        task = loadingTask
+        const loaded = await loadingTask.promise
+        const sizes = await Promise.all(
+          Array.from({ length: loaded.numPages }, async (_, i) => {
+            const vp = (await loaded.getPage(i + 1)).getViewport({ scale: 1 })
+            return vp.height / vp.width
+          })
+        )
+        if (!cancelled) {
+          setRatios(sizes)
+          setPdf(loaded)
+        }
+      })
+      .catch(() => !cancelled && setError(true))
+    return () => {
+      cancelled = true
+      void task?.destroy()
+    }
+  }, [url])
+
+  if (error) return <p className="rounded-xl border p-6 text-center text-sm text-destructive">{t("loadError")}</p>
+  if (!pdf) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border p-10 text-sm text-muted-foreground">
+        <Spinner /> {t("loading")}
+      </div>
+    )
+  }
+
+  const total = pdf.numPages + extraPages
+  const lastRatio = ratios[ratios.length - 1] ?? 1.414
+  return (
+    <div className={className ?? "space-y-4"}>
+      {Array.from({ length: total }, (_, i) => (
+        <PdfPage
+          key={i}
+          pdf={pdf}
+          pageNumber={i + 1}
+          ratio={ratios[i] ?? lastRatio}
+          blank={i >= pdf.numPages}
+          overlay={renderOverlay?.(i + 1)}
+          onRef={(el) => onPageRef?.(i + 1, el)}
+          label={t("page", { page: i + 1, total })}
+        />
+      ))}
+    </div>
+  )
+}
+
+function PdfPage({
+  pdf,
+  pageNumber,
+  ratio,
+  blank,
+  overlay,
+  onRef,
+  label,
+}: {
+  pdf: PDFDocumentProxy
+  pageNumber: number
+  ratio: number
+  blank: boolean
+  overlay?: ReactNode
+  onRef: (el: HTMLDivElement | null) => void
+  label: string
+}) {
+  const wrapper = useRef<HTMLDivElement | null>(null)
+  const canvas = useRef<HTMLCanvasElement | null>(null)
+  const [visible, setVisible] = useState(false)
+
+  // Render only once the page is near the viewport.
+  useEffect(() => {
+    const el = wrapper.current
+    if (!el || blank) return
+    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setVisible(true), {
+      rootMargin: "600px 0px",
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [blank])
+
+  useEffect(() => {
+    if (!visible || blank) return
+    let task: { cancel: () => void } | null = null
+    let cancelled = false
+    ;(async () => {
+      const page = await pdf.getPage(pageNumber)
+      const el = wrapper.current
+      const target = canvas.current
+      if (!el || !target || cancelled) return
+      const cssWidth = el.clientWidth
+      const scale = (cssWidth / page.getViewport({ scale: 1 }).width) * Math.min(window.devicePixelRatio || 1, 2)
+      const viewport = page.getViewport({ scale })
+      target.width = Math.floor(viewport.width)
+      target.height = Math.floor(viewport.height)
+      const render = page.render({ canvas: target, viewport })
+      task = render
+      await render.promise.catch(() => undefined)
+    })()
+    return () => {
+      cancelled = true
+      task?.cancel()
+    }
+  }, [visible, blank, pdf, pageNumber])
+
+  return (
+    <div
+      ref={(el) => {
+        wrapper.current = el
+        onRef(el)
+      }}
+      role="img"
+      aria-label={label}
+      data-page={pageNumber}
+      className="relative w-full overflow-hidden rounded-md border bg-white shadow-sm"
+      style={{ aspectRatio: `1 / ${ratio}` }}
+    >
+      {!blank && <canvas ref={canvas} className="absolute inset-0 h-full w-full" />}
+      {overlay}
+    </div>
+  )
+}

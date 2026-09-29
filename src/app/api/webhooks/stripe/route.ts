@@ -47,6 +47,16 @@ export async function POST(req: NextRequest) {
         await handleChargeRefunded(charge)
         break
       }
+      // Stripe Connect: a sender finished (or updated) payout onboarding for
+      // Sign & Pay. Readiness follows Stripe's own `charges_enabled`.
+      case "account.updated": {
+        const account = event.data.object as Stripe.Account
+        await prisma.payoutAccount.updateMany({
+          where: { provider: "STRIPE", externalAccountId: account.id },
+          data: { ready: Boolean(account.charges_enabled) },
+        })
+        break
+      }
     }
   } catch (err) {
     console.error(`Webhook handler error for ${event.type}:`, err)
@@ -60,6 +70,14 @@ const longDate = (date: Date) =>
   date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // Sign & Pay checkouts are signers paying a sender, not plan purchases.
+  // They are confirmed by the e-sign engine, which re-verifies with Stripe.
+  if (session.metadata?.kind === "sign_and_pay" && session.metadata.salsoxPaymentId) {
+    const { confirmPayment } = await import("@/lib/esign/signing")
+    await confirmPayment(session.metadata.salsoxPaymentId)
+    return
+  }
+
   if (session.mode === "payment") {
     await handleOneTimeCheckout(session)
     return

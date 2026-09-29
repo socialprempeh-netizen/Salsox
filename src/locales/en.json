@@ -110,28 +110,10 @@
     }
   },
   "dashboard": {
-    "projects": {
-      "title": "Projects",
-      "subtitle": "The things you're working on. This is the example resource.",
-      "newTitle": "New project",
-      "newDescription": "Create a project you own.",
-      "emptyTitle": "No projects yet",
-      "emptyBody": "Create your first project to get started.",
-      "noDescription": "No description",
-      "updated": "Updated {date}",
-      "searchPlaceholder": "Search projects...",
-      "noResultsTitle": "Nothing matched",
-      "noResultsBody": "No project matches “{query}”. Try a shorter word, or clear the search.",
-      "clearSearch": "Clear search"
-    },
     "home": {
       "greeting": "Welcome back, {name} 👋",
       "greetingFallback": "there",
-      "subtitle": "Here's what's happening with your account.",
-      "projectsTitle": "Projects",
-      "projectsCount": "{count, plural, =0 {Create your first project to get started.} one {You have # project.} other {You have # projects.}}",
-      "projectsCreate": "Create one",
-      "projectsViewAll": "View all",
+      "subtitle": "Here's what's happening with your documents.",
       "currentPlan": "Current Plan",
       "planFree": "Free",
       "status": "Status",
@@ -140,8 +122,8 @@
       "nextBilling": "Next Billing",
       "none": "None",
       "$product": {
-        "upsellTitle": "Do more with a plan",
-        "upsellBody": "Unlock the full workspace for you and your team. Change or cancel whenever you like.",
+        "upsellTitle": "Get paid as you get signed",
+        "upsellBody": "Sending is unlimited on every plan. Business adds Sign & Pay, sequential signing and sealed PDFs. Cancel in one click, and you'll get a reminder before any renewal.",
         "upsellCta": "See plans"
       },
       "$kit": {
@@ -153,8 +135,15 @@
       "checklistProgress": "{done} of {total} complete",
       "checklistDismiss": "Dismiss checklist",
       "checklistName": "Add your name",
-      "checklistProject": "Create your first project",
-      "checklistBilling": "Set up billing"
+      "checklistBilling": "Set up billing",
+      "documentsTitle": "Documents",
+      "documentsCount": "{count, plural, =0 {Send your first document: it takes under a minute.} one {You have # document.} other {You have # documents.}}",
+      "quickSend": "Quick Send",
+      "newDocument": "New document",
+      "awaiting": "Awaiting others",
+      "completed": "Completed",
+      "expired": "Expired",
+      "checklistDocument": "Send your first document"
     },
     "settings": {
       "title": "Settings",
@@ -326,30 +315,6 @@
         "void": "Void"
       }
     },
-    "projectDetail": {
-      "subtitle": "Edit the details or delete this project.",
-      "detailsTitle": "Details",
-      "detailsDescription": "Update the project name and description.",
-      "metadataTitle": "Metadata",
-      "created": "Created",
-      "updated": "Last updated",
-      "dangerTitle": "Danger zone",
-      "dangerDescription": "Deleting a project is permanent and cannot be undone.",
-      "delete": "Delete project"
-    },
-    "createProject": {
-      "created": "Project created",
-      "name": "Project name",
-      "description": "Description (optional)",
-      "descriptionPlaceholder": "What is this project about?",
-      "descriptionHint": "Optional. Up to {max} characters.",
-      "submit": "Create project"
-    },
-    "projectEdit": {
-      "updated": "Project updated",
-      "name": "Project name",
-      "descriptionPlaceholder": "What is this project about?"
-    },
     "profile": {
       "updated": "Profile updated",
       "avatarAlt": "Avatar",
@@ -378,13 +343,15 @@
     },
     "nav": {
       "dashboard": "Dashboard",
-      "projects": "Projects",
       "billing": "Billing",
       "settings": "Settings",
       "overview": "Overview",
       "adminPanel": "Admin Panel",
       "backToDashboard": "Back to Dashboard",
-      "openNavigation": "Open navigation"
+      "openNavigation": "Open navigation",
+      "documents": "Documents",
+      "quickSend": "Quick Send",
+      "payouts": "Payouts"
     }
   },
   "admin": {
@@ -549,49 +516,55 @@
     "$product": {
       "headlineHead": "",
       "headlineAccent": "",
-      "subtitle": "One workspace for your projects, your customers and your billing. Invite your team and get back to the work that matters.",
-      "cta": "Get started",
-      "trust": "Set up in minutes · No credit card required · Cancel anytime",
-      "pill": "Now in public beta"
+      "subtitle": "Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone. Unlimited documents on every plan.",
+      "cta": "Send your first document",
+      "trust": "No envelope limits · Cancel in one click · Export everything, any time",
+      "pill": "Sign & Pay with Stripe or Paystack"
     },
     "mock": {
       "navDashboard": "Dashboard",
-      "navProjects": "Projects",
       "navBilling": "Billing",
       "navSettings": "Settings",
-      "statPlan": "Current Plan",
+      "statPlan": "Sent this month",
       "statStatus": "Status",
-      "statStatusValue": "Active",
-      "statBilling": "Next Billing"
+      "statStatusValue": "No limits",
+      "statBilling": "Collected",
+      "navDocuments": "Documents",
+      "greeting": "Welcome back, Ama 👋",
+      "greetingBody": "3 documents are waiting on others.",
+      "chartTitle": "Signed per week",
+      "docsTitle": "Service agreement",
+      "docsBody": "Kofi signed and paid GH₵ 1,200",
+      "viewAll": "Open"
     }
   },
   "features": {
     "$product": {
-      "title": "Everything you need, in one place",
-      "subtitle": "The essentials done properly, so you can get on with the work.",
+      "title": "E-signatures without the usual headaches",
+      "subtitle": "Built around the complaints people have about the big e-signature tools.",
       "c1": {
-        "title": "Sign in, your way",
-        "description": "Google, GitHub, a password or a one-time link in your inbox. Pick what suits your team and switch whenever you want."
+        "title": "Unlimited sending",
+        "description": "No envelope caps, no counting, no surprise upgrade prompts. Every plan sends as many documents as you need."
       },
       "c2": {
-        "title": "Billing without the back and forth",
-        "description": "Upgrade, downgrade or cancel in a click. Invoices and receipts arrive on their own, and the payment details stay with Stripe."
+        "title": "Fix a wrong email in one click",
+        "description": "Typo in an address, or a link that expired? Correct it or renew it in place. Fields and signatures stay put, and the old link stops working."
       },
       "c3": {
-        "title": "Your data stays yours",
-        "description": "Everything lives in one database you control. Nothing is held hostage, and leaving is as easy as arriving."
+        "title": "Made for signing on a phone",
+        "description": "Signers are walked through one field at a time with a big thumb-friendly button. No app, no account, no pinching and zooming."
       },
       "c4": {
-        "title": "Light and dark",
-        "description": "The interface follows your system theme, or you pick one and it stays. Easy on the eyes at 9am and at midnight."
+        "title": "Sign & Pay in one flow",
+        "description": "Ask for a deposit or a fee with the contract. Signers pay by card or mobile money through Stripe or Paystack, straight to your account."
       },
       "c5": {
-        "title": "Private by default",
-        "description": "Your workspace is visible to you and the people you invite, and to nobody else. Sessions expire, access is checked on every request."
+        "title": "Quick Send",
+        "description": "Upload a PDF, type an email, press send. Signature and date fields are placed for you. Share the link on WhatsApp or SMS too."
       },
       "c6": {
-        "title": "Admin controls",
-        "description": "See every member, their role and their plan in one place. Promote, review and step in when something needs a decision."
+        "title": "Honest billing, your data",
+        "description": "Cancel in one click, a reminder before every renewal, and a full export of every signed PDF and audit trail, any time, on any plan."
       }
     },
     "$kit": {
@@ -714,16 +687,24 @@
     "$product": {
       "items": [
         {
-          "question": "How do I get started?",
-          "answer": "Create an account, name your first project and you are in. {site} works in the browser, there is nothing to install, and you can invite the rest of your team whenever you are ready."
+          "question": "Is there really no limit on how many documents I send?",
+          "answer": "None. {site} doesn't count envelopes on any plan. Paid plans add features like Sign & Pay and sequential signing, never more sends."
         },
         {
-          "question": "How does billing work?",
-          "answer": "You pick a plan and pay by card. Upgrades and downgrades take effect right away and are prorated, invoices land in your inbox automatically, and you can see and change everything from the billing page in your account."
+          "question": "Are electronic signatures legally binding?",
+          "answer": "In most countries, yes, including under the US ESIGN Act, the EU's eIDAS regulation and Ghana's Electronic Transactions Act. Every signed PDF from {site} carries a certificate with a tamper-evident hash and a full audit trail of who signed, when and from where."
         },
         {
-          "question": "Who can see my data?",
-          "answer": "You, and the people you invite. Your data lives in our own database rather than being scattered across third parties, card details are held by Stripe and never touch our servers, and we do not sell any of it."
+          "question": "What if I sent it to the wrong email?",
+          "answer": "Open the document, tap Edit next to the recipient and fix the address. The old link stops working immediately and the right person gets a new one. Nothing needs to be rebuilt."
+        },
+        {
+          "question": "How does Sign & Pay work?",
+          "answer": "Connect Stripe or Paystack once, then set an amount on any document. The signer pays at the end of signing, by card or mobile money, and the money settles to your own account."
+        },
+        {
+          "question": "How do I cancel?",
+          "answer": "One button on your billing page. You keep access until the end of the period you paid for, we email you before any renewal, and your documents stay exportable even after you cancel."
         }
       ]
     },
@@ -973,14 +954,389 @@
   },
   "errors": {
     "unauthorized": "Unauthorized",
-    "projectNotFound": "Project not found",
     "nameRequired": "Name is required",
     "nameTooLong": "Name too long",
-    "descriptionTooLong": "Description too long",
     "invalidEmail": "Enter a valid email address",
     "messageTooShort": "Tell us a bit more (at least 10 characters)",
     "checkTheForm": "Check the form and try again",
     "tooManyMessages": "Too many messages from this connection. Try again in a few minutes.",
     "contactSendFailed": "Something went wrong on our side. Email us directly at {email}."
+  },
+  "esignEmail": {
+    "hello": "Hi {name},",
+    "inviteSubject": "{sender} sent you “{title}” to sign",
+    "reminderSubject": "Reminder: “{title}” is waiting for your signature",
+    "inviteIntro": "{sender} has asked you to review and sign {title}.",
+    "invitePayment": "This document also asks for a payment of {amount}, which you can make securely at the end of signing.",
+    "inviteCta": "Review and sign →",
+    "inviteMobile": "It works on any phone: no account and no app needed. It takes about a minute.",
+    "inviteExpires": "This link is valid until {date}.",
+    "completedSubject": "“{title}” is signed by everyone",
+    "completedIntro": "Everyone has signed {title}. The signed PDF, with its certificate of completion, is ready to download.",
+    "completedCta": "Download signed PDF →",
+    "rejectedSubject": "{name} declined to sign “{title}”",
+    "rejectedIntro": "{name} declined to sign {title}.",
+    "openDocumentCta": "Open the document →",
+    "expiredSubject": "Signing links for “{title}” expired",
+    "expiredIntro": "The signing links for {title} expired before everyone signed. You can renew them with one click: nothing needs to be rebuilt.",
+    "expiredCta": "Renew the links →",
+    "renewalSubject": "Your {plan} plan renews on {date}",
+    "renewalIntro": "A heads-up, well before it happens: your {plan} plan renews on {date} for {amount}.",
+    "renewalCancel": "Don't want it? Cancel in one click from your billing page before that date and you won't be charged again. Your documents stay available to export either way.",
+    "renewalCta": "Manage billing →"
+  },
+  "esign": {
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "unauthorized": "Please sign in again.",
+      "rateLimited": "Too many requests. Please wait a moment and try again.",
+      "notFound": "That document or recipient could not be found.",
+      "notDraft": "This document has already been sent.",
+      "invalidInput": "Please check the details and try again.",
+      "invalidAmount": "Enter an amount of at least 1.00, with up to two decimals.",
+      "invalidPayer": "Choose a signer or approver to pay.",
+      "noPayoutAccount": "Connect a payout account before asking for a payment.",
+      "noSigners": "Add at least one signer or approver.",
+      "signerWithoutFields": "Every signer needs at least one field to fill.",
+      "notRenewable": "Only pending or expired documents can be renewed.",
+      "notCancellable": "This document can no longer be cancelled.",
+      "notEditable": "This recipient can no longer be changed.",
+      "noFile": "Choose a PDF to upload.",
+      "invalidEmails": "Enter one or more valid email addresses (up to 25).",
+      "NOT_PDF": "That file is not a PDF.",
+      "TOO_LARGE": "PDFs can be up to 4 MB.",
+      "ENCRYPTED": "This PDF is password-protected. Remove the password and upload it again.",
+      "UNREADABLE": "This PDF could not be read. Try exporting it again.",
+      "EMPTY": "This PDF has no pages.",
+      "DOCUMENT_NOT_PENDING": "This document is no longer open for signing.",
+      "ALREADY_SIGNED": "You have already signed this document.",
+      "REJECTED": "You declined this document.",
+      "EXPIRED": "This signing link has expired. Ask the sender to renew it.",
+      "NOT_YOUR_TURN": "Someone else needs to sign first. We'll email you when it's your turn.",
+      "NO_ACTION_REQUIRED": "You're receiving a copy of this document; there's nothing to sign.",
+      "invalidValue": "That value isn't valid for this field.",
+      "missingFields": "Some required fields are still empty.",
+      "paymentRequired": "Please complete the payment to finish signing.",
+      "noPaymentDue": "There's no payment due on this document.",
+      "payoutUnavailable": "Payments aren't available for this document right now. Please contact the sender.",
+      "payoutRejected": "The payout account was rejected. Check the bank details and try again.",
+      "paymentFailed": "The payment could not be started. Please try again.",
+      "noSubscription": "There is no active subscription to change."
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING": "Awaiting signatures",
+      "COMPLETED": "Completed",
+      "REJECTED": "Declined",
+      "CANCELLED": "Cancelled",
+      "EXPIRED": "Expired"
+    },
+    "viewer": {
+      "loading": "Loading document…",
+      "loadError": "The document could not be displayed. Reload the page to try again.",
+      "page": "Page {page} of {total}"
+    },
+    "list": {
+      "title": "Documents",
+      "subtitle": "Everything you've sent, and who you're waiting on. Sending is unlimited.",
+      "quickSend": "Quick Send",
+      "new": "New document",
+      "filterLabel": "Filter documents",
+      "filter": {
+        "ALL": "All",
+        "PENDING": "Awaiting",
+        "COMPLETED": "Completed",
+        "DRAFT": "Drafts",
+        "EXPIRED": "Expired"
+      },
+      "searchPlaceholder": "Search title or email…",
+      "noResults": "Nothing matched",
+      "emptyTitle": "No documents yet",
+      "emptyBody": "Upload a PDF and send it for signature in under a minute.",
+      "signedOf": "{signed} of {total} signed",
+      "noRecipients": "No recipients yet"
+    },
+    "upload": {
+      "title": "New document",
+      "subtitle": "Upload a PDF, then add recipients and place fields.",
+      "tryQuickSend": "In a hurry? Use Quick Send.",
+      "cardTitle": "Upload",
+      "cardBody": "PDF up to 4 MB. The original is never modified; signatures are added to a sealed copy.",
+      "pick": "Tap to choose a PDF, or drop it here",
+      "limits": "PDF, up to 4 MB",
+      "replace": "Tap to choose a different file",
+      "notPdf": "Please choose a PDF file.",
+      "tooLarge": "This file is larger than 4 MB.",
+      "titleLabel": "Title (optional)",
+      "titlePlaceholder": "Defaults to the file name",
+      "continue": "Continue to recipients"
+    },
+    "quickSend": {
+      "title": "Quick Send",
+      "subtitle": "Upload a PDF, enter who signs, send. We place a signature and date for each signer.",
+      "emailsLabel": "Who needs to sign?",
+      "emailsPlaceholder": "ama@example.com, kofi@example.com",
+      "emailsHint": "{count, plural, =0 {Separate addresses with commas or new lines.} one {# signer} other {# signers}}",
+      "invalidEmails": "Check these: {list}",
+      "more": "Title, message and expiry (optional)",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Defaults to the file name",
+      "messageLabel": "Message to signers",
+      "messagePlaceholder": "Hi, please sign when you get a moment.",
+      "expiryLabel": "Links expire after",
+      "expiryDays": "{days} days",
+      "expiryNever": "Never",
+      "submit": "{count, plural, =0 {Send for signature} one {Send to # signer} other {Send to # signers}}",
+      "sent": "Sent! You can also share each link by WhatsApp or SMS."
+    },
+    "editor": {
+      "subtitle": "Add recipients, place fields, then send.",
+      "steps": "Steps",
+      "stepRecipients": "Recipients",
+      "stepFields": "Fields",
+      "stepReview": "Send",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone (optional, for WhatsApp/SMS)",
+      "role": "Role",
+      "roles": {
+        "SIGNER": "Signs",
+        "APPROVER": "Approves",
+        "VIEWER": "Views",
+        "CC": "Gets a copy"
+      },
+      "orderN": "Signs {n, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Remove",
+      "addRecipient": "Add recipient",
+      "sequential": "Sign in order (one after another)",
+      "next": "Next",
+      "back": "Back",
+      "recipientsIncomplete": "Every recipient needs a name and a valid email, and at least one must sign or approve.",
+      "fieldTypes": {
+        "SIGNATURE": "Signature",
+        "INITIALS": "Initials",
+        "NAME": "Name",
+        "DATE": "Date",
+        "EMAIL": "Email",
+        "TEXT": "Text",
+        "CHECKBOX": "Checkbox"
+      },
+      "pickFieldType": "Choose a recipient and a field type, then tap the page to place it. Drag to move, pull the corner to resize.",
+      "tapToPlace": "Now tap the page where the field should go.",
+      "required": "Required",
+      "deselect": "Done",
+      "pageCount": "{count, plural, one {# page} other {# pages}}",
+      "title": "Document title",
+      "subject": "Email subject (optional)",
+      "subjectPlaceholder": "Defaults to “… sent you … to sign”",
+      "message": "Message to recipients (optional)",
+      "expiry": "Signing links expire after",
+      "expiryDays": "{days} days",
+      "expiryNever": "Never",
+      "signAndPay": "Collect a payment (Sign & Pay)",
+      "signAndPayHint": "The chosen signer pays at the end of signing, by card or mobile money. The money goes straight to your payout account.",
+      "noPayout": "You need a payout account first.",
+      "connectPayout": "Connect one",
+      "amount": "Amount",
+      "currency": "Currency",
+      "payer": "Who pays",
+      "summary": "{recipients, plural, one {# recipient} other {# recipients}}, {fields, plural, one {# field} other {# fields}}.",
+      "send": "Send for signature",
+      "saveDraft": "Save draft",
+      "saved": "Draft saved.",
+      "sent": "Sent!",
+      "signerNeedsField": "{name} has no fields yet. Place at least one."
+    },
+    "detail": {
+      "back": "All documents",
+      "sentOn": "Sent {date}",
+      "completedOn": "completed {date}",
+      "sentBanner": "Sent! Each recipient got an email. You can also share their link directly by WhatsApp or SMS below.",
+      "expiredBanner": "The signing links expired before everyone signed. Renew them with one click: nothing needs to be rebuilt, and anything already signed is kept.",
+      "renew": "Extend links",
+      "renewExpired": "Renew and resend",
+      "renewed": "Links renewed and resent.",
+      "remind": "Send reminder",
+      "reminded": "Reminder sent.",
+      "cancel": "Cancel document",
+      "cancelTitle": "Cancel this document?",
+      "cancelBody": "Signing links stop working. Anything already signed stays in the audit trail and your export.",
+      "cancelConfirm": "Cancel document",
+      "cancelled": "Document cancelled.",
+      "keep": "Keep it",
+      "deleteDraft": "Delete draft",
+      "deleted": "Draft deleted.",
+      "recipients": "Recipients",
+      "recipientsHint": "Wrong email? Edit it here: the old link stops working and the new address gets a fresh one.",
+      "role": {
+        "SIGNER": "Signer",
+        "APPROVER": "Approver",
+        "VIEWER": "Viewer",
+        "CC": "CC"
+      },
+      "signedAt": "Signed {date}",
+      "declined": "Declined",
+      "linkExpired": "Link expired",
+      "viewed": "Opened",
+      "sent": "Sent",
+      "waiting": "Waiting for their turn",
+      "paid": "Paid {amount}",
+      "paymentDue": "Pays {amount}",
+      "files": "Files",
+      "filesHint": "Download any time, on any plan, even after cancelling.",
+      "downloadOriginal": "Original PDF",
+      "downloadSigned": "Signed PDF + certificate",
+      "audit": "Audit trail",
+      "auditHint": "Every action, with time, email and IP. Printed on the signed PDF's certificate page.",
+      "event": {
+        "DOCUMENT_CREATED": "Document uploaded",
+        "DOCUMENT_SENT": "Sent for signature",
+        "DOCUMENT_VIEWED": "Opened by recipient",
+        "FIELD_SIGNED": "Field completed",
+        "RECIPIENT_SIGNED": "Recipient signed",
+        "RECIPIENT_REJECTED": "Recipient declined",
+        "RECIPIENT_UPDATED": "Recipient details corrected",
+        "DOCUMENT_RENEWED": "Links renewed",
+        "REMINDER_SENT": "Reminder sent",
+        "PAYMENT_STARTED": "Payment started",
+        "PAYMENT_RECEIVED": "Payment received",
+        "DOCUMENT_COMPLETED": "Completed by all parties",
+        "DOCUMENT_CANCELLED": "Cancelled by sender",
+        "DOCUMENT_EXPIRED": "Links expired"
+      }
+    },
+    "recipient": {
+      "share": "Share link",
+      "copyLink": "Copy link",
+      "copied": "Link copied.",
+      "copyFailed": "Couldn't copy. Long-press the link to copy it instead.",
+      "whatsapp": "Send via WhatsApp",
+      "sms": "Send via SMS",
+      "email": "Send via email app",
+      "edit": "Edit",
+      "resend": "Resend",
+      "resent": "Link resent.",
+      "editTitle": "Edit recipient",
+      "editBody": "Changing the email replaces their link: the old one stops working and the new address gets a fresh link. Their fields stay as they are.",
+      "name": "Name",
+      "emailLabel": "Email",
+      "phone": "Phone",
+      "phoneHint": "Optional. Used to open WhatsApp or SMS directly to this person.",
+      "close": "Close",
+      "save": "Save changes",
+      "updated": "Recipient updated.",
+      "updatedRotated": "Recipient updated and a new link sent. The old link no longer works."
+    },
+    "signature": {
+      "draw": "Draw",
+      "type": "Type",
+      "upload": "Upload",
+      "drawArea": "Signature drawing area",
+      "drawHint": "Sign with your finger or mouse",
+      "clear": "Clear",
+      "typeLabel": "Type your name",
+      "uploadHint": "Tap to choose a photo of your signature",
+      "uploadPreview": "Uploaded signature"
+    },
+    "sign": {
+      "introBody": "{sender} has asked you to review and sign this document.",
+      "introStep1": "{count, plural, one {Fill in # field} other {Fill in # fields}}. We'll guide you to each one.",
+      "introStepPay": "Pay {amount} securely at the end.",
+      "introStep2": "Get a signed copy by email when everyone is done.",
+      "consent": "I agree to sign electronically and to receive this document and related records electronically.",
+      "start": "Review and sign",
+      "decline": "Decline to sign",
+      "progress": "{done} of {total} done",
+      "remaining": "{count, plural, one {# field left} other {# fields left}}",
+      "startSigning": "Start",
+      "nextField": "Next field",
+      "finish": "Finish signing",
+      "payAndFinish": "Pay {amount} and finish",
+      "fieldType": {
+        "SIGNATURE": "Signature",
+        "INITIALS": "Initials",
+        "NAME": "Full name",
+        "DATE": "Date",
+        "EMAIL": "Email",
+        "TEXT": "Text",
+        "CHECKBOX": "Checkbox"
+      },
+      "fieldHint": {
+        "SIGNATURE": "Draw, type or upload your signature.",
+        "INITIALS": "Draw, type or upload your initials.",
+        "NAME": "Your full name as it should appear.",
+        "DATE": "Today's date is filled in for you.",
+        "EMAIL": "Your email address.",
+        "TEXT": "Fill in the requested information.",
+        "CHECKBOX": "Tick or leave unticked."
+      },
+      "reuseSignature": "Use the signature you already made?",
+      "applySignature": "Apply my signature",
+      "adopt": "Adopt and sign",
+      "adoptLegal": "By tapping “Adopt and sign”, you agree this is your electronic signature, as legally valid as your handwritten one.",
+      "check": "Tick",
+      "uncheck": "Leave unticked",
+      "save": "Save",
+      "genericError": "Something went wrong. Please try again.",
+      "declineTitle": "Decline to sign?",
+      "declineBody": "{sender} will be told you declined. You can say why (optional).",
+      "declinePlaceholder": "Reason (optional)",
+      "declineCancel": "Go back",
+      "declineConfirm": "Decline",
+      "signedTitle": "You've signed",
+      "signedCompleteBody": "Everyone has signed. Your copy is ready to download, and was emailed to you too.",
+      "signedWaitingBody": "Thanks! We'll email you the signed copy once everyone has signed.",
+      "notYourTurnTitle": "Not your turn yet",
+      "notYourTurnBody": "Someone needs to sign before you. We'll email you as soon as it's your turn.",
+      "expiredTitle": "This link has expired",
+      "expiredBody": "Ask {sender} ({email}) to renew it. They can do it in one click, and anything you've already filled in is kept.",
+      "rejectedTitle": "You declined this document",
+      "rejectedBody": "{sender} has been told. If that was a mistake, ask them to send it again.",
+      "completeTitle": "This document is complete",
+      "closedTitle": "This document is closed",
+      "closedBody": "{sender} cancelled or closed this document, so it can't be signed any more.",
+      "ccTitle": "You've been sent a copy",
+      "ccBody": "{sender} shared this document with you. There's nothing for you to sign.",
+      "downloadSigned": "Download signed PDF",
+      "viewDocument": "View the document",
+      "poweredBy": "Secured by {site}"
+    },
+    "payouts": {
+      "title": "Payouts",
+      "subtitle": "Where Sign & Pay money goes. Connect Stripe, Paystack, or both.",
+      "ready": "Ready",
+      "notReady": "Setup incomplete",
+      "refresh": "Refresh status",
+      "refreshed": "Status updated.",
+      "stripeBody": "Cards in 40+ countries. You'll finish setup on Stripe's secure page.",
+      "stripeConnect": "Connect Stripe",
+      "stripeContinue": "Continue Stripe setup",
+      "paystackBody": "Cards and mobile money in Ghana, Nigeria, Kenya and South Africa.",
+      "businessName": "Business or account name",
+      "bank": "Bank",
+      "bankPick": "Choose your bank",
+      "bankCodePlaceholder": "Bank code",
+      "accountNumber": "Account number",
+      "paystackConnect": "Connect Paystack",
+      "paystackConnected": "Paystack connected.",
+      "connectedAs": "Connected: {id}",
+      "providerOff": "Not available on this deployment yet."
+    },
+    "billing": {
+      "renewalNotice": "Renews on {date}. We'll email you before then, never a silent charge. You can cancel any time.",
+      "cancel": "Cancel subscription",
+      "cancelTitle": "Cancel your subscription?",
+      "cancelBody": "You keep everything until {date}, then you won't be charged again. Your documents stay available to download and export.",
+      "cancelConfirm": "Yes, cancel",
+      "keep": "Keep my plan",
+      "cancelled": "Cancelled. You keep access until {date}.",
+      "resume": "Undo cancellation",
+      "resumed": "Your subscription will continue.",
+      "exportTitle": "Export all documents",
+      "exportBody": "A ZIP with every original, every signed PDF and every audit trail. Free on every plan, any time, including after you cancel.",
+      "exportCta": "Download ZIP"
+    }
   }
 }

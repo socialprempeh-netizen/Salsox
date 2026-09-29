@@ -1,3 +1,30 @@
+# Salsox
+
+**E-signatures without the usual headaches.** Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone.
+
+- **Unlimited sending**: no envelope caps on any plan.
+- **Fix, don't rebuild**: correct a wrong email or renew expired links in one click; fields and signatures are kept, and the old link stops working.
+- **Mobile-first signing**: one field at a time, thumb-sized controls, no app or account for signers.
+- **Sign & Pay**: signers pay by card or mobile money through Stripe or Paystack, straight to the sender.
+- **Quick Send**: upload, type emails, send. Share links over WhatsApp or SMS too.
+- **Honest billing**: one-click cancel, a reminder before every renewal, export everything any time.
+
+The signing engine and its configuration are documented in [docs/esign.md](./docs/esign.md). Salsox is built on OpenStarterKit (MIT), whose original README follows.
+
+### Local development
+
+```bash
+npm install
+docker run -d --name salsox-db -e POSTGRES_USER=salsox -e POSTGRES_PASSWORD=salsox -e POSTGRES_DB=salsox -p 55440:5432 postgres:16-alpine
+cp .env.example .env.local   # set DATABASE_URL=postgresql://salsox:salsox@localhost:55440/salsox
+npx prisma migrate deploy && npm run db:seed
+npm run dev
+```
+
+Tests: `npm test` (unit), and `npx playwright test` for the e2e suite (`e2e/esign.spec.ts` covers the signing flow; `e2e/responsive.spec.ts` checks every main page at 360px and 390px).
+
+---
+
 <p align="center">
   <img src=".github/openstarterkit.webp" alt="OpenStarterKit" width="100%" />
 </p>

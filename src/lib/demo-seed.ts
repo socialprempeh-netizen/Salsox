@@ -32,54 +32,55 @@ const examplePlans: {
 }[] = [
   {
     slug: "starter-monthly",
-    name: "Starter",
-    description: "Example entry plan: replace with your own",
+    name: "Personal",
+    description: "For freelancers and individuals. Unlimited documents, no envelope caps.",
     price: 900,
     interval: "MONTH",
     stripePriceId: process.env.STRIPE_STARTER_PRICE_ID ?? "price_starter_placeholder",
-    features: ["Up to 3 projects", "Basic analytics", "Community support"],
+    features: ["Unlimited documents and signers", "Quick Send", "WhatsApp and SMS signing links", "Export everything, any time"],
   },
   {
     slug: "starter-yearly",
-    name: "Starter Yearly",
-    description: "Example annual plan: save 2 months",
+    name: "Personal Yearly",
+    description: "Personal, billed yearly: 2 months free. Renewal reminder sent in advance.",
     price: 9000,
     interval: "YEAR",
     stripePriceId: process.env.STRIPE_STARTER_YEARLY_PRICE_ID ?? "price_starter_yearly_placeholder",
-    features: ["Up to 3 projects", "Basic analytics", "2 months free"],
+    features: ["Everything in Personal", "2 months free", "Renewal reminder 7 days ahead"],
   },
   {
     slug: "pro-monthly",
-    name: "Pro",
-    description: "Example paid plan: replace with your own",
+    name: "Business",
+    description: "Get paid as you get signed. Unlimited documents, no envelope caps.",
     price: 1900,
     interval: "MONTH",
     stripePriceId: process.env.STRIPE_PRO_PRICE_ID ?? "price_pro_placeholder",
     trialDays: 14,
     features: [
-      "Everything in Starter",
-      "Unlimited projects",
-      "Advanced analytics",
+      "Everything in Personal",
+      "Sign & Pay (Stripe or Paystack)",
+      "Sequential signing and approvers",
+      "Digitally sealed PDFs with audit certificate",
       "Priority support",
     ],
   },
   {
     slug: "pro-yearly",
-    name: "Pro Yearly",
-    description: "Example annual plan: save 2 months",
+    name: "Business Yearly",
+    description: "Business, billed yearly: 2 months free. Renewal reminder sent in advance.",
     price: 19000,
     interval: "YEAR",
     stripePriceId: process.env.STRIPE_PRO_YEARLY_PRICE_ID ?? "price_pro_yearly_placeholder",
-    features: ["Everything in Pro", "2 months free", "Priority support"],
+    features: ["Everything in Business", "2 months free", "Renewal reminder 7 days ahead"],
   },
   {
     slug: "lifetime",
     name: "Lifetime",
-    description: "Example one-time purchase: pay once, keep it forever",
+    description: "Pay once, sign forever. No subscription to cancel.",
     price: 29900,
     interval: "ONE_TIME",
     stripePriceId: process.env.STRIPE_LIFETIME_PRICE_ID ?? "price_lifetime_placeholder",
-    features: ["Everything in Pro", "All future updates", "No recurring billing"],
+    features: ["Everything in Business", "All future updates", "No recurring billing"],
   },
   {
     slug: "metered-example",
@@ -101,47 +102,46 @@ const fakeUsers: {
   plan?: "starter-monthly" | "pro-monthly" | "pro-yearly"
   subStatus?: SubscriptionStatus
   lifetime?: boolean
-  projects: string[]
 }[] = [
-  { name: "Ada Lovelace", email: "ada@example.com", signedUpDaysAgo: 88, plan: "pro-yearly", subStatus: "ACTIVE", projects: ["Analytics engine", "Docs portal"] },
-  { name: "Grace Hopper", email: "grace@example.com", signedUpDaysAgo: 80, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Compiler playground"] },
-  { name: "Alan Turing", email: "alan@example.com", signedUpDaysAgo: 74, lifetime: true, projects: ["Enigma dashboard", "Morphogenesis lab", "Chess bot"] },
-  { name: "Margaret Hamilton", email: "margaret@example.com", signedUpDaysAgo: 66, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Guidance system"] },
-  { name: "Linus Chen", email: "linus@example.com", signedUpDaysAgo: 59, projects: [] },
-  { name: "Sofia Almeida", email: "sofia@example.com", signedUpDaysAgo: 51, plan: "pro-monthly", subStatus: "PAST_DUE", projects: ["Churn radar"] },
-  { name: "Yuki Tanaka", email: "yuki@example.com", signedUpDaysAgo: 45, plan: "pro-yearly", subStatus: "ACTIVE", projects: ["Design tokens", "Icon pipeline"] },
-  { name: "Omar Haddad", email: "omar@example.com", signedUpDaysAgo: 38, projects: ["Side project"] },
-  { name: "Elena Petrova", email: "elena@example.com", signedUpDaysAgo: 30, plan: "pro-monthly", subStatus: "CANCELED", projects: [] },
-  { name: "Marco Rossi", email: "marco@example.com", signedUpDaysAgo: 24, plan: "starter-monthly", subStatus: "ACTIVE", projects: ["Invoice generator"] },
-  { name: "Priya Sharma", email: "priya@example.com", signedUpDaysAgo: 18, plan: "pro-monthly", subStatus: "TRIALING", projects: ["Feedback widget"] },
-  { name: "Tom Becker", email: "tom@example.com", signedUpDaysAgo: 12, projects: [] },
-  { name: "Aisha Bello", email: "aisha@example.com", signedUpDaysAgo: 7, plan: "starter-monthly", subStatus: "ACTIVE", projects: ["Launch checklist"] },
-  { name: "Jonas Weber", email: "jonas@example.com", signedUpDaysAgo: 3, projects: ["Weekend MVP"] },
-  { name: "Lucia Fernandez", email: "lucia@example.com", signedUpDaysAgo: 1, projects: [] },
+  { name: "Ada Lovelace", email: "ada@example.com", signedUpDaysAgo: 88, plan: "pro-yearly", subStatus: "ACTIVE" },
+  { name: "Grace Hopper", email: "grace@example.com", signedUpDaysAgo: 80, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Alan Turing", email: "alan@example.com", signedUpDaysAgo: 74, lifetime: true },
+  { name: "Margaret Hamilton", email: "margaret@example.com", signedUpDaysAgo: 66, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Linus Chen", email: "linus@example.com", signedUpDaysAgo: 59 },
+  { name: "Sofia Almeida", email: "sofia@example.com", signedUpDaysAgo: 51, plan: "pro-monthly", subStatus: "PAST_DUE" },
+  { name: "Yuki Tanaka", email: "yuki@example.com", signedUpDaysAgo: 45, plan: "pro-yearly", subStatus: "ACTIVE" },
+  { name: "Omar Haddad", email: "omar@example.com", signedUpDaysAgo: 38 },
+  { name: "Elena Petrova", email: "elena@example.com", signedUpDaysAgo: 30, plan: "pro-monthly", subStatus: "CANCELED" },
+  { name: "Marco Rossi", email: "marco@example.com", signedUpDaysAgo: 24, plan: "starter-monthly", subStatus: "ACTIVE" },
+  { name: "Priya Sharma", email: "priya@example.com", signedUpDaysAgo: 18, plan: "pro-monthly", subStatus: "TRIALING" },
+  { name: "Tom Becker", email: "tom@example.com", signedUpDaysAgo: 12 },
+  { name: "Aisha Bello", email: "aisha@example.com", signedUpDaysAgo: 7, plan: "starter-monthly", subStatus: "ACTIVE" },
+  { name: "Jonas Weber", email: "jonas@example.com", signedUpDaysAgo: 3 },
+  { name: "Lucia Fernandez", email: "lucia@example.com", signedUpDaysAgo: 1 },
   // A wider paying population, spread across the twelve weeks the chart covers,
   // so the line climbs instead of sitting on the axis. Dates are what make it a
   // curve; the plan mix is what gives it steps of different heights.
-  { name: "Noah Lindqvist", email: "noah@example.com", signedUpDaysAgo: 84, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Fleet tracker"] },
-  { name: "Amara Okafor", email: "amara@example.com", signedUpDaysAgo: 77, plan: "pro-yearly", subStatus: "ACTIVE", projects: ["Grant tracker", "Field notes"] },
-  { name: "Ines Moreau", email: "ines@example.com", signedUpDaysAgo: 71, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Menu planner"] },
-  { name: "Kwame Mensah", email: "kwame@example.com", signedUpDaysAgo: 64, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Route optimiser"] },
-  { name: "Hana Kobayashi", email: "hana@example.com", signedUpDaysAgo: 57, plan: "starter-monthly", subStatus: "ACTIVE", projects: ["Recipe box"] },
-  { name: "Diego Ramirez", email: "diego@example.com", signedUpDaysAgo: 49, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Match stats", "Team wiki"] },
-  { name: "Freya Nilsen", email: "freya@example.com", signedUpDaysAgo: 43, plan: "pro-yearly", subStatus: "ACTIVE", projects: ["Trail atlas"] },
-  { name: "Samir Farouk", email: "samir@example.com", signedUpDaysAgo: 36, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Invoice inbox"] },
-  { name: "Clara Bianchi", email: "clara@example.com", signedUpDaysAgo: 29, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Studio bookings"] },
-  { name: "Ravi Menon", email: "ravi@example.com", signedUpDaysAgo: 22, plan: "starter-monthly", subStatus: "ACTIVE", projects: ["Habit log"] },
-  { name: "Mia Sorensen", email: "mia@example.com", signedUpDaysAgo: 16, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Client portal"] },
-  { name: "Theo Vasquez", email: "theo@example.com", signedUpDaysAgo: 11, plan: "pro-monthly", subStatus: "ACTIVE", projects: ["Deploy board"] },
-  { name: "Zara Haddadi", email: "zara@example.com", signedUpDaysAgo: 6, plan: "pro-yearly", subStatus: "ACTIVE", projects: ["Podcast notes"] },
-  { name: "Felix Braun", email: "felix@example.com", signedUpDaysAgo: 2, plan: "pro-monthly", subStatus: "TRIALING", projects: [] },
+  { name: "Noah Lindqvist", email: "noah@example.com", signedUpDaysAgo: 84, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Amara Okafor", email: "amara@example.com", signedUpDaysAgo: 77, plan: "pro-yearly", subStatus: "ACTIVE" },
+  { name: "Ines Moreau", email: "ines@example.com", signedUpDaysAgo: 71, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Kwame Mensah", email: "kwame@example.com", signedUpDaysAgo: 64, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Hana Kobayashi", email: "hana@example.com", signedUpDaysAgo: 57, plan: "starter-monthly", subStatus: "ACTIVE" },
+  { name: "Diego Ramirez", email: "diego@example.com", signedUpDaysAgo: 49, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Freya Nilsen", email: "freya@example.com", signedUpDaysAgo: 43, plan: "pro-yearly", subStatus: "ACTIVE" },
+  { name: "Samir Farouk", email: "samir@example.com", signedUpDaysAgo: 36, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Clara Bianchi", email: "clara@example.com", signedUpDaysAgo: 29, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Ravi Menon", email: "ravi@example.com", signedUpDaysAgo: 22, plan: "starter-monthly", subStatus: "ACTIVE" },
+  { name: "Mia Sorensen", email: "mia@example.com", signedUpDaysAgo: 16, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Theo Vasquez", email: "theo@example.com", signedUpDaysAgo: 11, plan: "pro-monthly", subStatus: "ACTIVE" },
+  { name: "Zara Haddadi", email: "zara@example.com", signedUpDaysAgo: 6, plan: "pro-yearly", subStatus: "ACTIVE" },
+  { name: "Felix Braun", email: "felix@example.com", signedUpDaysAgo: 2, plan: "pro-monthly", subStatus: "TRIALING" },
 ]
 
 export type DemoSeedResult = {
   users: number
   subscriptions: number
   purchases: number
-  projects: number
+  documents: number
 }
 
 export async function seedDemoData(prisma: PrismaClient): Promise<DemoSeedResult> {
@@ -163,7 +163,7 @@ export async function seedDemoData(prisma: PrismaClient): Promise<DemoSeedResult
     planBySlug.set(slug, { id: row.id, price: row.price })
   }
 
-  // Full reset: wipe users (cascades to subscriptions, purchases, projects,
+  // Full reset: wipe users (cascades to subscriptions, purchases, documents,
   // accounts, sessions). Since 2.0 sessions are rows rather than cookies, so
   // this is also what signs out every visitor currently poking at the demo:
   // the cascade takes their session with the user it belonged to.
@@ -210,13 +210,6 @@ export async function seedDemoData(prisma: PrismaClient): Promise<DemoSeedResult
         role: "USER",
         createdAt,
         stripeCustomerId: hasBilling ? `cus_demo_${String(++customerCounter).padStart(3, "0")}` : null,
-        projects: {
-          create: fake.projects.map((name, i) => ({
-            name,
-            description: "Demo project (seeded data)",
-            createdAt: daysAgo(Math.max(fake.signedUpDaysAgo - 1 - i * 2, 0)),
-          })),
-        },
       },
     })
 
@@ -258,12 +251,12 @@ export async function seedDemoData(prisma: PrismaClient): Promise<DemoSeedResult
     }
   }
 
-  const [users, subscriptions, purchases, projects] = await Promise.all([
+  const [users, subscriptions, purchases, documents] = await Promise.all([
     prisma.user.count(),
     prisma.subscription.count(),
     prisma.purchase.count(),
-    prisma.project.count(),
+    prisma.document.count(),
   ])
 
-  return { users, subscriptions, purchases, projects }
+  return { users, subscriptions, purchases, documents }
 }

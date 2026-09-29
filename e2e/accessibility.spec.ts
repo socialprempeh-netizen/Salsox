@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { freshEmail as esignEmail, quickSend, tokenFor } from "./helpers/esign"
 import AxeBuilder from "@axe-core/playwright"
 
 /**
@@ -103,10 +104,28 @@ test.describe("accessibility", () => {
     await page.goto("/dashboard/settings")
     await scan(page, "settings")
 
-    await page.goto("/dashboard/projects")
-    await scan(page, "projects")
+    await page.goto("/dashboard/documents")
+    await scan(page, "documents")
 
     await page.goto("/dashboard/billing")
     await scan(page, "billing")
+
+    await page.goto("/dashboard/documents/new")
+    await scan(page, "new document")
+
+    await page.goto("/dashboard/payouts")
+    await scan(page, "payouts")
+
+    // The e-signature surfaces: a sent document, and the public signing page
+    // a signer sees (no account, often on a phone).
+    const signerEmail = esignEmail("a11y")
+    const documentId = await quickSend(page, [signerEmail])
+    await scan(page, "document detail")
+
+    await page.goto("/dashboard/documents/quick-send")
+    await scan(page, "quick send")
+
+    await page.goto(`/sign/${await tokenFor(documentId, signerEmail)}`)
+    await scan(page, "signing intro")
   })
 })

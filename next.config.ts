@@ -42,6 +42,14 @@ const nextConfig: NextConfig = {
     "/sitemap.xml": ["./content/blog/**"],
     "/llms.txt": ["./content/blog/**"],
   },
+  experimental: {
+    serverActions: {
+      // PDF uploads go through server actions. The engine caps a PDF at 4 MB
+      // (MAX_PDF_BYTES in src/lib/esign/pdf/inspect.ts, under Vercel's 4.5 MB
+      // function body limit); this leaves room for multipart overhead.
+      bodySizeLimit: "4.4mb",
+    },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

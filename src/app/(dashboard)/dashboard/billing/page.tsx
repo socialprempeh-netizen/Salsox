@@ -10,6 +10,8 @@ import { SubscriptionStatusBadge } from "@/components/billing/subscription-statu
 import { PlanCards, type PlanCardData } from "@/components/billing/plan-cards"
 import { exampleEnterpriseCard } from "@/components/billing/enterprise-card"
 import { CheckoutStatusToast } from "@/components/billing/checkout-status-toast"
+import { CancelSubscription } from "@/components/billing/cancel-subscription"
+import { Button } from "@/components/ui/button"
 
 // Invoice statuses come from Stripe as stable codes, like subscription ones;
 // their labels live in the message files under `dashboard.billing.invoiceStatus`.
@@ -45,6 +47,7 @@ async function getDiscounts(stripeSubscriptionId: string | null): Promise<Discou
 
 export default async function BillingPage() {
   const t = await getTranslations("dashboard.billing")
+  const tEsign = await getTranslations("esign.billing")
   const format = await getFormatter()
   const currentUser = await requireUser()
 
@@ -189,9 +192,17 @@ export default async function BillingPage() {
               {t("alsoSubscribed", { plan: subscription.plan.name })}
             </p>
           )}
+          {/* Stated up front, not in the terms: when it renews, and that we
+              email first. Cancel is right here, not only inside the portal. */}
+          {!purchase && subscription && !subscription.cancelAtPeriodEnd && renewalDate && (
+            <p className="rounded-xl bg-muted/60 p-3 text-sm">{tEsign("renewalNotice", { date: renewalDate })}</p>
+          )}
           {(subscription || (purchase && user?.stripeCustomerId)) && (
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
               <ManageBillingButton className="w-full sm:w-auto" />
+              {!purchase && subscription && subscription.status !== "CANCELED" && (
+                <CancelSubscription cancelling={subscription.cancelAtPeriodEnd} endDate={renewalDate ?? ""} />
+              )}
               {subscription && !purchase && (
                 <p className="text-sm text-muted-foreground">
                   {t("portalHint")}
@@ -218,6 +229,20 @@ export default async function BillingPage() {
           />
         </div>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{tEsign("exportTitle")}</CardTitle>
+          <CardDescription>{tEsign("exportBody")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            {/* A file download from a route handler: it must be a full
+                navigation (hence `download`), not a client-side <Link> transition. */}
+            <a href="/api/export" download>{tEsign("exportCta")}</a>
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

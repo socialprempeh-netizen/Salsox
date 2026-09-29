@@ -46,7 +46,7 @@ export const siteConfig = {
     process.env.NEXT_PUBLIC_BRAND_DESCRIPTION ||
     (isKitSite
       ? "A production-ready SaaS starter with Next.js, Better Auth, Stripe, Prisma, and Tailwind. Plain Next.js, with no framework to learn first."
-      : "One workspace for your projects, your customers and your billing. Set up in minutes, cancel any time."),
+      : "Unlimited e-signatures with Sign & Pay, Quick Send and mobile-first signing. Cancel in one click, export any time."),
 
   /** Base URL of this deployment — no trailing slash. */
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",

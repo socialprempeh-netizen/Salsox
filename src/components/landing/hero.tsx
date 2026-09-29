@@ -3,7 +3,7 @@ import {
   ArrowRight,
   Sparkles,
   LayoutGrid,
-  FolderKanban,
+  FileSignature,
   CreditCard,
   Settings,
   type LucideIcon,
@@ -29,7 +29,7 @@ import { siteConfig } from "@/config/site"
 // else: it is a picture of a product, but the words in it are still read.
 const mockNav: { key: string; icon: LucideIcon; active?: boolean }[] = [
   { key: "navDashboard", icon: LayoutGrid, active: true },
-  { key: "navProjects", icon: FolderKanban },
+  { key: "navDocuments", icon: FileSignature },
   { key: "navBilling", icon: CreditCard },
   { key: "navSettings", icon: Settings },
 ]
@@ -182,8 +182,8 @@ export function Hero() {
                 {/* Content */}
                 <div className="space-y-4 p-5">
                   <div>
-                    <p className="text-base font-bold text-foreground">Welcome back, Alex 👋</p>
-                    <p className="text-xs text-muted-foreground">Here&apos;s what&apos;s happening with your account.</p>
+                    <p className="text-base font-bold text-foreground">{tm("greeting")}</p>
+                    <p className="text-xs text-muted-foreground">{tm("greetingBody")}</p>
                   </div>
 
                   {/* Stat cards */}
@@ -206,7 +206,7 @@ export function Hero() {
                   {/* Revenue chart card */}
                   <div className="rounded-xl border border-border bg-card p-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold text-foreground">Revenue</p>
+                      <p className="text-xs font-semibold text-foreground">{tm("chartTitle")}</p>
                       <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">+12.5%</span>
                     </div>
                     <div className="mt-3 flex h-20 items-end gap-1.5">
@@ -220,14 +220,14 @@ export function Hero() {
                     </div>
                   </div>
 
-                  {/* Projects row */}
+                  {/* Documents row */}
                   <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">Projects</p>
-                      <p className="text-xs text-muted-foreground">You have 3 projects.</p>
+                      <p className="text-sm font-semibold text-foreground">{tm("docsTitle")}</p>
+                      <p className="text-xs text-muted-foreground">{tm("docsBody")}</p>
                     </div>
                     <span className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground">
-                      View all
+                      {tm("viewAll")}
                     </span>
                   </div>
                 </div>

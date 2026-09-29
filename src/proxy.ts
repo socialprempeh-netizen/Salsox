@@ -38,6 +38,11 @@ const UNLOCALIZED = [
   "/reset-password",
   "/verify-request",
   "/2fa",
+  // Public signing links (/sign/{token}). Public but not localized: signers
+  // have no account and arrive from an email, WhatsApp or SMS link that must
+  // resolve exactly as sent. The token is the authorization, checked by the
+  // page itself, so this path is deliberately absent from PROTECTED_ROUTES.
+  "/sign/",
   // Root level metadata routes.
   "/sitemap.xml",
   "/robots.txt",
@@ -59,7 +64,7 @@ const UNLOCALIZED = [
  * each return 401 on their own. Treat this file as defence in depth, and add
  * a prefix here when you add a private area outside `/dashboard`.
  */
-const PROTECTED_ROUTES = ["/dashboard", "/api/checkout", "/api/billing"]
+const PROTECTED_ROUTES = ["/dashboard", "/api/checkout", "/api/billing", "/api/documents", "/api/export"]
 const ADMIN_ROUTES = ["/admin", "/api/admin"]
 // `/2fa` belongs here for the same reason as the other two: it is a step on the
 // way in, so somebody who already holds a session has nothing to do on it. The

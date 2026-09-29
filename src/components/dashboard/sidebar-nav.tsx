@@ -7,7 +7,9 @@ import { useRenderedPathname } from "@/hooks/use-rendered-pathname"
 import {
   ArrowLeft,
   CreditCard,
-  FolderKanban,
+  FileSignature,
+  Send,
+  Wallet,
   LayoutGrid,
   Settings,
   Shield,
@@ -21,7 +23,9 @@ const menus = {
     // `exact`: section roots match only themselves, otherwise "Dashboard"
     // would light up on every sub-page too.
     { href: "/dashboard", key: "dashboard", icon: LayoutGrid, exact: true },
-    { href: "/dashboard/projects", key: "projects", icon: FolderKanban },
+    { href: "/dashboard/documents", key: "documents", icon: FileSignature },
+    { href: "/dashboard/documents/quick-send", key: "quickSend", icon: Send, exact: true },
+    { href: "/dashboard/payouts", key: "payouts", icon: Wallet },
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],

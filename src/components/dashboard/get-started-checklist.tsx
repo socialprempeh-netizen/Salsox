@@ -11,17 +11,17 @@ type ChecklistItem = { label: string; done: boolean; href: string }
 // page, only the dismissal is persisted (User.onboardingDismissedAt).
 export async function GetStartedChecklist({
   hasName,
-  hasProject,
+  hasDocument,
   hasBilling,
 }: {
   hasName: boolean
-  hasProject: boolean
+  hasDocument: boolean
   hasBilling: boolean
 }) {
   const t = await getTranslations("dashboard.home")
   const items: ChecklistItem[] = [
     { label: t("checklistName"), done: hasName, href: "/dashboard/settings" },
-    { label: t("checklistProject"), done: hasProject, href: "/dashboard/projects" },
+    { label: t("checklistDocument"), done: hasDocument, href: "/dashboard/documents/quick-send" },
     { label: t("checklistBilling"), done: hasBilling, href: "/dashboard/billing" },
   ]
   const doneCount = items.filter((i) => i.done).length

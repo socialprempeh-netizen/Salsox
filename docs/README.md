@@ -13,6 +13,7 @@ Everything you need to go from `git clone` to production.
 | [Languages](./i18n.md) | Adding a language, translating the docs, and keeping translations current |
 | [Deployment](./deployment.md) | Shipping to Vercel, production env, webhooks, going admin |
 | [Upgrading](./upgrading.md) | Taking a newer version without losing your work, and the cost in advance |
+| [E-signatures (Salsox)](./esign.md) | How documents are sent, signed, paid for and sealed, and how to configure it |
 
 Quick pointers:
 

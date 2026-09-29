@@ -20,13 +20,20 @@ export default async function DashboardPage() {
   const subscription = entitlement.kind === "subscription" ? entitlement.subscription : null
   const lifetime = entitlement.kind === "lifetime" ? entitlement.purchase : null
 
-  const [projectCount, userRow] = await Promise.all([
-    prisma.project.count({ where: { userId: user.id } }),
+  // One grouped count instead of one query per status.
+  const [statusCounts, userRow] = await Promise.all([
+    prisma.document.groupBy({ by: ["status"], where: { userId: user.id }, _count: { _all: true } }),
     prisma.user.findUnique({
       where: { id: user.id },
       select: { name: true, onboardingDismissedAt: true, stripeCustomerId: true },
     }),
   ])
+
+  const countOf = (status: string) => statusCounts.find((c) => c.status === status)?._count._all ?? 0
+  const documentCount = statusCounts.reduce((sum, c) => sum + c._count._all, 0)
+  const awaiting = countOf("PENDING")
+  const completed = countOf("COMPLETED")
+  const expired = countOf("EXPIRED")
 
   // Formatted through next-intl rather than a hardcoded "en-US": a date is
   // part of the interface, and a locale that reads dates day-first would show
@@ -52,25 +59,46 @@ export default async function DashboardPage() {
       {!userRow?.onboardingDismissedAt && (
         <GetStartedChecklist
           hasName={Boolean(userRow?.name)}
-          hasProject={projectCount > 0}
+          hasDocument={documentCount > 0}
           hasBilling={entitlement.kind !== "free" || Boolean(userRow?.stripeCustomerId)}
         />
       )}
 
+      {/* Documents at a glance, with the two ways to send one. Quick Send is
+          first because it is the fastest path: upload, type an email, done. */}
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="text-base">{t("projectsTitle")}</CardTitle>
-              <CardDescription>{t("projectsCount", { count: projectCount })}</CardDescription>
+              <CardTitle className="text-base">{t("documentsTitle")}</CardTitle>
+              <CardDescription>{t("documentsCount", { count: documentCount })}</CardDescription>
             </div>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/dashboard/projects">
-                {projectCount === 0 ? t("projectsCreate") : t("projectsViewAll")}
-              </Link>
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild size="sm">
+                <Link href="/dashboard/documents/quick-send">{t("quickSend")}</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/dashboard/documents/new">{t("newDocument")}</Link>
+              </Button>
+            </div>
           </div>
         </CardHeader>
+        {documentCount > 0 && (
+          <CardContent className="grid grid-cols-3 gap-3 pt-0">
+            <Link href="/dashboard/documents?status=PENDING" className="rounded-xl border p-3 hover:border-primary/40">
+              <p className="text-2xl font-bold">{awaiting}</p>
+              <p className="text-xs text-muted-foreground">{t("awaiting")}</p>
+            </Link>
+            <Link href="/dashboard/documents?status=COMPLETED" className="rounded-xl border p-3 hover:border-primary/40">
+              <p className="text-2xl font-bold">{completed}</p>
+              <p className="text-xs text-muted-foreground">{t("completed")}</p>
+            </Link>
+            <Link href="/dashboard/documents?status=EXPIRED" className="rounded-xl border p-3 hover:border-primary/40">
+              <p className="text-2xl font-bold">{expired}</p>
+              <p className="text-xs text-muted-foreground">{t("expired")}</p>
+            </Link>
+          </CardContent>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

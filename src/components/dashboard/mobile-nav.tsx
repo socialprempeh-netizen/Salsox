@@ -7,7 +7,9 @@ import { useRenderedPathname } from "@/hooks/use-rendered-pathname"
 import {
   ArrowLeft,
   CreditCard,
-  FolderKanban,
+  FileSignature,
+  Send,
+  Wallet,
   LayoutGrid,
   Menu,
   Settings,
@@ -27,7 +29,9 @@ import {
 const menus = {
   dashboard: [
     { href: "/dashboard", key: "dashboard", icon: LayoutGrid },
-    { href: "/dashboard/projects", key: "projects", icon: FolderKanban },
+    { href: "/dashboard/documents", key: "documents", icon: FileSignature },
+    { href: "/dashboard/documents/quick-send", key: "quickSend", icon: Send, exact: true },
+    { href: "/dashboard/payouts", key: "payouts", icon: Wallet },
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],

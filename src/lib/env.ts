@@ -74,6 +74,15 @@ export const envSchema = z
     STRIPE_AUTOMATIC_TAX: flag,
 
     RESEND_API_KEY: prefixed("re_", "RESEND_API_KEY"),
+
+    // E-signatures (docs/esign.md). All optional: the signing flow runs
+    // locally with none of them.
+    BLOB_READ_WRITE_TOKEN: optional,
+    PAYSTACK_SECRET_KEY: prefixed("sk_", "PAYSTACK_SECRET_KEY"),
+    PAYSTACK_COUNTRY: optional,
+    SIGN_AND_PAY_FEE_BPS: blankAsUnset(z.string().regex(/^\d+$/, "SIGN_AND_PAY_FEE_BPS should be a whole number of basis points").optional()),
+    SIGNING_P12_BASE64: optional,
+    SIGNING_P12_PASSPHRASE: optional,
     RESEND_AUDIENCE_ID: optional,
     EMAIL_FROM: optional,
 

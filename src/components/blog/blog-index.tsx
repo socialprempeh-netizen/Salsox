@@ -24,7 +24,7 @@ export function BlogIndex({ page }: { page: number }) {
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{t("title")}</h1>
           <p className="mt-4 text-muted-foreground">
             {t("intro")}{" "}
-            <a href="/blog/rss.xml" className="text-primary hover:underline">
+            <a href="/blog/rss.xml" className="text-primary underline underline-offset-4">
               RSS
             </a>
             .

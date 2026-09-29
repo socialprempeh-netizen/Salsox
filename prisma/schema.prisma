@@ -38,35 +38,36 @@ enum PurchaseStatus {
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
-  id                    String        @id @default(cuid())
+  id                    String          @id @default(cuid())
   // Required by Better Auth, where Auth.js left it optional. The 2.0 migration
   // backfills the users that had none: OAuth fills it from the provider profile
   // afterwards, but the column cannot be null in the meantime.
   name                  String
-  email                 String        @unique
+  email                 String          @unique
   // A boolean here, a timestamp in Auth.js. The 2.0 migration turns "has a
   // date" into true and null into false, and the exact moment is not
   // recoverable afterwards. Nothing in the kit read it as a date.
-  emailVerified         Boolean       @default(false)
+  emailVerified         Boolean         @default(false)
   image                 String?
-  role                  Role          @default(USER)
+  role                  Role            @default(USER)
   // Owned by the two-factor plugin, which is why it is `input: false` on its
   // side: nobody can set it through the API or an OAuth profile. It exists on
   // User rather than being derived from the TwoFactor row because sign-in has
   // to know whether to stop and ask, before it goes looking for a secret.
-  twoFactorEnabled      Boolean       @default(false)
-  stripeCustomerId      String?       @unique
+  twoFactorEnabled      Boolean         @default(false)
+  stripeCustomerId      String?         @unique
   // When the user dismissed the "Get started" checklist; the checklist items
-  // themselves are derived live (name, projects, billing), only this persists.
+  // themselves are derived live (name, documents, billing), only this persists.
   onboardingDismissedAt DateTime?
   accounts              Account[]
   sessions              Session[]
   twoFactor             TwoFactor[]
   subscription          Subscription?
   purchases             Purchase[]
-  projects              Project[]
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  documents             Document[]
+  payoutAccounts        PayoutAccount[]
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 }
 
 // One row per way of signing in. OAuth accounts and the email+password
@@ -160,13 +161,13 @@ model Verification {
 }
 
 model Plan {
-  id            String          @id @default(cuid())
-  name          String
-  slug          String          @unique
-  description   String?
-  price         Int
-  interval      BillingInterval
-  stripePriceId String          @unique
+  id             String          @id @default(cuid())
+  name           String
+  slug           String          @unique
+  description    String?
+  price          Int
+  interval       BillingInterval
+  stripePriceId  String          @unique
   // Set only on metered (usage-based) plans: the Stripe Billing Meter event
   // name that recordUsage() reports against. Metered prices must be checked
   // out without a quantity.
@@ -174,13 +175,13 @@ model Plan {
   // Days of free trial on this plan, offered only to a customer who has never
   // had a subscription (trialDaysFor in src/lib/billing.ts). Null is no trial.
   // Stripe accepts up to 730.
-  trialDays     Int?
-  features      String[]
-  isActive      Boolean         @default(true)
-  subscriptions Subscription[]
-  purchases     Purchase[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  trialDays      Int?
+  features       String[]
+  isActive       Boolean         @default(true)
+  subscriptions  Subscription[]
+  purchases      Purchase[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
 model Subscription {
@@ -196,6 +197,10 @@ model Subscription {
   // set after the trial is over: read it together with the status, which says
   // TRIALING only while the trial runs.
   trialEndsAt          DateTime?
+  // Salsox never renews silently: the e-sign cron emails a notice ahead of
+  // every renewal and stamps this with the period it was sent for, so a
+  // notice goes out once per period and a renewed period gets its own.
+  renewalNoticeSentAt  DateTime?
   user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan                 Plan               @relation(fields: [planId], references: [id])
   createdAt            DateTime           @default(now())
@@ -222,22 +227,6 @@ model Purchase {
   @@index([userId])
 }
 
-// ─── Example domain resource ──────────────────────────────────────────────────
-// The core "thing" users create and own. It's the base CRUD pattern to copy when
-// building your own features — and the foundation teams/multi-tenancy builds on
-// (in the Pro tier, a Project belongs to a Team instead of a single User).
-model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([userId])
-}
-
 // ─── Newsletter / pre-launch waitlist ─────────────────────────────────────────
 // Double opt-in mailing list, owned in your database (docs/newsletter.md).
 // createdAt records the latest signup request and confirmedAt the completed
@@ -252,4 +241,226 @@ model NewsletterSubscriber {
   confirmToken     String    @unique
   unsubscribeToken String    @unique
   unsubscribedAt   DateTime?
+}
+
+// ─── E-signature (Salsox) ─────────────────────────────────────────────────────
+// A clean-room design informed by how open e-signature engines model the
+// problem (a document, its recipients, the fields each recipient fills, and an
+// append-only audit trail). No code was copied from any AGPL project.
+//
+// Deliberate differences from DocuSign-style products:
+// - No envelope counters anywhere: nothing here limits how many documents a
+//   plan may send (see docs/esign.md).
+// - A recipient's email can be corrected, or their expired link renewed, in
+//   place: fields and other signatures stay attached to the recipient row, and
+//   only the token rotates.
+
+enum DocumentStatus {
+  DRAFT
+  PENDING
+  COMPLETED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum SigningOrder {
+  PARALLEL
+  SEQUENTIAL
+}
+
+enum RecipientRole {
+  SIGNER
+  APPROVER
+  VIEWER
+  CC
+}
+
+enum SigningStatus {
+  NOT_SIGNED
+  SIGNED
+  REJECTED
+}
+
+enum FieldType {
+  SIGNATURE
+  INITIALS
+  NAME
+  EMAIL
+  DATE
+  TEXT
+  CHECKBOX
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYSTACK
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Document {
+  id              String           @id @default(cuid())
+  userId          String
+  title           String
+  status          DocumentStatus   @default(DRAFT)
+  // Storage keys, resolved by src/lib/esign/storage.ts. The original is never
+  // modified; the sealed copy is written once, when the last signer finishes.
+  originalKey     String
+  originalSha256  String
+  sealedKey       String?
+  sealedSha256    String?
+  pageCount       Int
+  signingOrder    SigningOrder     @default(PARALLEL)
+  subject         String?
+  message         String?
+  // Days each recipient link stays valid after it is (re)issued. Null: never.
+  expiresInDays   Int?
+  // Created from the one-screen Quick Send flow (fields placed automatically).
+  quickSend       Boolean          @default(false)
+  // Sign & Pay. Amount is in the currency's minor unit (cents, pesewas, kobo).
+  // Null amount means the document collects no payment.
+  paymentAmount   Int?
+  paymentCurrency String?
+  paymentProvider PaymentProvider?
+  sentAt          DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients      Recipient[]
+  fields          Field[]
+  auditEvents     AuditEvent[]
+  payments        Payment[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId, status])
+}
+
+model Recipient {
+  id              String        @id @default(cuid())
+  documentId      String
+  email           String
+  name            String
+  phone           String?
+  role            RecipientRole @default(SIGNER)
+  // Position in a SEQUENTIAL document; ignored for PARALLEL ones.
+  order           Int           @default(0)
+  // The secret in the signing link. Rotated whenever the email is corrected or
+  // the link renewed, so a link sent to a wrong address stops working.
+  token           String        @unique
+  tokenIssuedAt   DateTime      @default(now())
+  expiresAt       DateTime?
+  // With Sign & Pay, the one recipient who pays before completing.
+  mustPay         Boolean       @default(false)
+  signingStatus   SigningStatus @default(NOT_SIGNED)
+  sentAt          DateTime?
+  viewedAt        DateTime?
+  signedAt        DateTime?
+  rejectionReason String?
+  lastReminderAt  DateTime?
+  document        Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  fields          Field[]
+  signatures      Signature[]
+  payments        Payment[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([documentId])
+}
+
+// Positions are percentages of the page (0-100), measured from the top-left
+// corner, so a field lands in the same place whatever size the page renders at.
+model Field {
+  id          String     @id @default(cuid())
+  documentId  String
+  recipientId String
+  type        FieldType
+  page        Int // 1-based
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  required    Boolean    @default(true)
+  label       String?
+  // Text, date or "true"/"false" for checkboxes. Signatures live in Signature.
+  value       String?
+  inserted    Boolean    @default(false)
+  document    Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  recipient   Recipient  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  signature   Signature?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([documentId])
+  @@index([recipientId])
+}
+
+model Signature {
+  id           String    @id @default(cuid())
+  fieldId      String    @unique
+  recipientId  String
+  // A PNG data URL (drawn or uploaded) or typed text rendered at seal time.
+  imageDataUrl String?
+  typedText    String?
+  field        Field     @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  recipient    Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+}
+
+// Sign & Pay collections. providerRef (Stripe Checkout Session id or Paystack
+// reference) is the webhook idempotency key.
+model Payment {
+  id          String          @id @default(cuid())
+  documentId  String
+  recipientId String
+  provider    PaymentProvider
+  providerRef String          @unique
+  amount      Int
+  currency    String
+  status      PaymentStatus   @default(PENDING)
+  paidAt      DateTime?
+  document    Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  recipient   Recipient       @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([documentId])
+}
+
+// Append-only. Rendered onto the certificate page of the sealed PDF, so every
+// row is evidence: never update or delete one outside account deletion.
+model AuditEvent {
+  id          String   @id @default(cuid())
+  documentId  String
+  recipientId String?
+  type        String
+  data        Json?
+  actorEmail  String?
+  ipAddress   String?
+  userAgent   String?
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([documentId, createdAt])
+}
+
+// Where a sender's Sign & Pay money goes: a Stripe Connect account id
+// (acct_...) or a Paystack subaccount code (ACCT_...).
+model PayoutAccount {
+  id                String          @id @default(cuid())
+  userId            String
+  provider          PaymentProvider
+  externalAccountId String
+  ready             Boolean         @default(false)
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([userId, provider])
 }

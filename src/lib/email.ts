@@ -137,7 +137,7 @@ export async function sendSubscriptionCancelledEmail(to: string, name: string, e
   )
 }
 
-function baseTemplate(content: string) {
+export function baseTemplate(content: string) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -316,7 +316,7 @@ export async function sendContactMessage(fromEmail: string, name: string | undef
   )
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

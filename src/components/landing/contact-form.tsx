@@ -87,7 +87,7 @@ export function ContactForm({ disabled = false }: { disabled?: boolean }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">
           By sending this you agree to our{" "}
-          <Link href="/privacy" className="text-primary hover:underline">
+          <Link href="/privacy" className="text-primary underline underline-offset-4">
             Privacy Policy
           </Link>
           .

@@ -10,7 +10,7 @@ export const maxDuration = 60
  * Puts the public demo back to a known state, on a schedule.
  *
  * Wired to a Vercel cron in vercel.json (04:00 UTC daily). Visitors share the
- * demo accounts, so without this the data drifts: projects renamed, records
+ * demo accounts, so without this the data drifts: documents cancelled, records
  * deleted, and by the second week the demo shows an empty or vandalised app.
  *
  * Two independent guards, because this endpoint deletes every user:

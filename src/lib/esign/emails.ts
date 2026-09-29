@@ -1,0 +1,138 @@
+/**
+ * Transactional emails for the signing flow, sent through the kit's Resend
+ * setup and wrapped in its shared template (src/lib/email.ts).
+ *
+ * Email is one delivery channel among several: every signing link can also be
+ * copied or shared over WhatsApp/SMS from the dashboard. So a missing Resend
+ * key is not an error here. In development the link is logged instead, which
+ * is enough to walk through the whole flow locally.
+ *
+ * Every value that came from a user (names, titles, messages) is escaped.
+ */
+import { Resend } from "resend"
+import { getTranslations } from "next-intl/server"
+import { routing } from "@/i18n/routing"
+import { siteConfig } from "@/config/site"
+import { baseTemplate, escapeHtml } from "@/lib/email"
+import { deliver } from "@/lib/email-delivery"
+
+function esignEmailStrings() {
+  return getTranslations({ locale: routing.defaultLocale, namespace: "esignEmail" })
+}
+
+const FROM_ADDRESS = process.env.EMAIL_FROM ?? `${siteConfig.name} <${siteConfig.contactEmail}>`
+
+/**
+ * Bold, for values dropped into a message. The markup lives here rather than
+ * in the message file because next-intl reads tags in a message as rich-text
+ * placeholders and refuses to format a plain string that contains them.
+ */
+const bold = (value: string) => `<strong>${value}</strong>`
+
+async function send(kind: string, to: string, subject: string, html: string, devLink?: string): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY
+  if (!key) {
+    // Not an error: see the note at the top of this file.
+    console.info(`[esign email] ${kind} → ${to}: ${subject}${devLink ? `\n  ${devLink}` : ""}`)
+    return false
+  }
+  const resend = new Resend(key)
+  try {
+    return await deliver(kind, () => resend.emails.send({ from: FROM_ADDRESS, to, subject, html }))
+  } catch (error) {
+    // A failed email must never fail the signing action that triggered it:
+    // the link is still shareable from the dashboard.
+    console.error(`[esign email] ${kind} failed`, error)
+    return false
+  }
+}
+
+export async function sendSigningInvite(args: {
+  to: string
+  recipientName: string
+  senderName: string
+  title: string
+  message?: string | null
+  url: string
+  expiresAt?: Date | null
+  reminder?: boolean
+  amountLabel?: string | null
+}): Promise<boolean> {
+  const t = await esignEmailStrings()
+  const title = escapeHtml(args.title)
+  const subject = args.reminder
+    ? t("reminderSubject", { title: args.title })
+    : t("inviteSubject", { sender: args.senderName, title: args.title })
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.recipientName) })}</p>
+    <p>${t("inviteIntro", { sender: escapeHtml(args.senderName), title: bold(title) })}</p>
+    ${args.message ? `<div class="highlight"><p>${escapeHtml(args.message).replace(/\n/g, "<br>")}</p></div>` : ""}
+    ${args.amountLabel ? `<p>${t("invitePayment", { amount: bold(escapeHtml(args.amountLabel)) })}</p>` : ""}
+    <a href="${args.url}" class="btn">${t("inviteCta")}</a>
+    <p style="margin-top:24px">${t("inviteMobile")}</p>
+    ${args.expiresAt ? `<p>${t("inviteExpires", { date: args.expiresAt.toUTCString() })}</p>` : ""}
+  `)
+  return send(args.reminder ? "esign-reminder" : "esign-invite", args.to, subject, html, args.url)
+}
+
+export async function sendDocumentCompleted(args: {
+  to: string
+  name: string
+  title: string
+  downloadUrl: string
+}): Promise<boolean> {
+  const t = await esignEmailStrings()
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.name) })}</p>
+    <p>${t("completedIntro", { title: bold(escapeHtml(args.title)) })}</p>
+    <a href="${args.downloadUrl}" class="btn">${t("completedCta")}</a>
+  `)
+  return send("esign-completed", args.to, t("completedSubject", { title: args.title }), html, args.downloadUrl)
+}
+
+export async function sendDocumentRejected(args: {
+  to: string
+  ownerName: string
+  signerName: string
+  title: string
+  reason?: string | null
+  url: string
+}): Promise<boolean> {
+  const t = await esignEmailStrings()
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.ownerName) })}</p>
+    <p>${t("rejectedIntro", { name: escapeHtml(args.signerName), title: bold(escapeHtml(args.title)) })}</p>
+    ${args.reason ? `<div class="highlight"><p>${escapeHtml(args.reason)}</p></div>` : ""}
+    <a href="${args.url}" class="btn">${t("openDocumentCta")}</a>
+  `)
+  return send("esign-rejected", args.to, t("rejectedSubject", { name: args.signerName, title: args.title }), html)
+}
+
+export async function sendDocumentExpired(args: { to: string; ownerName: string; title: string; url: string }) {
+  const t = await esignEmailStrings()
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.ownerName) })}</p>
+    <p>${t("expiredIntro", { title: bold(escapeHtml(args.title)) })}</p>
+    <a href="${args.url}" class="btn">${t("expiredCta")}</a>
+  `)
+  return send("esign-expired", args.to, t("expiredSubject", { title: args.title }), html, args.url)
+}
+
+/** Sent ahead of every renewal: Salsox never renews a subscription silently. */
+export async function sendRenewalNotice(args: {
+  to: string
+  name: string
+  plan: string
+  date: string
+  amount: string
+  manageUrl: string
+}): Promise<boolean> {
+  const t = await esignEmailStrings()
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.name) })}</p>
+    <p>${t("renewalIntro", { plan: bold(escapeHtml(args.plan)), date: bold(args.date), amount: bold(args.amount) })}</p>
+    <p>${t("renewalCancel")}</p>
+    <a href="${args.manageUrl}" class="btn">${t("renewalCta")}</a>
+  `)
+  return send("esign-renewal-notice", args.to, t("renewalSubject", { plan: args.plan, date: args.date }), html)
+}
