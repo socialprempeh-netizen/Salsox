@@ -7,9 +7,13 @@
  * translated messages, so nothing here is user-facing text.
  */
 import { z } from "zod"
+import { MAX_RECIPIENTS_PER_DOCUMENT } from "./sending-limits"
 
 export const TITLE_MAX = 140
-export const MAX_RECIPIENTS = 25
+// Was 25, which with the old send limit let one account email thousands of
+// addresses in minutes. The number now lives with the other sending rules.
+// export const MAX_RECIPIENTS = 25
+export const MAX_RECIPIENTS = MAX_RECIPIENTS_PER_DOCUMENT
 export const MAX_EXPIRY_DAYS = 365
 
 const percent = z.number().min(0).max(100)

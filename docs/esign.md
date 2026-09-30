@@ -26,6 +26,8 @@ src/lib/esign/
   schemas.ts        input shapes shared by forms and actions
   documents.ts      upload, setup, send, Quick Send, renew, cancel, finalize, sweeps
   recipients.ts     correct a recipient in place (token rotation), resend
+  sending-limits.ts who may send and how much, pure functions (sending-limits.test.ts)
+  sender.ts         loads a sender's standing for those rules
   signing.ts        signer operations by token, Sign & Pay start/confirm
   renewal.ts        advance notice before every subscription renewal
   audit.ts          append-only audit events
@@ -54,7 +56,11 @@ The rule from `AGENTS.md` holds: decisions live in `src/lib/esign` as functions 
 
 ## The DocuSign fixes
 
-- **Unlimited sending.** Nothing counts documents and no plan has a cap. The only limit is an abuse rate limit, 120 sends per 10 minutes per user.
+- **Unlimited sending.** No plan has an envelope cap and nothing reads the subscription when sending. What applies to every account alike is abuse protection, in `sending-limits.ts`:
+  - **A confirmed sender.** The sender's own email must be confirmed before anything that emails recipients: send, Quick Send, remind, renew, resend, and correcting an address. It is enforced when `RESEND_API_KEY` is set; without it no confirmation email can be sent and no invite leaves the server, so the rule is off. Unconfirmed senders see a notice on the Documents pages with a button to send the link again.
+  - **10 recipients per document.**
+  - **A daily ceiling**, counted from the database over a rolling 24 hours: 100 documents and 300 recipients, or 10 and 30 during an account's first 7 days.
+  - **Burst limits** in the actions: 10 sends and 30 uploads per 10 minutes per user, 3 reminders or renewals per hour per document, 10 recipient corrections per hour per user, 5 resends per hour per recipient. These use the shared rate limiter, which is per instance until `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set.
 - **Correct or renew without rebuilding.** Fields hang off the recipient row, so `updateRecipient` edits it in place and **rotates the token**: the link sent to a wrong address stops working immediately. `renewDocument` extends every unsigned link and revives an `EXPIRED` document; the tokens are kept, so links already shared work again.
 - **Mobile-first signing.** One field at a time, a sticky next-action bar, bottom-sheet inputs sized for thumbs, a remembered signature, and no horizontal scroll at 360px (covered by `e2e/responsive.spec.ts`).
 - **Sign & Pay.** Stripe (Connect destination charges) or Paystack (subaccounts) sit behind one `SignAndPayProvider` interface. A payment is always verified with the provider's API, never trusted from a webhook body or return URL alone, and amount and currency must match. Once paid, signing completes automatically.

@@ -20,6 +20,7 @@ import { sendSigningInvite } from "./emails"
 import { signingUrl } from "./share"
 import { appUrl, renewDocument, type Result } from "./documents"
 import { formatMinorUnits } from "./payments/select"
+import { senderBlocker } from "./sender"
 
 const DEFAULT_RENEW_DAYS = 30
 
@@ -35,6 +36,10 @@ export async function updateRecipient(
   if (!recipient) return { ok: false, error: "notFound" }
   const { document } = recipient
   if (!canEditRecipient(document.status, recipient)) return { ok: false, error: "notEditable" }
+  // A changed address gets a fresh invite, so this is a path that emails an
+  // address the sender typed: it needs a confirmed sender like any other.
+  const blocked = await senderBlocker(userId, 0)
+  if (blocked) return { ok: false, error: blocked }
 
   const emailChanged = recipient.email !== input.email
   const now = new Date()
@@ -100,6 +105,8 @@ export async function resendToRecipient(userId: string, recipientId: string): Pr
     include: { document: { include: { user: true } } },
   })
   if (!recipient) return { ok: false, error: "notFound" }
+  const blocked = await senderBlocker(userId, 0)
+  if (blocked) return { ok: false, error: blocked }
   await sendSigningInvite({
     to: recipient.email,
     recipientName: recipient.name,

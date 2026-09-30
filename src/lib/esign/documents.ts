@@ -7,9 +7,19 @@
  * Functions return `{ ok: false, error }` codes for expected failures (the
  * action maps them to translated messages) and throw only on the unexpected.
  *
- * Note on sending limits: there are none. Nothing in this file counts
- * documents or consults the plan. That is a product decision (no envelope
- * caps), not an omission. Abuse protection is the rate limiter in the actions.
+ * Note on sending limits: no plan has an envelope cap, and nothing in this
+ * file consults the plan. That is a product decision, not an omission. What
+ * every path that emails recipients does ask is `senderBlocker` (sender.ts):
+ * the sender's own email must be confirmed, and a daily abuse ceiling applies
+ * to every account alike (sending-limits.ts). The burst rate limiter in the
+ * actions sits on top of that.
+ *
+ * Previous note, superseded when the email-confirmation rule and the daily
+ * ceiling were added (the in-memory rate limiter alone left sending open to
+ * unconfirmed accounts):
+ *   Note on sending limits: there are none. Nothing in this file counts
+ *   documents or consults the plan. That is a product decision (no envelope
+ *   caps), not an omission. Abuse protection is the rate limiter in the actions.
  */
 import { randomUUID } from "node:crypto"
 import type { Prisma } from "@prisma/client"
@@ -32,6 +42,7 @@ import { chooseProvider, formatMinorUnits, toMinorUnits } from "./payments/selec
 import { nameFromEmail, type DocumentSetup } from "./schemas"
 import { signingUrl } from "./share"
 import { sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
+import { senderBlocker } from "./sender"
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
@@ -207,6 +218,10 @@ export async function sendDocument(userId: string, documentId: string): Promise<
   if (unplaced.length > 0) return { ok: false, error: "signerWithoutFields" }
 
   const now = new Date()
+  // Confirmed sender, and under the daily abuse ceiling (sending-limits.ts).
+  const blocked = await senderBlocker(userId, document.recipients.length, now)
+  if (blocked) return { ok: false, error: blocked }
+
   const expiresAt = computeExpiry(document.expiresInDays, now)
   const claimed = await prisma.document.updateMany({
     where: { id: documentId, status: "DRAFT" },
@@ -242,6 +257,12 @@ export async function quickSend(args: {
   message?: string
   expiresInDays: number | null
 }): Promise<Result<{ documentId: string }>> {
+  // Asked before anything is stored, so a sender who may not send is told now
+  // and is not left with a draft they never asked for. `sendDocument` asks
+  // again at the moment of sending.
+  const blocked = await senderBlocker(args.userId, args.signers.length)
+  if (blocked) return { ok: false, error: blocked }
+
   const created = await createDraftFromUpload({ userId: args.userId, title: args.title, bytes: args.bytes })
   if (!created.ok) return created
   const document = await prisma.document.update({
@@ -290,6 +311,10 @@ export async function renewDocument(userId: string, documentId: string): Promise
   if (!canRenewDocument(document.status)) return { ok: false, error: "notRenewable" }
 
   const now = new Date()
+  // Renewing re-emails people already counted: confirmed sender, no ceiling.
+  const blocked = await senderBlocker(userId, 0, now)
+  if (blocked) return { ok: false, error: blocked }
+
   const expiresAt = computeExpiry(document.expiresInDays ?? DEFAULT_RENEW_DAYS, now)
   await prisma.$transaction([
     prisma.recipient.updateMany({ where: { documentId, signingStatus: "NOT_SIGNED" }, data: { expiresAt } }),
@@ -313,6 +338,8 @@ export async function remindDocument(userId: string, documentId: string): Promis
     include: { recipients: true, user: true },
   })
   if (!document) return { ok: false, error: "notFound" }
+  const blocked = await senderBlocker(userId, 0)
+  if (blocked) return { ok: false, error: blocked }
   const ids = await notifyNext(document, { reminder: true })
   await recordAudit(prisma, { documentId, type: AUDIT.REMINDER_SENT, actorEmail: document.user.email, data: { recipients: ids.length } })
   return { ok: true }

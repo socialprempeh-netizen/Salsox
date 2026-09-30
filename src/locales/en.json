@@ -1002,7 +1002,9 @@
       "notCancellable": "This document can no longer be cancelled.",
       "notEditable": "This recipient can no longer be changed.",
       "noFile": "Choose a PDF to upload.",
-      "invalidEmails": "Enter one or more valid email addresses (up to 25).",
+      "invalidEmails": "Enter one or more valid email addresses (up to {max}).",
+      "emailNotConfirmed": "Confirm your email address before sending. Open the link we emailed you, or ask for a new one from the Documents page.",
+      "dailyLimit": "You've reached today's sending limit. It resets over the next 24 hours. Contact us if you need to send more.",
       "NOT_PDF": "That file is not a PDF.",
       "TOO_LARGE": "PDFs can be up to 4 MB.",
       "ENCRYPTED": "This PDF is password-protected. Remove the password and upload it again.",
@@ -1022,6 +1024,17 @@
       "payoutRejected": "The payout account was rejected. Check the bank details and try again.",
       "paymentFailed": "The payment could not be started. Please try again.",
       "noSubscription": "There is no active subscription to change."
+    },
+    "confirmEmail": {
+      "title": "Confirm your email to start sending",
+      "body": "We sent a confirmation link to {email}. You can upload and prepare documents now; sending unlocks as soon as you open that link.",
+      "resend": "Resend the email",
+      "result": {
+        "sent": "Sent. Check your inbox, and your spam folder too.",
+        "alreadyConfirmed": "Your email is already confirmed. Reload the page to continue.",
+        "rateLimited": "You've asked a few times already. Wait a few minutes, then try again.",
+        "failed": "The email could not be sent. Please try again."
+      }
     },
     "status": {
       "DRAFT": "Draft",

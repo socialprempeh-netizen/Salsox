@@ -20,7 +20,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react"
 import { saveAndSendAction, saveSetupAction } from "@/app/actions/documents"
 import { clampPercent, clientToPercent } from "@/lib/esign/pdf/coords"
 import { SIGN_AND_PAY_CURRENCIES } from "@/lib/esign/payments/select"
-import type { DocumentSetup } from "@/lib/esign/schemas"
+import { MAX_RECIPIENTS, type DocumentSetup } from "@/lib/esign/schemas"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -295,7 +295,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
             ))}
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" variant="outline" onClick={addRecipient}><Plus className="h-4 w-4" /> {t("addRecipient")}</Button>
+            <Button type="button" variant="outline" onClick={addRecipient} disabled={recipients.length >= MAX_RECIPIENTS}><Plus className="h-4 w-4" /> {t("addRecipient")}</Button>
             <label className="flex min-h-11 items-center gap-2 text-sm">
               <input type="checkbox" className="h-5 w-5" checked={signingOrder === "SEQUENTIAL"} onChange={(e) => setSigningOrder(e.target.checked ? "SEQUENTIAL" : "PARALLEL")} />
               {t("sequential")}

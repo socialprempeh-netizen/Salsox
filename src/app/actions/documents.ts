@@ -24,15 +24,28 @@ import {
 } from "@/lib/esign/documents"
 import { resendToRecipient, updateRecipient } from "@/lib/esign/recipients"
 import { documentSetupSchema, parseEmailList, recipientInputSchema, MAX_RECIPIENTS, TITLE_MAX } from "@/lib/esign/schemas"
+import { BURST_LIMITS } from "@/lib/esign/sending-limits"
 
 export type ActionState = { error?: string; ok?: boolean; documentId?: string }
 
-/** Generous on purpose: this guards against scripts, not against busy senders. */
-const SEND_LIMIT = { max: 120, windowMs: 10 * 60 * 1000 }
+// Replaced by BURST_LIMITS in src/lib/esign/sending-limits.ts. 120 sends per
+// 10 minutes, at 25 recipients each, was 3,000 emails from one account before
+// the limiter said anything; the numbers now sit beside the daily ceiling and
+// the email-confirmation rule, which the engine enforces on every send.
+// /** Generous on purpose: this guards against scripts, not against busy senders. */
+// const SEND_LIMIT = { max: 120, windowMs: 10 * 60 * 1000 }
+
+/** One burst bucket per user (or per document, or per recipient) and kind of action. */
+function underBurstLimit(kind: keyof typeof BURST_LIMITS, subject: string): Promise<boolean> {
+  const { max, windowMs } = BURST_LIMITS[kind]
+  return checkRateLimit(`esign:${kind}:${subject}`, max, windowMs)
+}
 
 async function errorText(code: string): Promise<string> {
   const t = await getTranslations("esign.errors")
-  return t.has(code) ? t(code) : t("generic")
+  // `max` is read by the one message that states the recipient cap, so the
+  // number shown and the number enforced are the same value.
+  return t.has(code) ? t(code, { max: MAX_RECIPIENTS }) : t("generic")
 }
 
 async function fail(code: string): Promise<ActionState> {
@@ -62,7 +75,7 @@ function revalidateDocument(id?: string) {
 export async function uploadDocumentAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await getCurrentUser()
   if (!user) return fail("unauthorized")
-  if (!(await checkRateLimit(`esign:upload:${user.id}`, SEND_LIMIT.max, SEND_LIMIT.windowMs))) return fail("rateLimited")
+  if (!(await underBurstLimit("upload", user.id))) return fail("rateLimited")
 
   const bytes = await readPdf(formData)
   if (!bytes) return fail("noFile")
@@ -90,7 +103,7 @@ export async function saveAndSendAction(documentId: string, payload: unknown): P
   if (!saved.ok) return saved
   const user = await getCurrentUser()
   if (!user) return fail("unauthorized")
-  if (!(await checkRateLimit(`esign:send:${user.id}`, SEND_LIMIT.max, SEND_LIMIT.windowMs))) return fail("rateLimited")
+  if (!(await underBurstLimit("send", user.id))) return fail("rateLimited")
   const sent = await sendDocument(user.id, documentId)
   if (!sent.ok) return fail(sent.error)
   revalidateDocument(documentId)
@@ -100,7 +113,7 @@ export async function saveAndSendAction(documentId: string, payload: unknown): P
 export async function quickSendAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await getCurrentUser()
   if (!user) return fail("unauthorized")
-  if (!(await checkRateLimit(`esign:send:${user.id}`, SEND_LIMIT.max, SEND_LIMIT.windowMs))) return fail("rateLimited")
+  if (!(await underBurstLimit("send", user.id))) return fail("rateLimited")
 
   const bytes = await readPdf(formData)
   if (!bytes) return fail("noFile")
@@ -127,22 +140,28 @@ export async function quickSendAction(_prev: ActionState, formData: FormData): P
 
 async function simple(
   documentId: string,
-  run: (userId: string, id: string) => Promise<{ ok: true } | { ok: false; error: string }>
+  run: (userId: string, id: string) => Promise<{ ok: true } | { ok: false; error: string }>,
+  // Set for the actions that email recipients: a per-document burst budget.
+  burst?: keyof typeof BURST_LIMITS
 ): Promise<ActionState> {
   const user = await getCurrentUser()
   if (!user) return fail("unauthorized")
+  if (burst && !(await underBurstLimit(burst, String(documentId)))) return fail("rateLimited")
   const result = await run(user.id, documentId)
   if (!result.ok) return fail(result.error)
   revalidateDocument(documentId)
   return { ok: true, documentId }
 }
 
+// Renewing and reminding each email every pending signer, so they share one
+// small per-document budget: nobody needs to nudge the same people more than
+// a few times an hour.
 export async function renewDocumentAction(documentId: string) {
-  return simple(documentId, renewDocument)
+  return simple(documentId, renewDocument, "nudge")
 }
 
 export async function remindDocumentAction(documentId: string) {
-  return simple(documentId, remindDocument)
+  return simple(documentId, remindDocument, "nudge")
 }
 
 export async function cancelDocumentAction(documentId: string) {
@@ -166,6 +185,8 @@ export async function updateRecipientAction(
   if (!user) return fail("unauthorized")
   const parsed = editableRecipient.safeParse(input)
   if (!parsed.success) return fail("invalidInput")
+  // A corrected address is emailed a new invite, so edits are budgeted too.
+  if (!(await underBurstLimit("recipientEdit", user.id))) return fail("rateLimited")
   const result = await updateRecipient(user.id, recipientId, parsed.data)
   if (!result.ok) return fail(result.error)
   revalidateDocument(documentId)

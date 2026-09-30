@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: 225ff4ecccdf
+source_checksum: d4f44bf0c72a
 ---
 
 # Firme elettroniche (Salsox)
@@ -33,6 +33,8 @@ src/lib/esign/
   schemas.ts        forme dei dati condivise tra form e azioni
   documents.ts      caricamento, configurazione, invio, Quick Send, rinnovo, annullamento, sigillo, sweep
   recipients.ts     correzione di un destinatario sul posto (rotazione del token), reinvio
+  sending-limits.ts chi può inviare e quanto, funzioni pure (sending-limits.test.ts)
+  sender.ts         carica la situazione del mittente per quelle regole
   signing.ts        operazioni del firmatario tramite token, avvio/conferma di Sign & Pay
   renewal.ts        avviso prima di ogni rinnovo dell'abbonamento
   audit.ts          eventi di audit solo in aggiunta
@@ -68,7 +70,11 @@ Vale la regola di `AGENTS.md`: le decisioni stanno in `src/lib/esign` come funzi
 
 ## Le correzioni rispetto a DocuSign
 
-- **Invii illimitati.** Nessun contatore di documenti e nessun piano con un tetto. L'unico limite è una protezione contro gli abusi: 120 invii ogni 10 minuti per utente.
+- **Invii illimitati.** Nessun piano ha un tetto di buste e l'invio non legge l'abbonamento. Quello che vale per ogni account allo stesso modo è la protezione contro gli abusi, in `sending-limits.ts`:
+  - **Mittente confermato.** L'email del mittente deve essere confermata prima di qualsiasi azione che scrive ai destinatari: invio, Quick Send, promemoria, rinnovo, reinvio e correzione di un indirizzo. La regola è attiva quando `RESEND_API_KEY` è impostata; senza, nessuna email di conferma può partire e nessun invito lascia il server, quindi la regola è spenta. Chi non ha confermato vede un avviso nelle pagine Documenti, con un pulsante per farsi rimandare il link.
+  - **10 destinatari per documento.**
+  - **Un tetto giornaliero**, contato dal database sulle ultime 24 ore: 100 documenti e 300 destinatari, oppure 10 e 30 nei primi 7 giorni di vita dell'account.
+  - **Limiti di raffica** nelle action: 10 invii e 30 caricamenti ogni 10 minuti per utente, 3 promemoria o rinnovi all'ora per documento, 10 correzioni di destinatari all'ora per utente, 5 reinvii all'ora per destinatario. Usano il rate limiter condiviso, che vale per singola istanza finché `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` non sono impostate.
 - **Correggere o rinnovare senza ricostruire.** I campi sono legati alla riga del destinatario, quindi `updateRecipient` la modifica sul posto e **ruota il token**: il link mandato all'indirizzo sbagliato smette subito di funzionare. `renewDocument` estende tutti i link non firmati e riattiva un documento `EXPIRED`; i token restano gli stessi, quindi i link già condivisi tornano a funzionare.
 - **Firma pensata per il telefono.** Un campo alla volta, una barra fissa con l'azione successiva, input in bottom sheet a misura di pollice, firma ricordata, nessuno scorrimento orizzontale a 360px (coperto da `e2e/responsive.spec.ts`).
 - **Sign & Pay.** Stripe (Connect, destination charges) o Paystack (subaccount), dietro un'unica interfaccia `SignAndPayProvider`. Il pagamento è sempre verificato tramite l'API del provider, mai preso per buono dal corpo di un webhook o dall'URL di ritorno, e importo e valuta devono coincidere. Dopo il pagamento, la firma si completa da sola.
