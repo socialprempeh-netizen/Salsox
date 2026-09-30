@@ -11,6 +11,12 @@ import { z } from "zod"
  * no sender address throws on the first email, in production, at the worst
  * possible moment.
  *
+ * Production is stricter. Three variables are optional on a laptop and not
+ * on a live deployment, because each one missing fails without an error: file
+ * storage (uploads land on a disk that is wiped), email (invitations are
+ * logged instead of sent) and the cron secret (the scheduled jobs never run).
+ * See the production block at the end of the schema.
+ *
  * Set SKIP_ENV_VALIDATION="true" to bypass this (useful in CI steps that only
  * build or lint and have no secrets).
  */
@@ -90,9 +96,11 @@ export const envSchema = z
     DEMO_MODE: flag,
     WAITLIST_ENABLED: flag,
 
-    // Read by the demo reset cron, which refuses to run without it. Not paired
-    // with DEMO_MODE on purpose: a demo with no scheduled reset is a working
-    // demo, so this is not a half-done configuration worth stopping a boot for.
+    // Read by both cron routes, which refuse to run without it. Required in
+    // production (below), where the e-sign job is what expires links, sends
+    // reminders and retries sealing. Not paired with DEMO_MODE on purpose: a
+    // demo with no scheduled reset is a working demo, so that is not a
+    // half-done configuration worth stopping a boot for.
     CRON_SECRET: optional,
 
     NEXT_PUBLIC_APP_URL: optional,
@@ -126,6 +134,35 @@ export const envSchema = z
         message: "AUTH_SECRET is required in production: Better Auth refuses to sign sessions without it",
       })
     }
+
+    // What a live deployment cannot run without. Each of these is optional in
+    // development, where its absence is handled on purpose (files on the local
+    // disk, links in the console, no schedule). In production the same
+    // fallbacks fail quietly and look like success, which is the worst way for
+    // a product that holds people's contracts to fail, so the server does not
+    // start instead.
+    //
+    // A public demo is exempt: it holds fake data in a database that is reset,
+    // and sends nothing on purpose.
+    if (env.NODE_ENV === "production" && env.DEMO_MODE !== "true") {
+      const requireInProduction = (name: keyof typeof env, why: string) => {
+        if (!env[name]) {
+          ctx.addIssue({ code: "custom", path: [name], message: `${name} is required in production: ${why}` })
+        }
+      }
+      requireInProduction(
+        "BLOB_READ_WRITE_TOKEN",
+        "without file storage, uploaded and signed documents are written to the server's temporary disk and lost",
+      )
+      requireInProduction(
+        "RESEND_API_KEY",
+        "without email, signing invitations are written to the log instead of being sent, and the app still reports them as sent",
+      )
+      requireInProduction(
+        "CRON_SECRET",
+        "without it the scheduled job refuses to run, so links never expire, reminders never go out and a failed seal is never retried",
+      )
+    }
   })
 
 export type Env = z.infer<typeof envSchema>
@@ -156,7 +193,13 @@ export function parseEnv(source: EnvSource = process.env): Env {
  *
  * Everything else still stops the boot: a half-configured Stripe or Resend is
  * the failure this check is for. And in production a missing database stops
- * the boot as it always did.
+ * the boot as it always did, along with missing file storage, email or cron
+ * secret.
+ *
+ * The problem is printed before it is thrown. The thrown error does stop the
+ * server, but where it surfaces depends on the host, and on a serverless
+ * platform it can be one line among many: the banner is what someone scanning
+ * the boot log finds.
  */
 export function validateEnv(source: EnvSource = process.env): void {
   if (source.SKIP_ENV_VALIDATION === "true") return
@@ -170,5 +213,13 @@ export function validateEnv(source: EnvSource = process.env): void {
     return
   }
 
-  parseEnv(source)
+  // Was a bare `parseEnv(source)`: same outcome, now announced first.
+  // parseEnv(source)
+  try {
+    parseEnv(source)
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    console.error(`\n[env] REFUSING TO START. Fix the environment and redeploy.\n${detail}\n`)
+    throw error
+  }
 }

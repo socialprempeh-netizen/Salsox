@@ -38,7 +38,7 @@ const examplePlans: {
   {
     slug: "starter-monthly",
     name: "Personal",
-    description: "For freelancers and individuals. Unlimited documents, no envelope caps.",
+    description: "For freelancers and individuals. Unlimited sending — fair-use limits apply to prevent spam.",
     price: 900,
     interval: "MONTH",
     stripePriceId: priceId(process.env.STRIPE_STARTER_PRICE_ID, "price_starter_placeholder"),
@@ -56,7 +56,7 @@ const examplePlans: {
   {
     slug: "pro-monthly",
     name: "Business",
-    description: "Get paid as you get signed. Unlimited documents, no envelope caps.",
+    description: "Get paid as you get signed. Unlimited sending — fair-use limits apply to prevent spam.",
     price: 1900,
     interval: "MONTH",
     stripePriceId: priceId(process.env.STRIPE_PRO_PRICE_ID, "price_pro_placeholder"),

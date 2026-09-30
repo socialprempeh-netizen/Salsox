@@ -138,6 +138,59 @@ describe("production-only rules", () => {
   it("does not require it in development, where Better Auth generates one", () => {
     expect(() => parseEnv(base({ NODE_ENV: "development" }))).not.toThrow()
   })
+
+  // Everything a live deployment needs, so each test below removes one thing.
+  const live = (extra: Record<string, string> = {}) =>
+    base({
+      NODE_ENV: "production",
+      AUTH_SECRET: "a-secret",
+      BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_x",
+      RESEND_API_KEY: "re_123",
+      EMAIL_FROM: "App <hello@example.com>",
+      CRON_SECRET: "cron-secret",
+      ...extra,
+    })
+
+  it("starts in production with storage, email and the cron secret set", () => {
+    expect(() => parseEnv(live())).not.toThrow()
+  })
+
+  it("refuses to start in production without file storage", () => {
+    expect(() => parseEnv(live({ BLOB_READ_WRITE_TOKEN: "" }))).toThrow(/BLOB_READ_WRITE_TOKEN is required in production/)
+  })
+
+  it("refuses to start in production without an email key", () => {
+    expect(() => parseEnv(live({ RESEND_API_KEY: "", EMAIL_FROM: "" }))).toThrow(/RESEND_API_KEY is required in production/)
+  })
+
+  it("refuses to start in production without the cron secret", () => {
+    expect(() => parseEnv(live({ CRON_SECRET: "" }))).toThrow(/CRON_SECRET is required in production/)
+  })
+
+  it("names all three at once when all three are missing", () => {
+    let message = ""
+    try {
+      parseEnv(base({ NODE_ENV: "production", AUTH_SECRET: "a-secret" }))
+    } catch (error) {
+      message = (error as Error).message
+    }
+    expect(message).toContain("BLOB_READ_WRITE_TOKEN")
+    expect(message).toContain("RESEND_API_KEY")
+    expect(message).toContain("CRON_SECRET")
+  })
+
+  it("says what breaks, so the message can be acted on", () => {
+    expect(() => parseEnv(live({ BLOB_READ_WRITE_TOKEN: "" }))).toThrow(/lost/)
+  })
+
+  it("asks for none of them in development", () => {
+    expect(() => parseEnv(base({ NODE_ENV: "development" }))).not.toThrow()
+    expect(() => parseEnv(base())).not.toThrow()
+  })
+
+  it("exempts a public demo, which stores fake data and sends nothing", () => {
+    expect(() => parseEnv(base({ NODE_ENV: "production", AUTH_SECRET: "a-secret", DEMO_MODE: "true" }))).not.toThrow()
+  })
 })
 
 describe("flags", () => {

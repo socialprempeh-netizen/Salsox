@@ -2,7 +2,7 @@
 title: Deployment
 description: "In produzione su Vercel: variabili, migrazioni, webhook, e come diventare amministratore."
 translated_from: deployment.md
-source_checksum: bfaa1da69543
+source_checksum: 694cd24530d6
 ---
 
 # Deployment
@@ -29,7 +29,11 @@ Imposta le variabili di [.env.example](../.env.example) nel pannello Vercel (Pro
 - Le credenziali OAuth, con le **URL di callback di produzione** aggiunte nella console di ogni provider:
   - `https://iltuodominio.com/api/auth/callback/google`
   - `https://iltuodominio.com/api/auth/callback/github`
-- `RESEND_API_KEY` e `EMAIL_FROM` se vuoi magic link, reset della password ed email transazionali
+- `RESEND_API_KEY` e `EMAIL_FROM`: inviti alla firma, email di conferma, magic link e reset della password
+- `BLOB_READ_WRITE_TOKEN`: archiviazione privata dei documenti caricati e firmati
+- `CRON_SECRET`: permette al job programmato di girare (scadenza dei link, promemoria, nuovi tentativi di sigillo, avvisi di rinnovo)
+
+Le ultime tre sono imposte. In produzione il server **si rifiuta di partire** se ne manca una, e il log di avvio dice quale e che cosa si romperebbe: senza archiviazione i documenti finiscono su un disco che viene azzerato; senza email gli inviti vengono scritti nel log invece di essere inviati; senza il secret il job programmato non gira mai. Nessuno di questi casi fallisce con un errore da solo, ed è per questo che il controllo esiste. Un deploy con `DEMO_MODE="true"` è esente, e `SKIP_ENV_VALIDATION="true"` spegne l'intero controllo per una fase di build senza segreti.
 
 ## Deploy fuori da Vercel
 

@@ -46,7 +46,10 @@ export const siteConfig = {
     process.env.NEXT_PUBLIC_BRAND_DESCRIPTION ||
     (isKitSite
       ? "A production-ready SaaS starter with Next.js, Better Auth, Stripe, Prisma, and Tailwind. Plain Next.js, with no framework to learn first."
-      : "Unlimited e-signatures with Sign & Pay, Quick Send and mobile-first signing. Cancel in one click, export any time."),
+      : // Was "Unlimited e-signatures with …": reworded when the fair-use
+        // ceiling was added, so the search snippet promises what the product
+        // does. Kept near 160 characters, which is what a result shows.
+        "E-signatures with Sign & Pay, Quick Send and mobile-first signing. Unlimited sending — fair-use limits apply to prevent spam. Cancel in one click."),
 
   /** Base URL of this deployment — no trailing slash. */
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",

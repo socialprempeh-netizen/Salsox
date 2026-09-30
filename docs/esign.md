@@ -75,9 +75,9 @@ The rule from `AGENTS.md` holds: decisions live in `src/lib/esign` as functions 
 
 | Variable | Needed for |
 |---|---|
-| `BLOB_READ_WRITE_TOKEN` | Production file storage. Without it, files go to `.data/storage` (development only). |
-| `CRON_SECRET` | `/api/cron/esign` (expiry, reminders, re-seal, renewal notices). Runs daily per `vercel.json`. |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Emails. Without them, signing links are logged, and can still be shared from the dashboard. |
+| `BLOB_READ_WRITE_TOKEN` | Production file storage. **Required in production.** In development, without it, files go to `.data/storage`. |
+| `CRON_SECRET` | `/api/cron/esign` (expiry, reminders, re-seal, renewal notices). Runs daily per `vercel.json`. **Required in production.** |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Emails. **Required in production.** In development, without them, signing links are logged, and can still be shared from the dashboard. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Sign & Pay through Stripe. Also enable Connect, and add `account.updated` to the webhook's events. |
 | `PAYSTACK_SECRET_KEY`, `PAYSTACK_COUNTRY` | Sign & Pay through Paystack. Point a webhook at `/api/webhooks/paystack`. Country defaults to `ghana`. |
 | `SIGN_AND_PAY_FEE_BPS` | Optional platform fee in basis points (150 = 1.5%). Defaults to 0. |

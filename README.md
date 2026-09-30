@@ -2,7 +2,7 @@
 
 **E-signatures without the usual headaches.** Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone.
 
-- **Unlimited sending**: no envelope caps on any plan.
+- **Unlimited sending**: no envelope caps on any plan. Fair-use limits apply to prevent spam.
 - **Fix, don't rebuild**: correct a wrong email or renew expired links in one click; fields and signatures are kept, and the old link stops working.
 - **Mobile-first signing**: one field at a time, thumb-sized controls, no app or account for signers.
 - **Sign & Pay**: signers pay by card or mobile money through Stripe or Paystack, straight to the sender.

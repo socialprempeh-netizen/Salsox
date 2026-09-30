@@ -22,7 +22,11 @@ Set the variables from [.env.example](../.env.example) in the Vercel dashboard (
 - OAuth credentials, with the **production callback URLs** added in each provider console:
   - `https://yourdomain.com/api/auth/callback/google`
   - `https://yourdomain.com/api/auth/callback/github`
-- `RESEND_API_KEY` + `EMAIL_FROM` if you want magic link, password reset and transactional emails
+- `RESEND_API_KEY` + `EMAIL_FROM`: signing invitations, confirmation emails, magic link and password reset
+- `BLOB_READ_WRITE_TOKEN`: private storage for uploaded and signed documents
+- `CRON_SECRET`: lets the scheduled job run (link expiry, reminders, sealing retries, renewal notices)
+
+The last three are enforced. In production the server **refuses to start** when any of them is missing, and the boot log says which one and what would break: without storage, documents go to a disk that is wiped; without email, invitations are logged instead of sent; without the secret, the scheduled job never runs. None of those fails with an error on its own, which is why the check exists. A `DEMO_MODE="true"` deployment is exempt, and `SKIP_ENV_VALIDATION="true"` turns the whole check off for a build step that has no secrets.
 
 ## Deploying somewhere other than Vercel
 

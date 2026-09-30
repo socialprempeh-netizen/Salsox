@@ -2,7 +2,7 @@
 title: Configurazione
 description: "Ogni variabile d'ambiente spiegata: database, OAuth, Stripe, email, marchio."
 translated_from: configuration.md
-source_checksum: bc249b8dfb06
+source_checksum: f41fc2fe31f2
 ---
 
 # Configurazione
@@ -89,7 +89,7 @@ Vale la pena sapere quale limite spostare per primo, perché non proteggono la s
 |---|---|
 | `DEMO_MODE` | `"true"` trasforma il deploy in una demo pubblica: account condivisi a un clic, OAuth reale disattivato, moduli di accesso via email nascosti. Usa un database isolato. |
 | `NEXT_PUBLIC_DEMO_URL` | Su un deploy di marketing, fa puntare i link di accesso alla tua istanza dimostrativa. |
-| `CRON_SECRET` | Solo per i deploy dimostrativi. `vercel.json` programma un ripopolamento giornaliero alle 04:00 UTC così i dati condivisi della demo non vanno alla deriva; Vercel manda questo valore come bearer token e la route si rifiuta di girare quando non è impostato, quindi lasciarlo vuoto disattiva semplicemente il ripristino. La route cancella ogni utente, e `DEMO_MODE="true"` è la guardia che la tiene lontana da un database vero. |
+| `CRON_SECRET` | Obbligatoria in produzione, dove permette al job delle firme di girare (vedi [esign.it.md](./esign.it.md)). Su un deploy dimostrativo protegge anche il reset: `vercel.json` programma un ripopolamento giornaliero alle 04:00 UTC così i dati condivisi della demo non vanno alla deriva; Vercel manda questo valore come bearer token e la route si rifiuta di girare quando non è impostato, quindi lasciarlo vuoto disattiva semplicemente il ripristino. La route cancella ogni utente, e `DEMO_MODE="true"` è la guardia che la tiene lontana da un database vero. |
 | `KIT_SITE` | Lascialo vuoto. È riservato al deploy che vende il kit stesso: `"true"` cambia il copy della landing, i prezzi (livelli open source scritti a mano più una waitlist Pro al posto delle tue righe `Plan`), le FAQ, i link di licenza nel footer e l'invito nella dashboard, così parlano del repository invece che del tuo prodotto. Vedi sotto. |
 | `WAITLIST_ENABLED` | Ha senso solo insieme a `KIT_SITE`. Il form della lista d'attesa Pro sulla pagina dei prezzi open source parte **disattivato** finché questa non vale `"true"`, così nessun deploy può raccogliere indirizzi prima che la sua informativa vera sia pubblicata. |
 | `NEXT_PUBLIC_DISABLE_ANALYTICS` | `"true"` non monta Vercel Analytics. Lasciata vuota resta acceso, che è il valore utile su Vercel e quello sbagliato ovunque tu preferisca non spedire nessuna analitica. |

@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: 8ff79121efb1
+source_checksum: a369c479047e
 ---
 
 # Firme elettroniche (Salsox)
@@ -89,9 +89,9 @@ Vale la regola di `AGENTS.md`: le decisioni stanno in `src/lib/esign` come funzi
 
 | Variabile | Serve per |
 |---|---|
-| `BLOB_READ_WRITE_TOKEN` | Archiviazione dei file in produzione. Senza, i file vanno in `.data/storage` (solo sviluppo). |
-| `CRON_SECRET` | `/api/cron/esign` (scadenze, promemoria, nuovo sigillo, avvisi di rinnovo). Gira ogni giorno secondo `vercel.json`. |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Email. Senza, i link di firma vengono scritti nel log e si possono comunque condividere dalla dashboard. |
+| `BLOB_READ_WRITE_TOKEN` | Archiviazione dei file in produzione. **Obbligatoria in produzione.** In sviluppo, senza, i file vanno in `.data/storage`. |
+| `CRON_SECRET` | `/api/cron/esign` (scadenze, promemoria, nuovo sigillo, avvisi di rinnovo). Gira ogni giorno secondo `vercel.json`. **Obbligatoria in produzione.** |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Email. **Obbligatorie in produzione.** In sviluppo, senza, i link di firma vengono scritti nel log e si possono comunque condividere dalla dashboard. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Sign & Pay tramite Stripe. Attiva anche Connect e aggiungi `account.updated` agli eventi del webhook. |
 | `PAYSTACK_SECRET_KEY`, `PAYSTACK_COUNTRY` | Sign & Pay tramite Paystack. Punta un webhook a `/api/webhooks/paystack`. Il paese predefinito è `ghana`. |
 | `SIGN_AND_PAY_FEE_BPS` | Commissione della piattaforma opzionale, in punti base (150 = 1,5%). Predefinita 0. |
