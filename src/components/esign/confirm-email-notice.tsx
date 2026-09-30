@@ -9,6 +9,10 @@
  * (`senderBlocker` in src/lib/esign/sender.ts), so hiding or bypassing this
  * component unlocks nothing.
  *
+ * "Sent" is shown only when the email provider accepted the message (the
+ * action reports that). A refusal is a distinct, visible failure: the status
+ * line turns into an error and the button becomes "Try again".
+ *
  * Layout is phone-first: text and button stack, and sit side by side from
  * `sm` up. Square corners throughout, per the project's design rules. The
  * entrance and the status line are animated with framer-motion and fall back
@@ -17,7 +21,7 @@
 import { useState, useTransition } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useTranslations } from "next-intl"
-import { MailWarning } from "lucide-react"
+import { CircleAlert, CircleCheck, MailWarning } from "lucide-react"
 import { resendConfirmationEmail, type ResendConfirmationResult } from "@/app/actions/email-confirmation"
 import { Button } from "@/components/ui/button"
 
@@ -34,6 +38,8 @@ export function ConfirmEmailNotice({ email }: { email: string }) {
   }
 
   const offset = reduceMotion ? 0 : -8
+  const failed = result === "failed"
+  const succeeded = result === "sent"
 
   return (
     <motion.section
@@ -61,7 +67,7 @@ export function ConfirmEmailNotice({ email }: { email: string }) {
           onClick={resend}
           className="w-full shrink-0 rounded-none sm:w-auto"
         >
-          {t("resend")}
+          {failed ? t("retry") : t("resend")}
         </Button>
       </div>
 
@@ -75,9 +81,15 @@ export function ConfirmEmailNotice({ email }: { email: string }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="mt-3 text-sm font-medium text-foreground"
+              className={
+                failed
+                  ? "mt-3 flex items-start gap-2 border border-destructive/40 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+                  : "mt-3 flex items-start gap-2 text-sm font-medium text-foreground"
+              }
             >
-              {t(`result.${result}`)}
+              {failed && <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />}
+              {succeeded && <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+              <span>{t(`result.${result}`)}</span>
             </motion.p>
           )}
         </AnimatePresence>

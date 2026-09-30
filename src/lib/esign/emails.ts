@@ -29,21 +29,44 @@ const FROM_ADDRESS = process.env.EMAIL_FROM ?? `${siteConfig.name} <${siteConfig
  */
 const bold = (value: string) => `<strong>${value}</strong>`
 
-async function send(kind: string, to: string, subject: string, html: string, devLink?: string): Promise<boolean> {
+/**
+ * What happened to one email.
+ *
+ *   sent           the provider accepted it
+ *   notConfigured  there is no provider on this deployment (no Resend key):
+ *                  nothing was attempted, and links are shared by hand
+ *   failed         a provider is configured and refused it, or could not be
+ *                  reached
+ *
+ * This used to be a boolean, false for both of the last two, and every caller
+ * ignored it: the dashboard said "Sent" whatever the provider answered. The
+ * two are kept apart because only `failed` is something to tell the sender
+ * about and offer a retry for.
+ */
+export type EmailOutcome = "sent" | "notConfigured" | "failed"
+
+/** True unless a configured provider failed to take the email. */
+export function delivered(outcome: EmailOutcome): boolean {
+  return outcome !== "failed"
+}
+
+async function send(kind: string, to: string, subject: string, html: string, devLink?: string): Promise<EmailOutcome> {
   const key = process.env.RESEND_API_KEY
   if (!key) {
     // Not an error: see the note at the top of this file.
     console.info(`[esign email] ${kind} → ${to}: ${subject}${devLink ? `\n  ${devLink}` : ""}`)
-    return false
+    return "notConfigured"
   }
   const resend = new Resend(key)
   try {
-    return await deliver(kind, () => resend.emails.send({ from: FROM_ADDRESS, to, subject, html }))
+    const accepted = await deliver(kind, () => resend.emails.send({ from: FROM_ADDRESS, to, subject, html }))
+    return accepted ? "sent" : "failed"
   } catch (error) {
     // A failed email must never fail the signing action that triggered it:
-    // the link is still shareable from the dashboard.
+    // the link is still shareable from the dashboard. It is reported to the
+    // caller, which decides what to tell the sender.
     console.error(`[esign email] ${kind} failed`, error)
-    return false
+    return "failed"
   }
 }
 
@@ -57,7 +80,7 @@ export async function sendSigningInvite(args: {
   expiresAt?: Date | null
   reminder?: boolean
   amountLabel?: string | null
-}): Promise<boolean> {
+}): Promise<EmailOutcome> {
   const t = await esignEmailStrings()
   const title = escapeHtml(args.title)
   const subject = args.reminder
@@ -80,7 +103,7 @@ export async function sendDocumentCompleted(args: {
   name: string
   title: string
   downloadUrl: string
-}): Promise<boolean> {
+}): Promise<EmailOutcome> {
   const t = await esignEmailStrings()
   const html = baseTemplate(`
     <p>${t("hello", { name: escapeHtml(args.name) })}</p>
@@ -97,7 +120,7 @@ export async function sendDocumentRejected(args: {
   title: string
   reason?: string | null
   url: string
-}): Promise<boolean> {
+}): Promise<EmailOutcome> {
   const t = await esignEmailStrings()
   const html = baseTemplate(`
     <p>${t("hello", { name: escapeHtml(args.ownerName) })}</p>
@@ -126,7 +149,7 @@ export async function sendRenewalNotice(args: {
   date: string
   amount: string
   manageUrl: string
-}): Promise<boolean> {
+}): Promise<EmailOutcome> {
   const t = await esignEmailStrings()
   const html = baseTemplate(`
     <p>${t("hello", { name: escapeHtml(args.name) })}</p>

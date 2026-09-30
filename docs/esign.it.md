@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: d4f44bf0c72a
+source_checksum: 8ff79121efb1
 ---
 
 # Firme elettroniche (Salsox)
@@ -57,7 +57,7 @@ Vale la regola di `AGENTS.md`: le decisioni stanno in `src/lib/esign` come funzi
 
 1. **Caricamento.** `inspectPdf` controlla i magic byte, la leggibilità, la cifratura e il limite di 4 MB (sotto il limite di 4,5 MB di Vercel). L'originale viene salvato una volta e mai modificato.
 2. **Configurazione.** Destinatari (firmatario, approvatore, lettore, CC), campi in percentuali della pagina, ordine di firma, scadenza, Sign & Pay opzionale.
-3. **Invio.** Ogni destinatario riceve una scadenza e un'email con il proprio link. Dalla pagina del documento ogni link si può anche copiare o condividere su WhatsApp (`wa.me`) e SMS (`sms:`).
+3. **Invio.** Ogni destinatario riceve una scadenza e un'email con il proprio link. Dalla pagina del documento ogni link si può anche copiare o condividere su WhatsApp (`wa.me`) e SMS (`sms:`). "Inviato" compare solo per un'email che il provider ha accettato: ogni invio in `emails.ts` restituisce `sent`, `notConfigured` (nessuna chiave Resend, i link si condividono a mano) oppure `failed`, e il `sentAt` di un destinatario viene scritto solo in caso di successo. Un invito rifiutato lascia il documento attivo, sostituisce il banner "Sent!" con un avviso che dice quanti non sono stati consegnati, segna quei destinatari come "Email not delivered", e un promemoria o un reinvio rifiutato viene segnalato come errore con la possibilità di riprovare.
 4. **Firma.** Ogni campo viene salvato appena compilato. `completeSigning` rifiuta finché mancano campi obbligatori o un pagamento.
 5. **Sigillo.** Quando l'ultimo firmatario completa, `finalizeDocument`:
    - rivendica in modo atomico il passaggio a `COMPLETED`;

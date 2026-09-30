@@ -26,7 +26,12 @@ import { resendToRecipient, updateRecipient } from "@/lib/esign/recipients"
 import { documentSetupSchema, parseEmailList, recipientInputSchema, MAX_RECIPIENTS, TITLE_MAX } from "@/lib/esign/schemas"
 import { BURST_LIMITS } from "@/lib/esign/sending-limits"
 
-export type ActionState = { error?: string; ok?: boolean; documentId?: string }
+/**
+ * `undelivered` is how many emails the provider refused on an action that
+ * otherwise succeeded (the document is sent, the links are renewed). The
+ * interface reads it so that it never says "Sent" for an email that was not.
+ */
+export type ActionState = { error?: string; ok?: boolean; documentId?: string; undelivered?: number }
 
 // Replaced by BURST_LIMITS in src/lib/esign/sending-limits.ts. 120 sends per
 // 10 minutes, at 25 recipients each, was 3,000 emails from one account before
@@ -107,7 +112,7 @@ export async function saveAndSendAction(documentId: string, payload: unknown): P
   const sent = await sendDocument(user.id, documentId)
   if (!sent.ok) return fail(sent.error)
   revalidateDocument(documentId)
-  return { ok: true, documentId }
+  return { ok: true, documentId, undelivered: sent.undelivered }
 }
 
 export async function quickSendAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -133,14 +138,14 @@ export async function quickSendAction(_prev: ActionState, formData: FormData): P
   })
   if (!result.ok) return fail(result.error)
   revalidateDocument(result.documentId)
-  return { ok: true, documentId: result.documentId }
+  return { ok: true, documentId: result.documentId, undelivered: result.undelivered }
 }
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
 async function simple(
   documentId: string,
-  run: (userId: string, id: string) => Promise<{ ok: true } | { ok: false; error: string }>,
+  run: (userId: string, id: string) => Promise<{ ok: true; undelivered?: number } | { ok: false; error: string }>,
   // Set for the actions that email recipients: a per-document burst budget.
   burst?: keyof typeof BURST_LIMITS
 ): Promise<ActionState> {
@@ -150,7 +155,7 @@ async function simple(
   const result = await run(user.id, documentId)
   if (!result.ok) return fail(result.error)
   revalidateDocument(documentId)
-  return { ok: true, documentId }
+  return { ok: true, documentId, undelivered: result.undelivered ?? 0 }
 }
 
 // Renewing and reminding each email every pending signer, so they share one
@@ -180,7 +185,7 @@ export async function updateRecipientAction(
   recipientId: string,
   documentId: string,
   input: unknown
-): Promise<ActionState & { tokenRotated?: boolean }> {
+): Promise<ActionState & { tokenRotated?: boolean; emailFailed?: boolean }> {
   const user = await getCurrentUser()
   if (!user) return fail("unauthorized")
   const parsed = editableRecipient.safeParse(input)
@@ -190,7 +195,7 @@ export async function updateRecipientAction(
   const result = await updateRecipient(user.id, recipientId, parsed.data)
   if (!result.ok) return fail(result.error)
   revalidateDocument(documentId)
-  return { ok: true, documentId, tokenRotated: result.tokenRotated }
+  return { ok: true, documentId, tokenRotated: result.tokenRotated, emailFailed: result.emailFailed }
 }
 
 export async function resendRecipientAction(recipientId: string, documentId: string): Promise<ActionState> {

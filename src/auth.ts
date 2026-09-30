@@ -305,7 +305,11 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       const { sendMagicLinkEmail } = await import("@/lib/email")
-      await sendMagicLinkEmail(user.email, url)
+      // Reported, not thrown: a refused email must not fail sign-up or a
+      // change of address, but the "resend" button has to know (see
+      // src/lib/email-outcome.ts).
+      const { reportEmailOutcome } = await import("@/lib/email-outcome")
+      reportEmailOutcome(await sendMagicLinkEmail(user.email, url))
     },
   },
 

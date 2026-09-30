@@ -20,7 +20,7 @@ import {
 } from "./rules"
 import { isPlausibleToken } from "./tokens"
 import { finalizeDocument, appUrl, type Result } from "./documents"
-import { sendDocumentRejected, sendSigningInvite } from "./emails"
+import { delivered, sendDocumentRejected, sendSigningInvite } from "./emails"
 import { signingUrl } from "./share"
 import { getProvider } from "./payments"
 import { formatMinorUnits } from "./payments/select"
@@ -199,7 +199,7 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
   if (document.signingOrder === "SEQUENTIAL") {
     // Email the next group, but only those not already emailed.
     for (const next of recipientsToNotify(document.recipients, "SEQUENTIAL").filter((r) => !r.sentAt)) {
-      await sendSigningInvite({
+      const outcome = await sendSigningInvite({
         to: next.email,
         recipientName: next.name,
         senderName: document.user.name || document.user.email,
@@ -212,7 +212,11 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
             ? formatMinorUnits(document.paymentAmount, document.paymentCurrency)
             : null,
       })
-      await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
+      // Stamped only when the email went: an unstamped recipient whose turn
+      // it is shows on the sender's document page as "not delivered", with a
+      // Resend button. It used to be stamped whatever the provider answered.
+      // await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
+      if (delivered(outcome)) await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
     }
   }
   return { ok: true, documentCompleted: false }

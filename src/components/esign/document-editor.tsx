@@ -212,7 +212,12 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
     startTransition(async () => {
       const result = send ? await saveAndSendAction(documentId, payload()) : await saveSetupAction(documentId, payload())
       if (result.error) return void toast.error(result.error)
-      if (send) {
+      if (send && result.undelivered) {
+        // The provider refused some invitations: say so, and let the document
+        // page show who was not reached instead of its "Sent!" banner.
+        toast.error(t("sentUndelivered", { count: result.undelivered }))
+        router.push(`/dashboard/documents/${documentId}`)
+      } else if (send) {
         toast.success(t("sent"))
         router.push(`/dashboard/documents/${documentId}?sent=1`)
       } else {

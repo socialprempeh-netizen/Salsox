@@ -516,7 +516,7 @@
     "$product": {
       "headlineHead": "",
       "headlineAccent": "",
-      "subtitle": "Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone. Unlimited documents on every plan.",
+      "subtitle": "Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone. Unlimited sending — fair-use limits apply to prevent spam.",
       "cta": "Send your first document",
       "trust": "No envelope limits · Cancel in one click · Export everything, any time",
       "pill": "Sign & Pay with Stripe or Paystack"
@@ -544,7 +544,7 @@
       "subtitle": "Built around the complaints people have about the big e-signature tools.",
       "c1": {
         "title": "Unlimited sending",
-        "description": "No envelope caps, no counting, no surprise upgrade prompts. Every plan sends as many documents as you need."
+        "description": "No envelope caps, no counting, no surprise upgrade prompts on any plan. Fair-use limits apply to prevent spam."
       },
       "c2": {
         "title": "Fix a wrong email in one click",
@@ -688,7 +688,7 @@
       "items": [
         {
           "question": "Is there really no limit on how many documents I send?",
-          "answer": "None. {site} doesn't count envelopes on any plan. Paid plans add features like Sign & Pay and sequential signing, never more sends."
+          "answer": "No plan has a cap. {site} doesn't count envelopes, and paid plans add features like Sign & Pay and sequential signing, never more sends. Fair-use limits apply to prevent spam."
         },
         {
           "question": "Are electronic signatures legally binding?",
@@ -1004,6 +1004,7 @@
       "noFile": "Choose a PDF to upload.",
       "invalidEmails": "Enter one or more valid email addresses (up to {max}).",
       "emailNotConfirmed": "Confirm your email address before sending. Open the link we emailed you, or ask for a new one from the Documents page.",
+      "emailFailed": "The email could not be sent. Try again, or share the link directly.",
       "dailyLimit": "You've reached today's sending limit. It resets over the next 24 hours. Contact us if you need to send more.",
       "NOT_PDF": "That file is not a PDF.",
       "TOO_LARGE": "PDFs can be up to 4 MB.",
@@ -1029,11 +1030,12 @@
       "title": "Confirm your email to start sending",
       "body": "We sent a confirmation link to {email}. You can upload and prepare documents now; sending unlocks as soon as you open that link.",
       "resend": "Resend the email",
+      "retry": "Try again",
       "result": {
         "sent": "Sent. Check your inbox, and your spam folder too.",
         "alreadyConfirmed": "Your email is already confirmed. Reload the page to continue.",
         "rateLimited": "You've asked a few times already. Wait a few minutes, then try again.",
-        "failed": "The email could not be sent. Please try again."
+        "failed": "The email was not sent: our email provider did not accept it. Nothing has reached your inbox."
       }
     },
     "status": {
@@ -1051,7 +1053,7 @@
     },
     "list": {
       "title": "Documents",
-      "subtitle": "Everything you've sent, and who you're waiting on. Sending is unlimited.",
+      "subtitle": "Everything you've sent, and who you're waiting on. Unlimited sending — fair-use limits apply to prevent spam.",
       "quickSend": "Quick Send",
       "new": "New document",
       "filterLabel": "Filter documents",
@@ -1100,7 +1102,8 @@
       "expiryDays": "{days} days",
       "expiryNever": "Never",
       "submit": "{count, plural, =0 {Send for signature} one {Send to # signer} other {Send to # signers}}",
-      "sent": "Sent! You can also share each link by WhatsApp or SMS."
+      "sent": "Sent! You can also share each link by WhatsApp or SMS.",
+      "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page."
     },
     "editor": {
       "subtitle": "Add recipients, place fields, then send.",
@@ -1160,6 +1163,7 @@
       "saveDraft": "Save draft",
       "saved": "Draft saved.",
       "sent": "Sent!",
+      "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page.",
       "signerNeedsField": "{name} has no fields yet. Place at least one."
     },
     "detail": {
@@ -1171,6 +1175,11 @@
       "renew": "Extend links",
       "renewExpired": "Renew and resend",
       "renewed": "Links renewed and resent.",
+      "undeliveredToast": "{count, plural, one {# email} other {# emails}} could not be delivered.",
+      "retry": "Try again",
+      "undeliveredTitle": "{count, plural, one {# invitation email was not delivered} other {# invitation emails were not delivered}}",
+      "undeliveredBody": "The document is live and every link works, but our email provider did not accept the message for the people marked below. Use Resend next to their name to try again, or share their link directly.",
+      "notDelivered": "Email not delivered",
       "remind": "Send reminder",
       "reminded": "Reminder sent.",
       "cancel": "Cancel document",
@@ -1231,6 +1240,7 @@
       "edit": "Edit",
       "resend": "Resend",
       "resent": "Link resent.",
+      "retry": "Try again",
       "editTitle": "Edit recipient",
       "editBody": "Changing the email replaces their link: the old one stops working and the new address gets a fresh link. Their fields stay as they are.",
       "name": "Name",
@@ -1240,7 +1250,8 @@
       "close": "Close",
       "save": "Save changes",
       "updated": "Recipient updated.",
-      "updatedRotated": "Recipient updated and a new link sent. The old link no longer works."
+      "updatedRotated": "Recipient updated and a new link sent. The old link no longer works.",
+      "updatedEmailFailed": "Recipient updated and the old link no longer works, but the email with the new link could not be sent. Use Resend to try again."
     },
     "signature": {
       "draw": "Draw",

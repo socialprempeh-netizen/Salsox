@@ -50,7 +50,7 @@ The rule from `AGENTS.md` holds: decisions live in `src/lib/esign` as functions 
 
 1. **Upload.** `inspectPdf` checks magic bytes, parseability, encryption and the 4 MB limit (under Vercel's 4.5 MB body limit). The original is stored once and never modified.
 2. **Setup.** Recipients (signer, approver, viewer, CC), fields as page percentages, signing order, expiry, optional Sign & Pay.
-3. **Send.** Recipients get an expiry and an email with their link. Every link can also be copied, or shared over WhatsApp (`wa.me`) and SMS (`sms:`), from the document page.
+3. **Send.** Recipients get an expiry and an email with their link. Every link can also be copied, or shared over WhatsApp (`wa.me`) and SMS (`sms:`), from the document page. "Sent" is only shown for an email the provider accepted: every send in `emails.ts` returns `sent`, `notConfigured` (no Resend key, links are shared by hand) or `failed`, and a recipient's `sentAt` is written on success only. A refused invitation leaves the document live, replaces the "Sent!" banner with a warning naming how many were not delivered, marks those recipients "Email not delivered", and a refused reminder or resend is reported as an error with a retry.
 4. **Sign.** Each field is saved as it is filled. `completeSigning` refuses while required fields are empty or a payment is outstanding.
 5. **Finalize.** When the last signer completes, `finalizeDocument` claims the `COMPLETED` transition atomically, stamps the fields, flattens forms, appends a certificate page (hashes, recipients, the full audit trail), optionally applies a digital signature, stores the sealed copy and emails everyone. If sealing fails, the cron sweep retries it.
 

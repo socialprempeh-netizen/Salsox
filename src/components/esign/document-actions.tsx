@@ -34,12 +34,17 @@ export function DocumentActions({ documentId, status }: { documentId: string; st
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
-  function run(action: (id: string) => Promise<ActionState>, success: string, after?: () => void) {
+  // `emails` marks the two actions that send email (renew, remind). For
+  // those, success is only claimed when the provider took every message; a
+  // refusal is shown as an error with a button to try again.
+  function run(action: (id: string) => Promise<ActionState>, success: string, opts: { after?: () => void; emails?: boolean } = {}) {
     startTransition(async () => {
       const result = await action(documentId)
-      if (result.error) return void toast.error(result.error)
-      toast.success(success)
-      if (after) after()
+      const retry = opts.emails ? { action: { label: t("retry"), onClick: () => run(action, success, opts) } } : undefined
+      if (result.error) return void toast.error(result.error, retry)
+      if (result.undelivered) toast.error(t("undeliveredToast", { count: result.undelivered }), retry)
+      else toast.success(success)
+      if (opts.after) opts.after()
       else router.refresh()
     })
   }
@@ -53,13 +58,13 @@ export function DocumentActions({ documentId, status }: { documentId: string; st
         <Button
           variant={status === "EXPIRED" ? "primary" : "outline"}
           loading={pending}
-          onClick={() => run(renewDocumentAction, t("renewed"))}
+          onClick={() => run(renewDocumentAction, t("renewed"), { emails: true })}
         >
           <RefreshCw className="h-4 w-4" /> {status === "EXPIRED" ? t("renewExpired") : t("renew")}
         </Button>
       )}
       {status === "PENDING" && (
-        <Button variant="outline" loading={pending} onClick={() => run(remindDocumentAction, t("reminded"))}>
+        <Button variant="outline" loading={pending} onClick={() => run(remindDocumentAction, t("reminded"), { emails: true })}>
           <BellRing className="h-4 w-4" /> {t("remind")}
         </Button>
       )}
@@ -87,7 +92,7 @@ export function DocumentActions({ documentId, status }: { documentId: string; st
           variant="ghost"
           className="text-destructive"
           loading={pending}
-          onClick={() => run(deleteDraftAction, t("deleted"), () => router.push("/dashboard/documents"))}
+          onClick={() => run(deleteDraftAction, t("deleted"), { after: () => router.push("/dashboard/documents") })}
         >
           <Trash2 className="h-4 w-4" /> {t("deleteDraft")}
         </Button>

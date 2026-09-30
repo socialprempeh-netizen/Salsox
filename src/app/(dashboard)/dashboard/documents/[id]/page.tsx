@@ -10,7 +10,7 @@ import { CheckCircle2, Circle, Download, FileText, XCircle } from "lucide-react"
 import { requireUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
-import { canEditRecipient, isActionable, isRecipientExpired } from "@/lib/esign/rules"
+import { canEditRecipient, isActionable, isRecipientExpired, undeliveredInvites } from "@/lib/esign/rules"
 import { signingUrl } from "@/lib/esign/share"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DocumentStatusBadge } from "@/components/esign/document-status-badge"
 import { DocumentActions } from "@/components/esign/document-actions"
 import { RecipientActions } from "@/components/esign/recipient-actions"
+import { UndeliveredNotice } from "@/components/esign/undelivered-notice"
 
 export default async function DocumentPage({
   params,
@@ -48,6 +49,10 @@ export default async function DocumentPage({
   const senderName = user.name || user.email || siteConfig.name
   const amountLabel =
     document.paymentAmount && document.paymentCurrency ? formatMinorUnits(document.paymentAmount, document.paymentCurrency) : null
+  // Whose invitation the email provider never accepted. Read from the rows,
+  // not from the URL, so the page tells the truth on every visit and the
+  // warning clears by itself once a resend gets through.
+  const undelivered = new Set(undeliveredInvites(document.status, document.recipients, document.signingOrder).map((r) => r.id))
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -65,8 +70,15 @@ export default async function DocumentPage({
           </div>
           <DocumentStatusBadge status={document.status} />
         </div>
-        {sent && (
+        {/* "Each recipient got an email" is only said when each one did. */}
+        {/* {sent && (
           <p className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">{t("sentBanner")}</p>
+        )} */}
+        {sent && undelivered.size === 0 && (
+          <p className="border border-primary/30 bg-primary/5 p-3 text-sm">{t("sentBanner")}</p>
+        )}
+        {undelivered.size > 0 && (
+          <UndeliveredNotice title={t("undeliveredTitle", { count: undelivered.size })} body={t("undeliveredBody")} />
         )}
         {document.status === "EXPIRED" && (
           <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm">{t("expiredBanner")}</p>
@@ -102,8 +114,20 @@ export default async function DocumentPage({
                       {r.signingStatus === "SIGNED" && r.signedAt && <Badge variant="success">{t("signedAt", { date: when(r.signedAt) })}</Badge>}
                       {r.signingStatus === "REJECTED" && <Badge variant="destructive">{t("declined")}</Badge>}
                       {r.signingStatus === "NOT_SIGNED" && isActionable(r.role) && (
-                        <Badge variant={expired ? "destructive" : "secondary"}>
-                          {expired ? t("linkExpired") : r.viewedAt ? t("viewed") : r.sentAt ? t("sent") : t("waiting")}
+                        // "Sent" needs `sentAt`, which is written only when the
+                        // provider accepted the email. No `sentAt` while it is
+                        // their turn means the email was refused, not that
+                        // they are waiting.
+                        <Badge variant={expired || undelivered.has(r.id) ? "destructive" : "secondary"}>
+                          {expired
+                            ? t("linkExpired")
+                            : r.viewedAt
+                              ? t("viewed")
+                              : r.sentAt
+                                ? t("sent")
+                                : undelivered.has(r.id)
+                                  ? t("notDelivered")
+                                  : t("waiting")}
                         </Badge>
                       )}
                       {r.mustPay && amountLabel && (

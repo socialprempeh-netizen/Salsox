@@ -10,6 +10,7 @@ import {
   recipientsToNotify,
   shouldExpireDocument,
   signingBlocker,
+  undeliveredInvites,
   type RuleRecipient,
 } from "./rules"
 
@@ -87,6 +88,29 @@ describe("recipientsToNotify", () => {
     expect(recipientsToNotify([a, b, c], "SEQUENTIAL").map((x) => x.id)).toEqual(["a"])
     const signedA = { ...a, signingStatus: "SIGNED" as const }
     expect(recipientsToNotify([signedA, b, c], "SEQUENTIAL").map((x) => x.id)).toEqual(["b", "c"])
+  })
+})
+
+describe("undeliveredInvites", () => {
+  const sentAt = new Date("2026-09-29T10:00:00Z")
+  const a = { ...r("a", { order: 0 }), sentAt: null, viewedAt: null }
+  const b = { ...r("b", { order: 1 }), sentAt: null, viewedAt: null }
+  it("lists pending recipients whose email never went", () => {
+    const reached = { ...r("c"), sentAt, viewedAt: null }
+    expect(undeliveredInvites("PENDING", [a, reached], "PARALLEL").map((x) => x.id)).toEqual(["a"])
+  })
+  it("does not count someone whose turn has not come", () => {
+    expect(undeliveredInvites("PENDING", [{ ...a, sentAt }, b], "SEQUENTIAL")).toEqual([])
+    expect(undeliveredInvites("PENDING", [a, b], "SEQUENTIAL").map((x) => x.id)).toEqual(["a"])
+  })
+  it("ignores signed recipients, CCs and documents that are not pending", () => {
+    const signed = { ...r("s", { signingStatus: "SIGNED" }), sentAt: null, viewedAt: null }
+    const cc = { ...r("cc", { role: "CC" }), sentAt: null, viewedAt: null }
+    expect(undeliveredInvites("PENDING", [signed, cc], "PARALLEL")).toEqual([])
+    expect(undeliveredInvites("EXPIRED", [a], "PARALLEL")).toEqual([])
+  })
+  it("drops someone who opened their link anyway", () => {
+    expect(undeliveredInvites("PENDING", [{ ...a, viewedAt: sentAt }], "PARALLEL")).toEqual([])
   })
 })
 

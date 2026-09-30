@@ -69,7 +69,10 @@ export function RecipientActions({ documentId, documentTitle, senderName, recipi
     startTransition(async () => {
       const result = await updateRecipientAction(recipient.id, documentId, { name, email, phone: phone || undefined })
       if (result.error) return void toast.error(result.error)
-      toast.success(result.tokenRotated ? t("updatedRotated") : t("updated"))
+      // The correction is saved either way; "a new link sent" is only said
+      // when the email with it actually went.
+      if (result.emailFailed) toast.error(t("updatedEmailFailed"))
+      else toast.success(result.tokenRotated ? t("updatedRotated") : t("updated"))
       setEditing(false)
       router.refresh()
     })
@@ -78,7 +81,8 @@ export function RecipientActions({ documentId, documentTitle, senderName, recipi
   function resend() {
     startTransition(async () => {
       const result = await resendRecipientAction(recipient.id, documentId)
-      if (result.error) return void toast.error(result.error)
+      // A refused email comes back as an error, with a way to try again.
+      if (result.error) return void toast.error(result.error, { action: { label: t("retry"), onClick: resend } })
       toast.success(t("resent"))
       router.refresh()
     })

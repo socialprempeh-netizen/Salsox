@@ -116,6 +116,24 @@ export function recipientsToNotify<R extends RuleRecipient>(all: R[], signingOrd
   return pending.filter((r) => r.order === lowest)
 }
 
+/**
+ * Recipients who should have an invitation by now and do not: it is their
+ * turn on a pending document, and no email to them was ever accepted by the
+ * provider (`sentAt` is only written on success). Someone further down a
+ * sequential order is not in this list: they have not been emailed because it
+ * is not their turn, which is not a failure. Neither is someone who has
+ * already opened their link: it reached them another way (WhatsApp, SMS), so
+ * there is nothing left to chase.
+ */
+export function undeliveredInvites<R extends RuleRecipient & { sentAt: Date | null; viewedAt: Date | null }>(
+  documentStatus: DocumentStatus,
+  all: R[],
+  signingOrder: SigningOrder
+): R[] {
+  if (documentStatus !== "PENDING") return []
+  return recipientsToNotify(all, signingOrder).filter((r) => r.sentAt === null && r.viewedAt === null)
+}
+
 /** A document is complete once it has actionable recipients and all of them signed. */
 export function isDocumentComplete(all: RuleRecipient[]): boolean {
   const actionable = actionableRecipients(all)

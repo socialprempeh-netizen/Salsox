@@ -29,8 +29,16 @@ export function QuickSendForm() {
   useEffect(() => {
     if (state.error) toast.error(state.error)
     if (state.ok && state.documentId) {
-      toast.success(t("sent"))
-      router.push(`/dashboard/documents/${state.documentId}?sent=1`)
+      // "Sent" only when the provider took every invitation. Otherwise the
+      // document page opens without the success banner and shows who was not
+      // reached, with a Resend button beside each of them.
+      if (state.undelivered) {
+        toast.error(t("sentUndelivered", { count: state.undelivered }))
+        router.push(`/dashboard/documents/${state.documentId}`)
+      } else {
+        toast.success(t("sent"))
+        router.push(`/dashboard/documents/${state.documentId}?sent=1`)
+      }
     }
   }, [state, router, t])
 
