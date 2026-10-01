@@ -346,6 +346,8 @@
       "billing": "Billing",
       "settings": "Settings",
       "overview": "Overview",
+      "customers": "Customers",
+      "moderation": "Moderation",
       "adminPanel": "Admin Panel",
       "backToDashboard": "Back to Dashboard",
       "openNavigation": "Open navigation",
@@ -353,6 +355,68 @@
       "quickSend": "Quick Send",
       "payouts": "Payouts"
     }
+  },
+  "adminCustomers": {
+    "title": "Customers",
+    "subtitle": "What each account pays, sends and collects through Sign & Pay.",
+    "customers": "Customers",
+    "paying": "Paying",
+    "monthlyRevenue": "Plan revenue / month",
+    "documentsSent": "Documents sent",
+    "completionRate": "Completion rate",
+    "volumeTotal": "Sign & Pay collected for senders, all time (per currency, not our revenue)",
+    "count": "{count, plural, one {# customer} other {# customers}}",
+    "sortLabel": "Sort customers",
+    "sort": {
+      "documents": "Most documents",
+      "revenue": "Plan revenue",
+      "volume": "Sign & Pay payments",
+      "newest": "Newest"
+    },
+    "empty": "No customer has sent a document or bought a plan yet.",
+    "colCustomer": "Customer",
+    "colPlan": "Plan",
+    "colRevenue": "Revenue / mo",
+    "colDocuments": "Sent / completed",
+    "colCompletion": "Completion rate",
+    "colVolume": "Sign & Pay collected",
+    "colRefunded": "Refunded",
+    "colJoined": "Joined",
+    "sentCompleted": "{sent} / {completed}",
+    "free": "Free",
+    "page": "Page {page} of {total}",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "adminModeration": {
+    "title": "Moderation",
+    "subtitle": "Accounts worth a look, from their activity over the last {days} days. Nothing here acts on an account.",
+    "flaggedTitle": "Flagged accounts",
+    "flaggedHint": "Red is a strong signal on its own; amber is worth checking alongside the others.",
+    "flaggedEmpty": "No account matches any signal right now.",
+    "joined": "joined {date}",
+    "activity": "{sent} sent, {completed} completed, {recipients} recipients",
+    "signal": {
+      "disputes": "{disputes, plural, one {# payment dispute} other {# payment disputes}}",
+      "highRejection": "{percent}% of recipients declined ({rejected})",
+      "nearDailyCeiling": "{sent} of {ceiling} daily documents used",
+      "newAccountBurst": "New account, {sent} documents in its first week",
+      "lowCompletion": "Only {percent}% of {sent} documents completed",
+      "unconfirmedSender": "Email not confirmed, {sent} documents sent"
+    },
+    "rejectionsTitle": "Latest decline reasons",
+    "rejectionsHint": "What recipients wrote when they declined. Spam and scams usually show up here first.",
+    "rejectionsEmpty": "No recipient has declined with a reason yet.",
+    "rejectionMeta": "{recipient} declined “{title}” from {sender}, {when}",
+    "paymentsTitle": "Sign & Pay disputes and refunds",
+    "paymentsHint": "Chargebacks and refunds on payments collected for senders.",
+    "paymentsEmpty": "No disputes or refunds yet.",
+    "paymentEvent": {
+      "PAYMENT_DISPUTED": "Dispute opened",
+      "PAYMENT_DISPUTE_CLOSED": "Dispute closed",
+      "PAYMENT_REFUNDED": "Refunded"
+    },
+    "paymentMeta": "“{title}” from {sender}, {when}"
   },
   "admin": {
     "title": "Admin Panel",
@@ -1264,6 +1328,10 @@
         "REMINDER_SENT": "Reminder sent",
         "PAYMENT_STARTED": "Payment started",
         "PAYMENT_RECEIVED": "Payment received",
+        "PAYMENT_FAILED": "Payment failed or abandoned",
+        "PAYMENT_REFUNDED": "Payment refunded",
+        "PAYMENT_DISPUTED": "Payment disputed by the payer's bank",
+        "PAYMENT_DISPUTE_CLOSED": "Payment dispute closed",
         "DOCUMENT_COMPLETED": "Completed by all parties",
         "DOCUMENT_CANCELLED": "Cancelled by sender",
         "DOCUMENT_EXPIRED": "Links expired"

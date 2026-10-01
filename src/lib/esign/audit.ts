@@ -20,6 +20,15 @@ export const AUDIT = {
   REMINDER_SENT: "REMINDER_SENT",
   PAYMENT_STARTED: "PAYMENT_STARTED",
   PAYMENT_RECEIVED: "PAYMENT_RECEIVED",
+  // Sign & Pay after the money moved (payments/reconcile.ts): a checkout that
+  // failed or was abandoned, a refund (ours or one issued at the provider),
+  // and a chargeback opened or closed by the payer's bank. Kept as events, not
+  // statuses: a dispute does not change what was paid, it is something that
+  // happened to it, and the trail is where that history belongs.
+  PAYMENT_FAILED: "PAYMENT_FAILED",
+  PAYMENT_REFUNDED: "PAYMENT_REFUNDED",
+  PAYMENT_DISPUTED: "PAYMENT_DISPUTED",
+  PAYMENT_DISPUTE_CLOSED: "PAYMENT_DISPUTE_CLOSED",
   COMPLETED: "DOCUMENT_COMPLETED",
   CANCELLED: "DOCUMENT_CANCELLED",
   EXPIRED: "DOCUMENT_EXPIRED",

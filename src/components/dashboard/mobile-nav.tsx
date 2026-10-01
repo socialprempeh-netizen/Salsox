@@ -11,6 +11,8 @@ import {
   Send,
   Wallet,
   LayoutGrid,
+  ShieldAlert,
+  Users,
   Menu,
   Settings,
   Shield,
@@ -35,7 +37,11 @@ const menus = {
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],
-  admin: [{ href: "/admin", key: "overview", icon: LayoutGrid }],
+  admin: [
+    { href: "/admin", key: "overview", icon: LayoutGrid },
+    { href: "/admin/customers", key: "customers", icon: Users },
+    { href: "/admin/moderation", key: "moderation", icon: ShieldAlert },
+  ],
 }
 
 /** Hamburger nav for the app areas below `md`, where the sidebar is hidden. */

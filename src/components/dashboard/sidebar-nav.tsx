@@ -11,6 +11,8 @@ import {
   Send,
   Wallet,
   LayoutGrid,
+  ShieldAlert,
+  Users,
   Settings,
   Shield,
 } from "lucide-react"
@@ -29,7 +31,11 @@ const menus = {
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],
-  admin: [{ href: "/admin", key: "overview", icon: LayoutGrid, exact: true }],
+  admin: [
+    { href: "/admin", key: "overview", icon: LayoutGrid, exact: true },
+    { href: "/admin/customers", key: "customers", icon: Users },
+    { href: "/admin/moderation", key: "moderation", icon: ShieldAlert },
+  ],
 }
 
 function linkClass(active: boolean) {
