@@ -11,6 +11,7 @@ import { GithubIcon } from "@/components/icons/github"
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
 import { NavbarWrapper } from "@/components/landing/navbar-wrapper"
+import { getStartedHref } from "@/lib/landing-cta"
 
 export async function Navbar() {
   const [t, tCommon] = await Promise.all([getTranslations("nav"), getTranslations("common")])
@@ -58,7 +59,8 @@ export async function Navbar() {
                     {tCommon("starOnGitHub")}
                   </a>
                 ) : (
-                  <Link href="/#pricing">{t("getStarted")}</Link>
+                  // Replaced: <Link href="/#pricing">, which sent "Get started" to billing.
+                  <Link href={getStartedHref()}>{t("getStarted")}</Link>
                 )}
               </Button>
             </>

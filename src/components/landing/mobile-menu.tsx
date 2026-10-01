@@ -7,6 +7,7 @@ import { usePathname } from "@/i18n/navigation"
 import { Menu } from "lucide-react"
 import { GithubIcon } from "@/components/icons/github"
 import { cn } from "@/lib/utils"
+import { getStartedHref } from "@/lib/landing-cta"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -98,11 +99,10 @@ export function MobileMenu({
                   {tCommon("starOnGitHub")}
                 </a>
               ) : (
-                <Link
-                  href="/#pricing"
-                  onClick={(e) => scrollToSection(e, "pricing")}
-                  className="font-semibold text-primary"
-                >
+                /* Replaced: href="/#pricing" with
+                   onClick={(e) => scrollToSection(e, "pricing")}, which sent
+                   "Get started" to billing instead of to sign up. */
+                <Link href={getStartedHref()} className="font-semibold text-primary">
                   {t("getStarted")}
                 </Link>
               )}
