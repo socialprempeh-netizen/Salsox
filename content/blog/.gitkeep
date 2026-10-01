@@ -1,0 +1,5 @@
+# Keeps content/blog/ in the repository while it holds no posts.
+# The starter kit's three sample posts were removed: a post here is an .mdx
+# file with title, description, date and category in its frontmatter (see
+# src/lib/blog.ts). Until the first one lands, /blog is noindex and left out
+# of the navbar, the footer, the sitemap and llms.txt.

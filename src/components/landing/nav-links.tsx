@@ -7,7 +7,8 @@ import { usePathname } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { sections, useActiveSection } from "@/components/landing/use-active-section"
 
-export function NavLinks() {
+/** `showBlog` comes from the server (`hasPosts()`): an empty blog gets no link. */
+export function NavLinks({ showBlog = true }: { showBlog?: boolean }) {
   const t = useTranslations("nav")
   const current = useActiveSection()
   const pathname = usePathname()
@@ -28,9 +29,11 @@ export function NavLinks() {
       <Link href="/docs" className={linkClass(pathname.startsWith("/docs"))}>
         {t("docs")}
       </Link>
-      <Link href="/blog" className={linkClass(pathname.startsWith("/blog"))}>
-        {t("blog")}
-      </Link>
+      {showBlog && (
+        <Link href="/blog" className={linkClass(pathname.startsWith("/blog"))}>
+          {t("blog")}
+        </Link>
+      )}
       <Link href="/changelog" className={linkClass(pathname.startsWith("/changelog"))}>
         {t("changelog")}
       </Link>

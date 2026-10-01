@@ -30,6 +30,6 @@ Everyone you invite can see and work on that project. Only you and the other adm
 
 - Add your name and photo in **Settings**, so your teammates recognise you
 - Look at **Billing** to see which plan you are on and what it includes
-- Read [Projects](/docs/projects) for how projects, members and archiving work
+- Read [Billing and plans](/docs/billing-and-plans) for invoices, plan changes and cancelling
 
 If something is unclear, write to us. A person reads every message.

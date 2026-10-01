@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { getAllPosts, getCategories, categorySlug } from "@/lib/blog"
+import { getAllPosts, getCategories, categorySlug, hasPosts } from "@/lib/blog"
 import { getChangelog } from "@/lib/changelog"
 import { getDocs, translatedLocales } from "@/lib/docs"
 import { routing } from "@/i18n/routing"
@@ -57,7 +57,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // The index renders from the message files, so it exists in every language
     // that has one.
     ...localized("/docs", routing.locales, { changeFrequency: "weekly", priority: 0.8 }),
-    { url: `${siteConfig.url}/blog`, changeFrequency: "weekly", priority: 0.8, ...newest(allPosts.map(postDate)) },
+    // The blog index only once there is something in it: while empty it is
+    // noindex, and listing it here would contradict that.
+    ...(hasPosts()
+      ? [{ url: `${siteConfig.url}/blog`, changeFrequency: "weekly" as const, priority: 0.8, ...newest(allPosts.map(postDate)) }]
+      : []),
     {
       url: `${siteConfig.url}/changelog`,
       changeFrequency: "weekly",

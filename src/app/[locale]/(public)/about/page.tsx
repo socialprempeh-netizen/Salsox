@@ -6,6 +6,7 @@ import { isKitSite } from "@/config/kit"
 import { jsonLdScript } from "@/lib/json-ld"
 import { aboutPageJsonLd } from "@/lib/structured-data"
 import { RelatedLinks } from "@/components/landing/related-links"
+import { hasPosts } from "@/lib/blog"
 
 export const metadata: Metadata = pageMetadata({
   title: `About | ${siteConfig.name}`,
@@ -85,7 +86,7 @@ export default function AboutPage() {
           )}
         </div>
 
-        <RelatedLinks path="/about" />
+        <RelatedLinks path="/about" hide={hasPosts() ? [] : ["blog"]} />
       </div>
     </section>
   )

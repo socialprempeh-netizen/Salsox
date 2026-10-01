@@ -43,7 +43,9 @@ const ACCENT_1 = brand.primary ?? (isKitSite ? "#2563eb" : "#e5e5e5")
 const ACCENT_2 = brand.primary2 ?? brand.primary ?? (isKitSite ? "#38bdf8" : "#737373")
 
 export async function generateStaticParams() {
-  const files = await readdir(COVERS_DIR)
+  // No covers folder is a normal state (a blog with no posts yet), not a
+  // build failure: the scandir used to throw and stop `next build` outright.
+  const files = await readdir(COVERS_DIR).catch(() => [] as string[])
   return files.filter((f) => f.endsWith(".svg")).map((file) => ({ file }))
 }
 

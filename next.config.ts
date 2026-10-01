@@ -50,6 +50,15 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4.4mb",
     },
   },
+  // Salsox dropped its Italian pages (src/i18n/routing.ts). The /it/* URLs
+  // were in the sitemap and may be indexed, so each one goes permanently, in
+  // one hop, to the English page it translated rather than to a 404.
+  async redirects() {
+    return [
+      { source: "/it", destination: "/", permanent: true },
+      { source: "/it/:path*", destination: "/:path*", permanent: true },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

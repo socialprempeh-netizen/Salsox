@@ -5,6 +5,7 @@ import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 import { isKitSite } from "@/config/kit"
 import { RelatedLinks } from "@/components/landing/related-links"
+import { hasPosts } from "@/lib/blog"
 
 export const metadata: Metadata = pageMetadata({
   title: `Contact | ${siteConfig.name}`,
@@ -41,7 +42,7 @@ export default function ContactPage() {
           </div>
         )}
 
-        <RelatedLinks path="/contact" />
+        <RelatedLinks path="/contact" hide={hasPosts() ? [] : ["blog"]} />
       </div>
     </section>
   )

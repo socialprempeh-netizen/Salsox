@@ -58,7 +58,7 @@ describe("translatedLocales", () => {
   it("agrees with the files on disk, not with the configured locale list", () => {
     // The check that ties the rule above to reality: read from `routing` and
     // every page would look translated in every language.
-    for (const doc of ["getting-started", "projects", "billing-and-plans"]) {
+    for (const doc of ["getting-started", "billing-and-plans"]) {
       const locales = translatedLocales(doc)
       expect(locales).toContain(routing.defaultLocale)
       expect(locales.every((l) => routing.locales.includes(l as never))).toBe(true)

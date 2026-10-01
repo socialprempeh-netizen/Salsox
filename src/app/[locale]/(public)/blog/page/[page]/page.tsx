@@ -14,6 +14,11 @@ import { pageMetadata } from "@/lib/metadata"
  * an empty page, because an address that renders nothing still looks valid to
  * a crawler.
  */
+// Posts are files, so every valid address is known at build time. Anything
+// else is a 404 without rendering: with no posts at all, an on-demand render
+// of an unknown slug used to hit the navbar's session read and answer 500.
+export const dynamicParams = false
+
 export function generateStaticParams() {
   const { totalPages } = paginate(getAllPosts(), 1)
   return Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => ({

@@ -7,6 +7,7 @@ import { LogoLink } from "@/components/landing/logo-link"
 import { siteConfig } from "@/config/site"
 import { useTranslations } from "next-intl"
 import { isKitSite } from "@/config/kit"
+import { hasPosts } from "@/lib/blog"
 
 function XIcon() {
   return (
@@ -64,7 +65,10 @@ export function Footer() {
               <li><Link href="/#features" className="transition-colors hover:text-foreground">{t("features")}</Link></li>
               <li><Link href="/#pricing" className="transition-colors hover:text-foreground">{t("pricing")}</Link></li>
               <li><Link href="/docs" className="transition-colors hover:text-foreground">{t("docs")}</Link></li>
-              <li><Link href="/blog" className="transition-colors hover:text-foreground">{t("blog")}</Link></li>
+              {/* Hidden while the blog has no posts: see hasPosts(). */}
+              {hasPosts() && (
+                <li><Link href="/blog" className="transition-colors hover:text-foreground">{t("blog")}</Link></li>
+              )}
               <li><Link href="/changelog" className="transition-colors hover:text-foreground">{t("changelog")}</Link></li>
               <li>
                 <Link href={siteConfig.links.demo ?? "/login"} className="transition-colors hover:text-foreground">

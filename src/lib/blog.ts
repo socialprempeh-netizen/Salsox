@@ -9,8 +9,9 @@ import { isKitSite } from "@/config/kit"
  * no CMS, no external service: writing a post is a git commit. Files with
  * `draft: true` stay out of every list, the feed and the sitemap.
  *
- * The three posts in there are examples written for a product audience:
- * rewrite them, add your own, delete what you don't need.
+ * The kit's three example posts have been removed, so the folder starts
+ * empty. While it is, `hasPosts()` is false and the blog hides itself: no
+ * link in the navbar or footer, nothing in the sitemap, and /blog is noindex.
  *
  * `KIT_SITE="true"` switches the source to `content/blog-kit/`, a folder that
  * is **not** part of this repository. It is how one codebase can serve a
@@ -84,6 +85,15 @@ export function assertRevisionOrder(file: string, date: string, updated?: string
   if (updated !== undefined && updated < date) {
     throw new Error(`content/blog/${file}: "updated" (${updated}) is before "date" (${date})`)
   }
+}
+
+/**
+ * Whether the blog has anything to show. An empty blog linked from every
+ * page is a dead end for readers and a thin page for search engines, so the
+ * links to it and its sitemap entry follow this.
+ */
+export function hasPosts(): boolean {
+  return getAllPosts().length > 0
 }
 
 export function getAllPosts(): Post[] {

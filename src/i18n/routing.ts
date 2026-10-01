@@ -17,7 +17,11 @@ import { defineRouting } from "next-intl/routing"
  * and not a rewrite.
  */
 export const routing = defineRouting({
-  locales: ["en", "it"],
+  // Replaced: ["en", "it"]. Salsox is not localized, and the only Italian
+  // pages were the kit's sample docs. With one locale the language switch
+  // hides itself, and old /it/* URLs redirect to English in next.config.ts.
+  // locales: ["en", "it"],
+  locales: ["en"],
   defaultLocale: "en",
 
   /**

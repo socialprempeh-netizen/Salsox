@@ -18,25 +18,28 @@ import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { relatedPagesFor } from "@/lib/related-pages"
+import { relatedPagesFor, type RelatedKey } from "@/lib/related-pages"
 import { cn } from "@/lib/utils"
 
 export function RelatedLinks({
   path,
   limit = 3,
   heading = "h2",
+  hide,
   className,
 }: {
   /** The current page, so it is never suggested to itself. */
   path: string
   limit?: number
+  /** Sections to leave out, decided on the server (this runs in the browser). */
+  hide?: readonly RelatedKey[]
   heading?: "h2" | "h3"
   className?: string
 }) {
   const t = useTranslations("related")
   const reduceMotion = useReducedMotion()
   const Heading = heading
-  const pages = relatedPagesFor(path, limit)
+  const pages = relatedPagesFor(path, limit, hide)
 
   return (
     <nav aria-label={t("title")} className={cn("mt-16 border-t border-border pt-10", className)}>

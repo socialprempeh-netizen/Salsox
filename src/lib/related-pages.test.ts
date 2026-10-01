@@ -14,6 +14,10 @@ describe("relatedPagesFor", () => {
     expect(relatedPagesFor("/about", 2)).toHaveLength(2)
   })
 
+  it("skips hidden sections and fills the row from the next in line", () => {
+    expect(relatedPagesFor("/no-such-page", 3, ["blog"]).map((p) => p.key)).toEqual(["pricing", "docs", "contact"])
+  })
+
   // The 404 page and anything not listed get a sensible default set.
   it("falls back to the default neighbours for an unknown path", () => {
     expect(relatedPagesFor("/no-such-page").map((p) => p.href)).toEqual(["/pricing", "/docs", "/blog"])

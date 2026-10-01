@@ -12,6 +12,7 @@ import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
 import { NavbarWrapper } from "@/components/landing/navbar-wrapper"
 import { getStartedHref } from "@/lib/landing-cta"
+import { hasPosts } from "@/lib/blog"
 
 export async function Navbar() {
   const [t, tCommon] = await Promise.all([getTranslations("nav"), getTranslations("common")])
@@ -31,6 +32,8 @@ export async function Navbar() {
    * that product happens to have a public repository.
    */
   const starHref = isKitSite ? siteConfig.links.github : null
+  // Read here because both menus below are client components.
+  const showBlog = hasPosts()
 
   return (
     <NavbarWrapper>
@@ -39,7 +42,7 @@ export async function Navbar() {
           <Logo animated wordmarkClassName="text-base font-bold" />
         </LogoLink>
 
-        <NavLinks />
+        <NavLinks showBlog={showBlog} />
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -72,6 +75,7 @@ export async function Navbar() {
             signInHref={siteConfig.links.demo ?? "/login"}
             starHref={starHref}
             isAuthenticated={!!user}
+            showBlog={showBlog}
           />
         </div>
       </div>

@@ -7,6 +7,11 @@ import { getCategories } from "@/lib/blog"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 
+// Posts are files, so every valid address is known at build time. Anything
+// else is a 404 without rendering: with no posts at all, an on-demand render
+// of an unknown slug used to hit the navbar's session read and answer 500.
+export const dynamicParams = false
+
 export async function generateStaticParams() {
   return getCategories().map((c) => ({ category: c.slug }))
 }

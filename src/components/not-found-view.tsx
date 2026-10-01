@@ -22,7 +22,7 @@ import { Logo } from "@/components/logo"
 import { RelatedLinks } from "@/components/landing/related-links"
 import { siteConfig } from "@/config/site"
 
-export function NotFoundView() {
+export function NotFoundView({ showBlog }: { showBlog: boolean }) {
   const t = useTranslations("notFound")
   const reduceMotion = useReducedMotion()
 
@@ -110,7 +110,7 @@ export function NotFoundView() {
         </motion.div>
 
         <motion.div variants={item}>
-          <RelatedLinks path="/404" className="mt-14" />
+          <RelatedLinks path="/404" hide={showBlog ? [] : ["blog"]} className="mt-14" />
         </motion.div>
       </motion.div>
 

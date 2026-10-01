@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 import { RelatedLinks } from "@/components/landing/related-links"
+import { hasPosts } from "@/lib/blog"
 
 // The entries are written for the repository, where `./docs/blog.md` is the
 // right link. Here the same string would ask the browser for a page that does
@@ -97,7 +98,7 @@ export default function ChangelogPage() {
           ))}
         </div>
 
-        <RelatedLinks path="/changelog" />
+        <RelatedLinks path="/changelog" hide={hasPosts() ? [] : ["blog"]} />
       </div>
     </section>
   )

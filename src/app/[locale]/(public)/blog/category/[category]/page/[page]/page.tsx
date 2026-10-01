@@ -7,6 +7,11 @@ import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 
 /** Pages two and up of a category. Page 1 stays at the bare category address. */
+// Posts are files, so every valid address is known at build time. Anything
+// else is a 404 without rendering: with no posts at all, an on-demand render
+// of an unknown slug used to hit the navbar's session read and answer 500.
+export const dynamicParams = false
+
 export function generateStaticParams() {
   return getCategories().flatMap((c) => {
     const { totalPages } = paginate(getPostsByCategory(c.slug), 1)

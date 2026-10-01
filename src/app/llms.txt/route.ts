@@ -1,7 +1,7 @@
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
 import { getDocs } from "@/lib/docs"
-import { getAllPosts, getCategories } from "@/lib/blog"
+import { getAllPosts, getCategories, hasPosts } from "@/lib/blog"
 
 /**
  * llms.txt: a Markdown map of the site for large language models, following
@@ -53,10 +53,10 @@ ${docs}
 - [About](${base}/about): What ${siteConfig.name} is for and the thinking behind it.
 - [Contact](${base}/contact): How to reach the team.${repo ? `\n- [Source code](${repo}): The public source repository.` : ""}
 
-## Blog
+${hasPosts() ? `## Blog
 - [Blog](${base}/blog): Articles and product updates.
 ${categories}
-
+` : ""}
 ## Optional
 ${posts}
 - [Privacy policy](${base}/privacy): How user data is handled.

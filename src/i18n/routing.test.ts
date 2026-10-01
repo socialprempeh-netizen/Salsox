@@ -27,7 +27,7 @@ describe("locale routing", () => {
   it("declares exactly the locales that have a message file", async () => {
     const { existsSync } = await import("node:fs")
     const { join } = await import("node:path")
-    expect([...routing.locales]).toEqual(["en", "it"])
+    expect([...routing.locales]).toEqual(["en"])
     // The list and the folder have to agree in both directions. A locale with
     // no file is a 500 the first time somebody opens its URL, and the array on
     // its own cannot tell you that: it was green for a day while `it.json` did

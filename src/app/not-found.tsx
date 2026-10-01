@@ -1,4 +1,5 @@
 import { NotFoundView } from "@/components/not-found-view"
+import { hasPosts } from "@/lib/blog"
 
 /**
  * The 404 page for every unmatched URL and every `notFound()` call.
@@ -10,7 +11,8 @@ import { NotFoundView } from "@/components/not-found-view"
  * Next answers 404 with `noindex` on its own.
  */
 export default function NotFound() {
-  return <NotFoundView />
+  // The view is a client component and cannot read content/blog/ itself.
+  return <NotFoundView showBlog={hasPosts()} />
 }
 
 // Replaced by the server component above and NotFoundView. The old page sent

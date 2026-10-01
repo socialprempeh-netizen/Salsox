@@ -33,10 +33,19 @@ const NEIGHBOURS: Record<string, RelatedKey[]> = {
 
 const DEFAULT: RelatedKey[] = ["pricing", "docs", "blog", "contact"]
 
-export function relatedPagesFor(path: string, limit = 3): { key: RelatedKey; href: string }[] {
+/**
+ * `hide` takes out sections that exist but have nothing to offer right now:
+ * the blog while it has no posts (`hasPosts()` in src/lib/blog.ts). The next
+ * neighbour in line takes its place, so the row stays full.
+ */
+export function relatedPagesFor(
+  path: string,
+  limit = 3,
+  hide: readonly RelatedKey[] = [],
+): { key: RelatedKey; href: string }[] {
   const keys = NEIGHBOURS[path] ?? DEFAULT
   return keys
-    .filter((key) => RELATED_HREF[key] !== path)
+    .filter((key) => RELATED_HREF[key] !== path && !hide.includes(key))
     .slice(0, limit)
     .map((key) => ({ key, href: RELATED_HREF[key] }))
 }

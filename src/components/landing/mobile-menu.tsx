@@ -21,11 +21,14 @@ export function MobileMenu({
   signInHref,
   starHref,
   isAuthenticated,
+  showBlog = true,
 }: {
   signInHref: string
   /** Set only on the kit's own site: see the comment in `navbar.tsx`. */
   starHref?: string | null
   isAuthenticated: boolean
+  /** From the server (`hasPosts()`): an empty blog gets no menu entry. */
+  showBlog?: boolean
 }) {
   const t = useTranslations("nav")
   const tCommon = useTranslations("common")
@@ -71,9 +74,11 @@ export function MobileMenu({
         <DropdownMenuItem asChild>
           <Link href="/docs">Docs</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/blog">Blog</Link>
-        </DropdownMenuItem>
+        {showBlog && (
+          <DropdownMenuItem asChild>
+            <Link href="/blog">Blog</Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/changelog">Changelog</Link>
         </DropdownMenuItem>
