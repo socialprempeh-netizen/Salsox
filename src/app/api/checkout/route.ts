@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
+import { siteConfig } from "@/config/site"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 import { CHECKOUT_BLOCKING_STATUSES, trialDaysFor } from "@/lib/billing"
@@ -91,8 +92,9 @@ export async function POST(req: NextRequest) {
     mode: isOneTime ? "payment" : "subscription",
     // Metered prices bill from reported usage, so Stripe rejects a quantity.
     line_items: [plan.meterEventName ? { price: priceId } : { price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?canceled=true`,
+    // Through siteConfig.url: the raw variable gave Stripe "undefined/..." when unset.
+    success_url: `${siteConfig.url}/dashboard/billing?success=true`,
+    cancel_url: `${siteConfig.url}/dashboard/billing?canceled=true`,
     metadata,
   }
 
