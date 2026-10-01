@@ -63,6 +63,33 @@ export async function deleteFile(key: string): Promise<void> {
   await fs.rm(safeLocalPath(key), { force: true })
 }
 
+/**
+ * Deletes every file whose key starts with `prefix`, which must name a folder
+ * (end in "/"). Used when an account goes: whatever was stored for it, rows or
+ * no rows, goes too.
+ */
+export async function deleteFolder(prefix: string): Promise<void> {
+  if (!prefix.endsWith("/")) throw new Error(`Not a folder: ${prefix}`)
+  if (blobConfigured()) {
+    const { list, del } = await import("@vercel/blob")
+    let cursor: string | undefined
+    do {
+      const page = await list({ prefix, cursor })
+      if (page.blobs.length > 0) await del(page.blobs.map((b) => b.pathname))
+      cursor = page.hasMore ? page.cursor : undefined
+    } while (cursor)
+    return
+  }
+  await fs.rm(safeLocalPath(prefix), { recursive: true, force: true })
+}
+
 export function documentKey(userId: string, documentId: string, name: "original" | "sealed"): string {
   return `documents/${userId}/${documentId}/${name}.pdf`
+}
+
+/** The folder every document of one user is stored under (see `documentKey`). */
+export function userFolder(userId: string): string {
+  // An empty id would name `documents/`, every user's files at once.
+  if (!/^[\w-]+$/.test(userId)) throw new Error(`Invalid user id: ${userId}`)
+  return `documents/${userId}/`
 }

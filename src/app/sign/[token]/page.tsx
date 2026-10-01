@@ -80,7 +80,10 @@ export default async function SignPage({
             </a>
           </Button>
         )}
-        {(blocker === "NO_ACTION_REQUIRED" || blocker === "NOT_YOUR_TURN") && (
+        {/* Replaced: offered on these two blockers whatever the document's state,
+            so a CC on a cancelled document got a link that now answers 404.
+        {(blocker === "NO_ACTION_REQUIRED" || blocker === "NOT_YOUR_TURN") && ( */}
+        {(blocker === "NO_ACTION_REQUIRED" || blocker === "NOT_YOUR_TURN") && context.canViewFile && (
           <Button asChild size="lg" variant="outline" className="w-full">
             <a href={`/sign/${token}/file`} target="_blank" rel="noopener">{t("viewDocument")}</a>
           </Button>

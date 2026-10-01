@@ -47,3 +47,25 @@ describe("documentSetupSchema", () => {
     expect(documentSetupSchema.safeParse({ title: "x", recipients: [], fields: [] }).success).toBe(false)
   })
 })
+
+describe("documentSetupSchema payment currency", () => {
+  const setup = (currency: string) => ({
+    title: "Invoice",
+    recipients: [{ key: "r1", name: "Ama", email: "ama@x.com" }],
+    fields: [],
+    payment: { amount: "12.50", currency, recipientKey: "r1" },
+  })
+
+  it("accepts an offered currency, in any case", () => {
+    expect(documentSetupSchema.parse(setup(" ghs ")).payment?.currency).toBe("GHS")
+    expect(documentSetupSchema.parse(setup("usd")).payment?.currency).toBe("USD")
+  })
+
+  // The exploit: amounts are stored in hundredths, so a zero-decimal currency
+  // would charge 1,250 yen for a payment shown as 12.50.
+  it("refuses a crafted zero-decimal currency, and any code not offered", () => {
+    for (const currency of ["JPY", "KRW", "XOF", "BHD", "ABC", "US"]) {
+      expect(documentSetupSchema.safeParse(setup(currency)).success).toBe(false)
+    }
+  })
+})

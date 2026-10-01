@@ -172,6 +172,22 @@ export function canEditRecipient(
   )
 }
 
+/**
+ * Whether a recipient's link may still serve the original PDF. Only while the
+ * document is live (PENDING, and their own link has not run out) or finished
+ * (COMPLETED, where everyone keeps their copy). A draft was never sent; a
+ * cancelled, declined or expired document was withdrawn, and a link that
+ * stopped letting someone sign must stop letting them read the contract too.
+ */
+export function canViewOriginal(
+  documentStatus: DocumentStatus,
+  recipient: Pick<RuleRecipient, "expiresAt">,
+  now: Date
+): boolean {
+  if (documentStatus === "COMPLETED") return true
+  return documentStatus === "PENDING" && !isRecipientExpired(recipient, now)
+}
+
 /** A document can be renewed (links extended and resent) while pending or expired. */
 export function canRenewDocument(documentStatus: DocumentStatus): boolean {
   return documentStatus === "PENDING" || documentStatus === "EXPIRED"

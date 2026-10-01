@@ -10,8 +10,21 @@ import type { PaymentProvider } from "@prisma/client"
 /** Currencies Paystack settles (ISO 4217, upper case). */
 export const PAYSTACK_CURRENCIES = ["GHS", "NGN", "KES", "ZAR", "XOF", "EGP", "RWF"] as const
 
-/** Currencies offered in the Sign & Pay picker. */
+/**
+ * Currencies offered in the Sign & Pay picker, and the only ones the server
+ * accepts. Every one has two decimal places, which the rest of this file
+ * assumes: amounts are stored in hundredths. A zero-decimal currency (JPY,
+ * KRW, XOF, ...) has no hundredths, so "12.50" stored as 1250 would be charged
+ * as 1,250, a hundred times what the signer was shown.
+ */
 export const SIGN_AND_PAY_CURRENCIES = ["USD", "EUR", "GBP", "GHS", "NGN", "KES", "ZAR"] as const
+
+export type SignAndPayCurrency = (typeof SIGN_AND_PAY_CURRENCIES)[number]
+
+/** True only for an exact, upper-case code from `SIGN_AND_PAY_CURRENCIES`. */
+export function isSignAndPayCurrency(currency: string): currency is SignAndPayCurrency {
+  return (SIGN_AND_PAY_CURRENCIES as readonly string[]).includes(currency)
+}
 
 export function defaultProviderFor(currency: string): PaymentProvider {
   return (PAYSTACK_CURRENCIES as readonly string[]).includes(currency.toUpperCase()) ? "PAYSTACK" : "STRIPE"

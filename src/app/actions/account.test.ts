@@ -14,15 +14,32 @@ import { APIError } from "better-auth/api"
  */
 
 const changeEmailApi = vi.fn()
+const signOutApi = vi.fn()
 const getCurrentUser = vi.fn()
 const allowRateLimit = vi.fn()
+const findUser = vi.fn()
+const deleteUser = vi.fn()
+const deleteAccountFiles = vi.fn()
 
 vi.mock("@/auth", () => ({
-  auth: { api: { changeEmail: (...a: unknown[]) => changeEmailApi(...a) } },
+  auth: {
+    api: {
+      changeEmail: (...a: unknown[]) => changeEmailApi(...a),
+      signOut: (...a: unknown[]) => signOutApi(...a),
+    },
+  },
 }))
 vi.mock("@/lib/auth", () => ({ getCurrentUser: () => getCurrentUser() }))
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }))
-vi.mock("@/lib/prisma", () => ({ prisma: {} }))
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    user: {
+      findUnique: (...a: unknown[]) => findUser(...a),
+      delete: (...a: unknown[]) => deleteUser(...a),
+    },
+  },
+}))
+vi.mock("@/lib/esign/documents", () => ({ deleteAccountFiles: (...a: unknown[]) => deleteAccountFiles(...a) }))
 vi.mock("@/lib/stripe", () => ({ stripe: {} }))
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => allowRateLimit() }))
 vi.mock("next/navigation", () => ({
@@ -31,7 +48,7 @@ vi.mock("next/navigation", () => ({
   },
 }))
 
-const { changeEmail } = await import("./account")
+const { changeEmail, deleteAccount } = await import("./account")
 
 async function redirectOf(run: () => Promise<unknown>): Promise<string> {
   try {
@@ -91,7 +108,7 @@ describe("changeEmail", () => {
     expect(changeEmailApi).not.toHaveBeenCalled()
   })
 
-  it("refuses on a demo deployment, where accounts are shared and reset nightly", async () => {
+  it("refuses on a demo deployment, where accounts are shared", async () => {
     process.env.DEMO_MODE = "true"
     expect(await redirectOf(() => changeEmail(form("new@example.com")))).toBe(
       "/dashboard/settings?error=demo"
@@ -124,5 +141,41 @@ describe("changeEmail", () => {
     const taken = await redirectOf(() => changeEmail(form("taken@example.com")))
     const fresh = await redirectOf(() => changeEmail(form("fresh@example.com")))
     expect(taken).toBe(fresh)
+  })
+})
+
+/**
+ * Deleting an account removes its stored PDFs as well as its rows. The rows go
+ * by cascade; the files live in storage, where no cascade reaches, and used to
+ * stay there for good. They are removed after the account row, so a refusal
+ * earlier on (wrong confirmation, a subscription Stripe would not cancel)
+ * never costs anyone their documents.
+ */
+describe("deleteAccount", () => {
+  const confirm = (email: string) => {
+    const data = new FormData()
+    data.append("confirm", email)
+    return data
+  }
+
+  beforeEach(() => {
+    delete process.env.DEMO_MODE
+    findUser.mockResolvedValue({ email: "old@example.com", role: "USER", subscription: null })
+    deleteUser.mockResolvedValue({})
+  })
+
+  it("deletes the stored files of the account, after the account itself", async () => {
+    const order: string[] = []
+    deleteUser.mockImplementation(async () => void order.push("row"))
+    deleteAccountFiles.mockImplementation(async () => void order.push("files"))
+    expect(await redirectOf(() => deleteAccount(confirm("old@example.com")))).toBe("/")
+    expect(deleteAccountFiles).toHaveBeenCalledWith("u1")
+    expect(order).toEqual(["row", "files"])
+  })
+
+  it("touches no files when the confirmation does not match", async () => {
+    expect(await redirectOf(() => deleteAccount(confirm("someone@else.com")))).toBe("/dashboard/settings?error=confirm")
+    expect(deleteUser).not.toHaveBeenCalled()
+    expect(deleteAccountFiles).not.toHaveBeenCalled()
   })
 })

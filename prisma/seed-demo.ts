@@ -8,8 +8,10 @@ import { seedDemoData } from "../src/lib/demo-seed"
 // the admin panel, subscriptions for the MRR metrics, documents for the dashboard,
 // and a lifetime purchase so the one-time billing state is visible too.
 //
-// The dataset and the writing logic live in src/lib/demo-seed.ts, shared with
-// the scheduled reset at /api/cron/reset-demo so the two cannot drift.
+// The dataset and the writing logic live in src/lib/demo-seed.ts. This script
+// is the only way to run it: the scheduled reset route (/api/cron/reset-demo)
+// was removed, because an HTTP endpoint able to delete every user is not worth
+// keeping on any deployment, guards or not.
 //
 // ⚠️ Running it WIPES all users/subscriptions/documents and recreates them —
 // that's the point: re-run it to reset the demo. Never point it at a database

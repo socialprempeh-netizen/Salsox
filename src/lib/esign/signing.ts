@@ -11,6 +11,7 @@ import type { FieldType } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { AUDIT, recordAudit, requestMeta } from "./audit"
 import {
+  canViewOriginal,
   isDocumentComplete,
   missingRequiredFields,
   paymentOutstanding,
@@ -23,7 +24,7 @@ import { finalizeDocument, appUrl, type Result } from "./documents"
 import { delivered, sendDocumentRejected, sendSigningInvite } from "./emails"
 import { signingUrl } from "./share"
 import { getProvider } from "./payments"
-import { formatMinorUnits } from "./payments/select"
+import { formatMinorUnits, isSignAndPayCurrency } from "./payments/select"
 import { checkSignatureImage } from "./pdf/signature-image"
 
 /** Drawn signatures are small PNGs; anything larger is not a signature. */
@@ -53,7 +54,8 @@ export async function getSigningContext(token: string) {
     orderBy: [{ page: "asc" }, { y: "asc" }, { x: "asc" }],
   })
   const { document } = recipient
-  const blocker = signingBlocker(document, recipient, document.recipients, new Date())
+  const now = new Date()
+  const blocker = signingBlocker(document, recipient, document.recipients, now)
   const paid = recipient.payments.some((p) => p.status === "PAID")
   return {
     recipient,
@@ -62,6 +64,9 @@ export async function getSigningContext(token: string) {
     blocker,
     paid,
     paymentDue: paymentOutstanding(document, recipient, paid),
+    // Whether /sign/{token}/file will serve the PDF, so the page never offers
+    // a link that answers 404.
+    canViewFile: canViewOriginal(document.status, recipient, now),
     // Fields may sit on a page appended by Quick Send.
     renderedPageCount: Math.max(document.pageCount, ...fields.map((f) => f.page)),
   }
@@ -274,6 +279,10 @@ export async function startPayment(token: string): Promise<Result<{ url: string 
     return { ok: false, error: "noPaymentDue" }
   }
   if (!document.paymentProvider || !document.paymentAmount || !document.paymentCurrency) return { ok: false, error: "noPaymentDue" }
+  // A document saved before currencies were restricted may hold any code. The
+  // amount means hundredths only in these currencies, so nothing is charged
+  // in any other.
+  if (!isSignAndPayCurrency(document.paymentCurrency)) return { ok: false, error: "payoutUnavailable" }
   const payout = await prisma.payoutAccount.findUnique({
     where: { userId_provider: { userId: document.userId, provider: document.paymentProvider } },
   })

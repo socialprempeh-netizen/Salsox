@@ -26,7 +26,7 @@ import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { AUDIT, recordAudit, requestMeta } from "./audit"
-import { documentKey, getFile, putFile, sha256 } from "./storage"
+import { deleteFile, deleteFolder, documentKey, getFile, putFile, sha256, userFolder } from "./storage"
 import { inspectPdf, type PdfInspection } from "./pdf/inspect"
 import { sealDocument } from "./pdf/seal"
 import { newSigningToken } from "./tokens"
@@ -38,7 +38,7 @@ import {
   shouldExpireDocument,
 } from "./rules"
 import { autoPlaceFields } from "./quick-send"
-import { chooseProvider, formatMinorUnits, toMinorUnits } from "./payments/select"
+import { chooseProvider, formatMinorUnits, isSignAndPayCurrency, toMinorUnits } from "./payments/select"
 import { nameFromEmail, type DocumentSetup } from "./schemas"
 import { signingUrl } from "./share"
 import { delivered, sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
@@ -106,6 +106,9 @@ export async function saveDocumentSetup(userId: string, documentId: string, setu
 
   let payment: { amount: number; currency: string; provider: "STRIPE" | "PAYSTACK"; recipientKey: string } | null = null
   if (setup.payment) {
+    // Checked here as well as in the schema: this function is the authority,
+    // and a currency outside the list turns the amount into the wrong charge.
+    if (!isSignAndPayCurrency(setup.payment.currency)) return { ok: false, error: "invalidCurrency" }
     const amount = toMinorUnits(setup.payment.amount)
     if (!amount || amount < 100) return { ok: false, error: "invalidAmount" }
     const payer = setup.recipients.find((r) => r.key === setup.payment!.recipientKey)
@@ -394,10 +397,51 @@ export async function cancelDocument(userId: string, documentId: string): Promis
   return { ok: true }
 }
 
-/** Drafts are deleted outright; anything sent is evidence and is only cancelled. */
+/**
+ * Drafts are deleted outright, stored PDF included; anything sent is evidence
+ * and is only cancelled.
+ *
+ * The row goes first and the file after it. The other order could leave a
+ * draft pointing at a file that no longer exists; this one can at worst leave
+ * a file with no row, which is logged, and swept when the account is deleted.
+ */
 export async function deleteDraft(userId: string, documentId: string): Promise<Result> {
+  // Replaced: the row was deleted and its PDF left in storage for good, with
+  // nothing pointing at it any more.
+  // const deleted = await prisma.document.deleteMany({ where: { id: documentId, userId, status: "DRAFT" } })
+  // return deleted.count > 0 ? { ok: true } : { ok: false, error: "notDraft" }
+  const draft = await prisma.document.findFirst({
+    where: { id: documentId, userId, status: "DRAFT" },
+    select: { originalKey: true, sealedKey: true },
+  })
+  if (!draft) return { ok: false, error: "notDraft" }
+  // Still conditional on DRAFT: a send that lands between the read and this
+  // delete wins, and the file stays with the document it now belongs to.
   const deleted = await prisma.document.deleteMany({ where: { id: documentId, userId, status: "DRAFT" } })
-  return deleted.count > 0 ? { ok: true } : { ok: false, error: "notDraft" }
+  if (deleted.count === 0) return { ok: false, error: "notDraft" }
+  await deleteStoredFiles([draft.originalKey, draft.sealedKey])
+  return { ok: true }
+}
+
+/**
+ * Removes every stored file of a user. Called once their account row is gone
+ * (the documents go with it by cascade), and by folder rather than by row, so
+ * a file whose row was lost to an earlier failure goes too. A storage failure
+ * is logged and does not undo the deletion: the account is already gone.
+ */
+export async function deleteAccountFiles(userId: string): Promise<void> {
+  try {
+    await deleteFolder(userFolder(userId))
+  } catch (error) {
+    console.error(`[esign] could not delete stored files of deleted user ${userId}`, error)
+  }
+}
+
+async function deleteStoredFiles(keys: (string | null)[]): Promise<void> {
+  const results = await Promise.allSettled(keys.filter((k): k is string => Boolean(k)).map((key) => deleteFile(key)))
+  for (const result of results) {
+    if (result.status === "rejected") console.error("[esign] could not delete a stored file", result.reason)
+  }
 }
 
 // ─── Finalize ─────────────────────────────────────────────────────────────────

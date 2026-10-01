@@ -96,11 +96,10 @@ export const envSchema = z
     DEMO_MODE: flag,
     WAITLIST_ENABLED: flag,
 
-    // Read by both cron routes, which refuse to run without it. Required in
-    // production (below), where the e-sign job is what expires links, sends
-    // reminders and retries sealing. Not paired with DEMO_MODE on purpose: a
-    // demo with no scheduled reset is a working demo, so that is not a
-    // half-done configuration worth stopping a boot for.
+    // Read by the e-sign cron route, which refuses to run without it. Required
+    // in production (below), where that job is what expires links, sends
+    // reminders and retries sealing. (It also guarded a demo reset route,
+    // since removed: see src/lib/demo-seed.ts.)
     CRON_SECRET: optional,
 
     NEXT_PUBLIC_APP_URL: optional,

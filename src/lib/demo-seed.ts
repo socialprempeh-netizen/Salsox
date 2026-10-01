@@ -3,10 +3,10 @@ import type { PrismaClient, SubscriptionStatus, BillingInterval } from "@prisma/
 /**
  * The demo dataset, and the function that (re)writes it.
  *
- * Lives here rather than inside prisma/seed-demo.ts because two callers need
- * it: the CLI script (`npm run db:seed:demo`) and the scheduled reset route
- * (`/api/cron/reset-demo`). Two copies of this would drift, and the demo would
- * end up looking different depending on which one last ran.
+ * Called only by the CLI script (`npm run db:seed:demo`), run by hand. It
+ * used to be shared with a scheduled reset route (`/api/cron/reset-demo`),
+ * removed because an HTTP endpoint able to delete every user is not worth
+ * keeping on any deployment, however well guarded.
  *
  * ⚠️ Running it WIPES all users and everything cascading from them. That is
  * the point: it is how the public demo goes back to a known state. Never point

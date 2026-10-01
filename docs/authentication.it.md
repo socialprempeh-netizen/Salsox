@@ -2,7 +2,7 @@
 title: Autenticazione
 description: OAuth, magic link, email e password, reset e collegamento degli account.
 translated_from: authentication.md
-source_checksum: cd219032f8a5
+source_checksum: d55a003c2b5f
 ---
 
 # Autenticazione
@@ -91,7 +91,7 @@ Tre di queste righe sono decisioni, non impostazioni predefinite, e ognuna merit
 
 **A OAuth non chiediamo un TOTP sopra**, perché un secondo fattore dalla parte di Google è compito di Google, e lo fa meglio. Ma la metà automatica del collegamento degli account viene rifiutata per questi account: vedi più sotto.
 
-**Gli accessi dev e demo** aprono una sessione senza verificare niente, quindi un controllo lì sorveglierebbe una porta senza serratura. A tenerli al sicuro è quello che li ha sempre tenuti al sicuro: dev è rifiutato fuori dallo sviluppo, demo esiste solo quando `DEMO_MODE` è attivo. In più l'account demo non può attivare la verifica in due passaggi, perché il ripristino notturno lascerebbe il visitatore successivo con un fattore che nessuno possiede.
+**Gli accessi dev e demo** aprono una sessione senza verificare niente, quindi un controllo lì sorveglierebbe una porta senza serratura. A tenerli al sicuro è quello che li ha sempre tenuti al sicuro: dev è rifiutato fuori dallo sviluppo, demo esiste solo quando `DEMO_MODE` è attivo. In più l'account demo non può attivare la verifica in due passaggi, perché il prossimo ripopolamento lascerebbe il visitatore successivo con un fattore che nessuno possiede.
 
 ### Codici di backup
 

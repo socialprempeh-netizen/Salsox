@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   canEditRecipient,
+  canViewOriginal,
   canRenewDocument,
   computeExpiry,
   isDocumentComplete,
@@ -167,5 +168,24 @@ describe("shouldExpireDocument", () => {
     expect(shouldExpireDocument(pending, [a], now)).toBe(true)
     expect(shouldExpireDocument(pending, [{ ...a, signingStatus: "SIGNED" }], now)).toBe(false)
     expect(shouldExpireDocument({ status: "COMPLETED" }, [a], now)).toBe(false)
+  })
+})
+
+describe("canViewOriginal", () => {
+  it("serves the file on a live link and on a finished document", () => {
+    expect(canViewOriginal("PENDING", { expiresAt: future }, now)).toBe(true)
+    expect(canViewOriginal("PENDING", { expiresAt: null }, now)).toBe(true)
+    expect(canViewOriginal("COMPLETED", { expiresAt: past }, now)).toBe(true)
+  })
+
+  it("refuses drafts and withdrawn documents: cancelled, declined, expired", () => {
+    for (const status of ["DRAFT", "CANCELLED", "REJECTED", "EXPIRED"] as const) {
+      expect(canViewOriginal(status, { expiresAt: future }, now)).toBe(false)
+    }
+  })
+
+  it("refuses a pending document once this recipient's own link has run out", () => {
+    expect(canViewOriginal("PENDING", { expiresAt: past }, now)).toBe(false)
+    expect(canViewOriginal("PENDING", { expiresAt: now }, now)).toBe(false)
   })
 })

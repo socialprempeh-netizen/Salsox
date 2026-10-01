@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { chooseProvider, defaultProviderFor, formatMinorUnits, toMinorUnits } from "./select"
+import { chooseProvider, defaultProviderFor, formatMinorUnits, isSignAndPayCurrency, SIGN_AND_PAY_CURRENCIES, toMinorUnits } from "./select"
 
 describe("defaultProviderFor", () => {
   it("routes African currencies to Paystack", () => {
@@ -36,5 +36,20 @@ describe("toMinorUnits", () => {
 describe("formatMinorUnits", () => {
   it("formats in major units", () => {
     expect(formatMinorUnits(1250, "usd")).toBe("$12.50")
+  })
+})
+
+describe("isSignAndPayCurrency", () => {
+  it("accepts exactly the offered codes", () => {
+    for (const currency of SIGN_AND_PAY_CURRENCIES) expect(isSignAndPayCurrency(currency)).toBe(true)
+    for (const currency of ["JPY", "KRW", "usd", "", "USD "]) expect(isSignAndPayCurrency(currency)).toBe(false)
+  })
+
+  // The assumption the whole flow rests on: every offered currency has two
+  // decimal places, so "minor units / 100" is the amount the signer was shown.
+  it("offers only currencies with two decimal places", () => {
+    for (const currency of SIGN_AND_PAY_CURRENCIES) {
+      expect(new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits).toBe(2)
+    }
   })
 })

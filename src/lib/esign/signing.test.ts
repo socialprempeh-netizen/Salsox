@@ -17,6 +17,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const TOKEN = "a".repeat(32)
 const transaction = vi.fn()
 const recordAudit = vi.fn()
+const loadRecipient = vi.fn()
+const createPayment = vi.fn()
+const findPayout = vi.fn()
+const getProvider = vi.fn()
 
 const recipient = {
   id: "rec_1",
@@ -33,7 +37,9 @@ const document = { id: "doc_1", status: "PENDING", signingOrder: "PARALLEL", rec
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    recipient: { findUnique: async () => ({ ...recipient, document }) },
+    recipient: { findUnique: (...a: unknown[]) => loadRecipient(...a) },
+    payment: { create: (...a: unknown[]) => createPayment(...a) },
+    payoutAccount: { findUnique: (...a: unknown[]) => findPayout(...a) },
     field: { findFirst: async () => ({ id: "field_1", recipientId: "rec_1", type: "SIGNATURE" }) },
     $transaction: transaction,
   },
@@ -45,9 +51,9 @@ vi.mock("./audit", () => ({
 }))
 vi.mock("./documents", () => ({ finalizeDocument: vi.fn(), appUrl: () => "http://localhost:3000" }))
 vi.mock("./emails", () => ({ delivered: () => true, sendDocumentRejected: vi.fn(), sendSigningInvite: vi.fn() }))
-vi.mock("./payments", () => ({ getProvider: vi.fn() }))
+vi.mock("./payments", () => ({ getProvider: (...a: unknown[]) => getProvider(...a) }))
 
-const { saveField } = await import("./signing")
+const { saveField, startPayment } = await import("./signing")
 
 // 1x1 transparent PNG.
 const VALID_PNG =
@@ -56,6 +62,7 @@ const base64 = (text: string) => Buffer.from(text).toString("base64")
 
 beforeEach(() => {
   vi.clearAllMocks()
+  loadRecipient.mockImplementation(async () => ({ ...recipient, document }))
   transaction.mockImplementation(async (run: (tx: unknown) => Promise<void>) =>
     run({ signature: { upsert: vi.fn() }, field: { update: vi.fn() } })
   )
@@ -90,5 +97,36 @@ describe("saveField with a drawn signature", () => {
   it("still accepts a typed signature, which has no image to check", async () => {
     expect(await saveField(TOKEN, "field_1", { typedText: "Ama Mensah" })).toEqual({ ok: true })
     expect(transaction).toHaveBeenCalledTimes(1)
+  })
+})
+
+/**
+ * Sign & Pay amounts are stored in hundredths, which is only true of the
+ * offered currencies. A document saved before the server restricted them may
+ * still carry a crafted zero-decimal code; starting its checkout would charge
+ * a hundred times the amount shown, so it must not start at all.
+ */
+describe("startPayment with a currency outside the offered list", () => {
+  const owing = (paymentCurrency: string) => ({
+    ...recipient,
+    mustPay: true,
+    document: { ...document, userId: "user_1", title: "Invoice", paymentAmount: 1250, paymentProvider: "STRIPE", paymentCurrency },
+  })
+
+  it("refuses a zero-decimal currency before creating any payment or checkout", async () => {
+    loadRecipient.mockResolvedValue(owing("JPY"))
+    expect(await startPayment(TOKEN)).toEqual({ ok: false, error: "payoutUnavailable" })
+    expect(createPayment).not.toHaveBeenCalled()
+    expect(getProvider).not.toHaveBeenCalled()
+  })
+
+  it("lets an offered currency through to the provider", async () => {
+    loadRecipient.mockResolvedValue(owing("USD"))
+    findPayout.mockResolvedValue({ ready: true, externalAccountId: "acct_1" })
+    const createCheckout = vi.fn(async (req: { reference: string }) => ({ url: "https://pay.example/1", providerRef: req.reference }))
+    getProvider.mockReturnValue({ isConfigured: () => true, createCheckout })
+    createPayment.mockResolvedValue({ id: "pay_1" })
+    expect(await startPayment(TOKEN)).toEqual({ ok: true, url: "https://pay.example/1" })
+    expect(createCheckout).toHaveBeenCalledWith(expect.objectContaining({ amount: 1250, currency: "USD" }))
   })
 })
