@@ -84,7 +84,7 @@ Three of those rows are decisions rather than defaults, and each is worth a sent
 
 **OAuth is not asked for a TOTP on top**, because a second factor on Google's side is Google's job and it does it better. But the automatic half of account linking is refused for these accounts. See below.
 
-**Dev and demo sign-ins** open a session without verifying anything, so a check there would be guarding a door with no lock. What keeps them safe is what always did: dev is refused outside development, demo only exists when `DEMO_MODE` is on. On top of that the demo account cannot turn 2FA on at all, because the nightly reset would strand the next visitor with a factor nobody holds.
+**Dev and demo sign-ins** open a session without verifying anything, so a check there would be guarding a door with no lock. What keeps them safe is what always did: dev is refused outside development, demo only exists when `DEMO_MODE` is on. On top of that the demo account cannot turn 2FA on at all, because the next reseed would strand the next visitor with a factor nobody holds.
 
 ### Backup codes
 

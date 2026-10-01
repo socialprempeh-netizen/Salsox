@@ -82,7 +82,7 @@ Worth knowing which limit to move first, because they are not protecting the sam
 |---|---|
 | `DEMO_MODE` | `"true"` turns the deployment into a public demo: one-click shared accounts, real OAuth disabled, email-based auth forms hidden. Use an isolated database. |
 | `NEXT_PUBLIC_DEMO_URL` | On a marketing deployment, points the sign-in links at your demo instance. |
-| `CRON_SECRET` | Required in production, where it lets the e-sign job run (see [esign.md](./esign.md)). On a demo deployment it also guards the reset: `vercel.json` schedules a daily reseed at 04:00 UTC so shared demo data does not drift; Vercel sends this value as a bearer token and the route refuses to run when it is unset, so an empty value just leaves the reset off. The route deletes every user, and `DEMO_MODE="true"` is the guard that keeps it away from a real database. |
+| `CRON_SECRET` | Required in production, where it lets the e-sign job run (see [esign.md](./esign.md)). Vercel sends this value as a bearer token and the route refuses to run when it is unset. There is no scheduled demo reset: an endpoint able to delete every user is not kept on any deployment. Reset a demo by hand with `npm run db:seed:demo`. |
 | `KIT_SITE` | Leave it empty. Reserved for the deployment that sells the kit itself: `"true"` switches the landing copy, pricing (hand-written open source tiers plus a Pro waitlist instead of your `Plan` rows), FAQ, footer license links and the dashboard upsell to talk about the repository rather than about your product. See below. |
 | `WAITLIST_ENABLED` | Only means anything with `KIT_SITE`. The Pro waitlist form on the open source pricing ships disabled until this is `"true"`, so a deployment cannot start collecting addresses before its real privacy policy is live. |
 | `NEXT_PUBLIC_DISABLE_ANALYTICS` | `"true"` stops mounting Vercel Analytics. Left empty it stays on, which is the useful default on Vercel and the wrong one everywhere you would rather ship no analytics at all. |
@@ -97,7 +97,7 @@ Worth knowing which limit to move first, because they are not protecting the sam
 
 **The mechanism under it is worth having, and that part is yours.** Sections whose wording differs between two deployments carry both variants under `$kit` and `$product` in the message files, and the build drops the one that cannot render, so neither deployment ships the other's copy. Rename the flag, put your own wording under the markers, and you have a marketing site and an app on two domains from one repo, diverging only where they have to. [Languages](./i18n.md) has the details.
 
-**If what you want is a second deployment to show the product off, that is `DEMO_MODE`, not this**: shared one-click accounts, real OAuth off, a daily reseed, and your own app untouched on its own domain.
+**If what you want is a second deployment to show the product off, that is `DEMO_MODE`, not this**: shared one-click accounts, real OAuth off, a reseed whenever you run one, and your own app untouched on its own domain.
 
 ## Branding & theming
 

@@ -994,6 +994,7 @@
       "notDraft": "This document has already been sent.",
       "invalidInput": "Please check the details and try again.",
       "invalidAmount": "Enter an amount of at least 1.00, with up to two decimals.",
+      "invalidCurrency": "Choose one of the currencies offered for Sign & Pay.",
       "invalidPayer": "Choose a signer or approver to pay.",
       "noPayoutAccount": "Connect a payout account before asking for a payment.",
       "noSigners": "Add at least one signer or approver.",

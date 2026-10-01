@@ -8,6 +8,7 @@
  */
 import { z } from "zod"
 import { MAX_RECIPIENTS_PER_DOCUMENT } from "./sending-limits"
+import { isSignAndPayCurrency } from "./payments/select"
 
 export const TITLE_MAX = 140
 // Was 25, which with the old send limit let one account email thousands of
@@ -50,7 +51,10 @@ export const fieldInputSchema = z
 
 export const paymentInputSchema = z.object({
   amount: z.string().trim().min(1),
-  currency: z.string().trim().length(3).toUpperCase(),
+  // Replaced: any three letters passed, so a crafted request could set a
+  // zero-decimal currency and charge a hundred times the amount shown.
+  // currency: z.string().trim().length(3).toUpperCase(),
+  currency: z.string().trim().toUpperCase().refine((code): boolean => isSignAndPayCurrency(code), { message: "invalidCurrency" }),
   recipientKey: z.string().min(1),
   provider: z.enum(["STRIPE", "PAYSTACK"]).optional(),
 })

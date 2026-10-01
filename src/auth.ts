@@ -30,7 +30,7 @@ import { siteConfig } from "@/config/site"
 // the endpoint has already passed. What keeps them safe is what always kept
 // them safe — dev is refused outside development, demo only exists when
 // DEMO_MODE is on — and on top of that the demo account is not allowed to turn
-// 2FA on at all (src/app/actions/two-factor.ts), because the nightly reset
+// 2FA on at all (src/app/actions/two-factor.ts), because the next reseed
 // would strand the next visitor with a factor nobody holds.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ const devLogin = () =>
  * DEMO_MODE="true"; never enable it on a deployment with real users.
  *
  * Note for the 2.0: sessions now live in the database, so every demo visitor
- * leaves a row in Session. The nightly reset must clear those too.
+ * leaves a row in Session. A reseed (npm run db:seed:demo) must clear those too.
  */
 const demoLogin = () =>
   ({

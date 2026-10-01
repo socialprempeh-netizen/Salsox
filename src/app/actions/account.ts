@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma"
 import { passwordSchema } from "@/lib/password"
 import { stripe } from "@/lib/stripe"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { deleteAccountFiles } from "@/lib/esign/documents"
 
 // Account-management actions behind a session: link/unlink OAuth providers
 // and set or change the password. Outcomes surface as query params on the
@@ -117,8 +118,8 @@ export async function deleteAccount(formData: FormData) {
   const currentUser = await getCurrentUser()
   if (!currentUser) redirect("/login")
 
-  // A demo deployment runs on seeded accounts that a cron restores. Letting a
-  // visitor delete one would empty the showcase until the next reset.
+  // A demo deployment runs on shared seeded accounts. Letting a visitor delete
+  // one would empty the showcase until someone reseeds it.
   if (process.env.DEMO_MODE === "true") redirect(`${SETTINGS}?error=demo`)
 
   const user = await prisma.user.findUnique({
@@ -169,6 +170,9 @@ export async function deleteAccount(formData: FormData) {
   }
 
   await prisma.user.delete({ where: { id: currentUser.id } })
+  // The cascade removed the document rows; the PDFs live in storage, which
+  // the database cannot reach.
+  await deleteAccountFiles(currentUser.id)
   // The session rows go with the user (onDelete: Cascade), so this only clears
   // the cookie that now points at nothing.
   await auth.api.signOut({ headers: await headers() })
@@ -193,8 +197,8 @@ export async function changeEmail(formData: FormData) {
   const currentUser = await getCurrentUser()
   if (!currentUser) redirect("/login")
 
-  // Shared demo accounts, restored nightly: moving one would take the showcase
-  // with it until the reset.
+  // Shared demo accounts: moving one would take the showcase with it until
+  // someone reseeds it.
   if (process.env.DEMO_MODE === "true") redirect(`${SETTINGS}?error=demo`)
 
   const parsed = z
