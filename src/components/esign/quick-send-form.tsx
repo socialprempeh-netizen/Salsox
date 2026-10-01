@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/sonner"
 import { PdfDropzone } from "./pdf-dropzone"
+import { DEFAULT_EXPIRY_DAYS } from "@/lib/esign/limits"
 
 export function QuickSendForm() {
   const t = useTranslations("esign.quickSend")
@@ -83,7 +84,7 @@ export function QuickSendForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="expiresInDays">{t("expiryLabel")}</Label>
-            <select id="expiresInDays" name="expiresInDays" defaultValue="30" className="h-11 w-full rounded-xl border bg-background px-3 text-sm">
+            <select id="expiresInDays" name="expiresInDays" defaultValue={String(DEFAULT_EXPIRY_DAYS)} className="h-11 w-full rounded-xl border bg-background px-3 text-sm">
               <option value="7">{t("expiryDays", { days: 7 })}</option>
               <option value="14">{t("expiryDays", { days: 14 })}</option>
               <option value="30">{t("expiryDays", { days: 30 })}</option>

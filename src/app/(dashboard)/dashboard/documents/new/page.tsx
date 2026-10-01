@@ -7,6 +7,7 @@ import { getTranslations } from "next-intl/server"
 import { requireUser } from "@/lib/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { UploadForm } from "@/components/esign/upload-form"
+import { MAX_PDF_MB } from "@/lib/esign/limits"
 
 export default async function NewDocumentPage() {
   await requireUser()
@@ -25,7 +26,7 @@ export default async function NewDocumentPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("cardTitle")}</CardTitle>
-          <CardDescription>{t("cardBody")}</CardDescription>
+          <CardDescription>{t("cardBody", { maxMb: MAX_PDF_MB })}</CardDescription>
         </CardHeader>
         <CardContent>
           <UploadForm />

@@ -43,13 +43,16 @@ import { nameFromEmail, type DocumentSetup } from "./schemas"
 import { signingUrl } from "./share"
 import { sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
 import { senderBlocker } from "./sender"
+import { DEFAULT_EXPIRY_DAYS } from "./limits"
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
 export const appUrl = () => siteConfig.url
 
-/** Fallback when a document was created without an explicit expiry setting. */
-const DEFAULT_RENEW_DAYS = 30
+// Replaced by DEFAULT_EXPIRY_DAYS in ./limits: this 30 was declared in both
+// documents.ts and recipients.ts, and is also the default a new document gets.
+// /** Fallback when a document was created without an explicit expiry setting. */
+// const DEFAULT_RENEW_DAYS = 30
 
 // ─── Upload ───────────────────────────────────────────────────────────────────
 
@@ -356,7 +359,7 @@ export async function renewDocument(userId: string, documentId: string): Promise
   const blocked = await senderBlocker(userId, 0, now)
   if (blocked) return { ok: false, error: blocked }
 
-  const expiresAt = computeExpiry(document.expiresInDays ?? DEFAULT_RENEW_DAYS, now)
+  const expiresAt = computeExpiry(document.expiresInDays ?? DEFAULT_EXPIRY_DAYS, now)
   await prisma.$transaction([
     prisma.recipient.updateMany({ where: { documentId, signingStatus: "NOT_SIGNED" }, data: { expiresAt } }),
     prisma.document.update({ where: { id: documentId }, data: { status: "PENDING" } }),

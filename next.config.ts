@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/esign/limits";
 
 // Points next-intl at the request config that loads the message files.
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
@@ -47,7 +48,9 @@ const nextConfig: NextConfig = {
       // PDF uploads go through server actions. The engine caps a PDF at 4 MB
       // (MAX_PDF_BYTES in src/lib/esign/pdf/inspect.ts, under Vercel's 4.5 MB
       // function body limit); this leaves room for multipart overhead.
-      bodySizeLimit: "4.4mb",
+      // Derived from the cap in src/lib/esign/limits.ts, so raising one
+      // raises the other. Was the literal "4.4mb".
+      bodySizeLimit: SERVER_ACTION_BODY_LIMIT,
     },
   },
   // Salsox dropped its Italian pages (src/i18n/routing.ts). The /it/* URLs

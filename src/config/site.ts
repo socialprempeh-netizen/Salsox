@@ -12,10 +12,15 @@ import { isKitSite } from "@/config/kit"
 import { resolveAppUrl } from "@/lib/app-url"
 
 export const siteConfig = {
-  name: process.env.NEXT_PUBLIC_BRAND_NAME || (isKitSite ? "OpenStarterKit" : "Acme"),
+  // Fallbacks were the kit's placeholders, "Acme" and "Ship your product
+  // faster": a deployment that missed the variable shipped someone else's
+  // name. They now match what production sets, so a missing variable changes
+  // nothing visible.
+  // name: process.env.NEXT_PUBLIC_BRAND_NAME || (isKitSite ? "OpenStarterKit" : "Acme"),
+  name: process.env.NEXT_PUBLIC_BRAND_NAME || (isKitSite ? "OpenStarterKit" : "Salsox"),
   tagline:
     process.env.NEXT_PUBLIC_BRAND_TAGLINE ||
-    (isKitSite ? "Ship your SaaS this weekend" : "Ship your product faster"),
+    (isKitSite ? "Ship your SaaS this weekend" : "Send, sign and get paid — from any phone."),
 
   /**
    * Title for `<title>` and search results, where the words people type matter
@@ -42,7 +47,13 @@ export const siteConfig = {
    */
   llmsSummary: process.env.NEXT_PUBLIC_LLMS_SUMMARY || null,
 
-  version: "2.3.3",
+  /**
+   * Salsox's own release, shown in the footer badge and served at
+   * /api/health. Must equal `version` in package.json and the newest entry in
+   * content/changelog.md; tests check both. Was "2.3.3", the starter kit's
+   * version at the time Salsox was built on it.
+   */
+  version: "1.0.0",
   description:
     process.env.NEXT_PUBLIC_BRAND_DESCRIPTION ||
     (isKitSite
@@ -67,7 +78,8 @@ export const siteConfig = {
   /** Shown as the contact address in the footer and pre-filled emails. */
   contactEmail:
     process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
-    (isKitSite ? "hello@openstarterkit.dev" : "hello@example.com"),
+    // Was "hello@example.com", the kit's placeholder.
+    (isKitSite ? "hello@openstarterkit.dev" : "contact@salsox.com"),
 
   links: {
     /** Public repository — footer/pricing/docs buttons hide when unset. */

@@ -9,9 +9,12 @@ import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { FileUp, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MAX_PDF_BYTES, MAX_PDF_MB } from "@/lib/esign/limits"
 
-/** Kept in sync with MAX_PDF_BYTES on the server (src/lib/esign/pdf/inspect.ts). */
-const MAX_BYTES = 4 * 1024 * 1024
+// Replaced by MAX_PDF_BYTES from src/lib/esign/limits.ts, the value the
+// server checks, instead of a copy kept equal by hand.
+// /** Kept in sync with MAX_PDF_BYTES on the server (src/lib/esign/pdf/inspect.ts). */
+// const MAX_BYTES = 4 * 1024 * 1024
 
 export function PdfDropzone({ name = "file", onFile }: { name?: string; onFile?: (file: File | null) => void }) {
   const t = useTranslations("esign.upload")
@@ -27,8 +30,8 @@ export function PdfDropzone({ name = "file", onFile }: { name?: string; onFile?:
       if (input) input.value = ""
       return
     }
-    if (candidate.size > MAX_BYTES) {
-      setError(t("tooLarge"))
+    if (candidate.size > MAX_PDF_BYTES) {
+      setError(t("tooLarge", { maxMb: MAX_PDF_MB }))
       if (input) input.value = ""
       return
     }
@@ -72,7 +75,7 @@ export function PdfDropzone({ name = "file", onFile }: { name?: string; onFile?:
           <>
             <FileUp className="h-8 w-8 text-muted-foreground" />
             <span className="font-medium">{t("pick")}</span>
-            <span className="text-xs text-muted-foreground">{t("limits")}</span>
+            <span className="text-xs text-muted-foreground">{t("limits", { maxMb: MAX_PDF_MB })}</span>
           </>
         )}
         <input

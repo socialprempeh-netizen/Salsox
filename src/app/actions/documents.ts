@@ -25,6 +25,7 @@ import {
 import { resendToRecipient, updateRecipient } from "@/lib/esign/recipients"
 import { documentSetupSchema, parseEmailList, recipientInputSchema, MAX_RECIPIENTS, TITLE_MAX } from "@/lib/esign/schemas"
 import { BURST_LIMITS } from "@/lib/esign/sending-limits"
+import { MAX_PDF_MB, parseExpiryChoice } from "@/lib/esign/limits"
 
 /**
  * `undelivered` is how many emails the provider refused on an action that
@@ -52,7 +53,8 @@ async function errorText(code: string): Promise<string> {
   const t = await getTranslations("esign.errors")
   // `max` is read by the one message that states the recipient cap, so the
   // number shown and the number enforced are the same value.
-  return t.has(code) ? t(code, { max: MAX_RECIPIENTS }) : t("generic")
+  // `maxMb` likewise, for the file-size message.
+  return t.has(code) ? t(code, { max: MAX_RECIPIENTS, maxMb: MAX_PDF_MB }) : t("generic")
 }
 
 async function fail(code: string): Promise<ActionState> {
@@ -127,8 +129,11 @@ export async function quickSendAction(_prev: ActionState, formData: FormData): P
   const { emails, invalid } = parseEmailList(String(formData.get("emails") ?? ""))
   if (invalid.length > 0 || emails.length === 0 || emails.length > MAX_RECIPIENTS) return fail("invalidEmails")
 
-  const expiryRaw = String(formData.get("expiresInDays") ?? "30")
-  const expiresInDays = expiryRaw === "never" ? null : Math.min(365, Math.max(1, Number.parseInt(expiryRaw, 10) || 30))
+  // Replaced by parseExpiryChoice, which reads the default and the ceiling
+  // from src/lib/esign/limits.ts instead of repeating 30 and 365 here.
+  // const expiryRaw = String(formData.get("expiresInDays") ?? "30")
+  // const expiresInDays = expiryRaw === "never" ? null : Math.min(365, Math.max(1, Number.parseInt(expiryRaw, 10) || 30))
+  const expiresInDays = parseExpiryChoice(formData.get("expiresInDays")?.toString())
 
   const result = await quickSend({
     userId: user.id,

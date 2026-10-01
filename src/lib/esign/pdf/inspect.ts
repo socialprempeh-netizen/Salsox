@@ -7,13 +7,18 @@
  * need.
  */
 import { PDFDocument } from "pdf-lib"
+import { MAX_PDF_BYTES } from "../limits"
 
-/**
- * 4 MB: under Vercel's 4.5 MB request-body limit for functions, which is what
- * an upload through a server action is subject to. Larger files need a direct
- * client upload to Blob, which is a later addition.
- */
-export const MAX_PDF_BYTES = 4 * 1024 * 1024
+// Moved to src/lib/esign/limits.ts, which the upload dropzone reads too:
+// the two copies were kept equal only by a comment. Re-exported so existing
+// imports keep working.
+// /**
+//  * 4 MB: under Vercel's 4.5 MB request-body limit for functions, which is what
+//  * an upload through a server action is subject to. Larger files need a direct
+//  * client upload to Blob, which is a later addition.
+//  */
+// export const MAX_PDF_BYTES = 4 * 1024 * 1024
+export { MAX_PDF_BYTES }
 
 export type PdfInspection =
   | { ok: true; pageCount: number }

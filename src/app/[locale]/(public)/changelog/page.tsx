@@ -44,7 +44,7 @@ function formatDate(iso: string | null) {
   })
 }
 
-// Renders the repo root CHANGELOG.md as a release timeline. The version is
+// Renders content/changelog.md, Salsox's release notes, as a release timeline. The version is
 // the visual anchor of each entry: big brand-gradient pill, date beneath,
 // body subordinate on the timeline rail.
 export default function ChangelogPage() {

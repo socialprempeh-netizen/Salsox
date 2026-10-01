@@ -9,13 +9,16 @@
 import { z } from "zod"
 import { MAX_RECIPIENTS_PER_DOCUMENT } from "./sending-limits"
 import { isSignAndPayCurrency } from "./payments/select"
+import { DEFAULT_EXPIRY_DAYS, MAX_EXPIRY_DAYS } from "./limits"
 
 export const TITLE_MAX = 140
 // Was 25, which with the old send limit let one account email thousands of
 // addresses in minutes. The number now lives with the other sending rules.
 // export const MAX_RECIPIENTS = 25
 export const MAX_RECIPIENTS = MAX_RECIPIENTS_PER_DOCUMENT
-export const MAX_EXPIRY_DAYS = 365
+// Moved to ./limits with the default it bounds; re-exported for existing imports.
+// export const MAX_EXPIRY_DAYS = 365
+export { MAX_EXPIRY_DAYS }
 
 const percent = z.number().min(0).max(100)
 
@@ -64,7 +67,7 @@ export const documentSetupSchema = z.object({
   signingOrder: z.enum(["PARALLEL", "SEQUENTIAL"]).default("PARALLEL"),
   subject: z.string().trim().max(200).optional(),
   message: z.string().trim().max(2000).optional(),
-  expiresInDays: z.number().int().min(1).max(MAX_EXPIRY_DAYS).nullable().default(30),
+  expiresInDays: z.number().int().min(1).max(MAX_EXPIRY_DAYS).nullable().default(DEFAULT_EXPIRY_DAYS),
   recipients: z.array(recipientInputSchema).min(1).max(MAX_RECIPIENTS),
   fields: z.array(fieldInputSchema).max(500),
   payment: paymentInputSchema.nullable().default(null),

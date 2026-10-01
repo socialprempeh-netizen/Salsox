@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
-import { isKitSite } from "@/config/kit"
+// Unused since the source stopped depending on KIT_SITE (see SOURCE below).
+// import { isKitSite } from "@/config/kit"
 
 export type ChangelogRelease = {
   version: string
@@ -28,9 +29,13 @@ export type Changelog = {
  *   what the footer shows.
  * - the kit's own site (KIT_SITE="true") reads the repo root `CHANGELOG.md`.
  */
-const SOURCE = isKitSite
-  ? path.join(process.cwd(), "CHANGELOG.md")
-  : path.join(process.cwd(), "content", "changelog.md")
+// Replaced: the kit's own site read the repo root CHANGELOG.md, the starter
+// kit's release history. Salsox removed that file (its history lives in the
+// upstream repository), so content/changelog.md is the only source.
+// const SOURCE = isKitSite
+//   ? path.join(process.cwd(), "CHANGELOG.md")
+//   : path.join(process.cwd(), "content", "changelog.md")
+const SOURCE = path.join(process.cwd(), "content", "changelog.md")
 
 /**
  * Where the file above sits in the repository, so relative links inside it
@@ -38,7 +43,8 @@ const SOURCE = isKitSite
  * different files depending on this: `./docs/blog.md` is the guide from the
  * root, something under `content/` from there.
  */
-export const CHANGELOG_BASE_DIR = isKitSite ? "" : "content"
+// export const CHANGELOG_BASE_DIR = isKitSite ? "" : "content"
+export const CHANGELOG_BASE_DIR = "content"
 
 export function getChangelog(): Changelog {
   const raw = fs.readFileSync(SOURCE, "utf8")

@@ -21,8 +21,11 @@ import { signingUrl } from "./share"
 import { appUrl, renewDocument, type Result } from "./documents"
 import { formatMinorUnits } from "./payments/select"
 import { senderBlocker } from "./sender"
+import { DEFAULT_EXPIRY_DAYS } from "./limits"
 
-const DEFAULT_RENEW_DAYS = 30
+// Replaced by DEFAULT_EXPIRY_DAYS in ./limits: this 30 was declared in both
+// documents.ts and recipients.ts, and is also the default a new document gets.
+// const DEFAULT_RENEW_DAYS = 30
 
 export async function updateRecipient(
   userId: string,
@@ -55,7 +58,7 @@ export async function updateRecipient(
             token: newSigningToken(),
             tokenIssuedAt: now,
             viewedAt: null,
-            expiresAt: computeExpiry(document.expiresInDays ?? DEFAULT_RENEW_DAYS, now),
+            expiresAt: computeExpiry(document.expiresInDays ?? DEFAULT_EXPIRY_DAYS, now),
           }
         : {}),
     },
