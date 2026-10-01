@@ -33,7 +33,7 @@ src/lib/esign/
   audit.ts          append-only audit events
   storage.ts        Vercel Blob (private) or .data/storage locally
   tokens.ts, share.ts, files.ts, quick-send.ts, emails.ts
-  pdf/              inspect.ts (upload checks), coords.ts, seal.ts
+  pdf/              inspect.ts (upload checks), signature-image.ts (signature checks), coords.ts, seal.ts
   payments/         types.ts (interface), stripe.ts, paystack.ts, select.ts, index.ts
 src/app/actions/    documents.ts, signing.ts, payouts.ts, billing.ts
 src/app/sign/[token]/            public signing page, file and download routes
@@ -51,7 +51,7 @@ The rule from `AGENTS.md` holds: decisions live in `src/lib/esign` as functions 
 1. **Upload.** `inspectPdf` checks magic bytes, parseability, encryption and the 4 MB limit (under Vercel's 4.5 MB body limit). The original is stored once and never modified.
 2. **Setup.** Recipients (signer, approver, viewer, CC), fields as page percentages, signing order, expiry, optional Sign & Pay.
 3. **Send.** Recipients get an expiry and an email with their link. Every link can also be copied, or shared over WhatsApp (`wa.me`) and SMS (`sms:`), from the document page. "Sent" is only shown for an email the provider accepted: every send in `emails.ts` returns `sent`, `notConfigured` (no Resend key, links are shared by hand) or `failed`, and a recipient's `sentAt` is written on success only. A refused invitation leaves the document live, replaces the "Sent!" banner with a warning naming how many were not delivered, marks those recipients "Email not delivered", and a refused reminder or resend is reported as an error with a retry.
-4. **Sign.** Each field is saved as it is filled. `completeSigning` refuses while required fields are empty or a payment is outstanding.
+4. **Sign.** Each field is saved as it is filled. A drawn or uploaded signature is checked before it is stored (`signature-image.ts`): the PNG or JPEG must be whole, of a sane size, and embeddable by pdf-lib, or the signer is asked to draw it again. This matters because pdf-lib loops forever on a damaged PNG, so a bad image that got stored would stop the document from ever being sealed; the sealer runs the same structural check and fails with an error instead of hanging. `completeSigning` refuses while required fields are empty or a payment is outstanding.
 5. **Finalize.** When the last signer completes, `finalizeDocument` claims the `COMPLETED` transition atomically, stamps the fields, flattens forms, appends a certificate page (hashes, recipients, the full audit trail), optionally applies a digital signature, stores the sealed copy and emails everyone. If sealing fails, the cron sweep retries it.
 
 ## The DocuSign fixes

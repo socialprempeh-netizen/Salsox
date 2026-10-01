@@ -1018,6 +1018,7 @@
       "NOT_YOUR_TURN": "Someone else needs to sign first. We'll email you when it's your turn.",
       "NO_ACTION_REQUIRED": "You're receiving a copy of this document; there's nothing to sign.",
       "invalidValue": "That value isn't valid for this field.",
+      "invalidSignature": "That signature couldn't be read, so it wasn't saved. Please draw it again, or type your name instead.",
       "missingFields": "Some required fields are still empty.",
       "paymentRequired": "Please complete the payment to finish signing.",
       "noPaymentDue": "There's no payment due on this document.",

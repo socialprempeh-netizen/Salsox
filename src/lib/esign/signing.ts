@@ -24,6 +24,7 @@ import { delivered, sendDocumentRejected, sendSigningInvite } from "./emails"
 import { signingUrl } from "./share"
 import { getProvider } from "./payments"
 import { formatMinorUnits } from "./payments/select"
+import { checkSignatureImage } from "./pdf/signature-image"
 
 /** Drawn signatures are small PNGs; anything larger is not a signature. */
 const MAX_SIGNATURE_DATA_URL = 400_000
@@ -130,6 +131,14 @@ export async function saveField(token: string, fieldId: string, input: FieldInpu
   if (!field) return { ok: false, error: "notFound" }
   const value = normaliseFieldValue(field.type, input)
   if (!value) return { ok: false, error: "invalidValue" }
+  // A drawn or uploaded signature must be an image the sealer can stamp.
+  // `normaliseFieldValue` only checks the data URL's shape; bytes that were
+  // not an image used to be stored here and then failed every attempt to seal
+  // the finished document. Refused now, while the signer can still redraw.
+  if (value.imageDataUrl) {
+    const image = await checkSignatureImage(value.imageDataUrl)
+    if (!image.ok) return { ok: false, error: "invalidSignature" }
+  }
 
   await prisma.$transaction(async (tx) => {
     if (field.type === "SIGNATURE" || field.type === "INITIALS") {

@@ -18,6 +18,7 @@
  */
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
 import { fitInside, percentToPdfRect } from "./coords"
+import { inspectSignatureBytes } from "./signature-image"
 
 export type SealField = {
   type: "SIGNATURE" | "INITIALS" | "NAME" | "EMAIL" | "DATE" | "TEXT" | "CHECKBOX"
@@ -112,6 +113,13 @@ async function stampFields(doc: PDFDocument, fields: SealField[]) {
     if (field.type === "SIGNATURE" || field.type === "INITIALS") {
       const image = field.signature?.imageDataUrl ? dataUrlToBytes(field.signature.imageDataUrl) : null
       if (image) {
+        // Signatures are validated when they are submitted, so this should
+        // never fire. It is here because pdf-lib does not fail on a damaged
+        // PNG, it loops forever: an image that reached the database some
+        // other way must stop the seal with an error that says why, not hang
+        // the request until the platform kills it.
+        const structure = inspectSignatureBytes(image.bytes, image.kind)
+        if (!structure.ok) throw new Error(`Signature image cannot be stamped (${structure.reason})`)
         const embedded = image.kind === "png" ? await doc.embedPng(image.bytes) : await doc.embedJpg(image.bytes)
         page.drawImage(embedded, fitInside(embedded.width, embedded.height, box))
       } else if (field.signature?.typedText) {
