@@ -9,6 +9,14 @@ import { LogoMark } from "@/components/logo"
 import { PendingButton } from "@/components/auth/pending-button"
 import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
+import type { Metadata } from "next"
+
+// Its own title in the tab and in any result that slips through; the
+// (auth) layout marks every page here noindex.
+export async function generateMetadata(): Promise<Metadata> {
+  const tMeta = await getTranslations("authMeta")
+  return { title: tMeta("login", { site: siteConfig.name }) }
+}
 
 export default async function LoginPage({
   searchParams,

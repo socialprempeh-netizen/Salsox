@@ -7,6 +7,7 @@ import { mapRepoHref } from "@/lib/markdown-links"
 import { Badge } from "@/components/ui/badge"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
+import { RelatedLinks } from "@/components/landing/related-links"
 
 // The entries are written for the repository, where `./docs/blog.md` is the
 // right link. Here the same string would ask the browser for a page that does
@@ -73,9 +74,14 @@ export default function ChangelogPage() {
                   banner sits above the navbar and makes it taller. */}
               <div className="md:sticky md:top-[116px] md:self-start">
                 <div className="flex items-center gap-2.5">
-                  <span className="inline-block rounded-full px-4 py-1.5 text-lg font-bold tracking-tight text-primary-foreground shadow-soft [background-image:var(--gradient-brand)]">
+                  {/* An h2, not a span: each release body opens with h3s
+                      ("Added", "Fixed"), and without a level between them and
+                      the page's h1 the outline skipped a level. Squared when
+                      it became a heading, per the design rules; it was a
+                      rounded-full pill. */}
+                  <h2 className="inline-block px-4 py-1.5 text-lg font-bold tracking-tight text-primary-foreground shadow-soft [background-image:var(--gradient-brand)]">
                     v{release.version}
-                  </span>
+                  </h2>
                   {i === 0 && <Badge variant="secondary">{t("latest")}</Badge>}
                 </div>
                 <p className="mt-2.5 text-sm text-muted-foreground">{release.date ? formatDate(release.date) : t("unreleased")}</p>
@@ -90,6 +96,8 @@ export default function ChangelogPage() {
             </section>
           ))}
         </div>
+
+        <RelatedLinks path="/changelog" />
       </div>
     </section>
   )

@@ -1,6 +1,16 @@
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { LogoMark } from "@/components/logo"
+import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
+import { siteConfig } from "@/config/site"
+
+// Its own title in the tab and in any result that slips through; the
+// (auth) layout marks every page here noindex.
+export async function generateMetadata(): Promise<Metadata> {
+  const tMeta = await getTranslations("authMeta")
+  return { title: tMeta("verifyRequest", { site: siteConfig.name }) }
+}
 
 // Landing page after a magic link (or signup verification) email is sent.
 // Configured as pages.verifyRequest in src/auth.ts.

@@ -1,3 +1,16 @@
+import type { Metadata } from "next"
+
+/**
+ * Sign-in, sign-up and recovery pages: useful to a visitor, worthless as a
+ * search result. `noindex` keeps them out of the index while `follow` lets a
+ * crawler that landed here continue to the public pages they link to. They
+ * stay crawlable in robots.txt on purpose: a page that is never fetched never
+ * has its noindex read. They are also left out of the sitemap.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+}
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-muted/40">

@@ -16,6 +16,10 @@ import { localeAlternates } from "@/i18n/alternates"
 import { languageName } from "@/i18n/language-name"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
+import { jsonLdScript } from "@/lib/json-ld"
+import { techArticleJsonLd } from "@/lib/structured-data"
+import { breadcrumbJsonLd } from "@/lib/breadcrumb"
+import { localizedPath } from "@/i18n/alternates"
 
 // Flatten a heading's React children to plain text, so its anchor id matches
 // the slug the "On this page" outline links to.
@@ -44,7 +48,10 @@ export async function generateMetadata({
     ...pageMetadata({
       title: `${doc?.title ?? t("title")} | ${siteConfig.name} ${t("title")}`,
       description: doc?.description,
-      path: `/docs/${slug}`,
+      // The URL of the language actually served, so og:url agrees with the
+      // canonical below: the localized page when translated, the English
+      // original when this locale falls back to it.
+      path: localizedPath(`/docs/${slug}`, doc?.locale ?? locale),
     }),
     // localeAlternates carries the language variants as well as the canonical.
     alternates: localeAlternates(`/docs/${slug}`, locale, translatedLocales(slug)),
@@ -71,9 +78,24 @@ export default async function DocPage({
   // saying so turns a gap into a stated fallback.
   const untranslated = doc.locale !== locale
   const tLanguage = await getTranslations("language")
+  const tDocs = await getTranslations({ locale, namespace: "docs" })
+
+  // The guide as a TechArticle, plus the trail home > docs > guide. Paths are
+  // the localized ones, so each language's URL describes itself, and the
+  // article's language is the text actually served, not the URL's.
+  const path = localizedPath(`/docs/${slug}`, doc.locale)
+  const jsonLd = [
+    techArticleJsonLd({ title: doc.title, description: doc.description, path, inLanguage: doc.locale }),
+    breadcrumbJsonLd([
+      { name: siteConfig.name, href: "/" },
+      { name: tDocs("title"), href: localizedPath("/docs", locale) },
+      { name: doc.title, href: path },
+    ]),
+  ]
 
   return (
     <div className="flex gap-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
       {/* `lang` follows the text, not the URL: on a page that fell back, the
           prose is English inside an Italian document, and the notice above it
           is the one part actually written in the reader's language. */}

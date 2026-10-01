@@ -5,6 +5,15 @@ import { verifyTwoFactorCode, verifyTwoFactorBackupCode } from "@/app/actions/au
 import { LogoMark } from "@/components/logo"
 import { PendingButton } from "@/components/auth/pending-button"
 import { Input } from "@/components/ui/input"
+import type { Metadata } from "next"
+import { siteConfig } from "@/config/site"
+
+// Its own title in the tab and in any result that slips through; the
+// (auth) layout marks every page here noindex.
+export async function generateMetadata(): Promise<Metadata> {
+  const tMeta = await getTranslations("authMeta")
+  return { title: tMeta("twoFactor", { site: siteConfig.name }) }
+}
 
 /**
  * The second factor, between the password and the session.

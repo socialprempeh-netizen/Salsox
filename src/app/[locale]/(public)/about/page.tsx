@@ -3,6 +3,9 @@ import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 import { useTranslations } from "next-intl"
 import { isKitSite } from "@/config/kit"
+import { jsonLdScript } from "@/lib/json-ld"
+import { aboutPageJsonLd } from "@/lib/structured-data"
+import { RelatedLinks } from "@/components/landing/related-links"
 
 export const metadata: Metadata = pageMetadata({
   title: `About | ${siteConfig.name}`,
@@ -21,6 +24,9 @@ export default function AboutPage() {
   const t = useTranslations("about")
   return (
     <section className="py-24">
+      {/* The same organisation the home page declares, as the subject of this
+          page: built by the same helper so the two cannot disagree. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(aboutPageJsonLd()) }} />
       <div className="mx-auto max-w-3xl px-6 lg:px-12">
         <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           {t("title", { site: siteConfig.name })}
@@ -78,6 +84,8 @@ export default function AboutPage() {
             </div>
           )}
         </div>
+
+        <RelatedLinks path="/about" />
       </div>
     </section>
   )

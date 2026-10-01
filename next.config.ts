@@ -51,7 +51,19 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Never in a search result, whatever links to them: signing links carry
+      // a private token, and the app and API answer only signed-in users. A
+      // header rather than a <meta> tag because it also covers route handlers
+      // (PDF downloads, JSON) that have no <head> to put one in. robots.txt
+      // blocks the crawl of some of these; this is what keeps a URL found
+      // through an outside link from being indexed anyway.
+      ...["/sign/:path*", "/dashboard/:path*", "/admin/:path*", "/api/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      })),
+    ];
   },
 };
 

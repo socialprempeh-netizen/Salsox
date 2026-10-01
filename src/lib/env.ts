@@ -101,6 +101,10 @@ export const envSchema = z
     // reminders and retries sealing. (It also guarded a demo reset route,
     // since removed: see src/lib/demo-seed.ts.)
     CRON_SECRET: optional,
+    // IndexNow key (src/lib/indexnow.ts). Optional: without it the key is
+    // derived from CRON_SECRET. When set it must follow the protocol's rule,
+    // because a key the engines reject fails every submission silently.
+    INDEXNOW_KEY: blankAsUnset(z.string().regex(/^[a-zA-Z0-9-]{8,128}$/, "8 to 128 letters, digits or dashes").optional()),
 
     NEXT_PUBLIC_APP_URL: optional,
     NEXT_PUBLIC_DEMO_URL: optional,

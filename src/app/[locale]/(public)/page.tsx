@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 import { isKitSite } from "@/config/kit"
 import { jsonLdScript } from "@/lib/json-ld"
+import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data"
 import { pendingSetup } from "@/lib/setup-status"
 import { SetupGuide } from "@/components/setup-guide"
 import { getCurrentUser } from "@/lib/auth"
@@ -19,20 +20,22 @@ export const metadata: Metadata = pageMetadata({
   path: "/",
 })
 
-/**
- * Identifies the site itself to search engines: the name to show, the logo to
- * pick, and the profiles that are the same entity. Built from `siteConfig`,
- * so rebranding the kit rebrands this too.
- */
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: siteConfig.name,
-  url: siteConfig.url,
-  description: siteConfig.description,
-  logo: `${siteConfig.url}/icon`,
-  sameAs: [siteConfig.links.githubOrg, siteConfig.links.x].filter(Boolean),
-}
+// Replaced by organizationJsonLd() in src/lib/structured-data.ts, which the
+// About page reads too: two inline copies of "who we are" would drift.
+// /**
+//  * Identifies the site itself to search engines: the name to show, the logo to
+//  * pick, and the profiles that are the same entity. Built from `siteConfig`,
+//  * so rebranding the kit rebrands this too.
+//  */
+// const organizationJsonLd = {
+//   "@context": "https://schema.org",
+//   "@type": "Organization",
+//   name: siteConfig.name,
+//   url: siteConfig.url,
+//   description: siteConfig.description,
+//   logo: `${siteConfig.url}/icon`,
+//   sameAs: [siteConfig.links.githubOrg, siteConfig.links.x].filter(Boolean),
+// }
 
 export default async function LandingPage() {
   // A fresh clone has no database yet, and the plans below come from one: this
@@ -48,7 +51,7 @@ export default async function LandingPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdScript(organizationJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript([organizationJsonLd(), websiteJsonLd()]) }}
       />
       <Hero ctaHref={heroCtaHref({ isKitSite, signedIn: Boolean(await getCurrentUser()) })} />
       <Features />

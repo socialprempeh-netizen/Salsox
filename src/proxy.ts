@@ -47,6 +47,7 @@ const UNLOCALIZED = [
   "/sitemap.xml",
   "/robots.txt",
   "/llms.txt",
+  "/indexnow-key.txt",
   "/icon",
   "/opengraph-image",
 ]

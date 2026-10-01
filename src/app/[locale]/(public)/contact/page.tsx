@@ -4,6 +4,7 @@ import { ContactForm } from "@/components/landing/contact-form"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 import { isKitSite } from "@/config/kit"
+import { RelatedLinks } from "@/components/landing/related-links"
 
 export const metadata: Metadata = pageMetadata({
   title: `Contact | ${siteConfig.name}`,
@@ -39,6 +40,8 @@ export default function ContactPage() {
             )}
           </div>
         )}
+
+        <RelatedLinks path="/contact" />
       </div>
     </section>
   )

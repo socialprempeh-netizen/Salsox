@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
-import { getAllPosts, getCategories } from "@/lib/blog"
+import { getAllPosts, getCategories, categorySlug } from "@/lib/blog"
+import { getChangelog } from "@/lib/changelog"
 import { getDocs, translatedLocales } from "@/lib/docs"
 import { routing } from "@/i18n/routing"
 import { localizedPath } from "@/i18n/alternates"
@@ -32,10 +33,23 @@ function localized(
     ...(languages ? { alternates: { languages } } : {}),
   }))
 }
+/** The newest of some ISO dates, as a sitemap `lastModified`, or nothing. */
+function newest(dates: (string | null | undefined)[]): { lastModified: Date } | Record<string, never> {
+  const latest = dates.filter((d): d is string => Boolean(d)).sort().at(-1)
+  return latest ? { lastModified: new Date(`${latest}T00:00:00Z`) } : {}
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   // A demo deployment is `noindex` (see the root layout): handing search
   // engines a list of URLs we ask them to ignore only creates noise.
   if (process.env.DEMO_MODE === "true") return []
+
+  // A listing changes when what it lists does: the blog index on the newest
+  // post, a category on its newest post, the changelog on its latest dated
+  // release. Real dates here are also what the IndexNow cron
+  // (src/app/api/indexnow/route.ts) reads to know what was just published.
+  const allPosts = getAllPosts()
+  const postDate = (p: (typeof allPosts)[number]) => p.updated ?? p.date
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${siteConfig.url}/`, changeFrequency: "weekly", priority: 1 },
@@ -43,8 +57,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // The index renders from the message files, so it exists in every language
     // that has one.
     ...localized("/docs", routing.locales, { changeFrequency: "weekly", priority: 0.8 }),
-    { url: `${siteConfig.url}/blog`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${siteConfig.url}/changelog`, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${siteConfig.url}/blog`, changeFrequency: "weekly", priority: 0.8, ...newest(allPosts.map(postDate)) },
+    {
+      url: `${siteConfig.url}/changelog`,
+      changeFrequency: "weekly",
+      priority: 0.6,
+      ...newest(getChangelog().releases.map((r) => r.date)),
+    },
+    // Both were linked from every footer and missing here, so a crawler only
+    // found them by following links. Contact is the form in your app; the
+    // kit's own site has a dialog instead and keeps that page out.
+    { url: `${siteConfig.url}/about`, changeFrequency: "monthly", priority: 0.5 },
+    ...(isKitSite
+      ? []
+      : [{ url: `${siteConfig.url}/contact`, changeFrequency: "yearly" as const, priority: 0.4 }]),
     { url: `${siteConfig.url}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     // The kit's own site sells nothing and has no accounts, so it ships no
     // terms and no separate cookie page: the footer hides both links and the
@@ -65,7 +91,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
   )
 
-  const posts: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
+  const posts: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${siteConfig.url}/blog/${post.slug}`,
     // `updated` when the post declares a revision, so an edit to an old post is
     // a signal here rather than something a crawler has to notice on its own.
@@ -78,6 +104,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${siteConfig.url}/blog/category/${c.slug}`,
     changeFrequency: "weekly",
     priority: 0.4,
+    ...newest(allPosts.filter((p) => categorySlug(p.category) === c.slug).map(postDate)),
   }))
 
   return [...staticRoutes, ...docs, ...posts, ...categories]
