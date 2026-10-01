@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test"
 import { PDFDocument } from "pdf-lib"
-import { db, freshEmail, quickSend, samplePdf, signUp, tokenFor } from "./helpers/esign"
+import { db, expectNoHorizontalScroll, freshEmail, quickSend, samplePdf, signUp, tokenFor } from "./helpers/esign"
 
 /**
  * The core promise, end to end: a sender Quick Sends a PDF, the signer signs
@@ -159,4 +159,88 @@ test("an expired document is revived with one click", async ({ browser }) => {
   await signer.reload()
   await expect(signer.getByRole("button", { name: "Review and sign" })).toBeVisible()
   await ctx.close()
+})
+
+/** Draws a short scribble on the signature pad, the way a finger would. */
+async function scribble(page: import("@playwright/test").Page) {
+  const pad = page.getByLabel("Signature drawing area")
+  // The pad opens in a sheet that slides up: hovering waits for it to stop
+  // moving (and scrolls it into view), so the box measured next is where the
+  // canvas really is.
+  await pad.hover()
+  const box = (await pad.boundingBox())!
+  const at = (fx: number, fy: number) => [box.x + box.width * fx, box.y + box.height * fy] as const
+  await page.mouse.move(...at(0.15, 0.6))
+  await page.mouse.down()
+  for (const [fx, fy] of [[0.3, 0.3], [0.45, 0.7], [0.6, 0.35], [0.8, 0.6]] as const) {
+    await page.mouse.move(...at(fx, fy), { steps: 6 })
+  }
+  await page.mouse.up()
+}
+
+/**
+ * A drawn signature is an image the browser produces, and it is checked on
+ * the server before it is stored (src/lib/esign/pdf/signature-image.ts): a
+ * damaged one used to be accepted and then made the finished document
+ * impossible to seal. This covers both sides with a real browser: a damaged
+ * image is refused while the pad is still open, and the PNG a real canvas
+ * produces passes the check and ends up in the sealed PDF.
+ */
+test("a damaged drawn signature is refused with a retry; a real one is saved and sealed (on a phone)", async ({ browser }) => {
+  const senderCtx = await browser.newContext()
+  const sender = await senderCtx.newPage()
+  await signUp(sender)
+  const signerEmail = freshEmail("signer")
+  const documentId = await quickSend(sender, [signerEmail])
+  const token = await tokenFor(documentId, signerEmail)
+
+  const signerCtx = await browser.newContext(phone)
+  const signer = await signerCtx.newPage()
+  await signer.goto(`/sign/${token}`)
+  await signer.getByRole("checkbox").check()
+  await signer.getByRole("button", { name: "Review and sign" }).click()
+  await signer.getByRole("button", { name: "Start" }).click()
+
+  // Make the pad hand over half a PNG, as a flaky connection or a broken
+  // browser extension might.
+  await signer.evaluate(() => {
+    const real = HTMLCanvasElement.prototype.toDataURL
+    ;(window as unknown as { realToDataURL: typeof real }).realToDataURL = real
+    HTMLCanvasElement.prototype.toDataURL = function (...args) {
+      const url = real.apply(this, args)
+      return url.slice(0, Math.floor(url.length / 2))
+    }
+  })
+  await scribble(signer)
+  await signer.getByRole("button", { name: "Adopt and sign" }).click()
+
+  // Refused, said so, and the pad is still there to try again.
+  await expect(signer.getByText("That signature couldn't be read, so it wasn't saved.", { exact: false })).toBeVisible()
+  await expect(signer.getByLabel("Signature drawing area")).toBeVisible()
+  await expect(signer.getByText("1 of 2 done")).toHaveCount(0)
+  await expectNoHorizontalScroll(signer, "signing page with the signature error")
+  expect(await db().signature.count({ where: { recipient: { documentId } } })).toBe(0)
+
+  // Try again with the browser's real output.
+  await signer.evaluate(() => {
+    HTMLCanvasElement.prototype.toDataURL = (window as unknown as { realToDataURL: typeof HTMLCanvasElement.prototype.toDataURL }).realToDataURL
+  })
+  await signer.getByRole("button", { name: "Clear" }).click()
+  await scribble(signer)
+  await signer.getByRole("button", { name: "Adopt and sign" }).click()
+  await expect(signer.getByText("1 of 2 done")).toBeVisible()
+
+  await signer.getByRole("button", { name: /Next field/ }).click()
+  await signer.getByRole("button", { name: "Save" }).click()
+  await signer.getByRole("button", { name: "Finish signing" }).click()
+  await expect(signer.getByRole("heading", { name: "You've signed" })).toBeVisible({ timeout: 30_000 })
+
+  const stored = await db().signature.findFirstOrThrow({ where: { recipient: { documentId } } })
+  expect(stored.imageDataUrl).toMatch(/^data:image\/png;base64,/)
+  const document = await db().document.findUniqueOrThrow({ where: { id: documentId } })
+  expect(document.status).toBe("COMPLETED")
+  expect(document.sealedKey).toBeTruthy()
+
+  await senderCtx.close()
+  await signerCtx.close()
 })
