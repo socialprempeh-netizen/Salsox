@@ -10,6 +10,8 @@ import { isKitSite } from "@/config/kit"
 import { jsonLdScript } from "@/lib/json-ld"
 import { pendingSetup } from "@/lib/setup-status"
 import { SetupGuide } from "@/components/setup-guide"
+import { getCurrentUser } from "@/lib/auth"
+import { heroCtaHref } from "@/lib/landing-cta"
 
 export const metadata: Metadata = pageMetadata({
   title: siteConfig.seoTitle ?? `${siteConfig.name} | ${siteConfig.tagline}`,
@@ -48,7 +50,7 @@ export default async function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(organizationJsonLd) }}
       />
-      <Hero />
+      <Hero ctaHref={heroCtaHref({ isKitSite, signedIn: Boolean(await getCurrentUser()) })} />
       <Features />
       {isKitSite ? <Pricing /> : <PlanPricing />}
       <FAQ withJsonLd />

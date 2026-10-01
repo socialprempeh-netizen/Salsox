@@ -43,7 +43,11 @@ const mockStats = [
 // Decorative revenue bars (% heights) for the mock chart
 const mockBars = [38, 52, 45, 63, 58, 74, 69, 85, 78, 92, 88, 100]
 
-export function Hero() {
+/**
+ * `ctaHref` is decided by the page (heroCtaHref in src/lib/landing-cta.ts),
+ * which knows whether the visitor is signed in.
+ */
+export function Hero({ ctaHref }: { ctaHref: string }) {
   const t = useTranslations("hero")
   const tm = useTranslations("hero.mock")
   // Explicit split when the message provides one, otherwise derive it from
@@ -91,10 +95,17 @@ export function Hero() {
           className="mt-10 flex animate-fade-in-up flex-col items-center gap-4 sm:flex-row sm:justify-center"
           style={{ animationDelay: "180ms" }}
         >
+          {/* Replaced: always `<a href="#pricing">`, which scrolled "Send your
+              first document" down to billing instead of starting anything.
           <Button asChild variant="gradient" size="xl">
             <a href="#pricing">
               {t("cta")} <ArrowRight className="h-5 w-5" />
             </a>
+          </Button> */}
+          <Button asChild variant="gradient" size="xl">
+            <Link href={ctaHref}>
+              {t("cta")} <ArrowRight className="h-5 w-5" />
+            </Link>
           </Button>
           <Button asChild variant="outline" size="xl">
             <Link href={siteConfig.links.demo ?? "/login"}>Live demo</Link>
