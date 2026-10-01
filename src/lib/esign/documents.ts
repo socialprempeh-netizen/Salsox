@@ -22,20 +22,23 @@
  *   caps), not an omission. Abuse protection is the rate limiter in the actions.
  */
 import { randomUUID } from "node:crypto"
-import type { Prisma } from "@prisma/client"
+import type { DocumentStatus, Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { AUDIT, recordAudit, requestMeta } from "./audit"
-import { deleteFile, deleteFolder, documentKey, getFile, putFile, sha256, userFolder } from "./storage"
+import { deleteFile, deleteFolder, documentKey, getFile, putFile, sealedDocumentKey, sha256, userFolder } from "./storage"
 import { inspectPdf, type PdfInspection } from "./pdf/inspect"
 import { sealDocument } from "./pdf/seal"
 import { newSigningToken } from "./tokens"
 import {
   canRenewDocument,
   computeExpiry,
+  finalizeStep,
   isActionable,
+  isStuckFinalization,
   recipientsToNotify,
   shouldExpireDocument,
+  type RuleRecipient,
 } from "./rules"
 import { autoPlaceFields } from "./quick-send"
 import { chooseProvider, formatMinorUnits, isSignAndPayCurrency, toMinorUnits } from "./payments/select"
@@ -457,18 +460,46 @@ async function deleteStoredFiles(keys: (string | null)[]): Promise<void> {
 // ─── Finalize ─────────────────────────────────────────────────────────────────
 
 /**
- * Seals a completed document and emails everyone the signed copy.
+ * Seals a finished document and emails everyone the signed copy.
  *
- * Safe to call more than once: the COMPLETED transition is claimed atomically
- * (two last signers finishing at the same moment cannot both win), and a
- * document already sealed is left alone. If sealing throws, the document stays
- * COMPLETED without a `sealedKey`, and the cron sweep calls this again.
+ * Atomic. The sealed PDF (certificate page included) is built and stored
+ * first, under a key named by its own hash, and then a single transaction
+ * commits everything that has to agree: the COMPLETED status, the COMPLETED
+ * audit event, the sealed copy's key and its SHA-256. Either all of it is
+ * written or none of it is, so:
+ *
+ * - two last signers finishing at the same moment both build a seal, but only
+ *   one commit can claim the document; the other rolls back and deletes the
+ *   file it uploaded. The stored file is always the one whose fingerprint is
+ *   recorded, and the audit log has one COMPLETED event.
+ * - the certificate prints the audit trail as of the commit: the transaction
+ *   refuses if an event was added after the snapshot the seal was built from,
+ *   and the seal is rebuilt (up to FINALIZE_ATTEMPTS times).
+ * - a server failure anywhere before the commit leaves the document PENDING
+ *   with every signer done, which `recoverStuckFinalizations` finds and
+ *   finishes.
+ *
+ * Safe to call any number of times, from any number of places.
  */
 export async function finalizeDocument(documentId: string): Promise<void> {
-  await prisma.document.updateMany({
-    where: { id: documentId, status: "PENDING" },
-    data: { status: "COMPLETED", completedAt: new Date() },
-  })
+  for (let attempt = 1; attempt <= FINALIZE_ATTEMPTS; attempt++) {
+    if ((await finalizeOnce(documentId)) !== "stale") return
+  }
+  // Still changing under us. Nothing was committed; the recovery sweep or
+  // the next call picks it up.
+  console.warn("[esign] finalize kept seeing new audit events; left for recovery", documentId)
+}
+
+const FINALIZE_ATTEMPTS = 3
+
+/** Thrown inside the commit transaction to roll it back. */
+class FinalizeConflict extends Error {
+  constructor(readonly reason: "stale" | "taken") {
+    super(`finalize ${reason}`)
+  }
+}
+
+async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "taken" | "stale"> {
   const document = await prisma.document.findUniqueOrThrow({
     where: { id: documentId },
     include: {
@@ -478,13 +509,16 @@ export async function finalizeDocument(documentId: string): Promise<void> {
       auditEvents: { orderBy: { createdAt: "asc" } },
     },
   })
-  if (document.status !== "COMPLETED" || document.sealedKey) return
+  const step = finalizeStep(document.status, document.sealedKey, document.recipients)
+  if (!step) return "nothing"
 
-  const hasCompletedEvent = document.auditEvents.some((e) => e.type === AUDIT.COMPLETED)
-  if (!hasCompletedEvent) {
-    const event = await prisma.auditEvent.create({ data: { documentId, type: AUDIT.COMPLETED } })
-    document.auditEvents.push(event)
-  }
+  // The COMPLETED event is printed on the certificate before it exists as a
+  // row, so it is built here with the exact timestamp the row will get.
+  const completedAt = step === "SEAL_ONLY" ? document.completedAt ?? new Date() : new Date()
+  const completedEvent = document.auditEvents.some((e) => e.type === AUDIT.COMPLETED)
+    ? null
+    : { type: AUDIT.COMPLETED, createdAt: completedAt, actorEmail: null, ipAddress: null }
+  const audit = completedEvent ? [...document.auditEvents, completedEvent] : document.auditEvents
 
   const p12Base64 = process.env.SIGNING_P12_BASE64
   const sealed = await sealDocument({
@@ -493,7 +527,7 @@ export async function finalizeDocument(documentId: string): Promise<void> {
     title: document.title,
     originalSha256: document.originalSha256,
     appName: siteConfig.name,
-    completedAt: document.completedAt ?? new Date(),
+    completedAt,
     fields: document.fields,
     recipients: document.recipients.map((r) => ({
       name: r.name,
@@ -502,20 +536,37 @@ export async function finalizeDocument(documentId: string): Promise<void> {
       status: r.signingStatus,
       signedAt: r.signedAt,
     })),
-    audit: document.auditEvents,
+    audit,
     p12: p12Base64
       ? { certificate: new Uint8Array(Buffer.from(p12Base64, "base64")), passphrase: process.env.SIGNING_P12_PASSPHRASE ?? "" }
       : null,
   })
-
-  const key = documentKey(document.userId, document.originalKey.split("/")[2] ?? document.id, "sealed")
+  const sealedSha256 = sha256(sealed)
+  const key = sealedDocumentKey(document.userId, document.originalKey.split("/")[2] ?? document.id, sealedSha256)
   await putFile(key, sealed)
-  const claimed = await prisma.document.updateMany({
-    where: { id: documentId, sealedKey: null },
-    data: { sealedKey: key, sealedSha256: sha256(sealed) },
-  })
-  if (claimed.count === 0) return // another run sealed it first; skip duplicate emails
 
+  try {
+    await prisma.$transaction(async (tx) => {
+      // The audit log is append-only, so its length says whether anything
+      // happened since the snapshot the certificate was printed from.
+      const events = await tx.auditEvent.count({ where: { documentId } })
+      if (events !== document.auditEvents.length) throw new FinalizeConflict("stale")
+      const claimed = await tx.document.updateMany({
+        where: { id: documentId, sealedKey: null, status: step === "SEAL_AND_COMPLETE" ? "PENDING" : "COMPLETED" },
+        data: { status: "COMPLETED", completedAt, sealedKey: key, sealedSha256 },
+      })
+      if (claimed.count === 0) throw new FinalizeConflict("taken")
+      if (completedEvent) {
+        await tx.auditEvent.create({ data: { documentId, type: AUDIT.COMPLETED, createdAt: completedAt } })
+      }
+    })
+  } catch (error) {
+    await discardUnusedSeal(documentId, key)
+    if (error instanceof FinalizeConflict) return error.reason
+    throw error
+  }
+
+  // Only the run that committed gets here, so everyone is emailed once.
   const base = appUrl()
   await sendDocumentCompleted({
     to: document.user.email,
@@ -531,7 +582,106 @@ export async function finalizeDocument(documentId: string): Promise<void> {
       downloadUrl: `${signingUrl(base, r.token)}/download`,
     })
   }
+  return "done"
 }
+
+/**
+ * Deletes a seal this run uploaded and did not commit. Identical bytes share
+ * a key, so the file is kept if the document ended up recording that key
+ * (another run committed the same seal).
+ */
+async function discardUnusedSeal(documentId: string, key: string): Promise<void> {
+  try {
+    const current = await prisma.document.findUnique({ where: { id: documentId }, select: { sealedKey: true } })
+    if (current?.sealedKey !== key) await deleteFile(key)
+  } catch (error) {
+    console.error("[esign] could not discard an unused seal", key, error)
+  }
+}
+
+// Replaced by the atomic finalizeDocument above. This version claimed the
+// COMPLETED status first and sealed afterwards: the COMPLETED audit event was
+// checked and then inserted, so two concurrent runs could each add one; both
+// runs uploaded to the same fixed key, so the stored file could be the other
+// run's while the fingerprint recorded was this one's; and a crash between
+// the steps left a COMPLETED document with no sealed copy, or (before the
+// status was claimed) a PENDING one that no sweep ever looked at.
+// /**
+//  * Seals a completed document and emails everyone the signed copy.
+//  *
+//  * Safe to call more than once: the COMPLETED transition is claimed atomically
+//  * (two last signers finishing at the same moment cannot both win), and a
+//  * document already sealed is left alone. If sealing throws, the document stays
+//  * COMPLETED without a `sealedKey`, and the cron sweep calls this again.
+//  */
+// export async function finalizeDocument(documentId: string): Promise<void> {
+//   await prisma.document.updateMany({
+//     where: { id: documentId, status: "PENDING" },
+//     data: { status: "COMPLETED", completedAt: new Date() },
+//   })
+//   const document = await prisma.document.findUniqueOrThrow({
+//     where: { id: documentId },
+//     include: {
+//       user: true,
+//       recipients: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] },
+//       fields: { include: { signature: true } },
+//       auditEvents: { orderBy: { createdAt: "asc" } },
+//     },
+//   })
+//   if (document.status !== "COMPLETED" || document.sealedKey) return
+//
+//   const hasCompletedEvent = document.auditEvents.some((e) => e.type === AUDIT.COMPLETED)
+//   if (!hasCompletedEvent) {
+//     const event = await prisma.auditEvent.create({ data: { documentId, type: AUDIT.COMPLETED } })
+//     document.auditEvents.push(event)
+//   }
+//
+//   const p12Base64 = process.env.SIGNING_P12_BASE64
+//   const sealed = await sealDocument({
+//     original: await getFile(document.originalKey),
+//     documentId: document.id,
+//     title: document.title,
+//     originalSha256: document.originalSha256,
+//     appName: siteConfig.name,
+//     completedAt: document.completedAt ?? new Date(),
+//     fields: document.fields,
+//     recipients: document.recipients.map((r) => ({
+//       name: r.name,
+//       email: r.email,
+//       role: r.role,
+//       status: r.signingStatus,
+//       signedAt: r.signedAt,
+//     })),
+//     audit: document.auditEvents,
+//     p12: p12Base64
+//       ? { certificate: new Uint8Array(Buffer.from(p12Base64, "base64")), passphrase: process.env.SIGNING_P12_PASSPHRASE ?? "" }
+//       : null,
+//   })
+//
+//   const key = documentKey(document.userId, document.originalKey.split("/")[2] ?? document.id, "sealed")
+//   await putFile(key, sealed)
+//   const claimed = await prisma.document.updateMany({
+//     where: { id: documentId, sealedKey: null },
+//     data: { sealedKey: key, sealedSha256: sha256(sealed) },
+//   })
+//   if (claimed.count === 0) return // another run sealed it first; skip duplicate emails
+//
+//   const base = appUrl()
+//   await sendDocumentCompleted({
+//     to: document.user.email,
+//     name: document.user.name || document.user.email,
+//     title: document.title,
+//     downloadUrl: `${base}/dashboard/documents/${document.id}`,
+//   })
+//   for (const r of document.recipients) {
+//     await sendDocumentCompleted({
+//       to: r.email,
+//       name: r.name,
+//       title: document.title,
+//       downloadUrl: `${signingUrl(base, r.token)}/download`,
+//     })
+//   }
+// }
 
 // ─── Sweeps (called by the cron route) ────────────────────────────────────────
 
@@ -594,15 +744,77 @@ export async function reminderSweep(now = new Date()): Promise<number> {
   return sent
 }
 
-/** Re-runs sealing for documents that completed but failed to seal. */
-export async function resealSweep(): Promise<number> {
-  const stuck = await prisma.document.findMany({ where: { status: "COMPLETED", sealedKey: null }, select: { id: true }, take: 20 })
-  for (const { id } of stuck) {
+/**
+ * Finishes documents whose finalization did not: every signer is done but no
+ * sealed copy was committed (a server failure mid-finalization, a timeout, a
+ * storage error), plus any document the earlier two-step version left
+ * COMPLETED without a copy. Only documents past `FINALIZE_GRACE_MS` are
+ * touched, so a finalization still running in a request is left alone.
+ * Returns how many documents were finished.
+ */
+export async function recoverStuckFinalizations(now = new Date()): Promise<number> {
+  const candidates = await prisma.document.findMany({
+    where: {
+      sealedKey: null,
+      OR: [
+        { status: "COMPLETED" },
+        // Pending with no signer or approver left to sign: the cheap filter;
+        // `isStuckFinalization` makes the real decision.
+        {
+          status: "PENDING",
+          recipients: {
+            some: { role: { in: ["SIGNER", "APPROVER"] } },
+            none: { role: { in: ["SIGNER", "APPROVER"] }, signingStatus: { not: "SIGNED" } },
+          },
+        },
+      ],
+    },
+    include: { recipients: true },
+    take: 20,
+  })
+  let finished = 0
+  for (const document of candidates) {
+    if (!isStuckFinalization(document, document.recipients, now)) continue
     try {
-      await finalizeDocument(id)
+      await finalizeDocument(document.id)
+      const after = await prisma.document.findUnique({ where: { id: document.id }, select: { sealedKey: true } })
+      if (after?.sealedKey) finished++
     } catch (error) {
-      console.error("[esign] reseal failed", id, error)
+      console.error("[esign] recovery of a stuck finalization failed", document.id, error)
     }
   }
-  return stuck.length
+  return finished
 }
+
+/**
+ * Finishes one document if it is stuck, for pages that show it. Cheap when it
+ * is not: one decision on rows the caller already loaded.
+ */
+export async function recoverIfStuck(
+  document: { id: string; status: DocumentStatus; sealedKey: string | null; completedAt: Date | null },
+  recipients: (RuleRecipient & { signedAt: Date | null })[],
+  now = new Date()
+): Promise<void> {
+  if (!isStuckFinalization(document, recipients, now)) return
+  try {
+    await finalizeDocument(document.id)
+  } catch (error) {
+    console.error("[esign] recovery of a stuck finalization failed", document.id, error)
+  }
+}
+
+// Replaced by recoverStuckFinalizations, which also finds documents left
+// PENDING with every signer done (the state a failure mid-finalization now
+// leaves), and waits out the grace period instead of racing a live attempt.
+// /** Re-runs sealing for documents that completed but failed to seal. */
+// export async function resealSweep(): Promise<number> {
+//   const stuck = await prisma.document.findMany({ where: { status: "COMPLETED", sealedKey: null }, select: { id: true }, take: 20 })
+//   for (const { id } of stuck) {
+//     try {
+//       await finalizeDocument(id)
+//     } catch (error) {
+//       console.error("[esign] reseal failed", id, error)
+//     }
+//   }
+//   return stuck.length
+// }

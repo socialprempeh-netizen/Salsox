@@ -158,6 +158,59 @@ export function isDocumentComplete(all: RuleRecipient[]): boolean {
   return actionable.length > 0 && actionable.every((r) => r.signingStatus === "SIGNED")
 }
 
+/**
+ * What finalizing a document still has to do, or null when nothing.
+ *
+ * - `SEAL_AND_COMPLETE`: every signer is done and the document is still
+ *   PENDING. The sealed copy, its fingerprint, the COMPLETED status and the
+ *   COMPLETED audit event are then written in one transaction, so a document
+ *   is never COMPLETED without the rest. This is also the state a crash
+ *   mid-finalization leaves behind: nothing from the attempt was committed.
+ * - `SEAL_ONLY`: COMPLETED with no sealed copy, which only the earlier
+ *   two-step finalization could produce (status first, seal later).
+ */
+export type FinalizeStep = "SEAL_AND_COMPLETE" | "SEAL_ONLY"
+
+export function finalizeStep(
+  status: DocumentStatus,
+  sealedKey: string | null,
+  recipients: RuleRecipient[]
+): FinalizeStep | null {
+  if (sealedKey) return null
+  if (status === "PENDING") return isDocumentComplete(recipients) ? "SEAL_AND_COMPLETE" : null
+  if (status === "COMPLETED") return "SEAL_ONLY"
+  return null
+}
+
+/**
+ * How long finalization may take before a document counts as stuck. Sealing
+ * runs inside the last signer's request and takes seconds; anything older
+ * than this is not still in flight, so recovering it does not race a live
+ * attempt (and if it did, the commit is guarded and only one would win).
+ */
+export const FINALIZE_GRACE_MS = 5 * 60 * 1000
+
+/**
+ * True when a document should have been finalized and was not, and enough
+ * time has passed that no request is still working on it: what the recovery
+ * sweep and the owner's document page pick up.
+ */
+export function isStuckFinalization(
+  document: { status: DocumentStatus; sealedKey: string | null; completedAt: Date | null },
+  recipients: (RuleRecipient & { signedAt: Date | null })[],
+  now: Date,
+  graceMs = FINALIZE_GRACE_MS
+): boolean {
+  const step = finalizeStep(document.status, document.sealedKey, recipients)
+  if (!step) return false
+  const times =
+    step === "SEAL_ONLY"
+      ? [document.completedAt]
+      : actionableRecipients(recipients).map((r) => r.signedAt)
+  const last = Math.max(...times.map((t) => t?.getTime() ?? 0))
+  return now.getTime() - last >= graceMs
+}
+
 /** Required fields of one recipient that are still empty. */
 export function missingRequiredFields<F extends RuleField>(fields: F[], recipientId: string): F[] {
   return fields.filter((f) => f.recipientId === recipientId && f.required && !f.inserted)

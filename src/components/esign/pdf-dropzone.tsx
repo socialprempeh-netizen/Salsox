@@ -9,7 +9,7 @@ import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { FileUp, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { MAX_PDF_BYTES, MAX_PDF_MB } from "@/lib/esign/limits"
+import { MAX_PDF_MB, pdfFileProblem } from "@/lib/esign/limits"
 
 // Replaced by MAX_PDF_BYTES from src/lib/esign/limits.ts, the value the
 // server checks, instead of a copy kept equal by hand.
@@ -22,18 +22,52 @@ export function PdfDropzone({ name = "file", onFile }: { name?: string; onFile?:
   const [error, setError] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
 
-  function accept(candidate: File | null | undefined, input?: HTMLInputElement) {
+  // Replaced: a dropped file was copied into the input before this ran, and
+  // the rejection paths cleared the input only when one was passed, which
+  // the drop handler never did. An oversize drop stayed in the form, the
+  // message showed, and submitting sent it anyway: past the server-action
+  // body limit, Next throws a raw error instead of returning ours. A
+  // rejection also left the previously chosen file on screen while the input
+  // held nothing, or something else.
+  // function accept(candidate: File | null | undefined, input?: HTMLInputElement) {
+  //   setError(null)
+  //   if (!candidate) return
+  //   if (candidate.type !== "application/pdf" && !candidate.name.toLowerCase().endsWith(".pdf")) {
+  //     setError(t("notPdf"))
+  //     if (input) input.value = ""
+  //     return
+  //   }
+  //   if (candidate.size > MAX_PDF_BYTES) {
+  //     setError(t("tooLarge", { maxMb: MAX_PDF_MB }))
+  //     if (input) input.value = ""
+  //     return
+  //   }
+  //   setFile(candidate)
+  //   onFile?.(candidate)
+  // }
+
+  /**
+   * The one way a file gets into the form, for both the picker and a drop.
+   * A rejected file never reaches the input, and the input, what the box
+   * shows and the parent's `onFile` are cleared together, so the form cannot
+   * submit a file the screen says was refused.
+   */
+  function accept(candidate: File | null | undefined, input: HTMLInputElement | null) {
     setError(null)
     if (!candidate) return
-    if (candidate.type !== "application/pdf" && !candidate.name.toLowerCase().endsWith(".pdf")) {
-      setError(t("notPdf"))
+    const problem = pdfFileProblem(candidate)
+    if (problem) {
+      setError(problem === "tooLarge" ? t("tooLarge", { maxMb: MAX_PDF_MB }) : t("notPdf"))
       if (input) input.value = ""
+      setFile(null)
+      onFile?.(null)
       return
     }
-    if (candidate.size > MAX_PDF_BYTES) {
-      setError(t("tooLarge", { maxMb: MAX_PDF_MB }))
-      if (input) input.value = ""
-      return
+    if (input && input.files?.[0] !== candidate) {
+      // A dropped file: put it into the real input so the form submits it.
+      const dt = new DataTransfer()
+      dt.items.add(candidate)
+      input.files = dt.files
     }
     setFile(candidate)
     onFile?.(candidate)
@@ -50,18 +84,13 @@ export function PdfDropzone({ name = "file", onFile }: { name?: string; onFile?:
         onDrop={(e) => {
           e.preventDefault()
           setDragging(false)
-          const dropped = e.dataTransfer.files?.[0]
-          const input = e.currentTarget.querySelector("input")
-          if (dropped && input) {
-            // Put the dropped file into the real input so the form submits it.
-            const dt = new DataTransfer()
-            dt.items.add(dropped)
-            input.files = dt.files
-          }
-          accept(dropped)
+          // Validated first: the file only reaches the input if accepted
+          // (it used to be copied in here, before any check).
+          accept(e.dataTransfer.files?.[0], e.currentTarget.querySelector("input"))
         }}
         className={cn(
-          "flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition-colors",
+          // Square, per the design rules (was rounded-2xl).
+          "flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed p-6 text-center transition-colors",
           dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
         )}
       >

@@ -18,7 +18,7 @@ const list = vi.fn()
 const del = vi.fn()
 vi.mock("@vercel/blob", () => ({ list: (...a: unknown[]) => list(...a), del: (...a: unknown[]) => del(...a) }))
 
-const { deleteFolder, documentKey, putFile, userFolder } = await import("./storage")
+const { deleteFolder, documentKey, putFile, sealedDocumentKey, userFolder } = await import("./storage")
 
 const token = process.env.BLOB_READ_WRITE_TOKEN
 const local = (key: string) => path.join(process.cwd(), ".data", "storage", key)
@@ -27,6 +27,23 @@ afterEach(() => {
   vi.clearAllMocks()
   if (token === undefined) delete process.env.BLOB_READ_WRITE_TOKEN
   else process.env.BLOB_READ_WRITE_TOKEN = token
+})
+
+describe("sealedDocumentKey", () => {
+  const hash = (c: string) => c.repeat(64)
+
+  // The point of the scheme: two seals with different bytes cannot overwrite
+  // each other, so the stored file always matches the recorded fingerprint.
+  it("gives different bytes different keys, in the document's own folder", () => {
+    const a = sealedDocumentKey("user_1", "doc_1", hash("a"))
+    expect(a).not.toBe(sealedDocumentKey("user_1", "doc_1", hash("b")))
+    expect(a.startsWith(userFolder("user_1"))).toBe(true)
+    expect(a).toMatch(/^documents\/user_1\/doc_1\/sealed-a{32}\.pdf$/)
+  })
+
+  it("refuses something that is not a SHA-256", () => {
+    expect(() => sealedDocumentKey("user_1", "doc_1", "../../etc")).toThrow()
+  })
 })
 
 describe("userFolder", () => {

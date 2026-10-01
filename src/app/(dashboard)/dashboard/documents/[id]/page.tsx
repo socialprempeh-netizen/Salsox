@@ -5,6 +5,7 @@
  */
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
+import { after } from "next/server"
 import { getFormatter, getTranslations } from "next-intl/server"
 import { CheckCircle2, Circle, Download, FileText, XCircle } from "lucide-react"
 import { requireUser } from "@/lib/auth"
@@ -12,6 +13,7 @@ import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { canEditRecipient, isActionable, isRecipientExpired, missingInvites } from "@/lib/esign/rules"
 import { emailConfigured } from "@/lib/esign/emails"
+import { recoverIfStuck } from "@/lib/esign/documents"
 import { signingUrl } from "@/lib/esign/share"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
 import { Badge } from "@/components/ui/badge"
@@ -47,6 +49,10 @@ export default async function DocumentPage({
   if (document.status === "DRAFT") redirect(`/dashboard/documents/${id}/edit`)
 
   const now = new Date()
+  // A document whose last signature went through but whose sealing did not
+  // (a failure mid-finalization) is finished here, after the response, so
+  // its owner does not wait for the nightly sweep. Free when it is not stuck.
+  after(() => recoverIfStuck(document, document.recipients, now))
   const when = (d: Date) => format.dateTime(d, { dateStyle: "medium", timeStyle: "short" })
   const senderName = user.name || user.email || siteConfig.name
   const amountLabel =

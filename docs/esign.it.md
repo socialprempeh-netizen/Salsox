@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: 96863e157a4d
+source_checksum: ceef691e59e2
 ---
 
 # Firme elettroniche (Salsox)
@@ -60,13 +60,16 @@ Vale la regola di `AGENTS.md`: le decisioni stanno in `src/lib/esign` come funzi
 3. **Invio.** Ogni destinatario riceve una scadenza e un'email con il proprio link. Dalla pagina del documento ogni link si può anche copiare o condividere su WhatsApp (`wa.me`) e SMS (`sms:`). "Inviato" compare solo per un'email che il provider ha accettato: ogni invio in `emails.ts` restituisce `sent`, `notConfigured` (nessuna chiave Resend, i link si condividono a mano) oppure `failed`, e il `sentAt` di un destinatario viene scritto solo in caso di successo. Un invito rifiutato lascia il documento attivo, sostituisce il banner "Sent!" con un avviso che dice quanti non sono stati consegnati, segna quei destinatari come "Email not delivered", e un promemoria o un reinvio rifiutato viene segnalato come errore con la possibilità di riprovare. Senza un provider email configurato, nemmeno lì si dichiara una consegna: `sentAt` resta vuoto, la pagina mostra "Email isn't configured: share the signing links manually" al posto del banner "Sent!", i destinatari sono segnati "Share link manually", e un promemoria o un reinvio viene rifiutato con lo stesso consiglio invece di essere registrato come inviato.
 4. **Firma.** Ogni campo viene salvato appena compilato. Una firma disegnata o caricata viene controllata prima di essere salvata (`signature-image.ts`): il PNG o JPEG deve essere integro, di dimensioni ragionevoli e incorporabile da pdf-lib, altrimenti a chi firma viene chiesto di ridisegnarla. Conta perché pdf-lib entra in un ciclo infinito su un PNG danneggiato, quindi un'immagine rovinata già salvata impedirebbe per sempre di sigillare il documento; il sigillo esegue lo stesso controllo strutturale e fallisce con un errore invece di bloccarsi. `completeSigning` rifiuta finché mancano campi obbligatori o un pagamento.
 5. **Sigillo.** Quando l'ultimo firmatario completa, `finalizeDocument`:
-   - rivendica in modo atomico il passaggio a `COMPLETED`;
    - inserisce i campi e appiattisce i moduli;
-   - aggiunge una pagina di certificato (hash, destinatari, registro di audit completo);
+   - aggiunge una pagina di certificato (hash, destinatari, registro di audit completo, evento di completamento incluso);
    - applica, se configurata, una firma digitale;
-   - salva la copia sigillata e invia l'email a tutti.
+   - salva la copia sigillata sotto una chiave che porta il suo SHA-256;
+   - poi, in **una sola transazione**, scrive lo stato `COMPLETED`, l'evento di audit `DOCUMENT_COMPLETED`, la chiave della copia sigillata e la sua impronta; solo dopo invia l'email a tutti.
 
-   Se il sigillo fallisce, lo sweep del cron riprova.
+   Due ultimi firmatari che completano insieme costruiscono entrambi un sigillo, ma solo un commit può rivendicare il documento: l'altro annulla e cancella il proprio file, quindi il file salvato è sempre quello di cui è registrato l'hash e il registro ha un solo completamento. Il commit viene rifiutato anche se un evento di audit è arrivato dopo la stampa del certificato, e il sigillo viene ricostruito. Una firma e il suo evento `RECIPIENT_SIGNED` sono a loro volta scritti in una sola transazione.
+6. **Recupero.** Un errore prima di quel commit lascia il documento `PENDING` con tutti i firmatari completati, e niente scritto a metà. `recoverStuckFinalizations` (il cron giornaliero) completa questi documenti quando l'ultima firma ha più di 5 minuti (`FINALIZE_GRACE_MS` in `rules.ts`), e la pagina del documento del proprietario fa lo stesso dopo la risposta, così il proprietario raramente aspetta il cron. Un documento che la versione precedente in due passi aveva lasciato `COMPLETED` senza copia sigillata viene completato allo stesso modo.
+
+In un documento sequenziale il firmatario successivo viene rivendicato (una scrittura protetta di `sentAt`) prima che parta la sua email "tocca a te", così due firmatari dello stesso gruppo che completano insieme la inviano una volta sola. Se l'email non parte, la rivendicazione viene rilasciata. `src/lib/esign/finalize-concurrency.db.test.ts` mette alla prova tutto questo contro un database vero (`ESIGN_DB_TESTS=1`).
 
 ## Le correzioni rispetto a DocuSign
 
@@ -90,7 +93,7 @@ Vale la regola di `AGENTS.md`: le decisioni stanno in `src/lib/esign` come funzi
 | Variabile | Serve per |
 |---|---|
 | `BLOB_READ_WRITE_TOKEN` | Archiviazione dei file in produzione. **Obbligatoria in produzione.** In sviluppo, senza, i file vanno in `.data/storage`. |
-| `CRON_SECRET` | `/api/cron/esign` (scadenze, promemoria, nuovo sigillo, avvisi di rinnovo). Gira ogni giorno secondo `vercel.json`. **Obbligatoria in produzione.** |
+| `CRON_SECRET` | `/api/cron/esign` (scadenze, promemoria, recupero dei sigilli rimasti a metà, avvisi di rinnovo). Gira ogni giorno secondo `vercel.json`. **Obbligatoria in produzione.** |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Email. **Obbligatorie in produzione.** In sviluppo, senza, i link di firma vengono scritti nel log e si possono comunque condividere dalla dashboard. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Sign & Pay tramite Stripe. Attiva anche Connect e aggiungi `account.updated` agli eventi del webhook. |
 | `PAYSTACK_SECRET_KEY`, `PAYSTACK_COUNTRY` | Sign & Pay tramite Paystack. Punta un webhook a `/api/webhooks/paystack`. Il paese predefinito è `ghana`. |

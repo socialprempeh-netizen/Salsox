@@ -30,6 +30,18 @@ export const MAX_PDF_MB = MAX_PDF_BYTES / (1024 * 1024)
 export const SERVER_ACTION_BODY_LIMIT = `${MAX_PDF_MB + 0.4}mb` as const
 
 /**
+ * Why a chosen file cannot be uploaded, or null when it can: not a PDF, or
+ * over the cap. The browser checks this before the file is put into the form,
+ * whether it was picked or dropped; the server checks the bytes again in
+ * `inspectPdf`, because a browser check proves nothing.
+ */
+export function pdfFileProblem(file: { name: string; type: string; size: number }): "notPdf" | "tooLarge" | null {
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) return "notPdf"
+  if (file.size > MAX_PDF_BYTES) return "tooLarge"
+  return null
+}
+
+/**
  * How long signing links stay valid when nobody chose otherwise: the default
  * on a new document and in Quick Send, and the term a renewal grants to a
  * document created without an explicit expiry.

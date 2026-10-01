@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { expireSweep, reminderSweep, resealSweep } from "@/lib/esign/documents"
+import { expireSweep, recoverStuckFinalizations, reminderSweep } from "@/lib/esign/documents"
 import { renewalNoticeSweep } from "@/lib/esign/renewal"
 
 export const dynamic = "force-dynamic"
@@ -14,7 +14,9 @@ export const maxDuration = 300
  *  - expire:   PENDING documents whose unsigned links lapsed become EXPIRED,
  *              and the owner is told (with a one-click renew link).
  *  - remind:   recipients who have not signed get a nudge every 3 days.
- *  - reseal:   documents that completed but failed to seal are retried.
+ *  - finalize: documents whose last signature went through but whose sealing
+ *              did not (a failure mid-finalization) are finished. Was
+ *              "reseal", which only retried COMPLETED documents.
  *  - renewals: subscriptions renewing soon get an advance notice, because
  *              Salsox never renews silently.
  *
@@ -32,7 +34,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const steps = { expire: expireSweep, remind: reminderSweep, reseal: resealSweep, renewals: renewalNoticeSweep }
+  // const steps = { expire: expireSweep, remind: reminderSweep, reseal: resealSweep, renewals: renewalNoticeSweep }
+  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), renewals: renewalNoticeSweep }
   const results: Record<string, number | string> = {}
   for (const [name, run] of Object.entries(steps)) {
     try {

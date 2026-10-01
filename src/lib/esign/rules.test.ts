@@ -4,6 +4,9 @@ import {
   canViewOriginal,
   canRenewDocument,
   computeExpiry,
+  FINALIZE_GRACE_MS,
+  finalizeStep,
+  isStuckFinalization,
   isDocumentComplete,
   isRecipientTurn,
   missingRequiredFields,
@@ -209,5 +212,57 @@ describe("missingInvites", () => {
   it("leaves out anyone who already opened their link", () => {
     const opened = { ...unsent("a"), viewedAt: now }
     expect(missingInvites(false, "PENDING", [opened], "PARALLEL").shareByHand).toEqual([])
+  })
+})
+
+describe("finalizeStep", () => {
+  const signed = r("a", { signingStatus: "SIGNED" })
+  const waiting = r("b")
+
+  it("seals and completes a pending document once every signer is done", () => {
+    expect(finalizeStep("PENDING", null, [signed])).toBe("SEAL_AND_COMPLETE")
+  })
+
+  it("does nothing while a signer has not signed", () => {
+    expect(finalizeStep("PENDING", null, [signed, waiting])).toBeNull()
+  })
+
+  it("only seals a document left COMPLETED without a copy", () => {
+    expect(finalizeStep("COMPLETED", null, [signed])).toBe("SEAL_ONLY")
+  })
+
+  it("does nothing once sealed, or for a document that ended another way", () => {
+    expect(finalizeStep("COMPLETED", "documents/u/d/sealed.pdf", [signed])).toBeNull()
+    expect(finalizeStep("CANCELLED", null, [signed])).toBeNull()
+  })
+})
+
+describe("isStuckFinalization", () => {
+  const doc = { status: "PENDING" as const, sealedKey: null, completedAt: null }
+  const signedAt = (ms: number) => new Date(now.getTime() - ms)
+
+  it("leaves a document alone while its last signature is fresh", () => {
+    const recipients = [{ ...r("a", { signingStatus: "SIGNED" }), signedAt: signedAt(60_000) }]
+    expect(isStuckFinalization(doc, recipients, now)).toBe(false)
+  })
+
+  // A crash after the last signature and before the commit leaves exactly this.
+  it("flags a pending document whose signers all finished past the grace period", () => {
+    const recipients = [
+      { ...r("a", { signingStatus: "SIGNED" }), signedAt: signedAt(FINALIZE_GRACE_MS * 3) },
+      { ...r("b", { signingStatus: "SIGNED" }), signedAt: signedAt(FINALIZE_GRACE_MS) },
+    ]
+    expect(isStuckFinalization(doc, recipients, now)).toBe(true)
+  })
+
+  it("times a completed-but-unsealed document from its completion", () => {
+    const recipients = [{ ...r("a", { signingStatus: "SIGNED" }), signedAt: signedAt(FINALIZE_GRACE_MS * 10) }]
+    expect(isStuckFinalization({ status: "COMPLETED", sealedKey: null, completedAt: signedAt(1000) }, recipients, now)).toBe(false)
+    expect(isStuckFinalization({ status: "COMPLETED", sealedKey: null, completedAt: signedAt(FINALIZE_GRACE_MS) }, recipients, now)).toBe(true)
+  })
+
+  it("is never stuck while someone still has to sign", () => {
+    const recipients = [{ ...r("a"), signedAt: null }]
+    expect(isStuckFinalization(doc, recipients, now)).toBe(false)
   })
 })

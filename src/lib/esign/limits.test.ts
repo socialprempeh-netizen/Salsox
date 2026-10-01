@@ -6,8 +6,31 @@ import {
   MAX_PDF_BYTES,
   MAX_PDF_MB,
   parseExpiryChoice,
+  pdfFileProblem,
   SERVER_ACTION_BODY_LIMIT,
 } from "./limits"
+
+describe("pdfFileProblem", () => {
+  const pdf = (size: number, name = "contract.pdf", type = "application/pdf") => ({ name, type, size })
+
+  it("accepts a PDF up to and including the cap", () => {
+    expect(pdfFileProblem(pdf(MAX_PDF_BYTES))).toBeNull()
+  })
+
+  it("refuses a PDF one byte over the cap", () => {
+    expect(pdfFileProblem(pdf(MAX_PDF_BYTES + 1))).toBe("tooLarge")
+  })
+
+  // Some systems hand over a PDF with no MIME type; the extension decides then.
+  it("goes by the extension when the type is missing", () => {
+    expect(pdfFileProblem(pdf(1000, "SCAN.PDF", ""))).toBeNull()
+    expect(pdfFileProblem(pdf(1000, "photo.jpg", "image/jpeg"))).toBe("notPdf")
+  })
+
+  it("names the wrong type before the size", () => {
+    expect(pdfFileProblem(pdf(MAX_PDF_BYTES * 2, "movie.mp4", "video/mp4"))).toBe("notPdf")
+  })
+})
 
 describe("PDF cap", () => {
   it("states the same cap in bytes and in megabytes", () => {

@@ -87,6 +87,19 @@ export function documentKey(userId: string, documentId: string, name: "original"
   return `documents/${userId}/${documentId}/${name}.pdf`
 }
 
+/**
+ * Where a sealed copy is stored: named by its own SHA-256, beside the
+ * original. It used to be the fixed `sealed.pdf` from `documentKey`, so two
+ * finalizations running at once wrote to the same key, and the file that
+ * survived could be the other run's while the recorded fingerprint was this
+ * one's. Different bytes now always land at different keys, and the key a
+ * document records is the file whose hash it records.
+ */
+export function sealedDocumentKey(userId: string, documentId: string, sha256: string): string {
+  if (!/^[0-9a-f]{64}$/.test(sha256)) throw new Error("A sealed key needs a hex SHA-256")
+  return `documents/${userId}/${documentId}/sealed-${sha256.slice(0, 32)}.pdf`
+}
+
 /** The folder every document of one user is stored under (see `documentKey`). */
 export function userFolder(userId: string): string {
   // An empty id would name `documents/`, every user's files at once.

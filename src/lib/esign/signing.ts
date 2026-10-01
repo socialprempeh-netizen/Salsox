@@ -182,19 +182,33 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
   const paid = recipient.payments.some((p) => p.status === "PAID")
   if (paymentOutstanding(recipient.document, recipient, paid)) return { ok: false, error: "paymentRequired" }
 
-  // Guarded transition: a double tap cannot sign twice.
-  const updated = await prisma.recipient.updateMany({
-    where: { id: recipient.id, signingStatus: "NOT_SIGNED" },
-    data: { signingStatus: "SIGNED", signedAt: new Date() },
+  // Guarded transition: a double tap cannot sign twice. The status and its
+  // audit event commit together: finalizing reads both, and a snapshot that
+  // saw this signature without its event would print a certificate missing
+  // it. They used to be two separate writes.
+  // const updated = await prisma.recipient.updateMany({
+  //   where: { id: recipient.id, signingStatus: "NOT_SIGNED" },
+  //   data: { signingStatus: "SIGNED", signedAt: new Date() },
+  // })
+  // if (updated.count === 0) return { ok: false, error: "ALREADY_SIGNED" }
+  // await recordAudit(prisma, { documentId: recipient.documentId, recipientId: recipient.id, type: AUDIT.RECIPIENT_SIGNED, actorEmail: recipient.email, meta: await requestMeta() })
+  const meta = await requestMeta()
+  const signed = await prisma.$transaction(async (tx) => {
+    const updated = await tx.recipient.updateMany({
+      where: { id: recipient.id, signingStatus: "NOT_SIGNED" },
+      data: { signingStatus: "SIGNED", signedAt: new Date() },
+    })
+    if (updated.count === 0) return false
+    await recordAudit(tx, {
+      documentId: recipient.documentId,
+      recipientId: recipient.id,
+      type: AUDIT.RECIPIENT_SIGNED,
+      actorEmail: recipient.email,
+      meta,
+    })
+    return true
   })
-  if (updated.count === 0) return { ok: false, error: "ALREADY_SIGNED" }
-  await recordAudit(prisma, {
-    documentId: recipient.documentId,
-    recipientId: recipient.id,
-    type: AUDIT.RECIPIENT_SIGNED,
-    actorEmail: recipient.email,
-    meta: await requestMeta(),
-  })
+  if (!signed) return { ok: false, error: "ALREADY_SIGNED" }
 
   const document = await prisma.document.findUniqueOrThrow({
     where: { id: recipient.documentId },
@@ -213,6 +227,18 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
   if (document.signingOrder === "SEQUENTIAL") {
     // Email the next group, but only those not already emailed.
     for (const next of recipientsToNotify(document.recipients, "SEQUENTIAL").filter((r) => !r.sentAt)) {
+      // Claimed before sending. Two signers of the same group finishing at
+      // nearly the same moment both read a finished group and both reached
+      // this loop, and both emailed the next signer "your turn". Only the
+      // request whose guarded write lands now sends; the claim is released
+      // below if the email does not go, so the recipient still shows as not
+      // delivered, with a Resend button, as before.
+      const claimedAt = new Date()
+      const claim = await prisma.recipient.updateMany({ where: { id: next.id, sentAt: null }, data: { sentAt: claimedAt } })
+      if (claim.count === 0) continue
+      // A throw counts as not sent: the signature above is already committed,
+      // so this request must not fail on an email, and the claim must not
+      // stay behind claiming a delivery that never happened.
       const outcome = await sendSigningInvite({
         to: next.email,
         recipientName: next.name,
@@ -225,6 +251,9 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
           next.mustPay && document.paymentAmount && document.paymentCurrency
             ? formatMinorUnits(document.paymentAmount, document.paymentCurrency)
             : null,
+      }).catch((error: unknown) => {
+        console.error("[esign] next-signer invite threw", next.id, error)
+        return "failed" as const
       })
       // Stamped only when the email went: an unstamped recipient whose turn
       // it is shows on the sender's document page as "not delivered", with a
@@ -233,7 +262,12 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
       // Then stamped for "not configured" too, which showed "Sent" on a
       // deployment with no email; now only when the provider accepted it.
       // if (delivered(outcome)) await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
-      if (emailed(outcome)) await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
+      // if (emailed(outcome)) await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
+      // Now claimed up front (above); a send that did not go gives the claim
+      // back, only if it is still ours.
+      if (!emailed(outcome)) {
+        await prisma.recipient.updateMany({ where: { id: next.id, sentAt: claimedAt }, data: { sentAt: null } })
+      }
     }
   }
   return { ok: true, documentCompleted: false }
