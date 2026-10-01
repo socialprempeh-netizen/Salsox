@@ -35,6 +35,11 @@ export function QuickSendForm() {
       if (state.undelivered) {
         toast.error(t("sentUndelivered", { count: state.undelivered }))
         router.push(`/dashboard/documents/${state.documentId}`)
+      } else if (state.notEmailed) {
+        // No email provider: live, but nobody was emailed. A warning, not "Sent!".
+        toast.warning(t("sentNotEmailed"))
+        // ?sent=1 opens the page on its "email isn't configured" notice.
+        router.push(`/dashboard/documents/${state.documentId}?sent=1`)
       } else {
         toast.success(t("sent"))
         router.push(`/dashboard/documents/${state.documentId}?sent=1`)

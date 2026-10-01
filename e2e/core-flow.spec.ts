@@ -91,6 +91,11 @@ test("upload → fields for two recipients → send → both sign via their link
   await sender.getByRole("button", { name: "Send for signature" }).click()
   await sender.waitForURL(/\?sent=1/, { timeout: 30_000 })
   await expect(sender.getByText("Awaiting signatures")).toBeVisible()
+  // No Resend key on this server, so nobody was emailed: the page must say
+  // so, and must not claim "Each recipient got an email".
+  await expect(sender.getByText("Email isn't configured: share the signing links manually")).toBeVisible()
+  await expect(sender.getByText(/Each recipient got an email/)).toHaveCount(0)
+  await expect(sender.getByText("Share link manually")).toHaveCount(2)
   await shot(sender, "05-sent")
 
   const recipients = await db().recipient.findMany({ where: { documentId }, orderBy: { email: "asc" } })
@@ -175,8 +180,9 @@ test("upload → fields for two recipients → send → both sign via their link
   expect(audit.find((e) => e.type === "DOCUMENT_SENT")?.actorEmail).toBe(senderEmail)
   expect(new Set(audit.filter((e) => e.type === "RECIPIENT_SIGNED").map((e) => e.actorEmail))).toEqual(new Set([ama, kwame]))
 
-  const emails = recipients.map((r) => `${r.email}: sentAt=${r.sentAt?.toISOString() ?? "null"}`)
-  console.log("INVITATION EMAILS (server runs without a Resend key)\n  " + emails.join("\n  "))
+  // No Resend key on this server: nothing was emailed, so nobody is recorded
+  // as emailed. This used to read `sentAt` set for both, on no email at all.
+  for (const r of recipients) expect(r.sentAt, `${r.email} sentAt`).toBeNull()
 
   // ── The sealed PDF ────────────────────────────────────────────────────────
   const res = await kwamePage.request.get(`/sign/${kwameToken}/download`)

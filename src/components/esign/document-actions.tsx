@@ -43,6 +43,8 @@ export function DocumentActions({ documentId, status }: { documentId: string; st
       const retry = opts.emails ? { action: { label: t("retry"), onClick: () => run(action, success, opts) } } : undefined
       if (result.error) return void toast.error(result.error, retry)
       if (result.undelivered) toast.error(t("undeliveredToast", { count: result.undelivered }), retry)
+      // No email provider: the links were renewed, but nobody was emailed.
+      else if (result.notEmailed) toast.warning(t("notEmailedToast"))
       else toast.success(success)
       if (opts.after) opts.after()
       else router.refresh()

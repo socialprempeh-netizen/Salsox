@@ -7,6 +7,10 @@
  * down that the files go too, and in which order: rows first, so a failure can
  * at worst strand a file, never leave a document whose file is gone.
  *
+ * Sending with no email provider configured is covered too: nobody may be
+ * stamped "Sent" when no email went out, and a reminder that reached nobody
+ * is not recorded as sent.
+ *
  * Prisma and storage are mocked; so are the modules that reach for email,
  * so the file under test loads alone.
  */
@@ -19,13 +23,21 @@ const findPayouts = vi.fn()
 const transaction = vi.fn()
 const deleteFile = vi.fn()
 const deleteFolder = vi.fn()
+const updateDocuments = vi.fn()
+const loadDocument = vi.fn()
+const updateRecipients = vi.fn()
+const recordAudit = vi.fn()
+const sendSigningInvite = vi.fn()
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     document: {
       findFirst: (...a: unknown[]) => findDocument(...a),
       deleteMany: (...a: unknown[]) => deleteDocuments(...a),
+      updateMany: (...a: unknown[]) => updateDocuments(...a),
+      findUniqueOrThrow: (...a: unknown[]) => loadDocument(...a),
     },
+    recipient: { updateMany: (...a: unknown[]) => updateRecipients(...a) },
     payoutAccount: { findMany: (...a: unknown[]) => findPayouts(...a) },
     $transaction: (...a: unknown[]) => transaction(...a),
   },
@@ -35,10 +47,11 @@ vi.mock("./storage", async (importOriginal) => ({
   deleteFile: (...a: unknown[]) => deleteFile(...a),
   deleteFolder: (...a: unknown[]) => deleteFolder(...a),
 }))
-vi.mock("./audit", () => ({ AUDIT: {}, recordAudit: vi.fn(), requestMeta: async () => ({}) }))
-vi.mock("./emails", () => ({ delivered: () => true }))
+vi.mock("./audit", () => ({ AUDIT: { SENT: "DOCUMENT_SENT", REMINDER_SENT: "REMINDER_SENT" }, recordAudit: (...a: unknown[]) => recordAudit(...a), requestMeta: async () => ({}) }))
+vi.mock("./emails", () => ({ sendSigningInvite: (...a: unknown[]) => sendSigningInvite(...a) }))
+vi.mock("./sender", () => ({ senderBlocker: async () => null }))
 
-const { deleteAccountFiles, deleteDraft, saveDocumentSetup } = await import("./documents")
+const { deleteAccountFiles, deleteDraft, remindDocument, saveDocumentSetup, sendDocument } = await import("./documents")
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -127,5 +140,65 @@ describe("saveDocumentSetup with a crafted currency", () => {
     transaction.mockResolvedValue(undefined)
     expect(await saveDocumentSetup("u1", "doc_1", setup("USD"))).toEqual({ ok: true })
     expect(transaction).toHaveBeenCalledOnce()
+  })
+})
+
+describe("sending when no email provider is configured", () => {
+  const signer = (id: string) => ({
+    id,
+    email: `${id}@example.com`,
+    name: id,
+    role: "SIGNER",
+    order: 0,
+    signingStatus: "NOT_SIGNED",
+    expiresAt: null,
+    sentAt: null,
+    viewedAt: null,
+    token: `token-${id}`,
+    mustPay: false,
+  })
+  const draft = {
+    id: "doc_1",
+    userId: "u1",
+    title: "Lease",
+    message: null,
+    status: "DRAFT",
+    signingOrder: "PARALLEL",
+    expiresInDays: 30,
+    paymentAmount: null,
+    paymentCurrency: null,
+    user: { name: "Sender", email: "sender@example.com" },
+    recipients: [signer("a"), signer("b")],
+    fields: [{ recipientId: "a" }, { recipientId: "b" }],
+  }
+  /** Every `sentAt` written to a recipient row, from the updateMany calls. */
+  const stampedSent = () => updateRecipients.mock.calls.filter(([arg]) => "sentAt" in (arg as { data: object }).data)
+
+  beforeEach(() => {
+    findDocument.mockResolvedValue(draft)
+    updateDocuments.mockResolvedValue({ count: 1 })
+    loadDocument.mockResolvedValue({ ...draft, status: "PENDING" })
+    updateRecipients.mockResolvedValue({ count: 1 })
+  })
+
+  it("sends the document but stamps nobody \"Sent\" and reports them as not emailed", async () => {
+    sendSigningInvite.mockResolvedValue("notConfigured")
+    expect(await sendDocument("u1", "doc_1")).toEqual({ ok: true, undelivered: 0, notEmailed: 2 })
+    expect(stampedSent()).toEqual([])
+  })
+
+  it("stamps \"Sent\" when the provider accepted the emails", async () => {
+    sendSigningInvite.mockResolvedValue("sent")
+    expect(await sendDocument("u1", "doc_1")).toEqual({ ok: true, undelivered: 0, notEmailed: 0 })
+    expect(stampedSent()).toHaveLength(1)
+    expect(stampedSent()[0][0]).toMatchObject({ where: { id: { in: ["a", "b"] } } })
+  })
+
+  it("refuses a reminder that could reach nobody, and records no reminder", async () => {
+    findDocument.mockResolvedValue({ ...draft, status: "PENDING" })
+    sendSigningInvite.mockResolvedValue("notConfigured")
+    expect(await remindDocument("u1", "doc_1")).toEqual({ ok: false, error: "emailNotConfigured" })
+    expect(recordAudit).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ type: "REMINDER_SENT" }))
+    expect(updateRecipients).not.toHaveBeenCalled()
   })
 })

@@ -134,6 +134,24 @@ export function undeliveredInvites<R extends RuleRecipient & { sentAt: Date | nu
   return recipientsToNotify(all, signingOrder).filter((r) => r.sentAt === null && r.viewedAt === null)
 }
 
+/**
+ * Splits `undeliveredInvites` by why the invitation is missing. With an email
+ * provider configured, a missing invitation is one the provider refused: say
+ * "not delivered" and offer a resend. Without one, nothing was ever going to
+ * be sent: the sender has to share those links by hand, and a resend would
+ * achieve nothing. Before this split, the second case was hidden by stamping
+ * those recipients "Sent".
+ */
+export function missingInvites<R extends RuleRecipient & { sentAt: Date | null; viewedAt: Date | null }>(
+  emailConfigured: boolean,
+  documentStatus: DocumentStatus,
+  all: R[],
+  signingOrder: SigningOrder
+): { undelivered: R[]; shareByHand: R[] } {
+  const missing = undeliveredInvites(documentStatus, all, signingOrder)
+  return emailConfigured ? { undelivered: missing, shareByHand: [] } : { undelivered: [], shareByHand: missing }
+}
+
 /** A document is complete once it has actionable recipients and all of them signed. */
 export function isDocumentComplete(all: RuleRecipient[]): boolean {
   const actionable = actionableRecipients(all)

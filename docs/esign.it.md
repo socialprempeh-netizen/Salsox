@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: 2641406dc53b
+source_checksum: 96863e157a4d
 ---
 
 # Firme elettroniche (Salsox)
@@ -57,7 +57,7 @@ Vale la regola di `AGENTS.md`: le decisioni stanno in `src/lib/esign` come funzi
 
 1. **Caricamento.** `inspectPdf` controlla i magic byte, la leggibilità, la cifratura e il limite di 4 MB (sotto il limite di 4,5 MB di Vercel). L'originale viene salvato una volta e mai modificato.
 2. **Configurazione.** Destinatari (firmatario, approvatore, lettore, CC), campi in percentuali della pagina, ordine di firma, scadenza, Sign & Pay opzionale.
-3. **Invio.** Ogni destinatario riceve una scadenza e un'email con il proprio link. Dalla pagina del documento ogni link si può anche copiare o condividere su WhatsApp (`wa.me`) e SMS (`sms:`). "Inviato" compare solo per un'email che il provider ha accettato: ogni invio in `emails.ts` restituisce `sent`, `notConfigured` (nessuna chiave Resend, i link si condividono a mano) oppure `failed`, e il `sentAt` di un destinatario viene scritto solo in caso di successo. Un invito rifiutato lascia il documento attivo, sostituisce il banner "Sent!" con un avviso che dice quanti non sono stati consegnati, segna quei destinatari come "Email not delivered", e un promemoria o un reinvio rifiutato viene segnalato come errore con la possibilità di riprovare.
+3. **Invio.** Ogni destinatario riceve una scadenza e un'email con il proprio link. Dalla pagina del documento ogni link si può anche copiare o condividere su WhatsApp (`wa.me`) e SMS (`sms:`). "Inviato" compare solo per un'email che il provider ha accettato: ogni invio in `emails.ts` restituisce `sent`, `notConfigured` (nessuna chiave Resend, i link si condividono a mano) oppure `failed`, e il `sentAt` di un destinatario viene scritto solo in caso di successo. Un invito rifiutato lascia il documento attivo, sostituisce il banner "Sent!" con un avviso che dice quanti non sono stati consegnati, segna quei destinatari come "Email not delivered", e un promemoria o un reinvio rifiutato viene segnalato come errore con la possibilità di riprovare. Senza un provider email configurato, nemmeno lì si dichiara una consegna: `sentAt` resta vuoto, la pagina mostra "Email isn't configured: share the signing links manually" al posto del banner "Sent!", i destinatari sono segnati "Share link manually", e un promemoria o un reinvio viene rifiutato con lo stesso consiglio invece di essere registrato come inviato.
 4. **Firma.** Ogni campo viene salvato appena compilato. Una firma disegnata o caricata viene controllata prima di essere salvata (`signature-image.ts`): il PNG o JPEG deve essere integro, di dimensioni ragionevoli e incorporabile da pdf-lib, altrimenti a chi firma viene chiesto di ridisegnarla. Conta perché pdf-lib entra in un ciclo infinito su un PNG danneggiato, quindi un'immagine rovinata già salvata impedirebbe per sempre di sigillare il documento; il sigillo esegue lo stesso controllo strutturale e fallisce con un errore invece di bloccarsi. `completeSigning` rifiuta finché mancano campi obbligatori o un pagamento.
 5. **Sigillo.** Quando l'ultimo firmatario completa, `finalizeDocument`:
    - rivendica in modo atomico il passaggio a `COMPLETED`;

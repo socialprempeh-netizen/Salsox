@@ -12,6 +12,7 @@ import {
   shouldExpireDocument,
   signingBlocker,
   undeliveredInvites,
+  missingInvites,
   type RuleRecipient,
 } from "./rules"
 
@@ -187,5 +188,26 @@ describe("canViewOriginal", () => {
   it("refuses a pending document once this recipient's own link has run out", () => {
     expect(canViewOriginal("PENDING", { expiresAt: past }, now)).toBe(false)
     expect(canViewOriginal("PENDING", { expiresAt: now }, now)).toBe(false)
+  })
+})
+
+describe("missingInvites", () => {
+  const unsent = (id: string) => ({ ...r(id), sentAt: null, viewedAt: null })
+
+  it("calls a missing invitation undelivered when there is a provider to have refused it", () => {
+    const result = missingInvites(true, "PENDING", [unsent("a")], "PARALLEL")
+    expect(result.undelivered.map((x) => x.id)).toEqual(["a"])
+    expect(result.shareByHand).toEqual([])
+  })
+
+  it("asks for the link to be shared by hand when no provider is configured", () => {
+    const result = missingInvites(false, "PENDING", [unsent("a"), unsent("b")], "PARALLEL")
+    expect(result.undelivered).toEqual([])
+    expect(result.shareByHand.map((x) => x.id)).toEqual(["a", "b"])
+  })
+
+  it("leaves out anyone who already opened their link", () => {
+    const opened = { ...unsent("a"), viewedAt: now }
+    expect(missingInvites(false, "PENDING", [opened], "PARALLEL").shareByHand).toEqual([])
   })
 })

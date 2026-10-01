@@ -50,7 +50,7 @@ vi.mock("./audit", () => ({
   requestMeta: async () => ({ ipAddress: null, userAgent: null }),
 }))
 vi.mock("./documents", () => ({ finalizeDocument: vi.fn(), appUrl: () => "http://localhost:3000" }))
-vi.mock("./emails", () => ({ delivered: () => true, sendDocumentRejected: vi.fn(), sendSigningInvite: vi.fn() }))
+vi.mock("./emails", () => ({ delivered: () => true, emailed: () => true, sendDocumentRejected: vi.fn(), sendSigningInvite: vi.fn() }))
 vi.mock("./payments", () => ({ getProvider: (...a: unknown[]) => getProvider(...a) }))
 
 const { saveField, startPayment } = await import("./signing")

@@ -217,6 +217,12 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
         // page show who was not reached instead of its "Sent!" banner.
         toast.error(t("sentUndelivered", { count: result.undelivered }))
         router.push(`/dashboard/documents/${documentId}`)
+      } else if (send && result.notEmailed) {
+        // No email provider: the document is live but nobody was emailed, so
+        // this is a warning, never "Sent!".
+        toast.warning(t("sentNotEmailed"))
+        // ?sent=1 opens the page on its "email isn't configured" notice.
+        router.push(`/dashboard/documents/${documentId}?sent=1`)
       } else if (send) {
         toast.success(t("sent"))
         router.push(`/dashboard/documents/${documentId}?sent=1`)
