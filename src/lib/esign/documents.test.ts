@@ -49,12 +49,16 @@ vi.mock("./storage", async (importOriginal) => ({
 }))
 vi.mock("./audit", () => ({ AUDIT: { SENT: "DOCUMENT_SENT", REMINDER_SENT: "REMINDER_SENT" }, recordAudit: (...a: unknown[]) => recordAudit(...a), requestMeta: async () => ({}) }))
 vi.mock("./emails", () => ({ sendSigningInvite: (...a: unknown[]) => sendSigningInvite(...a) }))
-vi.mock("./sender", () => ({ senderBlocker: async () => null }))
+// The plan is Business unless a test says otherwise, so the tests about
+// other rules are not stopped by a plan gate.
+const plan = vi.hoisted(() => ({ current: { tier: "business" as "free" | "personal" | "business", documentsLeft: null as number | null } }))
+vi.mock("./sender", () => ({ senderBlocker: async () => null, senderPlan: async () => plan.current }))
 
 const { deleteAccountFiles, deleteDraft, remindDocument, saveDocumentSetup, sendDocument } = await import("./documents")
 
 beforeEach(() => {
   vi.clearAllMocks()
+  plan.current = { tier: "business", documentsLeft: null }
   vi.spyOn(console, "error").mockImplementation(() => {})
   deleteFile.mockResolvedValue(undefined)
   deleteFolder.mockResolvedValue(undefined)
@@ -143,6 +147,43 @@ describe("saveDocumentSetup with a crafted currency", () => {
   })
 })
 
+/**
+ * Plan gates (plans.ts): a Business feature on a lower plan is refused with
+ * the code the form turns into an upgrade prompt, and nothing is written.
+ * Before, every account could use them whatever it paid for.
+ */
+describe("plan gates on the setup", () => {
+  const base: DocumentSetup = {
+    title: "Contract",
+    signingOrder: "PARALLEL",
+    expiresInDays: 30,
+    recipients: [{ key: "r1", name: "Ama", email: "ama@example.com", phone: undefined, role: "SIGNER", order: 0 }],
+    fields: [],
+    payment: null,
+  }
+
+  beforeEach(() => {
+    findDocument.mockResolvedValue({ id: "doc_1", userId: "u1", status: "DRAFT", pageCount: 1 })
+    findPayouts.mockResolvedValue([{ provider: "STRIPE" }])
+    transaction.mockResolvedValue(undefined)
+  })
+
+  it("refuses Sign & Pay, signing order and approvers on Personal, and writes nothing", async () => {
+    plan.current = { tier: "personal", documentsLeft: null }
+    const payment = { amount: "12.50", currency: "USD", recipientKey: "r1" }
+    expect(await saveDocumentSetup("u1", "doc_1", { ...base, payment })).toEqual({ ok: false, error: "plan_signAndPay" })
+    expect(await saveDocumentSetup("u1", "doc_1", { ...base, signingOrder: "SEQUENTIAL" })).toEqual({ ok: false, error: "plan_sequentialSigning" })
+    const approver = { ...base, recipients: [{ ...base.recipients[0], role: "APPROVER" as const }] }
+    expect(await saveDocumentSetup("u1", "doc_1", approver)).toEqual({ ok: false, error: "plan_approvers" })
+    expect(transaction).not.toHaveBeenCalled()
+  })
+
+  it("saves a plain parallel setup on the free plan", async () => {
+    plan.current = { tier: "free", documentsLeft: 3 }
+    expect(await saveDocumentSetup("u1", "doc_1", base)).toEqual({ ok: true })
+  })
+})
+
 describe("sending when no email provider is configured", () => {
   const signer = (id: string) => ({
     id,
@@ -185,6 +226,21 @@ describe("sending when no email provider is configured", () => {
     sendSigningInvite.mockResolvedValue("notConfigured")
     expect(await sendDocument("u1", "doc_1")).toEqual({ ok: true, undelivered: 0, notEmailed: 2 })
     expect(stampedSent()).toEqual([])
+  })
+
+  it("refuses to send once a free account has used its documents this month", async () => {
+    plan.current = { tier: "free", documentsLeft: 0 }
+    expect(await sendDocument("u1", "doc_1")).toEqual({ ok: false, error: "plan_unlimitedDocuments" })
+    expect(updateDocuments).not.toHaveBeenCalled()
+    expect(sendSigningInvite).not.toHaveBeenCalled()
+  })
+
+  // Saved while on Business, sent after a downgrade: checked again at send.
+  it("refuses a Sign & Pay draft on a plan that no longer includes it", async () => {
+    plan.current = { tier: "personal", documentsLeft: null }
+    findDocument.mockResolvedValue({ ...draft, paymentAmount: 1250, paymentCurrency: "USD" })
+    expect(await sendDocument("u1", "doc_1")).toEqual({ ok: false, error: "plan_signAndPay" })
+    expect(updateDocuments).not.toHaveBeenCalled()
   })
 
   it("stamps \"Sent\" when the provider accepted the emails", async () => {

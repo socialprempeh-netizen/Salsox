@@ -45,7 +45,9 @@ import { chooseProvider, formatMinorUnits, isSignAndPayCurrency, toMinorUnits } 
 import { nameFromEmail, type DocumentSetup } from "./schemas"
 import { signingUrl } from "./share"
 import { sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
-import { senderBlocker } from "./sender"
+import { senderBlocker, senderPlan } from "./sender"
+import { hasFeature, planErrorCode, setupBlocker, tierForEntitlement } from "./plans"
+import { getEntitlement } from "@/lib/billing"
 import { DEFAULT_EXPIRY_DAYS } from "./limits"
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
@@ -102,6 +104,12 @@ export async function saveDocumentSetup(userId: string, documentId: string, setu
   const document = await prisma.document.findFirst({ where: { id: documentId, userId } })
   if (!document) return { ok: false, error: "notFound" }
   if (document.status !== "DRAFT") return { ok: false, error: "notDraft" }
+
+  // Business features on a lower plan are refused here, not saved and
+  // silently honoured: the editor locks them, and this is the authority.
+  const { tier } = await senderPlan(userId)
+  const gated = setupBlocker(tier, { signingOrder: setup.signingOrder, recipients: setup.recipients, hasPayment: Boolean(setup.payment) })
+  if (gated) return { ok: false, error: planErrorCode(gated) }
 
   const keys = new Set(setup.recipients.map((r) => r.key))
   if (keys.size !== setup.recipients.length) return { ok: false, error: "invalidInput" }
@@ -268,6 +276,17 @@ export async function sendDocument(userId: string, documentId: string): Promise<
   // Confirmed sender, and under the daily abuse ceiling (sending-limits.ts).
   const blocked = await senderBlocker(userId, document.recipients.length, now)
   if (blocked) return { ok: false, error: blocked }
+  // Asked again at the moment of sending: the plan may have changed since
+  // the setup was saved (a downgrade, a lapsed trial), and the free monthly
+  // allowance is spent by sending, not by saving.
+  const plan = await senderPlan(userId, now)
+  const gated = setupBlocker(plan.tier, {
+    signingOrder: document.signingOrder,
+    recipients: document.recipients,
+    hasPayment: Boolean(document.paymentAmount),
+  })
+  if (gated) return { ok: false, error: planErrorCode(gated) }
+  if (plan.documentsLeft === 0) return { ok: false, error: planErrorCode("unlimitedDocuments") }
 
   const expiresAt = computeExpiry(document.expiresInDays, now)
   const claimed = await prisma.document.updateMany({
@@ -309,6 +328,8 @@ export async function quickSend(args: {
   // again at the moment of sending.
   const blocked = await senderBlocker(args.userId, args.signers.length)
   if (blocked) return { ok: false, error: blocked }
+  // Same for a free account that has used its documents this month.
+  if ((await senderPlan(args.userId)).documentsLeft === 0) return { ok: false, error: planErrorCode("unlimitedDocuments") }
 
   const created = await createDraftFromUpload({ userId: args.userId, title: args.title, bytes: args.bytes })
   if (!created.ok) return created
@@ -512,16 +533,25 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
   const step = finalizeStep(document.status, document.sealedKey, document.recipients)
   if (!step) return "nothing"
 
+  // The certificate page and the digital seal are a Business feature, judged
+  // by the owner's plan when the document completes. Without it the copy is
+  // still sealed in the sense that matters for the record (fields stamped,
+  // forms flattened, hash stored); the audit trail stays on the dashboard and
+  // in the export, it is just not printed into the PDF.
+  const withCertificate = hasFeature(tierForEntitlement(await getEntitlement(document.userId)), "auditCertificate")
+
   // The COMPLETED event is printed on the certificate before it exists as a
-  // row, so it is built here with the exact timestamp the row will get.
+  // row, so it is built here with the exact timestamp the row will get. Its
+  // data records whether this copy carries the certificate, which is how the
+  // document page and later emails know what the PDF contains.
   const completedAt = step === "SEAL_ONLY" ? document.completedAt ?? new Date() : new Date()
   const completedEvent = document.auditEvents.some((e) => e.type === AUDIT.COMPLETED)
     ? null
     : { type: AUDIT.COMPLETED, createdAt: completedAt, actorEmail: null, ipAddress: null }
   const audit = completedEvent ? [...document.auditEvents, completedEvent] : document.auditEvents
-
-  const p12Base64 = process.env.SIGNING_P12_BASE64
+  const p12Base64 = withCertificate ? process.env.SIGNING_P12_BASE64 : undefined
   const sealed = await sealDocument({
+    certificate: withCertificate,
     original: await getFile(document.originalKey),
     documentId: document.id,
     title: document.title,
@@ -557,7 +587,7 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
       })
       if (claimed.count === 0) throw new FinalizeConflict("taken")
       if (completedEvent) {
-        await tx.auditEvent.create({ data: { documentId, type: AUDIT.COMPLETED, createdAt: completedAt } })
+        await tx.auditEvent.create({ data: { documentId, type: AUDIT.COMPLETED, createdAt: completedAt, data: { certificate: withCertificate } } })
       }
     })
   } catch (error) {
@@ -573,6 +603,7 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
     name: document.user.name || document.user.email,
     title: document.title,
     downloadUrl: `${base}/dashboard/documents/${document.id}`,
+    withCertificate,
   })
   for (const r of document.recipients) {
     await sendDocumentCompleted({
@@ -580,6 +611,7 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
       name: r.name,
       title: document.title,
       downloadUrl: `${signingUrl(base, r.token)}/download`,
+      withCertificate,
     })
   }
   return "done"

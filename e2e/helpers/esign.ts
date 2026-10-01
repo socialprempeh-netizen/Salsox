@@ -20,6 +20,28 @@ export function db(): PrismaClient {
   return client
 }
 
+/**
+ * Puts an account on the Business plan by writing the subscription row the
+ * Stripe webhook would, for tests about what Business unlocks (the sealed
+ * certificate, Sign & Pay, signing order). Checkout itself is covered by
+ * checkout.spec.ts. Removed with the account by the teardown (cascade).
+ */
+export async function giveBusinessPlan(email: string): Promise<void> {
+  const user = await db().user.findUniqueOrThrow({ where: { email } })
+  const plan = await db().plan.findUniqueOrThrow({ where: { slug: "pro-monthly" } })
+  const now = Date.now()
+  await db().subscription.create({
+    data: {
+      userId: user.id,
+      planId: plan.id,
+      stripeSubscriptionId: `sub_e2e_${now}_${Math.random().toString(36).slice(2)}`,
+      status: "ACTIVE",
+      currentPeriodStart: new Date(now),
+      currentPeriodEnd: new Date(now + 30 * 24 * 60 * 60 * 1000),
+    },
+  })
+}
+
 /** A small two-page agreement, generated per run so no fixture file is needed. */
 export async function samplePdf(pages = 2): Promise<Buffer> {
   const doc = await PDFDocument.create()

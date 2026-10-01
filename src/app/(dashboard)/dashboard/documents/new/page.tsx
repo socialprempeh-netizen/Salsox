@@ -8,10 +8,15 @@ import { requireUser } from "@/lib/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { UploadForm } from "@/components/esign/upload-form"
 import { MAX_PDF_MB } from "@/lib/esign/limits"
+import { senderPlan } from "@/lib/esign/sender"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
+import { FreeAllowanceNotice } from "@/components/esign/plan-upsell"
 
 export default async function NewDocumentPage() {
-  await requireUser()
+  const user = await requireUser()
   const t = await getTranslations("esign.upload")
+  // Free accounts see what is left of the month's documents before they start.
+  const { documentsLeft } = await senderPlan(user.id)
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
@@ -23,6 +28,7 @@ export default async function NewDocumentPage() {
           </Link>
         </p>
       </div>
+      <FreeAllowanceNotice left={documentsLeft} total={FREE_DOCUMENTS_PER_MONTH} />
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("cardTitle")}</CardTitle>

@@ -26,6 +26,7 @@ import { resendToRecipient, updateRecipient } from "@/lib/esign/recipients"
 import { documentSetupSchema, parseEmailList, recipientInputSchema, MAX_RECIPIENTS, TITLE_MAX } from "@/lib/esign/schemas"
 import { BURST_LIMITS } from "@/lib/esign/sending-limits"
 import { MAX_PDF_MB, parseExpiryChoice } from "@/lib/esign/limits"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 
 /**
  * `undelivered` is how many emails the provider refused on an action that
@@ -34,7 +35,9 @@ import { MAX_PDF_MB, parseExpiryChoice } from "@/lib/esign/limits"
  * email provider. The interface reads both so that it never says "Sent" for
  * an email that was not.
  */
-export type ActionState = { error?: string; ok?: boolean; documentId?: string; undelivered?: number; notEmailed?: number }
+// `upgrade` marks an error that a higher plan would lift (plans.ts), so the
+// form can offer the way to upgrade next to the message.
+export type ActionState = { error?: string; upgrade?: boolean; ok?: boolean; documentId?: string; undelivered?: number; notEmailed?: number }
 
 // Replaced by BURST_LIMITS in src/lib/esign/sending-limits.ts. 120 sends per
 // 10 minutes, at 25 recipients each, was 3,000 emails from one account before
@@ -54,11 +57,12 @@ async function errorText(code: string): Promise<string> {
   // `max` is read by the one message that states the recipient cap, so the
   // number shown and the number enforced are the same value.
   // `maxMb` likewise, for the file-size message.
-  return t.has(code) ? t(code, { max: MAX_RECIPIENTS, maxMb: MAX_PDF_MB }) : t("generic")
+  // `free` likewise, for the free monthly allowance.
+  return t.has(code) ? t(code, { max: MAX_RECIPIENTS, maxMb: MAX_PDF_MB, free: FREE_DOCUMENTS_PER_MONTH }) : t("generic")
 }
 
 async function fail(code: string): Promise<ActionState> {
-  return { error: await errorText(code) }
+  return { error: await errorText(code), ...(code.startsWith("plan_") ? { upgrade: true } : {}) }
 }
 
 async function readPdf(formData: FormData): Promise<Uint8Array | null> {

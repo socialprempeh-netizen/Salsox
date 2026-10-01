@@ -123,7 +123,7 @@
       "none": "None",
       "$product": {
         "upsellTitle": "Get paid as you get signed",
-        "upsellBody": "Unlimited sending on every plan — fair-use limits apply to prevent spam. Business adds Sign & Pay, sequential signing and sealed PDFs. Cancel in one click, and you'll get a reminder before any renewal.",
+        "upsellBody": "Free accounts send {free} documents a month. Personal sends unlimited documents; Business adds Sign & Pay, signing order and sealed PDFs with an audit certificate. Cancel in one click, and you'll get a reminder before any renewal.",
         "upsellCta": "See plans"
       },
       "$kit": {
@@ -516,7 +516,7 @@
     "$product": {
       "headlineHead": "",
       "headlineAccent": "",
-      "subtitle": "Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone. Unlimited sending — fair-use limits apply to prevent spam.",
+      "subtitle": "Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone. Unlimited sending on paid plans — fair-use limits apply to prevent spam.",
       "cta": "Send your first document",
       "trust": "No envelope limits · Cancel in one click · Export everything, any time",
       "pill": "Sign & Pay with Stripe or Paystack"
@@ -544,7 +544,7 @@
       "subtitle": "Built around the complaints people have about the big e-signature tools.",
       "c1": {
         "title": "Unlimited sending",
-        "description": "No envelope caps, no counting, no surprise upgrade prompts on any plan. Fair-use limits apply to prevent spam."
+        "description": "No envelope caps on Personal or Business, and no counting. Free accounts send {free} documents a month to try it. Fair-use limits apply to prevent spam."
       },
       "c2": {
         "title": "Fix a wrong email in one click",
@@ -688,7 +688,7 @@
       "items": [
         {
           "question": "Is there really no limit on how many documents I send?",
-          "answer": "No plan has a cap. {site} doesn't count envelopes, and paid plans add features like Sign & Pay and sequential signing, never more sends. Fair-use limits apply to prevent spam."
+          "answer": "On Personal and Business, none: {site} doesn't count envelopes, and Business adds features like Sign & Pay and signing order, never more sends. A free account sends {free} documents a month, so you can try it before you pay. Fair-use limits apply on every plan to prevent spam."
         },
         {
           "question": "Are electronic signatures legally binding?",
@@ -778,7 +778,7 @@
     "$product": {
       "title": "Simple, transparent pricing",
       "subtitleDemo": "These are example plans, rendered live from the database with monthly and yearly tiers. Sign in to the demo to see the full billing flow, including a one-time lifetime purchase.",
-      "subtitle": "Start free and upgrade when you need more. Every plan below comes straight from your database, so your pricing changes without a deploy."
+      "subtitle": "Start free with {free} documents a month. Upgrade for unlimited documents, then to Business for Sign & Pay, signing order and sealed PDFs with an audit certificate."
     }
   },
   "setup": {
@@ -955,14 +955,12 @@
   },
   "enterprise": {
     "name": "Enterprise",
-    "description": "For large teams and organizations",
+    "description": "For organizations that need custom terms",
     "priceLabel": "Custom",
     "note": "billed your way",
     "yearlyNote": "on an annual contract",
     "features": [
-      "Everything in Pro",
-      "Unlimited team members",
-      "SSO and audit logs",
+      "Everything in Business",
       "Dedicated support",
       "Custom invoicing and SLA"
     ],
@@ -1001,9 +999,20 @@
     "renewalSubject": "Your {plan} plan renews on {date}",
     "renewalIntro": "A heads-up, well before it happens: your {plan} plan renews on {date} for {amount}.",
     "renewalCancel": "Don't want it? Cancel in one click from your billing page before that date and you won't be charged again. Your documents stay available to export either way.",
-    "renewalCta": "Manage billing →"
+    "renewalCta": "Manage billing →",
+    "completedIntroPlain": "Everyone has signed {title}. The signed PDF is ready to download."
   },
   "esign": {
+    "plans": {
+      "planBadge": "{plan}",
+      "lockedHint": "Included in the {plan} plan.",
+      "upgrade": "Upgrade",
+      "approverOption": "Approves ({plan})",
+      "allowanceLeft": "{left} of {total} free documents left this month",
+      "allowanceSpent": "You've sent your {total} free documents this month",
+      "allowanceBody": "Personal sends unlimited documents. Business adds Sign & Pay, signing order and sealed PDFs with an audit certificate.",
+      "allowanceCta": "See plans"
+    },
     "errors": {
       "generic": "Something went wrong. Please try again.",
       "unauthorized": "Please sign in again.",
@@ -1028,6 +1037,10 @@
       "dailyLimit": "You've reached today's sending limit. It resets over the next 24 hours. Contact us if you need to send more.",
       "NOT_PDF": "That file is not a PDF.",
       "TOO_LARGE": "PDFs can be up to {maxMb} MB.",
+      "plan_signAndPay": "Sign & Pay is part of the Business plan. Upgrade to collect payments as people sign.",
+      "plan_sequentialSigning": "Signing in order is part of the Business plan. Upgrade to set a signing order.",
+      "plan_approvers": "Approvers are part of the Business plan. Upgrade to add one, or make them a signer.",
+      "plan_unlimitedDocuments": "You've sent your {free} free documents this month. Upgrade to Personal for unlimited documents.",
       "ENCRYPTED": "This PDF is password-protected. Remove the password and upload it again.",
       "UNREADABLE": "This PDF could not be read. Try exporting it again.",
       "EMPTY": "This PDF has no pages.",
@@ -1074,7 +1087,7 @@
     },
     "list": {
       "title": "Documents",
-      "subtitle": "Everything you've sent, and who you're waiting on. Unlimited sending — fair-use limits apply to prevent spam.",
+      "subtitle": "Everything you've sent, and who you're waiting on.",
       "quickSend": "Quick Send",
       "new": "New document",
       "filterLabel": "Filter documents",
@@ -1254,7 +1267,9 @@
         "DOCUMENT_COMPLETED": "Completed by all parties",
         "DOCUMENT_CANCELLED": "Cancelled by sender",
         "DOCUMENT_EXPIRED": "Links expired"
-      }
+      },
+      "downloadSignedPlain": "Signed PDF",
+      "auditHintPlain": "Every action, with time, email and IP. On Business, this trail is printed on a certificate page in the signed PDF."
     },
     "recipient": {
       "share": "Share link",

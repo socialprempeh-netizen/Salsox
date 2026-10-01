@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test"
 import { PDFDocument } from "pdf-lib"
-import { db, expectNoHorizontalScroll, freshEmail, quickSend, samplePdf, signUp, tokenFor } from "./helpers/esign"
+import { db, expectNoHorizontalScroll, freshEmail, giveBusinessPlan, quickSend, samplePdf, signUp, tokenFor } from "./helpers/esign"
 
 /**
  * The core promise, end to end: a sender Quick Sends a PDF, the signer signs
@@ -19,7 +19,8 @@ test.describe.configure({ timeout: 90_000 })
 test("Quick Send → sign on a phone → sealed PDF with certificate", async ({ browser }) => {
   const senderCtx = await browser.newContext()
   const sender = await senderCtx.newPage()
-  await signUp(sender)
+  // The certificate page asserted below is a Business feature.
+  await giveBusinessPlan(await signUp(sender))
   const signerEmail = freshEmail("signer")
   const documentId = await quickSend(sender, [signerEmail])
   await expect(sender.getByText("Awaiting signatures")).toBeVisible()

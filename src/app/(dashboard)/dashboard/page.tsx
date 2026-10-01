@@ -10,6 +10,7 @@ import { GetStartedChecklist } from "@/components/dashboard/get-started-checklis
 import { CheckoutStatusToast } from "@/components/billing/checkout-status-toast"
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge"
 import { isKitSite } from "@/config/kit"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard.home")
@@ -148,7 +149,7 @@ export default async function DashboardPage() {
               {t("upsellTitle")}
             </CardTitle>
             <CardDescription>
-              {t("upsellBody")}
+              {t("upsellBody", { free: FREE_DOCUMENTS_PER_MONTH })}
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test"
 import { inflateSync } from "node:zlib"
 import { PDFDocument } from "pdf-lib"
-import { db, freshEmail, samplePdf, signUp, tokenFor } from "./helpers/esign"
+import { db, freshEmail, samplePdf, signUp, tokenFor, giveBusinessPlan } from "./helpers/esign"
 
 /**
  * The core signing engine, driven the way a person uses it, start to finish.
@@ -57,6 +57,8 @@ test("upload → fields for two recipients → send → both sign via their link
   const senderCtx = await browser.newContext()
   const sender = await senderCtx.newPage()
   const senderEmail = await signUp(sender)
+  // The certificate page asserted below is a Business feature.
+  await giveBusinessPlan(senderEmail)
   const ama = freshEmail("ama")
   const kwame = freshEmail("kwame")
 

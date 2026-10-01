@@ -10,6 +10,8 @@ import { requireUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { DocumentEditor } from "@/components/esign/document-editor"
 import { DocumentActions } from "@/components/esign/document-actions"
+import { senderPlan } from "@/lib/esign/sender"
+import { hasFeature } from "@/lib/esign/plans"
 
 export default async function EditDocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,6 +27,8 @@ export default async function EditDocumentPage({ params }: { params: Promise<{ i
 
   const payouts = await prisma.payoutAccount.findMany({ where: { userId: user.id, ready: true }, select: { provider: true } })
   const payer = document.recipients.find((r) => r.mustPay)
+  // Which Business controls to unlock; the save and send actions check again.
+  const { tier } = await senderPlan(user.id)
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -40,6 +44,11 @@ export default async function EditDocumentPage({ params }: { params: Promise<{ i
         fileUrl={`/api/documents/${document.id}/original?inline=1`}
         pageCount={document.pageCount}
         readyProviders={payouts.map((p) => p.provider)}
+        plan={{
+          signAndPay: hasFeature(tier, "signAndPay"),
+          sequentialSigning: hasFeature(tier, "sequentialSigning"),
+          approvers: hasFeature(tier, "approvers"),
+        }}
         initial={{
           title: document.title,
           signingOrder: document.signingOrder,

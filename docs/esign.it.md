@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: ceef691e59e2
+source_checksum: 8a4831fce8e2
 ---
 
 # Firme elettroniche (Salsox)
@@ -73,7 +73,17 @@ In un documento sequenziale il firmatario successivo viene rivendicato (una scri
 
 ## Le correzioni rispetto a DocuSign
 
-- **Invii illimitati.** Nessun piano ha un tetto di buste e l'invio non legge l'abbonamento. Quello che vale per ogni account allo stesso modo è la protezione contro gli abusi, in `sending-limits.ts`:
+- **Piani, applicati.** Cosa sblocca ogni piano è scritto una volta sola, in `plans.ts`, e controllato dal motore, non solo mostrato nella pagina dei prezzi:
+
+  | | Gratuito | Personal | Business (e Lifetime) |
+  |---|---|---|---|
+  | Documenti | 3 per mese solare (UTC) | illimitati | illimitati |
+  | Quick Send, link WhatsApp/SMS | sì | sì | sì |
+  | Sign & Pay, ordine di firma, approvatori | no | no | sì |
+  | Pagina di certificato e sigillo digitale nel PDF firmato | no | no | sì |
+
+  Il livello viene da `getEntitlement` (`senderPlan` in `sender.ts`): i piani `starter-*` sono Personal, `pro-*` e `lifetime` sono Business, qualsiasi altro piano a pagamento conta come Personal. `saveDocumentSetup` e `sendDocument` rifiutano una funzione Business su un piano inferiore con un codice di errore `plan_*`, che l'azione segna come `upgrade` perché il modulo mostri un pulsante Upgrade; il limite gratuito si controlla all'invio, perché è l'invio a consumarlo. L'editor blocca gli stessi controlli, e le pagine di caricamento mostrano a un account gratuito quanto resta del suo mese. Il certificato dipende dal piano del proprietario al completamento del documento, ed è registrato sull'evento di audit `DOCUMENT_COMPLETED` (`data.certificate`), così la pagina del documento e l'email di completamento descrivono il PDF effettivamente prodotto. Un documento già inviato continua a funzionare dopo un downgrade: chi firma non viene mai fermato a metà. Enterprise si vende su contatto e gira sul piano Business; posti per il team e SSO non esistono ancora e non sono pubblicizzati.
+- **Invii illimitati sui piani a pagamento.** Personal e Business non hanno tetto di buste. Quello che vale per ogni account allo stesso modo è la protezione contro gli abusi, in `sending-limits.ts`:
   - **Mittente confermato.** L'email del mittente deve essere confermata prima di qualsiasi azione che scrive ai destinatari: invio, Quick Send, promemoria, rinnovo, reinvio e correzione di un indirizzo. La regola è attiva quando `RESEND_API_KEY` è impostata; senza, nessuna email di conferma può partire e nessun invito lascia il server, quindi la regola è spenta. Chi non ha confermato vede un avviso nelle pagine Documenti, con un pulsante per farsi rimandare il link.
   - **10 destinatari per documento.**
   - **Un tetto giornaliero**, contato dal database sulle ultime 24 ore: 100 documenti e 300 destinatari, oppure 10 e 30 nei primi 7 giorni di vita dell'account.

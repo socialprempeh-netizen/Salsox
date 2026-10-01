@@ -18,17 +18,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/sonner"
 import { PdfDropzone } from "./pdf-dropzone"
+import { useActionErrorToast } from "./plan-upsell"
 import { DEFAULT_EXPIRY_DAYS } from "@/lib/esign/limits"
 
 export function QuickSendForm() {
   const t = useTranslations("esign.quickSend")
   const router = useRouter()
+  const showError = useActionErrorToast()
   const [emails, setEmails] = useState("")
   const [state, action, pending] = useActionState<ActionState, FormData>(quickSendAction, {})
   const parsed = useMemo(() => parseEmailList(emails), [emails])
 
   useEffect(() => {
-    if (state.error) toast.error(state.error)
+    if (state.error) showError(state.error, state.upgrade)
     if (state.ok && state.documentId) {
       // "Sent" only when the provider took every invitation. Otherwise the
       // document page opens without the success banner and shows who was not
@@ -46,7 +48,7 @@ export function QuickSendForm() {
         router.push(`/dashboard/documents/${state.documentId}?sent=1`)
       }
     }
-  }, [state, router, t])
+  }, [state, router, t, showError])
 
   return (
     <form action={action} className="space-y-5">

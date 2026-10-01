@@ -119,11 +119,13 @@ export async function sendDocumentCompleted(args: {
   name: string
   title: string
   downloadUrl: string
+  /** Whether the sealed copy has the certificate page (a Business feature). */
+  withCertificate?: boolean
 }): Promise<EmailOutcome> {
   const t = await esignEmailStrings()
   const html = baseTemplate(`
     <p>${t("hello", { name: escapeHtml(args.name) })}</p>
-    <p>${t("completedIntro", { title: bold(escapeHtml(args.title)) })}</p>
+    <p>${t(args.withCertificate === false ? "completedIntroPlain" : "completedIntro", { title: bold(escapeHtml(args.title)) })}</p>
     <a href="${args.downloadUrl}" class="btn">${t("completedCta")}</a>
   `)
   return send("esign-completed", args.to, t("completedSubject", { title: args.title }), html, args.downloadUrl)

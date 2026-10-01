@@ -15,6 +15,7 @@ import { Reveal } from "@/components/landing/reveal"
 import { TechStack } from "@/components/landing/tech-stack"
 import { useTranslations } from "next-intl"
 import { isKitSite } from "@/config/kit"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 
 type Feature = { icon: LucideIcon; key: string }
 
@@ -82,7 +83,7 @@ export function Features() {
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="text-sm leading-relaxed">
-                      {t(`${feature.key}.description`)}
+                      {t(`${feature.key}.description`, { free: FREE_DOCUMENTS_PER_MONTH })}
                     </CardDescription>
                   </CardContent>
                 </Card>

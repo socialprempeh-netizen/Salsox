@@ -49,6 +49,12 @@ export default async function DocumentPage({
   if (document.status === "DRAFT") redirect(`/dashboard/documents/${id}/edit`)
 
   const now = new Date()
+  // Whether the sealed copy carries the certificate page, as recorded on the
+  // COMPLETED event when it was sealed (a Business feature, plans.ts). Events
+  // written before the flag existed had the certificate on every plan.
+  const completedData = document.auditEvents.find((e) => e.type === "DOCUMENT_COMPLETED")?.data as { certificate?: boolean } | null | undefined
+  const hasCertificate = completedData?.certificate !== false
+  const sealedWithoutCertificate = document.status === "COMPLETED" && !hasCertificate
   // A document whose last signature went through but whose sealing did not
   // (a failure mid-finalization) is finished here, after the response, so
   // its owner does not wait for the nightly sweep. Free when it is not stuck.
@@ -191,7 +197,7 @@ export default async function DocumentPage({
           </Button>
           {document.sealedKey && (
             <Button asChild>
-              <a href={`/api/documents/${document.id}/signed`}><Download className="h-4 w-4" /> {t("downloadSigned")}</a>
+              <a href={`/api/documents/${document.id}/signed`}><Download className="h-4 w-4" /> {t(hasCertificate ? "downloadSigned" : "downloadSignedPlain")}</a>
             </Button>
           )}
         </CardContent>
@@ -200,7 +206,7 @@ export default async function DocumentPage({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("audit")}</CardTitle>
-          <CardDescription>{t("auditHint")}</CardDescription>
+          <CardDescription>{t(sealedWithoutCertificate ? "auditHintPlain" : "auditHint")}</CardDescription>
         </CardHeader>
         <CardContent>
           <ol className="space-y-3 border-l pl-4">

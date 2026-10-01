@@ -12,6 +12,8 @@
  * which the in-memory rate limiter on its own does not.
  */
 import { prisma } from "@/lib/prisma"
+import { getEntitlement } from "@/lib/billing"
+import { documentsLeft, hasFeature, monthStartUtc, tierForEntitlement, type PlanTier } from "./plans"
 import {
   dailyWindowStart,
   emailConfirmationRequired,
@@ -47,6 +49,19 @@ export async function senderBlocker(
     addingRecipients,
     now
   )
+}
+
+/**
+ * The sender's plan, for the gates in plans.ts: their tier, and how many
+ * documents they may still send this month (null when unlimited). Read from
+ * billing on every call, like the standing above, so an upgrade applies as
+ * soon as the Stripe webhook lands.
+ */
+export async function senderPlan(userId: string, now = new Date()): Promise<{ tier: PlanTier; documentsLeft: number | null }> {
+  const tier = tierForEntitlement(await getEntitlement(userId))
+  if (hasFeature(tier, "unlimitedDocuments")) return { tier, documentsLeft: null }
+  const sentThisMonth = await prisma.document.count({ where: { userId, sentAt: { gte: monthStartUtc(now) } } })
+  return { tier, documentsLeft: documentsLeft(tier, sentThisMonth) }
 }
 
 /** For the dashboard notice: the address still to confirm, or null when nothing is needed. */

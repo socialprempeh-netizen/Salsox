@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { PdfPages } from "./pdf-pages"
+import { PlanLock, useActionErrorToast } from "./plan-upsell"
 
 type FieldType = DocumentSetup["fields"][number]["type"]
 type Role = DocumentSetup["recipients"][number]["role"]
@@ -65,13 +66,22 @@ type Props = {
     payment: { amount: string; currency: string; recipientKey: string } | null
   }
   readyProviders: ("STRIPE" | "PAYSTACK")[]
+  /**
+   * The Business features this sender's plan includes (src/lib/esign/plans.ts).
+   * A locked control is disabled with an upgrade note; one already switched
+   * on (a draft saved before a downgrade) can still be switched off. The
+   * server refuses the setup either way.
+   */
+  plan: { signAndPay: boolean; sequentialSigning: boolean; approvers: boolean }
 }
 
 let counter = 0
 const localId = (prefix: string) => `${prefix}_${Date.now().toString(36)}_${(counter++).toString(36)}`
 
-export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyProviders }: Props) {
+export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyProviders, plan }: Props) {
   const t = useTranslations("esign.editor")
+  const tPlans = useTranslations("esign.plans")
+  const showError = useActionErrorToast()
   const router = useRouter()
   const [step, setStep] = useState<0 | 1 | 2>(initial.recipients.length > 0 ? 1 : 0)
   const [title, setTitle] = useState(initial.title)
@@ -211,7 +221,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
     }
     startTransition(async () => {
       const result = send ? await saveAndSendAction(documentId, payload()) : await saveSetupAction(documentId, payload())
-      if (result.error) return void toast.error(result.error)
+      if (result.error) return void showError(result.error, result.upgrade)
       if (send && result.undelivered) {
         // The provider refused some invitations: say so, and let the document
         // page show who was not reached instead of its "Sent!" banner.
@@ -280,11 +290,17 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
                       id={`r-${r.key}`}
                       value={r.role}
                       onChange={(e) => updateRecipient(r.key, { role: e.target.value as Role })}
-                      className="h-11 w-full rounded-xl border bg-background px-3 text-sm"
+                      className="h-11 w-full border bg-background px-3 text-sm"
                     >
-                      {(["SIGNER", "APPROVER", "VIEWER", "CC"] as const).map((role) => (
-                        <option key={role} value={role}>{t(`roles.${role}`)}</option>
-                      ))}
+                      {(["SIGNER", "APPROVER", "VIEWER", "CC"] as const).map((role) =>
+                        // Approvers are a Business feature: offered, but not
+                        // selectable on a lower plan, and named as such.
+                        role === "APPROVER" && !plan.approvers ? (
+                          <option key={role} value={role} disabled>{tPlans("approverOption", { plan: "Business" })}</option>
+                        ) : (
+                          <option key={role} value={role}>{t(`roles.${role}`)}</option>
+                        )
+                      )}
                     </select>
                   </div>
                 </div>
@@ -307,11 +323,18 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button type="button" variant="outline" onClick={addRecipient} disabled={recipients.length >= MAX_RECIPIENTS}><Plus className="h-4 w-4" /> {t("addRecipient")}</Button>
-            <label className="flex min-h-11 items-center gap-2 text-sm">
-              <input type="checkbox" className="h-5 w-5" checked={signingOrder === "SEQUENTIAL"} onChange={(e) => setSigningOrder(e.target.checked ? "SEQUENTIAL" : "PARALLEL")} />
+            <label className={cn("flex min-h-11 items-center gap-2 text-sm", !plan.sequentialSigning && signingOrder !== "SEQUENTIAL" && "text-muted-foreground")}>
+              <input
+                type="checkbox"
+                className="h-5 w-5"
+                checked={signingOrder === "SEQUENTIAL"}
+                disabled={!plan.sequentialSigning && signingOrder !== "SEQUENTIAL"}
+                onChange={(e) => setSigningOrder(e.target.checked ? "SEQUENTIAL" : "PARALLEL")}
+              />
               {t("sequential")}
             </label>
           </div>
+          {(!plan.sequentialSigning || !plan.approvers) && <PlanLock plan="Business" />}
           <Button type="button" size="lg" className="w-full sm:w-auto" disabled={!recipientsValid} onClick={() => { setActiveRecipient(actionable[0]?.key ?? ""); setStep(1) }}>
             {t("next")}
           </Button>
@@ -454,12 +477,14 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
             </select>
           </div>
 
-          <div className="space-y-3 rounded-xl border p-4">
-            <label className="flex min-h-11 items-center gap-3 font-medium">
-              <input type="checkbox" className="h-5 w-5" checked={payOn} onChange={(e) => setPayOn(e.target.checked)} />
+          {/* Squared when the plan gate was added (was rounded-xl). */}
+          <div className="space-y-3 border p-4">
+            <label className={cn("flex min-h-11 items-center gap-3 font-medium", !plan.signAndPay && !payOn && "text-muted-foreground")}>
+              <input type="checkbox" className="h-5 w-5" checked={payOn} disabled={!plan.signAndPay && !payOn} onChange={(e) => setPayOn(e.target.checked)} />
               {t("signAndPay")}
             </label>
             <p className="text-sm text-muted-foreground">{t("signAndPayHint")}</p>
+            {!plan.signAndPay && <PlanLock plan="Business" />}
             {payOn && (
               readyProviders.length === 0 ? (
                 <p className="rounded-lg bg-amber-500/10 p-3 text-sm">

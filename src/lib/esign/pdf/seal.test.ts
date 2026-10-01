@@ -86,6 +86,21 @@ describe("sealDocument", () => {
     expect(text).toContain("/adbe.pkcs7.detached")
   }, 30_000)
 
+  // The certificate page and the digital seal are Business features
+  // (plans.ts). Off, the copy keeps its pages and fields and gains neither,
+  // even with a P12 configured for the deployment.
+  it("leaves out the certificate page and the digital seal when asked to", async () => {
+    const sealed = await sealDocument({
+      ...base,
+      certificate: false,
+      original: await samplePdf(2),
+      fields: [{ type: "DATE", page: 1, x: 10, y: 10, width: 20, height: 5, value: "2026-09-29", inserted: true }],
+      p12: { certificate: new Uint8Array([1, 2, 3]), passphrase: "unused" },
+    })
+    expect((await PDFDocument.load(sealed)).getPageCount()).toBe(2)
+    expect(Buffer.from(sealed).toString("latin1")).not.toContain("/adbe.pkcs7.detached")
+  })
+
   it("survives characters outside WinAnsi", () => {
     expect(toWinAnsi("Ọlá 😀 Kofi")).toBe("?lá ?? Kofi")
   })

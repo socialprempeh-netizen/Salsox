@@ -59,6 +59,12 @@ export type SealInput = {
   completedAt: Date
   /** Adds a large "REJECTED" stamp to every page instead of completing it. */
   rejected?: boolean
+  /**
+   * Append the certificate page (steps 5 and 6). On by default; off for an
+   * owner whose plan does not include it (see plans.ts), in which case no
+   * digital signature is applied either, whatever `p12` says.
+   */
+  certificate?: boolean
   p12?: { certificate: Uint8Array; passphrase: string } | null
 }
 
@@ -230,12 +236,13 @@ export async function sealDocument(input: SealInput): Promise<Uint8Array> {
     // on the page, so the seal proceeds rather than failing the document.
   }
   if (input.rejected) stampRejected(doc, await doc.embedFont(StandardFonts.HelveticaBold))
-  await appendCertificate(doc, input)
+  const withCertificate = input.certificate !== false
+  if (withCertificate) await appendCertificate(doc, input)
 
   doc.setTitle(input.title)
   doc.setProducer(input.appName)
   doc.setModificationDate(input.completedAt)
 
-  if (input.p12) return applyDigitalSignature(doc, input)
+  if (withCertificate && input.p12) return applyDigitalSignature(doc, input)
   return doc.save()
 }

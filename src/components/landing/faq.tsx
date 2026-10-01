@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/accordion"
 import { Reveal } from "@/components/landing/reveal"
 import { jsonLdScript } from "@/lib/json-ld"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 
 type Faq = { question: string; answer: string }
 
@@ -35,9 +36,11 @@ export function FAQ({ withJsonLd = false }: { withJsonLd?: boolean }) {
   // way the transactional emails do it. Reading each answer with `t()` instead
   // would interpolate on its own, but it would turn one list into a numbered
   // family of keys and lose the count that drives this section.
+  // `{free}` likewise: the free monthly allowance, from plans.ts.
+  const fill = (text: string) => text.replaceAll("{site}", siteConfig.name).replaceAll("{free}", String(FREE_DOCUMENTS_PER_MONTH))
   const items = (t.raw("items") as Faq[]).map((faq) => ({
-    question: faq.question.replaceAll("{site}", siteConfig.name),
-    answer: faq.answer.replaceAll("{site}", siteConfig.name),
+    question: fill(faq.question),
+    answer: fill(faq.answer),
   }))
   const jsonLd = {
     "@context": "https://schema.org",
