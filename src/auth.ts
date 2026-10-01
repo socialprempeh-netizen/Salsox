@@ -8,6 +8,7 @@ import { nextCookies } from "better-auth/next-js"
 import type { BetterAuthPlugin } from "better-auth"
 import { prisma } from "@/lib/prisma"
 import { hashPassword, verifyPassword } from "@/lib/password"
+import { trustedOriginsFor } from "@/lib/app-url"
 import { generateBackupCodes } from "@/lib/backup-codes"
 import { refusesAutomaticLink } from "@/lib/account-linking"
 import { siteConfig } from "@/config/site"
@@ -127,6 +128,10 @@ export const auth = betterAuth({
   // OAuth callbacks and redirects depend on whatever host answered. The kit
   // already ships this variable, so no new one appears in .env.example.
   baseURL: process.env.NEXT_PUBLIC_APP_URL,
+  // A custom domain answers on both its apex and www forms, one redirecting
+  // to the other. Only the base URL's origin was trusted, so a sign-in posted
+  // from the other form was refused as "invalid origin".
+  trustedOrigins: trustedOriginsFor(siteConfig.url),
 
 
   user: {

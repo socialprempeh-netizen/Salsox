@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
+import { siteConfig } from "@/config/site"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 
@@ -20,7 +21,8 @@ export async function POST() {
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+    // Through siteConfig.url: the raw variable gave Stripe "undefined/..." when unset.
+    return_url: `${siteConfig.url}/dashboard/billing`,
   })
 
   return NextResponse.json({ url: portalSession.url })

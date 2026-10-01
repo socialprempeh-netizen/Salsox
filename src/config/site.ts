@@ -9,6 +9,7 @@
  * config without editing code. The kit ships with neutral placeholders.
  */
 import { isKitSite } from "@/config/kit"
+import { resolveAppUrl } from "@/lib/app-url"
 
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_BRAND_NAME || (isKitSite ? "OpenStarterKit" : "Acme"),
@@ -52,7 +53,16 @@ export const siteConfig = {
         "E-signatures with Sign & Pay, Quick Send and mobile-first signing. Unlimited sending — fair-use limits apply to prevent spam. Cancel in one click."),
 
   /** Base URL of this deployment — no trailing slash. */
-  url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  // Replaced: fell back to localhost alone, and the email and Stripe links
+  // bypassed it with the raw variable, which printed "undefined" when unset.
+  // url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  // Each variable is named in full so Next inlines the public one into
+  // client bundles; the server-only ones are simply absent there.
+  url: resolveAppUrl({
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  }),
 
   /** Shown as the contact address in the footer and pre-filled emails. */
   contactEmail:

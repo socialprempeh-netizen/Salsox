@@ -34,6 +34,9 @@ function getInstance(): Resend {
 
 const FROM_ADDRESS = process.env.EMAIL_FROM ?? `${siteConfig.name} <${siteConfig.contactEmail}>`
 
+// The buttons in these emails used to read the raw NEXT_PUBLIC_APP_URL
+// variable, so on a deployment without it the welcome email linked to
+// http://undefined/dashboard. They now use siteConfig.url (src/lib/app-url.ts).
 export async function sendWelcomeEmail(to: string, name: string) {
   const resend = getInstance()
   return deliver("welcome", async () =>
@@ -186,7 +189,7 @@ async function welcomeTemplate(name: string) {
       ${t.raw("welcomeBody.bullets")}
     </div>
     <p>${t("welcomeBody.ready")}</p>
-    <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="btn">${t("welcomeBody.cta")}</a>
+    <a href="${siteConfig.url}/dashboard" class="btn">${t("welcomeBody.cta")}</a>
     <p style="margin-top:24px">${t("welcomeBody.help")}</p>
   `)
 }
@@ -256,7 +259,7 @@ async function subscriptionTemplate(
       ${dateLine}
     </div>
     <p>${t("subscriptionBody.access", { site: siteConfig.name })}</p>
-    <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing" class="btn">${t("subscriptionBody.cta")}</a>
+    <a href="${siteConfig.url}/dashboard/billing" class="btn">${t("subscriptionBody.cta")}</a>
     <p style="margin-top:24px">${t("subscriptionBody.changes")}</p>
   `)
 }
@@ -276,7 +279,7 @@ async function purchaseTemplate(name: string, planName: string, amount: number, 
       <p><strong>${t("purchaseBody.labelAmount")}</strong> ${formatted} ${t("purchaseBody.oneTime")}</p>
     </div>
     <p>${t("purchaseBody.access", { site: siteConfig.name })}</p>
-    <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing" class="btn">${t("purchaseBody.cta")}</a>
+    <a href="${siteConfig.url}/dashboard/billing" class="btn">${t("purchaseBody.cta")}</a>
     <p style="margin-top:24px">${t("purchaseBody.receipt")}</p>
   `)
 }
@@ -291,7 +294,7 @@ async function cancellationTemplate(name: string, endDate: string) {
       <p>${t("cancellationBody.dataSafe")}</p>
     </div>
     <p>${t("cancellationBody.changedMind")}</p>
-    <a href="${process.env.NEXT_PUBLIC_APP_URL}/pricing" class="btn">${t("cancellationBody.cta")}</a>
+    <a href="${siteConfig.url}/pricing" class="btn">${t("cancellationBody.cta")}</a>
     <p style="margin-top:24px">${t("cancellationBody.feedback")}</p>
   `)
 }
