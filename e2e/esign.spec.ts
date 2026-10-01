@@ -120,7 +120,11 @@ test("correcting a wrong email rotates the link without rebuilding the document"
   await page.getByRole("button", { name: "Edit" }).click()
   await page.getByLabel("Email").fill(right)
   await page.getByRole("button", { name: "Save changes" }).click()
-  await expect(page.getByText(/new link sent/i)).toBeVisible()
+  // This server has no Resend key, so no email carried the new link. It used
+  // to say "a new link sent" anyway:
+  // await expect(page.getByText(/new link sent/i)).toBeVisible()
+  await expect(page.getByText(/Email isn't configured, so share the new link manually/)).toBeVisible()
+  await expect(page.getByText(/new link sent/i)).toHaveCount(0)
 
   const newToken = await tokenFor(documentId, right)
   expect(newToken).not.toBe(oldToken)
@@ -149,7 +153,9 @@ test("an expired document is revived with one click", async ({ browser }) => {
 
   await page.goto(`/dashboard/documents/${documentId}`)
   await page.getByRole("button", { name: "Renew and resend" }).click()
-  await expect(page.getByText("Links renewed and resent.")).toBeVisible()
+  // Renewed, but with no Resend key nothing was resent. It used to say so anyway:
+  // await expect(page.getByText("Links renewed and resent.")).toBeVisible()
+  await expect(page.getByText("Email isn't configured, so no emails were sent. Share the links manually.")).toBeVisible()
 
   const document = await db().document.findUniqueOrThrow({ where: { id: documentId }, include: { recipients: true } })
   expect(document.status).toBe("PENDING")

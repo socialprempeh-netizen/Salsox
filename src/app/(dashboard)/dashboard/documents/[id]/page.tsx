@@ -10,7 +10,8 @@ import { CheckCircle2, Circle, Download, FileText, XCircle } from "lucide-react"
 import { requireUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
-import { canEditRecipient, isActionable, isRecipientExpired, undeliveredInvites } from "@/lib/esign/rules"
+import { canEditRecipient, isActionable, isRecipientExpired, missingInvites } from "@/lib/esign/rules"
+import { emailConfigured } from "@/lib/esign/emails"
 import { signingUrl } from "@/lib/esign/share"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,7 @@ import { DocumentStatusBadge } from "@/components/esign/document-status-badge"
 import { DocumentActions } from "@/components/esign/document-actions"
 import { RecipientActions } from "@/components/esign/recipient-actions"
 import { UndeliveredNotice } from "@/components/esign/undelivered-notice"
+import { EmailNotConfiguredNotice } from "@/components/esign/email-not-configured-notice"
 
 export default async function DocumentPage({
   params,
@@ -52,7 +54,15 @@ export default async function DocumentPage({
   // Whose invitation the email provider never accepted. Read from the rows,
   // not from the URL, so the page tells the truth on every visit and the
   // warning clears by itself once a resend gets through.
-  const undelivered = new Set(undeliveredInvites(document.status, document.recipients, document.signingOrder).map((r) => r.id))
+  // Replaced: every missing invitation counted as "not delivered", which is
+  // only true when there is a provider to have refused it.
+  // const undelivered = new Set(undeliveredInvites(document.status, document.recipients, document.signingOrder).map((r) => r.id))
+  // With no email provider, the same recipients are ones whose link the
+  // sender has to share by hand.
+  const emailOn = emailConfigured()
+  const missing = missingInvites(emailOn, document.status, document.recipients, document.signingOrder)
+  const undelivered = new Set(missing.undelivered.map((r) => r.id))
+  const shareByHand = new Set(missing.shareByHand.map((r) => r.id))
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -74,8 +84,16 @@ export default async function DocumentPage({
         {/* {sent && (
           <p className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">{t("sentBanner")}</p>
         )} */}
+        {/* Then only when nothing was refused, which still said it on a
+            deployment with no email at all.
         {sent && undelivered.size === 0 && (
           <p className="border border-primary/30 bg-primary/5 p-3 text-sm">{t("sentBanner")}</p>
+        )} */}
+        {sent && emailOn && undelivered.size === 0 && (
+          <p className="border border-primary/30 bg-primary/5 p-3 text-sm">{t("sentBanner")}</p>
+        )}
+        {!emailOn && (sent || shareByHand.size > 0) && (
+          <EmailNotConfiguredNotice title={t("emailNotConfiguredTitle")} body={t("emailNotConfiguredBody")} />
         )}
         {undelivered.size > 0 && (
           <UndeliveredNotice title={t("undeliveredTitle", { count: undelivered.size })} body={t("undeliveredBody")} />
@@ -118,7 +136,7 @@ export default async function DocumentPage({
                         // provider accepted the email. No `sentAt` while it is
                         // their turn means the email was refused, not that
                         // they are waiting.
-                        <Badge variant={expired || undelivered.has(r.id) ? "destructive" : "secondary"}>
+                        <Badge variant={expired || undelivered.has(r.id) ? "destructive" : shareByHand.has(r.id) ? "outline" : "secondary"}>
                           {expired
                             ? t("linkExpired")
                             : r.viewedAt
@@ -127,7 +145,9 @@ export default async function DocumentPage({
                                 ? t("sent")
                                 : undelivered.has(r.id)
                                   ? t("notDelivered")
-                                  : t("waiting")}
+                                  : shareByHand.has(r.id)
+                                    ? t("shareManually")
+                                    : t("waiting")}
                         </Badge>
                       )}
                       {r.mustPay && amountLabel && (

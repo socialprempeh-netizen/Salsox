@@ -1006,6 +1006,7 @@
       "invalidEmails": "Enter one or more valid email addresses (up to {max}).",
       "emailNotConfirmed": "Confirm your email address before sending. Open the link we emailed you, or ask for a new one from the Documents page.",
       "emailFailed": "The email could not be sent. Try again, or share the link directly.",
+      "emailNotConfigured": "Email isn't configured, so nothing was sent. Share the signing link manually instead.",
       "dailyLimit": "You've reached today's sending limit. It resets over the next 24 hours. Contact us if you need to send more.",
       "NOT_PDF": "That file is not a PDF.",
       "TOO_LARGE": "PDFs can be up to 4 MB.",
@@ -1105,7 +1106,8 @@
       "expiryNever": "Never",
       "submit": "{count, plural, =0 {Send for signature} one {Send to # signer} other {Send to # signers}}",
       "sent": "Sent! You can also share each link by WhatsApp or SMS.",
-      "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page."
+      "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page.",
+      "sentNotEmailed": "The document is live, but email isn't configured, so no invitations went out. Share each signing link manually from the document page."
     },
     "editor": {
       "subtitle": "Add recipients, place fields, then send.",
@@ -1166,6 +1168,7 @@
       "saved": "Draft saved.",
       "sent": "Sent!",
       "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page.",
+      "sentNotEmailed": "The document is live, but email isn't configured, so no invitations went out. Share each signing link manually from the document page.",
       "signerNeedsField": "{name} has no fields yet. Place at least one."
     },
     "detail": {
@@ -1182,6 +1185,10 @@
       "undeliveredTitle": "{count, plural, one {# invitation email was not delivered} other {# invitation emails were not delivered}}",
       "undeliveredBody": "The document is live and every link works, but our email provider did not accept the message for the people marked below. Use Resend next to their name to try again, or share their link directly.",
       "notDelivered": "Email not delivered",
+      "shareManually": "Share link manually",
+      "emailNotConfiguredTitle": "Email isn't configured: share the signing links manually",
+      "emailNotConfiguredBody": "No invitation emails were sent, because this deployment has no email provider. Every link works: use Share link beside each recipient to send it by WhatsApp, SMS or your own email.",
+      "notEmailedToast": "Email isn't configured, so no emails were sent. Share the links manually.",
       "remind": "Send reminder",
       "reminded": "Reminder sent.",
       "cancel": "Cancel document",
@@ -1253,6 +1260,7 @@
       "save": "Save changes",
       "updated": "Recipient updated.",
       "updatedRotated": "Recipient updated and a new link sent. The old link no longer works.",
+      "updatedNotEmailed": "Recipient updated. Email isn't configured, so share the new link manually. The old link no longer works.",
       "updatedEmailFailed": "Recipient updated and the old link no longer works, but the email with the new link could not be sent. Use Resend to try again."
     },
     "signature": {

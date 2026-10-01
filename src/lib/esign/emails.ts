@@ -39,15 +39,31 @@ const bold = (value: string) => `<strong>${value}</strong>`
  *                  reached
  *
  * This used to be a boolean, false for both of the last two, and every caller
- * ignored it: the dashboard said "Sent" whatever the provider answered. The
- * two are kept apart because only `failed` is something to tell the sender
- * about and offer a retry for.
+ * ignored it: the dashboard said "Sent" whatever the provider answered. All
+ * three are kept apart: only `failed` is something to retry, and only `sent`
+ * may be shown as "Sent". `notConfigured` is neither: nothing went out, and
+ * the sender is told to share the link by hand.
  */
 export type EmailOutcome = "sent" | "notConfigured" | "failed"
 
-/** True unless a configured provider failed to take the email. */
+/**
+ * True unless a configured provider failed to take the email. Answers "is
+ * there an error to report?", not "did an email go out?": that is `emailed`.
+ * It used to decide both, so with no provider configured the dashboard
+ * stamped every recipient "Sent" and said "Each recipient got an email".
+ */
 export function delivered(outcome: EmailOutcome): boolean {
   return outcome !== "failed"
+}
+
+/** True only when the provider accepted the email: the one case shown as "Sent". */
+export function emailed(outcome: EmailOutcome): boolean {
+  return outcome === "sent"
+}
+
+/** Whether this deployment has an email provider at all. */
+export function emailConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY)
 }
 
 async function send(kind: string, to: string, subject: string, html: string, devLink?: string): Promise<EmailOutcome> {

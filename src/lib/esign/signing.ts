@@ -21,7 +21,7 @@ import {
 } from "./rules"
 import { isPlausibleToken } from "./tokens"
 import { finalizeDocument, appUrl, type Result } from "./documents"
-import { delivered, sendDocumentRejected, sendSigningInvite } from "./emails"
+import { emailed, sendDocumentRejected, sendSigningInvite } from "./emails"
 import { signingUrl } from "./share"
 import { getProvider } from "./payments"
 import { formatMinorUnits, isSignAndPayCurrency } from "./payments/select"
@@ -230,7 +230,10 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
       // it is shows on the sender's document page as "not delivered", with a
       // Resend button. It used to be stamped whatever the provider answered.
       // await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
-      if (delivered(outcome)) await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
+      // Then stamped for "not configured" too, which showed "Sent" on a
+      // deployment with no email; now only when the provider accepted it.
+      // if (delivered(outcome)) await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
+      if (emailed(outcome)) await prisma.recipient.update({ where: { id: next.id }, data: { sentAt: new Date() } })
     }
   }
   return { ok: true, documentCompleted: false }

@@ -72,6 +72,7 @@ export function RecipientActions({ documentId, documentTitle, senderName, recipi
       // The correction is saved either way; "a new link sent" is only said
       // when the email with it actually went.
       if (result.emailFailed) toast.error(t("updatedEmailFailed"))
+      else if (result.emailNotConfigured) toast.warning(t("updatedNotEmailed"))
       else toast.success(result.tokenRotated ? t("updatedRotated") : t("updated"))
       setEditing(false)
       router.refresh()

@@ -16,7 +16,7 @@ import { prisma } from "@/lib/prisma"
 import { AUDIT, recordAudit, requestMeta } from "./audit"
 import { canEditRecipient, computeExpiry, isRecipientTurn } from "./rules"
 import { newSigningToken } from "./tokens"
-import { delivered, sendSigningInvite } from "./emails"
+import { delivered, emailed, sendSigningInvite } from "./emails"
 import { signingUrl } from "./share"
 import { appUrl, renewDocument, type Result } from "./documents"
 import { formatMinorUnits } from "./payments/select"
@@ -28,7 +28,7 @@ export async function updateRecipient(
   userId: string,
   recipientId: string,
   input: { name: string; email: string; phone?: string }
-): Promise<Result<{ tokenRotated: boolean; emailFailed: boolean }>> {
+): Promise<Result<{ tokenRotated: boolean; emailFailed: boolean; notEmailed: boolean }>> {
   const recipient = await prisma.recipient.findFirst({
     where: { id: recipientId, document: { userId } },
     include: { document: { include: { user: true, recipients: true } } },
@@ -75,13 +75,16 @@ export async function updateRecipient(
   if (document.status === "EXPIRED") {
     const renewed = await renewDocument(userId, document.id)
     if (!renewed.ok) return renewed
-    return { ok: true, tokenRotated: emailChanged, emailFailed: renewed.undelivered > 0 }
+    return { ok: true, tokenRotated: emailChanged, emailFailed: renewed.undelivered > 0, notEmailed: renewed.notEmailed > 0 }
   }
 
   const all = document.recipients.map((r) => (r.id === updated.id ? updated : r))
   // The correction itself always stands (the old link is dead either way);
   // what can fail is the email carrying the new link, and the sender is told.
   let emailFailed = false
+  // No provider configured: nothing was sent, and the sender must share the
+  // new link by hand. Neither a failure to retry nor a "Sent".
+  let notEmailed = false
   if (emailChanged && document.status === "PENDING" && isRecipientTurn(updated, all, document.signingOrder)) {
     const outcome = await sendSigningInvite({
       to: updated.email,
@@ -101,9 +104,12 @@ export async function updateRecipient(
     // never got anything.
     // await prisma.recipient.update({ where: { id: updated.id }, data: { sentAt: now } })
     emailFailed = !delivered(outcome)
-    await prisma.recipient.update({ where: { id: updated.id }, data: { sentAt: emailFailed ? null : now } })
+    notEmailed = outcome === "notConfigured"
+    // Then written for "not configured" too, which showed "Sent" with no email:
+    // await prisma.recipient.update({ where: { id: updated.id }, data: { sentAt: emailFailed ? null : now } })
+    await prisma.recipient.update({ where: { id: updated.id }, data: { sentAt: emailed(outcome) ? now : null } })
   }
-  return { ok: true, tokenRotated: emailChanged, emailFailed }
+  return { ok: true, tokenRotated: emailChanged, emailFailed, notEmailed }
 }
 
 /** Re-sends one recipient's current link (same token), e.g. "I can't find the email". */
@@ -128,6 +134,9 @@ export async function resendToRecipient(userId: string, recipientId: string): Pr
   // A resend is nothing but its email: refused means nothing happened, so
   // nothing is stamped or audited and the sender is offered a retry.
   if (!delivered(outcome)) return { ok: false, error: "emailFailed" }
+  // No provider: nothing was sent, so nothing is stamped "Sent" or audited as
+  // a reminder. It used to pass as delivered and record both.
+  if (!emailed(outcome)) return { ok: false, error: "emailNotConfigured" }
   const now = new Date()
   // Previously stamped whether or not the email went:
   // await prisma.recipient.update({ where: { id: recipientId }, data: { lastReminderAt: new Date() } })

@@ -41,7 +41,7 @@ import { autoPlaceFields } from "./quick-send"
 import { chooseProvider, formatMinorUnits, isSignAndPayCurrency, toMinorUnits } from "./payments/select"
 import { nameFromEmail, type DocumentSetup } from "./schemas"
 import { signingUrl } from "./share"
-import { delivered, sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
+import { sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
 import { senderBlocker } from "./sender"
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
@@ -181,19 +181,22 @@ type DocWithPeople = Prisma.DocumentGetPayload<{ include: { recipients: true; us
 /**
  * Emails signing links to whoever may act now, and says who was reached.
  *
- * `notified` are the recipients whose email went out (or, with no provider
- * configured, whose link is ready to share by hand); `undelivered` are those a
+ * `notified` are the recipients whose email the provider accepted;
+ * `notEmailed` are those for whom nothing was sent because no provider is
+ * configured, whose link must be shared by hand; `undelivered` are those a
  * configured provider refused. Only the first group is stamped: `sentAt` is
  * what the dashboard shows as "Sent", so it is written on provider success
  * and not before. It used to be written for every target whatever the
- * provider answered.
+ * provider answered, and then for every target except refusals, which still
+ * stamped "Sent" on a deployment that had no email at all.
  */
 async function notifyNext(
   document: DocWithPeople,
   opts: { reminder?: boolean } = {}
-): Promise<{ notified: string[]; undelivered: string[] }> {
+): Promise<{ notified: string[]; notEmailed: string[]; undelivered: string[] }> {
   const targets = recipientsToNotify(document.recipients, document.signingOrder)
   const notified: string[] = []
+  const notEmailed: string[] = []
   const undelivered: string[] = []
   const amountLabel =
     document.paymentAmount && document.paymentCurrency
@@ -211,7 +214,9 @@ async function notifyNext(
       reminder: opts.reminder,
       amountLabel: r.mustPay ? amountLabel : null,
     })
-    ;(delivered(outcome) ? notified : undelivered).push(r.id)
+    // Replaced: notConfigured counted as notified, and was stamped "Sent".
+    // ;(delivered(outcome) ? notified : undelivered).push(r.id)
+    ;(outcome === "sent" ? notified : outcome === "notConfigured" ? notEmailed : undelivered).push(r.id)
   }
   // Previous version, which stamped every target regardless of the outcome:
   // if (targets.length > 0) {
@@ -231,7 +236,7 @@ async function notifyNext(
       await prisma.recipient.updateMany({ where: { id: { in: notified } }, data: { sentAt: now } })
     }
   }
-  return { notified, undelivered }
+  return { notified, notEmailed, undelivered }
 }
 
 /**
@@ -240,7 +245,7 @@ async function notifyNext(
  * shared or resent from its page), but the caller must not tell the sender
  * that everyone was emailed when they were not.
  */
-export async function sendDocument(userId: string, documentId: string): Promise<Result<{ undelivered: number }>> {
+export async function sendDocument(userId: string, documentId: string): Promise<Result<{ undelivered: number; notEmailed: number }>> {
   const document = await prisma.document.findFirst({
     where: { id: documentId, userId },
     include: { recipients: true, fields: true, user: true },
@@ -275,8 +280,8 @@ export async function sendDocument(userId: string, documentId: string): Promise<
   })
 
   const fresh = await prisma.document.findUniqueOrThrow({ where: { id: documentId }, include: { recipients: true, user: true } })
-  const { undelivered } = await notifyNext(fresh)
-  return { ok: true, undelivered: undelivered.length }
+  const { undelivered, notEmailed } = await notifyNext(fresh)
+  return { ok: true, undelivered: undelivered.length, notEmailed: notEmailed.length }
 }
 
 // ─── Quick Send ───────────────────────────────────────────────────────────────
@@ -292,7 +297,7 @@ export async function quickSend(args: {
   signers: { email: string; name?: string }[]
   message?: string
   expiresInDays: number | null
-}): Promise<Result<{ documentId: string; undelivered: number }>> {
+}): Promise<Result<{ documentId: string; undelivered: number; notEmailed: number }>> {
   // Asked before anything is stored, so a sender who may not send is told now
   // and is not left with a draft they never asked for. `sendDocument` asks
   // again at the moment of sending.
@@ -331,7 +336,7 @@ export async function quickSend(args: {
 
   const sent = await sendDocument(args.userId, document.id)
   if (!sent.ok) return sent
-  return { ok: true, documentId: document.id, undelivered: sent.undelivered }
+  return { ok: true, documentId: document.id, undelivered: sent.undelivered, notEmailed: sent.notEmailed }
 }
 
 // ─── Renew, remind, cancel ────────────────────────────────────────────────────
@@ -341,7 +346,7 @@ export async function quickSend(args: {
  * EXPIRED document to PENDING, and re-sends links to whoever may act now.
  * Tokens are kept, so links already sent (by email or WhatsApp) work again.
  */
-export async function renewDocument(userId: string, documentId: string): Promise<Result<{ undelivered: number }>> {
+export async function renewDocument(userId: string, documentId: string): Promise<Result<{ undelivered: number; notEmailed: number }>> {
   const document = await prisma.document.findFirst({ where: { id: documentId, userId }, include: { user: true } })
   if (!document) return { ok: false, error: "notFound" }
   if (!canRenewDocument(document.status)) return { ok: false, error: "notRenewable" }
@@ -366,8 +371,8 @@ export async function renewDocument(userId: string, documentId: string): Promise
   const fresh = await prisma.document.findUniqueOrThrow({ where: { id: documentId }, include: { recipients: true, user: true } })
   // The links are renewed whatever happens to the emails, so a refusal is
   // reported beside the success and not instead of it.
-  const { undelivered } = await notifyNext(fresh)
-  return { ok: true, undelivered: undelivered.length }
+  const { undelivered, notEmailed } = await notifyNext(fresh)
+  return { ok: true, undelivered: undelivered.length, notEmailed: notEmailed.length }
 }
 
 export async function remindDocument(userId: string, documentId: string): Promise<Result<{ undelivered: number }>> {
@@ -378,10 +383,12 @@ export async function remindDocument(userId: string, documentId: string): Promis
   if (!document) return { ok: false, error: "notFound" }
   const blocked = await senderBlocker(userId, 0)
   if (blocked) return { ok: false, error: blocked }
-  const { notified, undelivered } = await notifyNext(document, { reminder: true })
+  const { notified, notEmailed, undelivered } = await notifyNext(document, { reminder: true })
   // A reminder is nothing but its emails: if none got through, nothing
   // happened, and the audit trail must not say a reminder was sent.
   if (notified.length === 0 && undelivered.length > 0) return { ok: false, error: "emailFailed" }
+  // Same with no provider at all: nothing went out, so nothing is recorded.
+  if (notified.length === 0 && notEmailed.length > 0) return { ok: false, error: "emailNotConfigured" }
   await recordAudit(prisma, { documentId, type: AUDIT.REMINDER_SENT, actorEmail: document.user.email, data: { recipients: notified.length } })
   return { ok: true, undelivered: undelivered.length }
 }
