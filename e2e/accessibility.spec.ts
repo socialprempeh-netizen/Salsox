@@ -91,6 +91,10 @@ test.describe("accessibility", () => {
   }
 
   test("the signed-in surfaces have none either", async ({ page }) => {
+    // Nine pages scanned, plus a sign-up and a document sent: more than the
+    // default 30 seconds on a dev server compiling each page on first visit,
+    // which made this fail on time while every scan was clean.
+    test.setTimeout(120_000)
     // The dashboard is where the kit spends most of its screen time, and it is
     // the part a marketing-page-only audit never reaches.
     await page.goto("/signup")

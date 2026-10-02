@@ -12,6 +12,7 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
 import { siteConfig } from "@/config/site"
+import { heroSecondaryCta } from "@/lib/landing-cta"
 
 /**
  * The hero copy lives in the message files, under two parallel namespaces:
@@ -34,10 +35,17 @@ const mockNav: { key: string; icon: LucideIcon; active?: boolean }[] = [
   { key: "navSettings", icon: Settings },
 ]
 
+// Replaced: the values did not match their labels ("Sent this month: Pro",
+// "Collected: Jul 24"), left over from the kit's billing mock-up.
+// const mockStats = [
+//   { key: "statPlan", value: "Pro" },
+//   { key: "statStatus", valueKey: "statStatusValue", badge: true },
+//   { key: "statBilling", value: "Jul 24" },
+// ]
 const mockStats = [
-  { key: "statPlan", value: "Pro" },
+  { key: "statPlan", valueKey: "statSentValue" },
   { key: "statStatus", valueKey: "statStatusValue", badge: true },
-  { key: "statBilling", value: "Jul 24" },
+  { key: "statBilling", valueKey: "statCollectedValue" },
 ]
 
 // Decorative revenue bars (% heights) for the mock chart
@@ -50,6 +58,8 @@ const mockBars = [38, 52, 45, 63, 58, 74, 69, 85, 78, 92, 88, 100]
 export function Hero({ ctaHref }: { ctaHref: string }) {
   const t = useTranslations("hero")
   const tm = useTranslations("hero.mock")
+  const secondary = heroSecondaryCta(siteConfig.links.demo)
+  const mockHost = new URL(siteConfig.url).host
   // Explicit split when the message provides one, otherwise derive it from
   // the tagline with the last word gradient-accented.
   const words = siteConfig.tagline.split(" ")
@@ -107,8 +117,10 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
               {t("cta")} <ArrowRight className="h-5 w-5" />
             </Link>
           </Button>
+          {/* Was "Live demo" → /login whenever no demo deployment was set,
+              which opened a sign-in form (see heroSecondaryCta). */}
           <Button asChild variant="outline" size="xl">
-            <Link href={siteConfig.links.demo ?? "/login"}>Live demo</Link>
+            <Link href={secondary.href}>{t(secondary.label === "liveDemo" ? "liveDemo" : "howItWorks")}</Link>
           </Button>
         </div>
 
@@ -141,8 +153,10 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
               <span className="h-3 w-3 rounded-full bg-red-400" />
               <span className="h-3 w-3 rounded-full bg-yellow-400" />
               <span className="h-3 w-3 rounded-full bg-green-400" />
+              {/* Was "dashboard.yoursaas.com": this is a picture of this
+                  product, so it shows this product's own address. */}
               <span className="mx-auto rounded-md bg-background px-3 py-0.5 text-xs text-muted-foreground ring-1 ring-border">
-                dashboard.yoursaas.com
+                {mockHost}/dashboard
               </span>
             </div>
 
@@ -151,12 +165,10 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
               {/* Sidebar */}
               <aside className="hidden w-52 flex-col border-r border-border bg-background sm:flex">
                 <div className="flex h-14 items-center border-b border-border px-4 text-sm font-bold tracking-tight">
-                  {/* Generic on purpose: this mockup is the customer's own
-                      product (dashboard.yoursaas.com, alex@acme.io), not ours.
-                      Greying the tile was not enough, because the mark itself
-                      is our bolt on the kit's site: `generic` swaps the symbol
-                      too, in both themes. */}
-                  <Logo generic markClassName="h-6 w-6" />
+                  {/* Was `<Logo generic />`, for when this mock-up showed a
+                      customer's own product built on the kit. It shows
+                      Salsox now, so it carries the real logo. */}
+                  <Logo markClassName="h-6 w-6" />
                 </div>
                 <nav className="flex-1 space-y-1 p-3">
                   {mockNav.map(({ key, icon: Icon, active }) => (
@@ -172,12 +184,16 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
                   ))}
                 </nav>
                 <div className="flex items-center gap-2.5 border-t border-border p-3">
+                  {/* Was "Alex Rivera, alex@acme.io": a made-up person at a
+                      made-up company. The sender is the same Ama the
+                      greeting addresses, shown with her plan rather than an
+                      invented email address. */}
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-2 text-xs font-semibold text-primary-foreground">
-                    AR
+                    {tm("userInitials")}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-foreground">Alex Rivera</p>
-                    <p className="truncate text-[11px] text-muted-foreground">alex@acme.io</p>
+                    <p className="truncate text-xs font-semibold text-foreground">{tm("userName")}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{tm("userPlan")}</p>
                   </div>
                 </div>
               </aside>
@@ -186,8 +202,8 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
               <div className="flex-1 bg-muted/20">
                 {/* Top bar */}
                 <div className="flex h-14 items-center justify-end gap-4 border-b border-border bg-background px-5 text-xs text-muted-foreground">
-                  <span>Docs</span>
-                  <span>Sign out</span>
+                  <span>{tm("topDocs")}</span>
+                  <span>{tm("topSignOut")}</span>
                 </div>
 
                 {/* Content */}
@@ -199,16 +215,16 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
 
                   {/* Stat cards */}
                   <div className="grid grid-cols-3 gap-3">
-                    {mockStats.map(({ key, value, valueKey, badge }) => (
+                    {mockStats.map(({ key, valueKey, badge }: { key: string; valueKey?: string; badge?: boolean; value?: string }) => (
                       <div key={key} className="rounded-xl border border-border bg-card p-3">
                         <p className="text-[11px] text-muted-foreground">{tm(key)}</p>
                         {badge ? (
                           <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            {valueKey ? tm(valueKey) : value}
+                            {valueKey ? tm(valueKey) : null}
                           </span>
                         ) : (
-                          <p className="mt-1 text-lg font-bold text-foreground">{value}</p>
+                          <p className="mt-1 text-sm font-bold text-foreground sm:text-lg">{valueKey ? tm(valueKey) : null}</p>
                         )}
                       </div>
                     ))}

@@ -26,3 +26,21 @@ export function heroCtaHref({ isKitSite, signedIn }: { isKitSite: boolean; signe
 export function getStartedHref(): string {
   return SIGNUP_PATH
 }
+
+export const GUIDE_PATH = "/docs/getting-started"
+
+/**
+ * The secondary "demo" links: the hero's second button and the footer's last
+ * product link. Both pointed at /login whenever no demo deployment was
+ * configured, so "Live demo" opened a sign-in form, which demonstrates
+ * nothing. With NEXT_PUBLIC_DEMO_URL set they lead there, as before; without
+ * it the hero offers the walkthrough guide and the footer the free plan,
+ * both real places. `label` is a key in the `hero` and `footer` messages.
+ */
+export function heroSecondaryCta(demoUrl: string | null): { href: string; label: "liveDemo" | "howItWorks" } {
+  return demoUrl ? { href: demoUrl, label: "liveDemo" } : { href: GUIDE_PATH, label: "howItWorks" }
+}
+
+export function footerTryLink(demoUrl: string | null): { href: string; label: "demo" | "tryFree" } {
+  return demoUrl ? { href: demoUrl, label: "demo" } : { href: SIGNUP_PATH, label: "tryFree" }
+}

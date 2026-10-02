@@ -573,6 +573,8 @@
     }
   },
   "hero": {
+    "liveDemo": "Live demo",
+    "howItWorks": "See how it works",
     "$kit": {
       "headlineHead": "Ship your SaaS",
       "headlineAccent": "this weekend.",
@@ -586,7 +588,7 @@
       "headlineAccent": "",
       "subtitle": "Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone. Unlimited sending on paid plans — fair-use limits apply to prevent spam.",
       "cta": "Send your first document",
-      "trust": "No envelope limits · Cancel in one click · Export everything, any time",
+      "trust": "Free to start · Cancel in one click · Export everything, any time",
       "pill": "Sign & Pay with Stripe or Paystack"
     },
     "mock": {
@@ -594,8 +596,15 @@
       "navBilling": "Billing",
       "navSettings": "Settings",
       "statPlan": "Sent this month",
-      "statStatus": "Status",
-      "statStatusValue": "No limits",
+      "statStatus": "This week",
+      "statStatusValue": "All signed",
+      "statSentValue": "24",
+      "statCollectedValue": "GH₵ 4,800",
+      "userInitials": "AM",
+      "userName": "Ama Mensah",
+      "userPlan": "Business plan",
+      "topDocs": "Docs",
+      "topSignOut": "Sign out",
       "statBilling": "Collected",
       "navDocuments": "Documents",
       "greeting": "Welcome back, Ama 👋",
@@ -689,6 +698,8 @@
     "changelog": "Changelog",
     "about": "About",
     "aboutLink": "About",
+    "demo": "Demo",
+    "tryFree": "Try it free",
     "faq": "FAQ",
     "contact": "Contact",
     "openSource": "Open Source",
@@ -727,14 +738,13 @@
       "maintainerTitle": "Who builds it",
       "maintainerIntro": "{site} is created and maintained by",
       "maintainerBody": ". One person, working in the open: the roadmap says what is coming, the changelog says what already shipped, and every release is a tag you can read. Issues and questions are answered by the person who wrote the code.",
-      "noteTitle": "This is a placeholder.",
-      "noteBody": "Tell your story here: what you are building, who it is for, and why it exists. Edit this page in <path>src/app/[locale]/(public)/about/page.tsx</path>.",
-      "what": "One place for the work your team does every day: projects, the people involved, and the billing that keeps it running. No tab juggling, no spreadsheet of record.",
-      "who": "Small teams who would rather spend the afternoon on the work itself than on the tools around it.",
+      "what": "Salsox is e-signatures built for the way business gets done on a phone. Upload any PDF, say who signs, and send it by email, WhatsApp or SMS. Signers need no account and no app: they sign one field at a time in their browser, and when the document asks for a payment they pay in the same flow, by card or mobile money, straight to the sender's account.",
+      "who": "Freelancers, agencies, landlords, clinics, schools and small businesses that send agreements, quotes, invoices and consent forms, and want them signed, and often paid, the same day. Especially where most clients live on their phones.",
       "principles": [
-        "Your data is yours: take it with you whenever you want.",
-        "Clear pricing, no surprises on the invoice.",
-        "Honest by default: real features, no smoke and mirrors."
+        "Unlimited sending on paid plans. Fair-use limits exist to stop spam, not to sell upgrades.",
+        "Mistakes are fixable: correct a wrong email or renew an expired link without starting over.",
+        "Your records are yours: export every document and audit trail, on any plan, even after you cancel.",
+        "No silent renewals: a reminder goes out before every charge, and cancelling takes one click."
       ]
     }
   },
@@ -953,8 +963,8 @@
       "metaDescription": "Setup guides for {site}: getting started, configuration, authentication, billing and deployment."
     },
     "$product": {
-      "intro": "Guides for getting the most out of <site></site>. Each one is a Markdown file in <code>content/docs/</code>, so your documentation ships and versions with your app.",
-      "metaDescription": "Guides for {site}, written as Markdown files that ship and version with the app."
+      "intro": "Guides for getting the most out of <site></site>: sending documents, signing on a phone, getting paid with Sign & Pay, and managing your plan.",
+      "metaDescription": "How to send documents for signature with {site}, collect payments with Sign & Pay, and manage your plan."
     }
   },
   "language": {
@@ -995,6 +1005,9 @@
     "resetPassword": "Choose a new password | {site}",
     "verifyRequest": "Check your email | {site}",
     "twoFactor": "Two-factor authentication | {site}"
+  },
+  "legal": {
+    "updated": "Last updated: {date}"
   },
   "related": {
     "title": "Keep exploring",

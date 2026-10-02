@@ -2,7 +2,8 @@ import type { Metadata } from "next"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 import { useTranslations } from "next-intl"
-import { isKitSite } from "@/config/kit"
+// Unused since the placeholder note below was removed.
+// import { isKitSite } from "@/config/kit"
 import { jsonLdScript } from "@/lib/json-ld"
 import { aboutPageJsonLd } from "@/lib/structured-data"
 import { RelatedLinks } from "@/components/landing/related-links"
@@ -10,16 +11,14 @@ import { hasPosts } from "@/lib/blog"
 
 export const metadata: Metadata = pageMetadata({
   title: `About | ${siteConfig.name}`,
-  description: `What ${siteConfig.name} is, who it is for, and the principles behind it.`,
+  description: `${siteConfig.name} is e-signatures built for phones: send any PDF, get it signed and paid in one flow, by email, WhatsApp or SMS.`,
   path: "/about",
 })
 
 /**
- * On the kit's own site this is the real page. In your clone it is a
- * structural scaffold: the copy under `about.product` in the message files is
- * a draft that reads as finished, so the layout holds while you write your
- * own. Replace the text there, and the dashed note disappears on its own once
- * KIT_SITE is set.
+ * What Salsox is, who it is for, and the principles it is run by. The copy
+ * lives under `about.$product` in the message files; it used to be the kit's
+ * placeholder ("projects", "small teams") with a note saying so.
  */
 export default function AboutPage() {
   const t = useTranslations("about")
@@ -35,14 +34,17 @@ export default function AboutPage() {
         <p className="mt-4 text-lg text-muted-foreground">{siteConfig.description}</p>
 
         <div className="mt-12 space-y-8 leading-7 text-muted-foreground">
-          {!isKitSite && (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-5 text-sm">
+          {/* Removed with the placeholder copy it apologised for: this page
+              now describes Salsox. The note's strings stay under `$kit`.
+              {!isKitSite && (
+              <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-5 text-sm">
               <p className="font-medium text-foreground">{t("noteTitle")}</p>
               <p className="mt-1">
-                {t.rich("noteBody", { path: (c) => <code>{c}</code> })}
+              {t.rich("noteBody", { path: (c) => <code>{c}</code> })}
               </p>
-            </div>
-          )}
+              </div>
+              )}
+          */}
 
           <div>
             <h2 className="mb-2 text-lg font-semibold text-foreground">{t("whatTitle")}</h2>

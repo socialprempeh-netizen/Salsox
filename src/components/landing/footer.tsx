@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site"
 import { useTranslations } from "next-intl"
 import { isKitSite } from "@/config/kit"
 import { hasPosts } from "@/lib/blog"
+import { footerTryLink } from "@/lib/landing-cta"
 
 function XIcon() {
   return (
@@ -20,6 +21,7 @@ function XIcon() {
 export function Footer() {
   const t = useTranslations("footer")
   const orgUrl = siteConfig.links.githubOrg ?? siteConfig.links.github
+  const tryLink = footerTryLink(siteConfig.links.demo)
   return (
     <footer className="border-t border-border bg-muted/30 py-12">
       <div className="mx-auto max-w-6xl px-6 lg:px-12">
@@ -70,9 +72,11 @@ export function Footer() {
                 <li><Link href="/blog" className="transition-colors hover:text-foreground">{t("blog")}</Link></li>
               )}
               <li><Link href="/changelog" className="transition-colors hover:text-foreground">{t("changelog")}</Link></li>
+              {/* Was a literal "Demo" → /login when no demo deployment was
+                  set; see footerTryLink. */}
               <li>
-                <Link href={siteConfig.links.demo ?? "/login"} className="transition-colors hover:text-foreground">
-                  Demo
+                <Link href={tryLink.href} className="transition-colors hover:text-foreground">
+                  {t(tryLink.label === "demo" ? "demo" : "tryFree")}
                 </Link>
               </li>
             </ul>

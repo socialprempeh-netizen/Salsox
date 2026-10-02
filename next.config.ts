@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
     // request time. Without this they never reach the serverless bundle.
     "/[locale]/blog": ["./content/blog/**"],
     "/[locale]/blog/**": ["./content/blog/**"],
+    // The legal pages read content/legal/ the same way (src/lib/legal.ts).
+    "/[locale]/privacy": ["./content/legal/**"],
+    "/[locale]/terms": ["./content/legal/**"],
+    "/[locale]/cookies": ["./content/legal/**"],
     // Not localized: these two live outside `[locale]`.
     "/sitemap.xml": ["./content/blog/**"],
     "/llms.txt": ["./content/blog/**"],

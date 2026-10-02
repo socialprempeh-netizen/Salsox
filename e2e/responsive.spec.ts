@@ -35,6 +35,9 @@ for (const width of WIDTHS) {
     await check("/docs", "docs")
     await check("/changelog", "changelog")
     await check("/this-page-does-not-exist", "not-found")
+    await check("/privacy", "privacy")
+    await check("/terms", "terms")
+    await check("/cookies", "cookies")
     await check("/login", "login")
 
     await signUp(page)

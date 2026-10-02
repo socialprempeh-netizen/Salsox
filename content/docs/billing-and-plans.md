@@ -1,33 +1,49 @@
 ---
 title: "Billing and plans"
-description: "Change plan, find your invoices, update your card and cancel, all from your account."
-order: 3
+description: "What each plan includes, how Sign & Pay pays you, and how to change plan, update your card or cancel."
+order: 2
 ---
 
 # Billing and plans
 
-Everything about payment lives on the **Billing** page in your account. You do not need to write to us to change anything on this page.
+Everything about your plan lives on the **Billing** page. You never need to write to us to change, pause or cancel anything.
 
-## Choosing a plan
+## What each plan includes
 
-Plans differ in how much you can keep active and which features are included. You can compare them on the [pricing page](/pricing) and switch whenever it suits you.
+| | Free | Personal | Business |
+|---|---|---|---|
+| Documents | 3 a month | Unlimited | Unlimited |
+| Quick Send, WhatsApp and SMS links | ✓ | ✓ | ✓ |
+| Sign & Pay (collect a payment as people sign) | | | ✓ |
+| Signing in order, and approvers | | | ✓ |
+| Signed PDF with an audit certificate page | | | ✓ |
 
-Monthly plans renew every month, yearly plans renew once a year and cost less per month. You can move between the two at any point.
+Prices are on the [pricing page](/pricing). Unlimited sending still has fair-use limits that stop spam, such as a daily ceiling and a cap of 10 recipients per document; ordinary use never comes near them.
+
+Business is the plan for documents that need more than signatures: getting paid, an order people sign in, or a signed copy that carries its own evidence. The certificate page lists every recipient, every action with its time and IP address, and the document's fingerprints, inside the PDF itself. On other plans the same audit trail is kept on the document's page and in your export.
+
+## Getting paid with Sign & Pay
+
+On Business, a document can ask one signer to pay before they sign. They pay on a secure page by card or mobile money, and the money goes to your own payout account, not to us. Connect one under **Payouts**: Stripe, Paystack, or both.
+
+A few safeguards are built in:
+
+- A signer can only have one checkout open for a document, so nobody pays twice by tapping twice.
+- If you cancel a document, or its links expire, while someone is paying, that payment is refunded to them in full and you are told.
+- If a payer's bank disputes a payment, we email you straight away. The signed document and its audit trail are your evidence.
 
 ## Changing plan
 
-Upgrades take effect immediately, and you are charged the difference for the days left in the period rather than a full new cycle. Downgrades take effect at the end of the period you already paid for, so nothing is cut short.
+Upgrades take effect immediately, and you are charged only for the days left in the current period. Downgrades take effect at the end of the period you already paid for. Sign & Pay and signing in order keep working on documents you already sent, so nobody is stopped halfway through signing. The certificate page is added when a document is completed, so it follows your plan at that moment.
 
-## Invoices and receipts
+## Invoices and your card
 
-Every payment produces an invoice, sent to the email on your account and available from the Billing page. Invoices carry the details your accountant will ask for, and you can add a company name and a VAT number before your next renewal.
+Every payment produces an invoice, emailed to you and listed on the Billing page. Use **Manage Billing** to change your card, your billing address or the email invoices go to. Card details are handled by our payment provider and never reach our servers.
 
-## Updating your card
+## Renewals and cancelling
 
-Use **Manage billing** to change your card, your billing address or the email invoices go to. Card details are handled by our payment provider and never reach our own servers.
+We email you before every renewal: 7 days ahead on monthly plans, 14 days on yearly ones. Cancel from the Billing page in one click, before the renewal date, and you will not be charged again. You keep access until the end of the period you paid for.
 
-## Cancelling
+## Taking everything with you
 
-Cancel from the Billing page whenever you want. Your access continues until the end of the period you have paid for, and nothing is deleted the moment you cancel.
-
-If you come back later, your projects are where you left them.
+**Export all documents** on the Billing page downloads every original, every signed PDF and every audit trail, on any plan and even after you cancel. Large accounts download in parts of 100 documents.

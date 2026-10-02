@@ -1,35 +1,55 @@
 ---
 title: "Getting started"
-description: "Create your account, set up your first project and invite the people you work with."
+description: "Create your account, send your first document for signature, and follow it until everyone has signed."
 order: 1
 ---
 
 # Getting started
 
-Welcome. This page walks you through the first ten minutes: creating your account, setting up a project and bringing in the rest of your team. Nothing here needs an admin or a support call.
+This guide takes you from a new account to a signed document. Most people are done in under five minutes, on a phone or a computer.
 
 ## Create your account
 
-Sign up with Google, with GitHub, or with an email address and a password. If you would rather not manage another password, choose the email option and we send you a one-time link that signs you in directly.
+Sign up with Google, GitHub, or an email address and a password. If you use email, confirm the address from the message we send you: documents can only go out from a confirmed address, so nobody can send in your name.
 
-Whichever you pick, you can add the others later from your account settings, and sign in with any of them.
+A free account sends 3 documents a month. That is enough to try everything on this page. Upgrade from **Billing** whenever you need more.
 
-## Set up your first project
+## Send your first document
 
-A project is where your work lives. From the dashboard, choose **New project** and give it a name. You can rename it or delete it at any point, so there is nothing to get right on the first try.
+There are two ways to send, and both start from **Documents** in the menu.
 
-Most teams start with one project per client, per product or per quarter. There is no wrong shape: pick the one that matches how you already talk about your work.
+**Quick Send** is the fast path. Choose a PDF, type the email addresses of the people who need to sign, separated by commas, and press send. A signature and a date field are placed for each signer at the end of the document, and everyone is emailed a link at once.
 
-## Invite your team
+**New document** gives you full control:
 
-Open a project and use **Invite** to send an email to the people who should have access. They get a link, they sign in, and they land straight in the project.
+1. Upload the PDF and press **Continue to recipients**.
+2. Add each person, their email and, if you want, their phone number. Choose what each one does: **Signs**, **Approves**, **Views**, or **Gets a copy** at the end.
+3. Tap the page to place fields for each signer: signature, initials, name, date, text or a checkbox. Drag a field to move it, and use its corner to resize it.
+4. Review, add a message if you like, choose when the links expire, and press **Send for signature**.
 
-Everyone you invite can see and work on that project. Only you and the other admins can change billing or remove members.
+PDFs can be up to 4 MB. The original file is never changed: signatures go onto a separate signed copy.
+
+## Share links your way
+
+Every signer gets an email, and every link can also be copied or sent over WhatsApp or SMS from the document's page. That is often the fastest way to reach someone who lives on their phone.
+
+## What your signers see
+
+Signers do not need an account or an app. They open the link, read the document, and fill one field at a time, with a button that always shows the next step. They can draw their signature with a finger, type it, or upload an image, and it is remembered for the rest of the document.
+
+## Follow a document
+
+The document's page shows who has opened it, who has signed, and every action with its time, in the audit trail. A few things happen on their own:
+
+- **Reminders** go out every three days to anyone who has not signed.
+- **Expired links** can be renewed in one click, and the links you already shared work again.
+- **A wrong email** can be corrected without starting over: the old link stops working and the right person gets a new one.
+
+When the last person signs, everyone receives the signed PDF by email, and you can download it from the document's page at any time.
 
 ## What to do next
 
-- Add your name and photo in **Settings**, so your teammates recognise you
-- Look at **Billing** to see which plan you are on and what it includes
-- Read [Billing and plans](/docs/billing-and-plans) for invoices, plan changes and cancelling
+- Read [Billing and plans](/docs/billing-and-plans) to see what each plan includes, including signing in order and collecting payments with Sign & Pay
+- Connect a payout account under **Payouts** if you want to be paid when people sign
 
 If something is unclear, write to us. A person reads every message.
