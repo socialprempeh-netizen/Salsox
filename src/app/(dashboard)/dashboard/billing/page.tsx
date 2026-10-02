@@ -12,6 +12,7 @@ import { exampleEnterpriseCard } from "@/components/billing/enterprise-card"
 import { CheckoutStatusToast } from "@/components/billing/checkout-status-toast"
 import { CancelSubscription } from "@/components/billing/cancel-subscription"
 import { Button } from "@/components/ui/button"
+import { EXPORT_DOCUMENTS_PER_PART, exportPartCount } from "@/lib/esign/zip-stream"
 
 // Invoice statuses come from Stripe as stable codes, like subscription ones;
 // their labels live in the message files under `dashboard.billing.invoiceStatus`.
@@ -57,6 +58,8 @@ export default async function BillingPage() {
   })
 
   const entitlement = await getEntitlement(currentUser.id)
+  // Large accounts export in parts (src/app/api/export/route.ts).
+  const exportParts = exportPartCount(await prisma.document.count({ where: { userId: currentUser.id } }))
   const purchase = entitlement.kind === "lifetime" ? entitlement.purchase : null
   const subscription =
     entitlement.kind === "subscription"
@@ -236,11 +239,28 @@ export default async function BillingPage() {
           <CardDescription>{tEsign("exportBody")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            {/* A file download from a route handler: it must be a full
-                navigation (hence `download`), not a client-side <Link> transition. */}
-            <a href="/api/export" download>{tEsign("exportCta")}</a>
-          </Button>
+          {exportParts === 1 ? (
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              {/* A file download from a route handler: it must be a full
+                  navigation (hence `download`), not a client-side <Link> transition. */}
+              <a href="/api/export" download>{tEsign("exportCta")}</a>
+            </Button>
+          ) : (
+            <>
+              <p className="mb-3 text-sm text-muted-foreground">
+                {tEsign("exportParts", { parts: exportParts, perPart: EXPORT_DOCUMENTS_PER_PART })}
+              </p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {Array.from({ length: exportParts }, (_, i) => (
+                  <Button key={i} asChild variant="outline">
+                    <a href={`/api/export?part=${i + 1}`} download>
+                      {tEsign("exportPart", { part: i + 1, parts: exportParts })}
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

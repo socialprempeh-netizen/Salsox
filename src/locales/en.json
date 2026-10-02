@@ -1487,7 +1487,9 @@
       "resumed": "Your subscription will continue.",
       "exportTitle": "Export all documents",
       "exportBody": "A ZIP with every original, every signed PDF and every audit trail. Free on every plan, any time, including after you cancel.",
-      "exportCta": "Download ZIP"
+      "exportCta": "Download ZIP",
+      "exportParts": "Your documents come in {parts} ZIP files of up to {perPart} documents each, oldest first.",
+      "exportPart": "Part {part} of {parts}"
     }
   }
 }
