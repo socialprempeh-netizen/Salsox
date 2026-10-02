@@ -58,6 +58,39 @@ export const stripeSignAndPay: SignAndPayProvider = {
     const account = await stripe.accounts.retrieve(externalAccountId)
     return Boolean(account.charges_enabled)
   },
+
+  async cancelCheckout(providerRef: string) {
+    const session = await stripe.checkout.sessions.retrieve(providerRef)
+    if (session.status !== "open") return session.status === "expired"
+    await stripe.checkout.sessions.expire(providerRef)
+    return true
+  },
+
+  async refund({ providerRef, paymentId }) {
+    const session = await stripe.checkout.sessions.retrieve(providerRef)
+    const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id
+    if (!paymentIntent) throw new Error(`Checkout ${providerRef} has no payment to refund`)
+    try {
+      const refund = await stripe.refunds.create(
+        {
+          payment_intent: paymentIntent,
+          // Destination charge: the money sits with the sender's connected
+          // account. Pull it back from them, and return our fee too, so the
+          // refund costs neither the payer nor the platform.
+          reverse_transfer: true,
+          refund_application_fee: true,
+          metadata: { salsoxPaymentId: paymentId },
+        },
+        // One refund per payment, however many times reconciliation retries.
+        { idempotencyKey: `salsox-refund-${paymentId}` }
+      )
+      return { refundId: refund.id }
+    } catch (error) {
+      // Refunded already (by us or from the Stripe dashboard): done.
+      if ((error as { code?: string }).code === "charge_already_refunded") return { refundId: `already:${paymentIntent}` }
+      throw error
+    }
+  },
 }
 
 /** Creates an Express account for a sender and returns the onboarding link. */

@@ -21,6 +21,9 @@ const loadRecipient = vi.fn()
 const createPayment = vi.fn()
 const findPayout = vi.fn()
 const getProvider = vi.fn()
+const findPayment = vi.fn()
+const findStartedEvent = vi.fn()
+const updatePayments = vi.fn()
 
 const recipient = {
   id: "rec_1",
@@ -38,14 +41,21 @@ const document = { id: "doc_1", status: "PENDING", signingOrder: "PARALLEL", rec
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     recipient: { findUnique: (...a: unknown[]) => loadRecipient(...a) },
-    payment: { create: (...a: unknown[]) => createPayment(...a) },
+    payment: {
+      create: (...a: unknown[]) => createPayment(...a),
+      findUnique: (...a: unknown[]) => findPayment(...a),
+      count: async () => 0,
+      update: vi.fn(),
+      updateMany: (...a: unknown[]) => updatePayments(...a),
+    },
+    auditEvent: { findFirst: (...a: unknown[]) => findStartedEvent(...a) },
     payoutAccount: { findUnique: (...a: unknown[]) => findPayout(...a) },
     field: { findFirst: async () => ({ id: "field_1", recipientId: "rec_1", type: "SIGNATURE" }) },
     $transaction: transaction,
   },
 }))
 vi.mock("./audit", () => ({
-  AUDIT: { FIELD_SIGNED: "FIELD_SIGNED" },
+  AUDIT: { FIELD_SIGNED: "FIELD_SIGNED", PAYMENT_STARTED: "PAYMENT_STARTED", PAYMENT_FAILED: "PAYMENT_FAILED" },
   recordAudit,
   requestMeta: async () => ({ ipAddress: null, userAgent: null }),
 }))
@@ -126,7 +136,80 @@ describe("startPayment with a currency outside the offered list", () => {
     const createCheckout = vi.fn(async (req: { reference: string }) => ({ url: "https://pay.example/1", providerRef: req.reference }))
     getProvider.mockReturnValue({ isConfigured: () => true, createCheckout })
     createPayment.mockResolvedValue({ id: "pay_1" })
+    transaction.mockImplementation(async (run: (tx: unknown) => Promise<unknown>) =>
+      run({ $executeRaw: vi.fn(), payment: { findFirst: async () => null, create: createPayment } })
+    )
     expect(await startPayment(TOKEN)).toEqual({ ok: true, url: "https://pay.example/1" })
     expect(createCheckout).toHaveBeenCalledWith(expect.objectContaining({ amount: 1250, currency: "USD" }))
+  })
+})
+
+/**
+ * One checkout per document. A reload, a back button or a double tap used to
+ * open a second live payment page; the second could be paid too.
+ */
+describe("startPayment with a checkout already open", () => {
+  const owing = {
+    ...recipient,
+    mustPay: true,
+    document: { ...document, userId: "user_1", title: "Invoice", paymentAmount: 1250, paymentProvider: "STRIPE", paymentCurrency: "USD" },
+  }
+  const open = (ageMs: number) => ({
+    id: "pay_open",
+    documentId: "doc_1",
+    recipientId: "rec_1",
+    provider: "STRIPE",
+    providerRef: "cs_open",
+    amount: 1250,
+    currency: "USD",
+    status: "PENDING",
+    createdAt: new Date(Date.now() - ageMs),
+    recipient: owing,
+    document: { status: "PENDING" },
+  })
+  const createCheckout = vi.fn(async () => ({ url: "https://pay.example/new", providerRef: "cs_new" }))
+
+  beforeEach(() => {
+    loadRecipient.mockResolvedValue(owing)
+    findPayout.mockResolvedValue({ ready: true, externalAccountId: "acct_1" })
+    createCheckout.mockClear()
+  })
+
+  const withOpen = (ageMs: number, url: string | null) => {
+    findPayment.mockResolvedValue(open(ageMs))
+    findStartedEvent.mockResolvedValue(url ? { data: { url } } : null)
+    transaction.mockImplementation(async (run: (tx: unknown) => Promise<unknown>) =>
+      run({ $executeRaw: vi.fn(), payment: { findFirst: async () => open(ageMs), create: createPayment } })
+    )
+    getProvider.mockReturnValue({
+      isConfigured: () => true,
+      createCheckout,
+      verify: async () => ({ status: "PENDING", amount: 1250, currency: "USD" }),
+    })
+  }
+
+  it("sends the signer back to the checkout already open", async () => {
+    withOpen(30_000, "https://pay.example/open")
+    expect(await startPayment(TOKEN)).toEqual({ ok: true, url: "https://pay.example/open" })
+    expect(createCheckout).not.toHaveBeenCalled()
+    expect(createPayment).not.toHaveBeenCalled()
+  })
+
+  it("asks to wait while another request is still opening it", async () => {
+    withOpen(1_000, null)
+    expect(await startPayment(TOKEN)).toEqual({ ok: false, error: "paymentInProgress" })
+    expect(createCheckout).not.toHaveBeenCalled()
+  })
+
+  it("closes the claim when the provider refuses to open a checkout", async () => {
+    transaction.mockImplementation(async (run: (tx: unknown) => Promise<unknown>) =>
+      run({ $executeRaw: vi.fn(), payment: { findFirst: async () => null, create: createPayment } })
+    )
+    createPayment.mockResolvedValue({ id: "pay_new", documentId: "doc_1", recipientId: "rec_1", provider: "STRIPE" })
+    updatePayments.mockResolvedValue({ count: 1 })
+    getProvider.mockReturnValue({ isConfigured: () => true, createCheckout: async () => { throw new Error("provider down") } })
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    expect(await startPayment(TOKEN)).toEqual({ ok: false, error: "paymentFailed" })
+    expect(updatePayments).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "pay_new", status: "PENDING" }, data: { status: "FAILED" } }))
   })
 })

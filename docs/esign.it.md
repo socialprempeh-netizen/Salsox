@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: 8a4831fce8e2
+source_checksum: 5f6c10ea2b17
 ---
 
 # Firme elettroniche (Salsox)
@@ -91,6 +91,14 @@ In un documento sequenziale il firmatario successivo viene rivendicato (una scri
 - **Correggere o rinnovare senza ricostruire.** I campi sono legati alla riga del destinatario, quindi `updateRecipient` la modifica sul posto e **ruota il token**: il link mandato all'indirizzo sbagliato smette subito di funzionare. `renewDocument` estende tutti i link non firmati e riattiva un documento `EXPIRED`; i token restano gli stessi, quindi i link già condivisi tornano a funzionare.
 - **Firma pensata per il telefono.** Un campo alla volta, una barra fissa con l'azione successiva, input in bottom sheet a misura di pollice, firma ricordata, nessuno scorrimento orizzontale a 360px (coperto da `e2e/responsive.spec.ts`).
 - **Sign & Pay.** Stripe (Connect, destination charges) o Paystack (subaccount), dietro un'unica interfaccia `SignAndPayProvider`. Il pagamento è sempre verificato tramite l'API del provider, mai preso per buono dal corpo di un webhook o dall'URL di ritorno, e importo e valuta devono coincidere. Dopo il pagamento, la firma si completa da sola.
+- **Riconciliazione di Sign & Pay.** Tutto quello che succede dopo il checkout è in `payments/settle.ts`, deciso da `payments/reconcile-rules.ts`:
+  - **Un checkout per documento.** `startPayment` rivendica il pagamento sotto un lock per documento nel database. Chi ha già un checkout aperto ci viene rimandato (l'URL è sull'evento `PAYMENT_STARTED`), oppure gli si chiede di attendere mentre un'altra richiesta lo sta ancora aprendo, oppure ne riceve uno nuovo solo se il precedente è fallito o è stato abbandonato.
+  - **Niente resta in sospeso.** `reconcilePayments` chiede al provider di ogni pagamento in sospeso da più di 10 minuti: dal cron giornaliero, e per un singolo documento quando il proprietario lo apre. Un checkout senza risposta per 48 ore viene chiuso.
+  - **I documenti chiusi non incassano.** Annullare, far scadere o rifiutare un documento chiude i suoi checkout aperti (le sessioni Stripe vengono fatte scadere; Paystack non ha una chiamata equivalente). Un pagamento che arriva comunque, o un secondo pagamento di chi ha già pagato, viene rimborsato per intero: su Stripe con `reverse_transfer` e `refund_application_fee`, così tornano indietro anche il trasferimento al mittente e la commissione della piattaforma. Proprietario e pagante ricevono entrambi un'email.
+  - **Rimborsi e chargeback vengono registrati** dai webhook, una volta per evento del provider: `PAYMENT_REFUNDED` (un rimborso totale rende il pagamento `REFUNDED`), `PAYMENT_DISPUTED` (il mittente riceve un'email) e `PAYMENT_DISPUTE_CLOSED` (una contestazione persa lo rende `REFUNDED`). Compaiono nel registro di audit del documento e in `/admin/moderation`.
+  - **Eventi webhook da abilitare.** Stripe: `checkout.session.completed`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed` (oltre agli eventi degli abbonamenti e ad `account.updated`). Paystack: `charge.success`, `refund.processed`, `charge.dispute.create`, `charge.dispute.resolve`.
+
+  `payments/reconcile.db.test.ts` mette alla prova tutto questo contro un database vero (`ESIGN_DB_TESTS=1`).
 - **Quick Send.** PDF + email → inviato. Per ogni firmatario vengono posizionati un campo firma e un campo data (`quick-send.ts`).
 - **Fatturazione onesta.**
   - Annullamento e ripristino dall'app, non solo dal portale Stripe.

@@ -44,6 +44,17 @@ export interface SignAndPayProvider {
   verify(providerRef: string): Promise<VerifiedPayment>
   /** Current readiness of a connected payout account. */
   isPayoutReady(externalAccountId: string): Promise<boolean>
+  /**
+   * Makes an unfinished checkout impossible to pay, when the provider allows
+   * it. Returns false when it cannot (Paystack has no such call): a payment
+   * that still lands is then refunded by reconciliation.
+   */
+  cancelCheckout(providerRef: string): Promise<boolean>
+  /**
+   * Gives a payment back in full. Safe to call again for the same payment:
+   * a payment already refunded counts as done, not as an error.
+   */
+  refund(args: { providerRef: string; paymentId: string }): Promise<{ refundId: string }>
 }
 
 /** Platform fee on a Sign & Pay amount, in minor units, rounded down. */

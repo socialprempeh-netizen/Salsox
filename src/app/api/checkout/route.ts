@@ -7,6 +7,18 @@ import { CHECKOUT_BLOCKING_STATUSES, trialDaysFor } from "@/lib/billing"
 import { AUTOMATIC_TAX_PARAMS, checkStripeTax } from "@/lib/stripe-tax"
 import type Stripe from "stripe"
 
+/** Stripe's way of saying an id we stored no longer exists on its side. */
+const isMissingResource = (error: unknown) => (error as { code?: string }).code === "resource_missing"
+
+/**
+ * What the browser is told when Stripe fails. The details go to the log: a
+ * raw Stripe message names internals, and is no help to the person paying.
+ */
+function stripeFailure(where: string, error: unknown) {
+  console.error(`[checkout] ${where} failed`, error)
+  return NextResponse.json({ error: "We couldn't start the checkout. Please try again in a moment." }, { status: 502 })
+}
+
 export async function POST(req: NextRequest) {
   const currentUser = await getCurrentUser()
   if (!currentUser) {
@@ -17,7 +29,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Billing is not configured" }, { status: 503 })
   }
 
-  const { priceId } = await req.json()
+  // A body that is not JSON was a 500 with a stack trace; it is a bad request.
+  const body = (await req.json().catch(() => null)) as { priceId?: unknown } | null
+  const priceId = typeof body?.priceId === "string" ? body.priceId : null
   if (!priceId) {
     return NextResponse.json({ error: "Price ID required" }, { status: 400 })
   }
@@ -66,19 +80,27 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  let customerId = user.stripeCustomerId
-
-  if (!customerId) {
+  /** Creates the Stripe customer and remembers it on the user. */
+  const createCustomer = async () => {
     const customer = await stripe.customers.create({
       email: user.email,
       name: user.name ?? undefined,
       metadata: { userId: currentUser.id },
     })
-    customerId = customer.id
     await prisma.user.update({
       where: { id: currentUser.id },
-      data: { stripeCustomerId: customerId },
+      data: { stripeCustomerId: customer.id },
     })
+    return customer.id
+  }
+
+  let customerId = user.stripeCustomerId
+  if (!customerId) {
+    try {
+      customerId = await createCustomer()
+    } catch (error) {
+      return stripeFailure("customer creation", error)
+    }
   }
 
   const isOneTime = plan.interval === "ONE_TIME"
@@ -130,7 +152,22 @@ export async function POST(req: NextRequest) {
     await checkStripeTax()
   }
 
-  const checkoutSession = await stripe.checkout.sessions.create(params)
-
-  return NextResponse.json({ url: checkoutSession.url })
+  try {
+    const checkoutSession = await stripe.checkout.sessions.create(params)
+    return NextResponse.json({ url: checkoutSession.url })
+  } catch (error) {
+    // The stored customer was deleted in Stripe (by hand, or a switch between
+    // test and live keys): every checkout failed until someone cleared the
+    // column. Make a new one and try once more.
+    if (isMissingResource(error) && params.customer) {
+      try {
+        params.customer = await createCustomer()
+        const checkoutSession = await stripe.checkout.sessions.create(params)
+        return NextResponse.json({ url: checkoutSession.url })
+      } catch (retryError) {
+        return stripeFailure("checkout (new customer)", retryError)
+      }
+    }
+    return stripeFailure("checkout", error)
+  }
 }

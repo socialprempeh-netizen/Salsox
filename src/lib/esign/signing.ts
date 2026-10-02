@@ -25,6 +25,8 @@ import { emailed, sendDocumentRejected, sendSigningInvite } from "./emails"
 import { signingUrl } from "./share"
 import { getProvider } from "./payments"
 import { formatMinorUnits, isSignAndPayCurrency } from "./payments/select"
+import { existingCheckout, settlement } from "./payments/reconcile-rules"
+import { closeOpenCheckouts, markFailed, refundPayment } from "./payments/settle"
 import { checkSignatureImage } from "./pdf/signature-image"
 
 /** Drawn signatures are small PNGs; anything larger is not a signature. */
@@ -284,6 +286,9 @@ export async function rejectSigning(token: string, reason: string): Promise<Resu
   })
   if (updated.count === 0) return { ok: false, error: "ALREADY_SIGNED" }
   await prisma.document.updateMany({ where: { id: recipient.documentId, status: "PENDING" }, data: { status: "REJECTED" } })
+  // A checkout still open on the now closed document would take a payment
+  // nobody can use: close it, or refund it if it went through meanwhile.
+  await closeOpenCheckouts(recipient.documentId)
   await recordAudit(prisma, {
     documentId: recipient.documentId,
     recipientId: recipient.id,
@@ -307,6 +312,17 @@ export async function rejectSigning(token: string, reason: string): Promise<Resu
 // ─── Sign & Pay ───────────────────────────────────────────────────────────────
 
 /** Opens a checkout for this recipient's payment and returns where to send them. */
+/**
+ * Opens the Sign & Pay checkout for this recipient, or the one already open.
+ *
+ * One checkout per document at a time. Opening a second used to be a tap
+ * away (a reload, a back button, a double tap), and each one was a live
+ * payment page: the signer could pay twice. Now the payment row is claimed
+ * under a per-document lock, and a recipient with a checkout in flight is
+ * sent back to it (its URL is on the PAYMENT_STARTED audit event), told to
+ * wait while another request is still opening it, or given a new one only
+ * once the old one failed or was abandoned. See `existingCheckout`.
+ */
 export async function startPayment(token: string): Promise<Result<{ url: string }>> {
   const check = await actionable(token)
   if (!check.ok) return check
@@ -329,43 +345,157 @@ export async function startPayment(token: string): Promise<Result<{ url: string 
   if (!provider.isConfigured()) return { ok: false, error: "payoutUnavailable" }
 
   const base = signingUrl(appUrl(), token)
-  const reference = `sx_${recipient.id}_${Date.now()}`
-  const payment = await prisma.payment.create({
-    data: {
+  // Twice at most: once for the checkout in flight, once more if it turned
+  // out to be dead and was replaced.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const reference = `sx_${recipient.id}_${Date.now()}`
+    const claim = await prisma.$transaction(async (tx) => {
+      // Serialises payment starts for this document across every instance.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`sign-and-pay:${document.id}`}))`
+      const open = await tx.payment.findFirst({
+        where: { documentId: document.id, recipientId: recipient.id, status: "PENDING" },
+        orderBy: { createdAt: "desc" },
+      })
+      if (open) return { existing: open }
+      const created = await tx.payment.create({
+        data: {
+          documentId: document.id,
+          recipientId: recipient.id,
+          provider: document.paymentProvider!,
+          providerRef: reference,
+          amount: document.paymentAmount!,
+          currency: document.paymentCurrency!,
+        },
+      })
+      return { created }
+    })
+
+    if ("existing" in claim && claim.existing) {
+      const open = claim.existing
+      // Ask the provider first: it may have been paid, or abandoned, meanwhile.
+      const status = await confirmPayment(open.id)
+      const started = await prisma.auditEvent.findFirst({
+        where: { documentId: document.id, type: AUDIT.PAYMENT_STARTED, data: { path: ["paymentId"], equals: open.id } },
+        select: { data: true },
+      })
+      const url = (started?.data as { url?: string } | null)?.url ?? null
+      const next = existingCheckout({
+        status: status === "UNKNOWN" ? "FAILED" : status,
+        url,
+        ageMs: Date.now() - open.createdAt.getTime(),
+      })
+      if (next.action === "paid") return { ok: true, url: `${base}?payment=${open.id}` }
+      if (next.action === "resume") return { ok: true, url: next.url }
+      if (next.action === "inProgress") return { ok: false, error: "paymentInProgress" }
+      // Replace: the old row is closed so the claim above makes a new one.
+      await markFailed(open, "replaced")
+      continue
+    }
+
+    const payment = claim.created!
+    let session: { url: string; providerRef: string }
+    try {
+      session = await provider.createCheckout({
+        paymentId: payment.id,
+        documentId: document.id,
+        description: document.title,
+        amount: document.paymentAmount,
+        currency: document.paymentCurrency,
+        payerEmail: recipient.email,
+        payoutAccountId: payout.externalAccountId,
+        reference,
+        successUrl: `${base}?payment=${payment.id}`,
+        cancelUrl: base,
+      })
+    } catch (error) {
+      // The provider refused or timed out: close the claim, so the next tap
+      // starts cleanly instead of waiting on a checkout that never existed.
+      console.error("[esign] checkout could not be created", payment.id, error)
+      await markFailed(payment, "checkoutError")
+      return { ok: false, error: "paymentFailed" }
+    }
+    // Stripe issues its own session id; store it so the webhook can find the row.
+    if (session.providerRef !== reference) {
+      await prisma.payment.update({ where: { id: payment.id }, data: { providerRef: session.providerRef } })
+    }
+    await recordAudit(prisma, {
       documentId: document.id,
       recipientId: recipient.id,
-      provider: document.paymentProvider,
-      providerRef: reference,
-      amount: document.paymentAmount,
-      currency: document.paymentCurrency,
-    },
-  })
-  const session = await provider.createCheckout({
-    paymentId: payment.id,
-    documentId: document.id,
-    description: document.title,
-    amount: document.paymentAmount,
-    currency: document.paymentCurrency,
-    payerEmail: recipient.email,
-    payoutAccountId: payout.externalAccountId,
-    reference,
-    successUrl: `${base}?payment=${payment.id}`,
-    cancelUrl: base,
-  })
-  // Stripe issues its own session id; store it so the webhook can find the row.
-  if (session.providerRef !== reference) {
-    await prisma.payment.update({ where: { id: payment.id }, data: { providerRef: session.providerRef } })
+      type: AUDIT.PAYMENT_STARTED,
+      actorEmail: recipient.email,
+      // The URL lets a returning signer resume this checkout instead of
+      // opening a second; the id ties the event to its payment row.
+      data: { provider: document.paymentProvider, amount: document.paymentAmount, currency: document.paymentCurrency, paymentId: payment.id, url: session.url },
+      meta: await requestMeta(),
+    })
+    return { ok: true, url: session.url }
   }
-  await recordAudit(prisma, {
-    documentId: document.id,
-    recipientId: recipient.id,
-    type: AUDIT.PAYMENT_STARTED,
-    actorEmail: recipient.email,
-    data: { provider: document.paymentProvider, amount: document.paymentAmount, currency: document.paymentCurrency },
-    meta: await requestMeta(),
-  })
-  return { ok: true, url: session.url }
+  return { ok: false, error: "paymentInProgress" }
 }
+
+// Replaced by the version above, which opens at most one checkout per
+// document: this one created a new payment row and a new live checkout on
+// every call, so a reload or a double tap could take two payments.
+// export async function startPayment(token: string): Promise<Result<{ url: string }>> {
+//   const check = await actionable(token)
+//   if (!check.ok) return check
+//   const { recipient } = check
+//   const { document } = recipient
+//   if (!paymentOutstanding(document, recipient, recipient.payments.some((p) => p.status === "PAID"))) {
+//     return { ok: false, error: "noPaymentDue" }
+//   }
+//   if (!document.paymentProvider || !document.paymentAmount || !document.paymentCurrency) return { ok: false, error: "noPaymentDue" }
+//   // A document saved before currencies were restricted may hold any code. The
+//   // amount means hundredths only in these currencies, so nothing is charged
+//   // in any other.
+//   if (!isSignAndPayCurrency(document.paymentCurrency)) return { ok: false, error: "payoutUnavailable" }
+//   const payout = await prisma.payoutAccount.findUnique({
+//     where: { userId_provider: { userId: document.userId, provider: document.paymentProvider } },
+//   })
+//   if (!payout?.ready) return { ok: false, error: "payoutUnavailable" }
+//
+//   const provider = getProvider(document.paymentProvider)
+//   if (!provider.isConfigured()) return { ok: false, error: "payoutUnavailable" }
+//
+//   const base = signingUrl(appUrl(), token)
+//   const reference = `sx_${recipient.id}_${Date.now()}`
+//   const payment = await prisma.payment.create({
+//     data: {
+//       documentId: document.id,
+//       recipientId: recipient.id,
+//       provider: document.paymentProvider,
+//       providerRef: reference,
+//       amount: document.paymentAmount,
+//       currency: document.paymentCurrency,
+//     },
+//   })
+//   const session = await provider.createCheckout({
+//     paymentId: payment.id,
+//     documentId: document.id,
+//     description: document.title,
+//     amount: document.paymentAmount,
+//     currency: document.paymentCurrency,
+//     payerEmail: recipient.email,
+//     payoutAccountId: payout.externalAccountId,
+//     reference,
+//     successUrl: `${base}?payment=${payment.id}`,
+//     cancelUrl: base,
+//   })
+//   // Stripe issues its own session id; store it so the webhook can find the row.
+//   if (session.providerRef !== reference) {
+//     await prisma.payment.update({ where: { id: payment.id }, data: { providerRef: session.providerRef } })
+//   }
+//   await recordAudit(prisma, {
+//     documentId: document.id,
+//     recipientId: recipient.id,
+//     type: AUDIT.PAYMENT_STARTED,
+//     actorEmail: recipient.email,
+//     data: { provider: document.paymentProvider, amount: document.paymentAmount, currency: document.paymentCurrency },
+//     meta: await requestMeta(),
+//   })
+//   return { ok: true, url: session.url }
+// }
+
 
 /**
  * Confirms a payment with the provider itself (never trusting the webhook body
@@ -373,24 +503,55 @@ export async function startPayment(token: string): Promise<Result<{ url: string 
  * completes the signature in the same step: that is the "one flow" in
  * Sign & Pay. Idempotent; webhooks and the return page may both call it.
  */
-export async function confirmPayment(paymentId: string): Promise<"PAID" | "PENDING" | "FAILED" | "UNKNOWN"> {
-  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, include: { recipient: true } })
+/**
+ * Asks the provider about a payment and settles it (rules in
+ * payments/reconcile-rules.ts): paid and wanted is kept and completes the
+ * signer's part; paid for a document that closed meanwhile, or paid twice,
+ * is refunded and both sides are told; failed, mismatched or abandoned is
+ * closed; anything else waits for the next check. Called from the return
+ * URL, the webhooks, the reconciliation sweep and `startPayment`.
+ */
+export async function confirmPayment(paymentId: string): Promise<"PAID" | "PENDING" | "FAILED" | "REFUNDED" | "UNKNOWN"> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { recipient: true, document: { select: { status: true } } },
+  })
   if (!payment) return "UNKNOWN"
-  if (payment.status === "PAID") return "PAID"
+  if (payment.status === "PAID" || payment.status === "REFUNDED") return payment.status
 
   const verified = await getProvider(payment.provider).verify(payment.providerRef)
   // Amount and currency must match what we asked for, or it is not our payment.
   const matches =
     (verified.amount === undefined || verified.amount === payment.amount) &&
     (verified.currency === undefined || verified.currency === payment.currency)
-  if (verified.status === "FAILED" || (verified.status === "PAID" && !matches)) {
-    await prisma.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } })
-    return "FAILED"
+  const alreadyPaid =
+    verified.status === "PAID" &&
+    (await prisma.payment.count({ where: { recipientId: payment.recipientId, status: "PAID", id: { not: payment.id } } })) > 0
+  const decision = settlement({
+    verified: verified.status,
+    matches,
+    documentStatus: payment.document.status,
+    alreadyPaid,
+    ageMs: Date.now() - payment.createdAt.getTime(),
+  })
+
+  switch (decision.action) {
+    case "wait":
+      return "PENDING"
+    case "markFailed":
+      // A FAILED row can still be paid later (Paystack retries a declined
+      // card on the same reference): the next check moves it on from here.
+      if (payment.status === "PENDING") await markFailed(payment, decision.reason)
+      return "FAILED"
+    case "refund":
+      await refundPayment(payment.id, decision.reason)
+      return "REFUNDED"
+    case "markPaid":
+      break
   }
-  if (verified.status !== "PAID") return "PENDING"
 
   const updated = await prisma.payment.updateMany({
-    where: { id: payment.id, status: { not: "PAID" } },
+    where: { id: payment.id, status: { notIn: ["PAID", "REFUNDED"] } },
     data: { status: "PAID", paidAt: new Date() },
   })
   if (updated.count > 0) {
@@ -409,6 +570,48 @@ export async function confirmPayment(paymentId: string): Promise<"PAID" | "PENDI
   }
   return "PAID"
 }
+
+// Replaced by the version above. This one kept every payment the provider
+// reported as paid, including one for a document cancelled or expired while
+// the signer was on the checkout page, and a second one by someone who had
+// already paid; and it left an unanswered checkout PENDING forever.
+// export async function confirmPayment(paymentId: string): Promise<"PAID" | "PENDING" | "FAILED" | "UNKNOWN"> {
+//   const payment = await prisma.payment.findUnique({ where: { id: paymentId }, include: { recipient: true } })
+//   if (!payment) return "UNKNOWN"
+//   if (payment.status === "PAID") return "PAID"
+//
+//   const verified = await getProvider(payment.provider).verify(payment.providerRef)
+//   // Amount and currency must match what we asked for, or it is not our payment.
+//   const matches =
+//     (verified.amount === undefined || verified.amount === payment.amount) &&
+//     (verified.currency === undefined || verified.currency === payment.currency)
+//   if (verified.status === "FAILED" || (verified.status === "PAID" && !matches)) {
+//     await prisma.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } })
+//     return "FAILED"
+//   }
+//   if (verified.status !== "PAID") return "PENDING"
+//
+//   const updated = await prisma.payment.updateMany({
+//     where: { id: payment.id, status: { not: "PAID" } },
+//     data: { status: "PAID", paidAt: new Date() },
+//   })
+//   if (updated.count > 0) {
+//     await recordAudit(prisma, {
+//       documentId: payment.documentId,
+//       recipientId: payment.recipientId,
+//       type: AUDIT.PAYMENT_RECEIVED,
+//       actorEmail: payment.recipient.email,
+//       data: { provider: payment.provider, amount: payment.amount, currency: payment.currency, ref: payment.providerRef },
+//     })
+//     // Complete automatically when nothing else is left to do.
+//     const result = await completeSigning(payment.recipient.token)
+//     if (!result.ok && result.error !== "missingFields") {
+//       console.warn("[esign] payment confirmed but completion deferred", payment.id, result.error)
+//     }
+//   }
+//   return "PAID"
+// }
+
 
 /** Finds our payment by provider reference (for webhooks). */
 export async function paymentIdByRef(providerRef: string): Promise<string | null> {

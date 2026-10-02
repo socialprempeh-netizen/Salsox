@@ -457,6 +457,10 @@
     "roleFailed": "Failed to update role"
   },
   "billing": {
+    "manage": {
+      "label": "Manage Billing",
+      "error": "We couldn't open the billing portal. Please try again, or contact us if it keeps happening."
+    },
     "checkout": {
       "paid": "Payment successful. Your plan updates in a few seconds.",
       "canceled": "Checkout canceled. You have not been charged."
@@ -1052,6 +1056,17 @@
     "inviteMobile": "It works on any phone: no account and no app needed. It takes about a minute.",
     "inviteExpires": "This link is valid until {date}.",
     "completedSubject": "“{title}” is signed by everyone",
+    "refundSubject": "A payment for “{title}” was refunded",
+    "refundOwnerClosed": "A payment of {amount} for {title} arrived after the document was closed, so it was refunded to the payer automatically. Nothing reaches your payout account.",
+    "refundOwnerDuplicate": "A second payment of {amount} for {title} was made after the first one went through, so the extra payment was refunded automatically.",
+    "refundPayerClosed": "Your payment of {amount} for {title} arrived after the sender closed the document, so it has been refunded in full.",
+    "refundPayerDuplicate": "You paid {amount} for {title} twice. The second payment has been refunded in full.",
+    "refundTiming": "Refunds usually reach the original card or mobile money account within 5 to 10 business days.",
+    "refundCta": "View the document →",
+    "disputeSubject": "A payment for “{title}” is being disputed",
+    "disputeIntro": "The payer's bank has opened a dispute (chargeback) on the {amount} payment for {title}.",
+    "disputeNext": "The signed document and its audit trail are your evidence. Reply to this email with anything else you have, such as invoices or messages, as soon as possible: disputes have a short deadline.",
+    "disputeCta": "View the document →",
     "completedIntro": "Everyone has signed {title}. The signed PDF, with its certificate of completion, is ready to download.",
     "completedCta": "Download signed PDF →",
     "rejectedSubject": "{name} declined to sign “{title}”",
@@ -1122,6 +1137,7 @@
       "payoutUnavailable": "Payments aren't available for this document right now. Please contact the sender.",
       "payoutRejected": "The payout account was rejected. Check the bank details and try again.",
       "paymentFailed": "The payment could not be started. Please try again.",
+      "paymentInProgress": "Your payment page is still opening. Wait a few seconds, then tap Pay again.",
       "noSubscription": "There is no active subscription to change."
     },
     "confirmEmail": {

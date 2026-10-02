@@ -14,6 +14,7 @@ import { siteConfig } from "@/config/site"
 import { canEditRecipient, isActionable, isRecipientExpired, missingInvites } from "@/lib/esign/rules"
 import { emailConfigured } from "@/lib/esign/emails"
 import { recoverIfStuck } from "@/lib/esign/documents"
+import { reconcilePayments } from "@/lib/esign/payments/reconcile"
 import { signingUrl } from "@/lib/esign/share"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
 import { Badge } from "@/components/ui/badge"
@@ -59,6 +60,11 @@ export default async function DocumentPage({
   // (a failure mid-finalization) is finished here, after the response, so
   // its owner does not wait for the nightly sweep. Free when it is not stuck.
   after(() => recoverIfStuck(document, document.recipients, now))
+  // Same for a Sign & Pay payment nobody came back to confirm: asked about
+  // after the response, only when one is pending.
+  if (document.recipients.some((r) => r.payments.some((p) => p.status === "PENDING"))) {
+    after(() => reconcilePayments(now, { documentId: document.id }))
+  }
   const when = (d: Date) => format.dateTime(d, { dateStyle: "medium", timeStyle: "short" })
   const senderName = user.name || user.email || siteConfig.name
   const amountLabel =

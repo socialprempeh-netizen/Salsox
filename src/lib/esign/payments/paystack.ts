@@ -68,6 +68,29 @@ export const paystackSignAndPay: SignAndPayProvider = {
     )
     return data.active !== false
   },
+
+  // Paystack has no call to void an initialized transaction. An abandoned one
+  // simply never succeeds; one that does after its document closed is
+  // refunded by reconciliation.
+  async cancelCheckout() {
+    return false
+  },
+
+  async refund({ providerRef }) {
+    try {
+      const data = await paystack<{ id?: number | string }>("/refund", {
+        method: "POST",
+        body: JSON.stringify({ transaction: providerRef }),
+      })
+      return { refundId: String(data?.id ?? `paystack:${providerRef}`) }
+    } catch (error) {
+      // Refunded already: Paystack reports the transaction as reversed.
+      if (/reversed|already been refunded|fully refunded/i.test(String((error as Error).message))) {
+        return { refundId: `already:${providerRef}` }
+      }
+      throw error
+    }
+  },
 }
 
 /** Creates the sender's settlement subaccount. Bank codes come from `listPaystackBanks`. */

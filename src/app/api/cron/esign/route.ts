@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { expireSweep, recoverStuckFinalizations, reminderSweep } from "@/lib/esign/documents"
 import { renewalNoticeSweep } from "@/lib/esign/renewal"
+import { reconcilePayments } from "@/lib/esign/payments/reconcile"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -17,6 +18,8 @@ export const maxDuration = 300
  *  - finalize: documents whose last signature went through but whose sealing
  *              did not (a failure mid-finalization) are finished. Was
  *              "reseal", which only retried COMPLETED documents.
+ *  - payments: Sign & Pay payments still pending are checked with the
+ *              provider and settled: paid, refunded or closed.
  *  - renewals: subscriptions renewing soon get an advance notice, because
  *              Salsox never renews silently.
  *
@@ -35,7 +38,7 @@ export async function GET(request: Request) {
   }
 
   // const steps = { expire: expireSweep, remind: reminderSweep, reseal: resealSweep, renewals: renewalNoticeSweep }
-  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), renewals: renewalNoticeSweep }
+  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), renewals: renewalNoticeSweep }
   const results: Record<string, number | string> = {}
   for (const [name, run] of Object.entries(steps)) {
     try {

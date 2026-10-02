@@ -131,6 +131,55 @@ export async function sendDocumentCompleted(args: {
   return send("esign-completed", args.to, t("completedSubject", { title: args.title }), html, args.downloadUrl)
 }
 
+/**
+ * A Sign & Pay payment was given back automatically: it arrived after the
+ * document was cancelled, expired or declined, or it duplicated one already
+ * made. The sender is told why the money will not reach them; the payer that
+ * it is on its way back.
+ */
+export async function sendPaymentRefunded(args: {
+  to: string
+  name: string
+  title: string
+  amountLabel: string
+  reason: "documentClosed" | "duplicate"
+  audience: "owner" | "payer"
+  url: string
+}): Promise<EmailOutcome> {
+  const t = await esignEmailStrings()
+  const owner = args.audience === "owner"
+  const duplicate = args.reason === "duplicate"
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.name) })}</p>
+    <p>${t(owner && duplicate ? "refundOwnerDuplicate" : owner ? "refundOwnerClosed" : duplicate ? "refundPayerDuplicate" : "refundPayerClosed", { title: bold(escapeHtml(args.title)), amount: bold(escapeHtml(args.amountLabel)) })}</p>
+    <p>${t("refundTiming")}</p>
+    <a href="${args.url}" class="btn">${t("refundCta")}</a>
+  `)
+  return send("esign-refund", args.to, t("refundSubject", { title: args.title }), html, args.url)
+}
+
+/**
+ * The payer's bank opened a dispute (chargeback) on a Sign & Pay payment.
+ * Only the sender is told: evidence comes from them, and the deadline to
+ * respond is short.
+ */
+export async function sendPaymentDisputed(args: {
+  to: string
+  name: string
+  title: string
+  amountLabel: string
+  url: string
+}): Promise<EmailOutcome> {
+  const t = await esignEmailStrings()
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.name) })}</p>
+    <p>${t("disputeIntro", { title: bold(escapeHtml(args.title)), amount: bold(escapeHtml(args.amountLabel)) })}</p>
+    <p>${t("disputeNext")}</p>
+    <a href="${args.url}" class="btn">${t("disputeCta")}</a>
+  `)
+  return send("esign-dispute", args.to, t("disputeSubject", { title: args.title }), html, args.url)
+}
+
 export async function sendDocumentRejected(args: {
   to: string
   ownerName: string

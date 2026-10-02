@@ -45,6 +45,16 @@ export async function POST(req: NextRequest) {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge
         await handleChargeRefunded(charge)
+        await handleSignAndPayRefund(charge)
+        break
+      }
+      // Sign & Pay chargebacks. With destination charges the dispute is
+      // raised on the platform account, so it arrives here, not on the
+      // sender's connected account.
+      case "charge.dispute.created":
+      case "charge.dispute.closed": {
+        const dispute = event.data.object as Stripe.Dispute
+        await handleSignAndPayDispute(dispute, event.type === "charge.dispute.created" ? "opened" : "closed")
         break
       }
       // Stripe Connect: a sender finished (or updated) payout onboarding for
@@ -269,6 +279,51 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   await prisma.subscription.updateMany({
     where: { stripeSubscriptionId: subscriptionId },
     data: { status: "PAST_DUE" },
+  })
+}
+
+/**
+ * The Sign & Pay payment a charge belongs to, from the metadata the checkout
+ * put on its PaymentIntent (payments/stripe.ts), or null for any other charge.
+ */
+async function signAndPayPaymentId(
+  paymentIntent: string | Stripe.PaymentIntent | null | undefined,
+  metadata?: Stripe.Metadata | null
+): Promise<string | null> {
+  if (metadata?.salsoxPaymentId) return metadata.salsoxPaymentId
+  const id = typeof paymentIntent === "string" ? paymentIntent : paymentIntent?.id
+  if (!id) return null
+  const intent = await stripe.paymentIntents.retrieve(id)
+  return intent.metadata?.salsoxPaymentId ?? null
+}
+
+/** A Sign & Pay refund, ours or one made from the Stripe dashboard. */
+async function handleSignAndPayRefund(charge: Stripe.Charge) {
+  const paymentId = await signAndPayPaymentId(charge.payment_intent, charge.metadata)
+  if (!paymentId) return
+  const { recordProviderRefund } = await import("@/lib/esign/payments/settle")
+  await recordProviderRefund({
+    find: { id: paymentId },
+    // amount_refunded is cumulative, so each new partial refund is a new key.
+    eventKey: `${charge.id}:${charge.amount_refunded}`,
+    amount: charge.amount_refunded,
+    full: charge.refunded,
+  })
+}
+
+async function handleSignAndPayDispute(dispute: Stripe.Dispute, stage: "opened" | "closed") {
+  const paymentId = await signAndPayPaymentId(dispute.payment_intent)
+  if (!paymentId) return
+  const { recordDispute } = await import("@/lib/esign/payments/settle")
+  await recordDispute({
+    find: { id: paymentId },
+    disputeId: dispute.id,
+    stage,
+    // Anything but a loss leaves the money with the sender (won, or an
+    // inquiry closed without a chargeback).
+    outcome: stage === "closed" ? (dispute.status === "lost" ? "lost" : "won") : undefined,
+    reason: dispute.reason,
+    amount: dispute.amount,
   })
 }
 

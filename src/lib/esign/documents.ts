@@ -49,6 +49,7 @@ import { senderBlocker, senderPlan } from "./sender"
 import { hasFeature, planErrorCode, setupBlocker, tierForEntitlement } from "./plans"
 import { getEntitlement } from "@/lib/billing"
 import { DEFAULT_EXPIRY_DAYS } from "./limits"
+import { closeOpenCheckouts } from "./payments/settle"
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
@@ -428,6 +429,9 @@ export async function cancelDocument(userId: string, documentId: string): Promis
   if (updated.count === 0) return { ok: false, error: "notCancellable" }
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
   await recordAudit(prisma, { documentId, type: AUDIT.CANCELLED, actorEmail: user?.email, meta: await requestMeta() })
+  // A signer may be on the checkout page right now: close it, or refund a
+  // payment that landed in the meantime (payments/settle.ts).
+  await closeOpenCheckouts(documentId)
   return { ok: true }
 }
 
@@ -731,6 +735,8 @@ export async function expireSweep(now = new Date()): Promise<number> {
     if (updated.count === 0) continue
     expired++
     await recordAudit(prisma, { documentId: document.id, type: AUDIT.EXPIRED })
+    // Same as a cancellation: no checkout stays open on a closed document.
+    await closeOpenCheckouts(document.id)
     await sendDocumentExpired({
       to: document.user.email,
       ownerName: document.user.name || document.user.email,
