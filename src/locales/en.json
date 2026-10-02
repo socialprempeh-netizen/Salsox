@@ -249,10 +249,10 @@
       },
       "deleteAccount": {
         "heading": "Delete this account",
-        "blurb": "Removes your account, your projects and your sign-in methods, and cancels any active subscription immediately. This cannot be undone.",
+        "blurb": "Removes your account, every document you sent with its signed copy and audit trail, your payout connections and your sign-in methods, and cancels any active subscription immediately. Export your documents first if you want to keep them. This cannot be undone.",
         "trigger": "Delete account",
         "title": "Delete your account?",
-        "description": "Your profile, projects, sessions and linked sign-in methods are removed permanently, and any active subscription is cancelled at once. There is no undo.",
+        "description": "Your profile, documents, signed copies, audit trails, sessions and linked sign-in methods are removed permanently, and any active subscription is cancelled at once. There is no undo.",
         "confirmLabel": "Type {email} to confirm",
         "cancel": "Keep my account",
         "confirm": "Delete permanently"
@@ -280,7 +280,7 @@
       "alsoSubscribed": "You also have a {plan} subscription. Since lifetime access covers everything, you can cancel it in the billing portal.",
       "portalHint": "Switch plans or update your payment method in the billing portal.",
       "availablePlans": "Available plans",
-      "availablePlansHint": "These are the seeded example plans: replace them with your own pricing.",
+      "availablePlansHint": "Compare what each plan includes. You can switch or cancel at any time.",
       "invoiceHistory": "Invoice History",
       "invoiceHistoryHint": "Your past payments and invoices.",
       "noInvoices": "No invoices yet.",
@@ -494,7 +494,7 @@
       "helloFallback": "there",
       "$product": {
         "intro": "Welcome to {site}! Your account is ready and there is nothing left to set up.",
-        "bullets": "<p>📁 <strong>Start a project</strong>: create your first one and invite your team</p>\n      <p>⚙️ <strong>Make it yours</strong>: add your name and preferences in settings</p>\n      <p>💳 <strong>Pick a plan</strong>: upgrade when you need more, cancel any time</p>"
+        "bullets": "<p>📄 <strong>Send your first document</strong>: upload a PDF, add who signs, and send it by email, WhatsApp or SMS</p>\n      <p>✉️ <strong>Confirm your email</strong>: documents go out only from a confirmed address</p>\n      <p>💳 <strong>Get paid as you get signed</strong>: Business plans add Sign & Pay, by card or mobile money</p>"
       },
       "$kit": {
         "intro": "Welcome to {site}! Your account is ready. You're now part of a community of developers shipping SaaS products faster.",

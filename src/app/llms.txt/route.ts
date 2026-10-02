@@ -1,4 +1,5 @@
 import { siteConfig } from "@/config/site"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 import { isKitSite } from "@/config/kit"
 import { getDocs } from "@/lib/docs"
 import { getAllPosts, getCategories, hasPosts } from "@/lib/blog"
@@ -40,7 +41,10 @@ ${summary}
 ${
     isKitSite
       ? `${siteConfig.name} is an open-source, production-ready SaaS starter kit. It ships with authentication, Stripe billing, a Postgres database via Prisma, a file-based blog and docs, transactional email and a full dashboard, so you can launch a real product without wiring the plumbing yourself.`
-      : `${siteConfig.name} is a SaaS product. Visitors can read about it here, sign up for an account, choose a plan and manage their subscription. Replace this paragraph with a short description of what you do and who you do it for.`
+      : // Was the kit's placeholder ("${siteConfig.name} is a SaaS product... Replace
+        // this paragraph with a short description of what you do"), served
+        // as-is to every assistant that read this file.
+        `${siteConfig.name} is an e-signature service built for phones. Senders upload any PDF, choose who signs, and send it by email, WhatsApp or SMS; signers need no account or app and sign one field at a time in their browser. Documents can collect a payment as part of signing (Sign & Pay, by card or mobile money through Stripe or Paystack), go to signers in a set order, and finish as a sealed PDF with an audit certificate. Free accounts send ${FREE_DOCUMENTS_PER_MONTH} documents a month; paid plans send unlimited documents.`
   }
 
 ## Documentation

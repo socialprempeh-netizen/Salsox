@@ -56,6 +56,15 @@ async function scan(page: Page, label: string) {
     width: viewport?.width ?? 1280,
     height: Math.min(Math.max(height, viewport?.height ?? 720), 16_000),
   })
+  // Growing the viewport brings every scroll-triggered entrance into view at
+  // once (the "Keep exploring" cards fade in). Scanned mid-fade, their text
+  // measured as low contrast and failed the run now and then, while the page
+  // at rest was clean. Wait for the animations to finish first.
+  await page.waitForTimeout(100)
+  await page
+    .waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"), null, { timeout: 5_000 })
+    .catch(() => {})
+  await page.waitForTimeout(400)
 
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

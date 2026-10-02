@@ -1,4 +1,5 @@
 import { Zap } from "lucide-react"
+import { brandingRemoved } from "@/lib/branding"
 
 /**
  * "Built with OpenStarterKit" attribution badge.
@@ -30,7 +31,9 @@ const HOMEPAGE_URL = "https://openstarterkit.dev"
 const OSK_GRADIENT = "linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #38bdf8 100%)"
 
 export function PoweredBy() {
-  if (process.env.NEXT_PUBLIC_REMOVE_BRANDING === "true") return null
+  // Was `=== "true"`, which ignored "TRUE", "1" and a trailing space.
+  // if (process.env.NEXT_PUBLIC_REMOVE_BRANDING === "true") return null
+  if (brandingRemoved(process.env.NEXT_PUBLIC_REMOVE_BRANDING)) return null
 
   return (
     <a
