@@ -52,7 +52,10 @@ export function FadeUp({ children, className, delay = 0 }: { children: React.Rea
       () => {
         animate(el, { opacity: 1, y: 0 }, { duration: 0.35, ease: "easeOut", delay: reduceMotion ? 0 : delay })
       },
-      { amount: 0.15 }
+      // Any part of the block in view, not a share of it: the legal pages wrap
+      // a whole document, and with `amount: 0.15` one taller than the screen
+      // could never reach 15% visible and stayed hidden for good.
+      { amount: "some", margin: "0px 0px -10% 0px" }
     )
     return () => {
       stop()

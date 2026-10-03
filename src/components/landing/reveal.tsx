@@ -93,7 +93,9 @@ export function Reveal({ children, className, delay = 0, as = "div" }: RevealPro
           observer.disconnect()
         }
       },
-      { threshold: 0.15, rootMargin: "0px 0px -10% 0px" }
+      // Was `threshold: 0.15`: a section taller than the screen could never
+      // reach 15% visible and stayed hidden. Any part in view is enough.
+      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
     )
 
     observer.observe(el)
