@@ -75,10 +75,15 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[600px] bg-glow" />
 
       <div className="mx-auto max-w-5xl px-6 lg:px-12 text-center">
+        {/* Every block below used to enter with `animate-fade-in-up`, staggered
+            by animationDelay 60/120/180/240/320ms. The animation starts at
+            opacity 0, so on a phone the headline (the page's largest paint)
+            stayed invisible until it ran. The hero is the first thing anyone
+            sees: it now paints as it is. */}
         {/* Announcement pill: the current version, then what is new in it.
             The badge reads `version` from src/config/site.ts, so it moves with
             your releases; swap the sentence for whatever you are shipping. */}
-        <div className="mb-7 inline-flex animate-fade-in-up items-center gap-2 rounded-full border border-border bg-card/70 py-1.5 pl-2 pr-4 text-sm font-medium shadow-soft backdrop-blur">
+        <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 py-1.5 pl-2 pr-4 text-sm font-medium shadow-soft backdrop-blur">
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
             <Sparkles className="h-3 w-3" /> v{siteConfig.version}
           </span>
@@ -86,8 +91,7 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
         </div>
 
         <h1
-          className="animate-fade-in-up text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl md:text-7xl lg:text-8xl"
-          style={{ animationDelay: "60ms" }}
+          className="text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl md:text-7xl lg:text-8xl"
         >
           {headline.head}
           <br />
@@ -95,15 +99,13 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
         </h1>
 
         <p
-          className="mx-auto mt-6 max-w-2xl animate-fade-in-up text-lg text-muted-foreground md:text-xl"
-          style={{ animationDelay: "120ms" }}
+          className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl"
         >
           {t("subtitle")}
         </p>
 
         <div
-          className="mt-10 flex animate-fade-in-up flex-col items-center gap-4 sm:flex-row sm:justify-center"
-          style={{ animationDelay: "180ms" }}
+          className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
         >
           {/* Replaced: always `<a href="#pricing">`, which scrolled "Send your
               first document" down to billing instead of starting anything.
@@ -125,8 +127,7 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
         </div>
 
         <p
-          className="mt-5 animate-fade-in-up text-sm text-muted-foreground"
-          style={{ animationDelay: "240ms" }}
+          className="mt-5 text-sm text-muted-foreground"
         >
           {t("trust")}
         </p>
@@ -144,8 +145,7 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
             headline above already says what the product is. */}
         <div
           aria-hidden="true"
-          className="mx-auto mt-16 max-w-4xl animate-fade-in-up text-left"
-          style={{ animationDelay: "320ms" }}
+          className="mx-auto mt-16 max-w-4xl text-left"
         >
           <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-[var(--shadow-soft-lg)] ring-1 ring-white/10 md:animate-float">
             {/* Browser chrome */}
