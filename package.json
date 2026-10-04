@@ -21,7 +21,8 @@
     "check:deploy": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/check-deploy.mjs",
     "db:seed": "dotenv run -q -f .env.local -- ts-node prisma/seed.ts",
     "db:seed:demo": "dotenv run -q -f .env.local -- ts-node prisma/seed-demo.ts",
-    "db:sync-plan-copy": "dotenv run -q -f .env.local -- ts-node prisma/sync-plan-copy.ts"
+    "db:sync-plan-copy": "dotenv run -q -f .env.local -- ts-node prisma/sync-plan-copy.ts",
+    "db:stripe-prices": "dotenv run -q -f .env.local -- ts-node prisma/create-stripe-prices.ts"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.7.5",
