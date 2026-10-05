@@ -67,7 +67,7 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
     "perfect-freehand": "^1.2.3",
-    "pg": "^8.23.0",
+    "pg": "^8.23.1",
     "prisma": "^7.10.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
