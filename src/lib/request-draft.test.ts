@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest"
 import { DRAFT_MAX_AGE_MS, isDraftFresh } from "./request-draft"
 
 describe("isDraftFresh", () => {
-  it("accepts a draft up to an hour old and nothing older or from the future", () => {
+  it("accepts a draft up to a day old and nothing older or from the future", () => {
     const now = 1_000_000_000
     expect(isDraftFresh(now - 1000, now)).toBe(true)
     expect(isDraftFresh(now - DRAFT_MAX_AGE_MS, now)).toBe(true)

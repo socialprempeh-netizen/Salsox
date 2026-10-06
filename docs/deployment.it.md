@@ -2,7 +2,7 @@
 title: Deployment
 description: "In produzione su Vercel: variabili, migrazioni, webhook, e come diventare amministratore."
 translated_from: deployment.md
-source_checksum: 1239a545378f
+source_checksum: d9fdbb5b7c3e
 ---
 
 # Deployment
@@ -34,6 +34,15 @@ Imposta le variabili di [.env.example](../.env.example) nel pannello Vercel (Pro
 - `CRON_SECRET`: permette al job programmato di girare (scadenza dei link, promemoria, nuovi tentativi di sigillo, avvisi di rinnovo)
 
 Le ultime tre sono imposte. In produzione il server **si rifiuta di partire** se ne manca una, e il log di avvio dice quale e che cosa si romperebbe: senza archiviazione i documenti finiscono su un disco che viene azzerato; senza email gli inviti vengono scritti nel log invece di essere inviati; senza il secret il job programmato non gira mai. Nessuno di questi casi fallisce con un errore da solo, ed è per questo che il controllo esiste. Un deploy con `DEMO_MODE="true"` è esente, e `SKIP_ENV_VALIDATION="true"` spegne l'intero controllo per una fase di build senza segreti.
+
+### Email inviate ma mai ricevute
+
+Che Resend accetti un'email non vuol dire che sia consegnata: l'app può dire "Inviato" mentre il destinatario non vede nulla. Prima di invitare firmatari reali:
+
+- **Invia dal tuo dominio.** Aggiungilo in Resend (Domains), pubblica i record SPF e DKIM che mostra e aggiungi un record DMARC (`v=DMARC1; p=none` va bene per iniziare). La posta da un dominio senza questi record finisce nello spam o viene scartata.
+- **Non usare `onboarding@resend.dev`.** Il mittente di prova di Resend consegna solo all'indirizzo proprietario dell'account Resend; un invito a chiunque altro non arriva mai. In produzione il server si rifiuta di partire con questo indirizzo, o con il segnaposto `yourdomain.com`, come `EMAIL_FROM`.
+- **Cercalo.** Ogni invito accettato da Resend viene scritto nel log come `[esign email] <kind> accepted by Resend: <id>`. Cerca quell'id in Resend (Emails) per vedere se è stato consegnato, respinto o segnato come spam.
+- **I nuovi account confermano prima.** Quando l'email è configurata, il primo invio di un nuovo account aspetta che l'indirizzo sia confermato, e Quick Send lo dice accanto al pulsante.
 
 ## Deploy fuori da Vercel
 

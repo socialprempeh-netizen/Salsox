@@ -25,9 +25,16 @@ import { toast } from "@/components/ui/sonner"
 import { PdfDropzone } from "./pdf-dropzone"
 import { useActionErrorToast } from "./plan-upsell"
 import { DEFAULT_EXPIRY_DAYS } from "@/lib/esign/limits"
-import { takeRequestDraft } from "@/lib/request-draft"
+import { clearRequestDraft, peekRequestDraft } from "@/lib/request-draft"
 
-export function QuickSendForm() {
+/**
+ * `confirmationNeeded`: the sender's own email address is not confirmed yet
+ * and this deployment requires it before anything is sent (sending-limits.ts).
+ * The form says so at the button and keeps it disabled, rather than letting
+ * a send be refused after the click, which is how a new account coming from
+ * the request-a-signature tool used to lose its request.
+ */
+export function QuickSendForm({ confirmationNeeded = false }: { confirmationNeeded?: boolean }) {
   const t = useTranslations("esign.quickSend")
   const router = useRouter()
   const showError = useActionErrorToast()
@@ -40,7 +47,9 @@ export function QuickSendForm() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("draft") !== "1") return
     let live = true
-    takeRequestDraft().then((draft) => {
+    // Peeked, not taken: the draft stays until it has been sent (below), so a
+    // refused or abandoned send can be picked up again.
+    peekRequestDraft().then((draft) => {
       if (!live || !draft) return
       setDraftFile(new File([draft.bytes as BlobPart], draft.name, { type: "application/pdf" }))
       setEmails(draft.emails)
@@ -55,6 +64,8 @@ export function QuickSendForm() {
   useEffect(() => {
     if (state.error) showError(state.error, state.upgrade)
     if (state.ok && state.documentId) {
+      // Sent: a prepared request has done its job.
+      void clearRequestDraft()
       // "Sent" only when the provider took every invitation. Otherwise the
       // document page opens without the success banner and shows who was not
       // reached, with a Resend button beside each of them.
@@ -119,7 +130,12 @@ export function QuickSendForm() {
           </div>
         </div>
       </details>
-      <Button type="submit" size="lg" className="w-full" loading={pending} disabled={parsed.emails.length === 0 || parsed.invalid.length > 0}>
+      {confirmationNeeded && (
+        <p className="border border-amber-500/40 bg-amber-500/10 p-3 text-sm" role="status">
+          {t("confirmFirst")}
+        </p>
+      )}
+      <Button type="submit" size="lg" className="w-full" loading={pending} disabled={confirmationNeeded || parsed.emails.length === 0 || parsed.invalid.length > 0}>
         <Send className="h-4 w-4" /> {t("submit", { count: parsed.emails.length })}
       </Button>
     </form>

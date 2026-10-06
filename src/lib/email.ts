@@ -32,7 +32,8 @@ function getInstance(): Resend {
   return _instance
 }
 
-const FROM_ADDRESS = process.env.EMAIL_FROM ?? `${siteConfig.name} <${siteConfig.contactEmail}>`
+// `||`, not `??`: an empty EMAIL_FROM (as .env.example ships it) falls back.
+const FROM_ADDRESS = process.env.EMAIL_FROM || `${siteConfig.name} <${siteConfig.contactEmail}>`
 
 // The buttons in these emails used to read the raw NEXT_PUBLIC_APP_URL
 // variable, so on a deployment without it the welcome email linked to

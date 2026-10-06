@@ -114,7 +114,12 @@ describe("sealDocument", () => {
     expect(Buffer.from(sealed).toString("latin1")).not.toContain("/adbe.pkcs7.detached")
   })
 
-  it("survives characters outside WinAnsi", () => {
-    expect(toWinAnsi("Ọlá 😀 Kofi")).toBe("?lá ?? Kofi")
+  // Was: expect(toWinAnsi("Ọlá 😀 Kofi")).toBe("?lá ?? Kofi"). Letters now
+  // keep their base form, and anything with no stand-in is one "?".
+  it("survives characters outside WinAnsi, keeping what it can", () => {
+    expect(toWinAnsi("Ọlá 😀 Kofi")).toBe("Olá ? Kofi")
+    expect(toWinAnsi("Ẹ̀kọ́ Àdùnní")).toBe("Eko Àdùnní")
+    expect(toWinAnsi("₵200 or ₦5,000")).toBe("GHS 200 or NGN 5,000")
+    expect(toWinAnsi("“Quoted” – €10…")).toBe("“Quoted” – €10…")
   })
 })

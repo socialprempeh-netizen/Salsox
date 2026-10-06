@@ -43,6 +43,8 @@ test("signed in, the landing page offers the dashboard and a new document", asyn
   // And on a phone, the menu carries the Dashboard link instead of Sign in.
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole("button", { name: "Open menu" }).click()
-  await expect(page.getByRole("menuitem", { name: "Dashboard" })).toBeVisible()
+  // The grouped menu is a full-screen panel of links now, not a dropdown of menu items.
+  // await expect(page.getByRole("menuitem", { name: "Dashboard" })).toBeVisible()
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Dashboard" })).toBeVisible()
   await ctx.close()
 })

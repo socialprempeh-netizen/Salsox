@@ -146,13 +146,18 @@ describe("production-only rules", () => {
       AUTH_SECRET: "a-secret",
       BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_x",
       RESEND_API_KEY: "re_123",
-      EMAIL_FROM: "App <hello@example.com>",
+      EMAIL_FROM: "App <hello@mail.acme.io>",
       CRON_SECRET: "cron-secret",
       ...extra,
     })
 
   it("starts in production with storage, email and the cron secret set", () => {
     expect(() => parseEnv(live())).not.toThrow()
+  })
+
+  it("refuses a production sender that cannot reach recipients", () => {
+    expect(() => parseEnv(live({ EMAIL_FROM: "App <onboarding@resend.dev>" }))).toThrow(/resend\.dev/)
+    expect(() => parseEnv(live({ EMAIL_FROM: "Acme <hello@yourdomain.com>" }))).toThrow(/placeholder/)
   })
 
   it("refuses to start in production without file storage", () => {

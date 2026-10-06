@@ -746,7 +746,8 @@
     "verify": "Verify a document",
     "freeTools": "Free tools",
     "compare": "Compare",
-    "useCases": "Use cases"
+    "useCases": "Use cases",
+    "company": "Company"
   },
   "about": {
     "$kit": {
@@ -797,7 +798,35 @@
     "getStarted": "Get started",
     "openMenu": "Open menu",
     "backToTop": "Back to top",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "menu": {
+      "why": "Why {site}",
+      "whatYouCanDo": "What you can do",
+      "useCases": "Use cases",
+      "exploreFeatures": "Explore all features",
+      "allUseCases": "All use cases",
+      "tools": "Free tools",
+      "allTools": "All free tools",
+      "toolBlurbs": {
+        "signPdf": "Sign a PDF yourself, in the browser",
+        "addSignature": "Place your signature on any page",
+        "fillAndSign": "Fill in a form, then sign it",
+        "requestSignature": "Send a PDF for someone else to sign",
+        "signatureGenerator": "Draw or type a signature image"
+      },
+      "compare": "Compare",
+      "allComparisons": "All comparisons",
+      "resources": "Resources",
+      "blogBlurb": "Guides and news about signing online",
+      "docs": "Help and docs",
+      "docsBlurb": "How to set up and use each feature",
+      "verify": "Verify a document",
+      "verifyBlurb": "Check that a signed PDF is genuine",
+      "changelogBlurb": "What changed in each release",
+      "faqBlurb": "Short answers to common questions",
+      "closeMenu": "Close menu",
+      "mainMenu": "Main"
+    }
   },
   "faq": {
     "title": "Frequently asked questions",
@@ -1272,7 +1301,8 @@
       "sent": "Sent! You can also share each link by WhatsApp or SMS.",
       "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page.",
       "sentNotEmailed": "The document is live, but email isn't configured, so no invitations went out. Share each signing link manually from the document page.",
-      "draftLoaded": "Your prepared request is filled in. Check it, then send."
+      "draftLoaded": "Your prepared request is filled in. Check it, then send.",
+      "confirmFirst": "Confirm your email address first: open the link we emailed you. Your prepared request stays here until you send it."
     },
     "editor": {
       "subtitle": "Add recipients, place fields, then send.",
@@ -1741,16 +1771,15 @@
     "tapToPlace": "Tap the page where it goes. Drag to move, use the corner to resize.",
     "pickMark": "Choose what to add, then tap the page.",
     "textLabel": "Text for the selected mark",
-    "textPlaceholder": "Type here",
     "remove": "Remove",
     "createSignature": "Create your signature",
     "cancel": "Close",
     "useSignature": "Use this signature",
     "formTitle": "{count, plural, one {This PDF has # fillable field} other {This PDF has # fillable fields}}",
-    "formHint": "Fill them in here. Your answers are added to the form when you download.",
+    "formHint": "Fill them on the page or in this list. Your answers are added to the form when you download.",
     "choose": "Choose…",
     "everyPage": "Repeat on every page",
-    "everyPageHint": "Marks on page 1 are copied to the same spot on every page, for initials.",
+    "everyPageHint": "Every mark you place is copied to the same spot on every page, for initials.",
     "nothingToSave": "Add a signature, text or a filled field first.",
     "saveFailed": "The signed PDF could not be created. Try again, or try another copy of the file.",
     "downloaded": "Downloaded. Check your downloads folder.",
@@ -1770,7 +1799,7 @@
     "draftFailed": "Your request could not be saved on this device. Try again.",
     "continueToSend": "Continue to send",
     "signUpToSend": "Create a free account to send",
-    "freeSends": "Free: 3 documents a month. Your PDF is uploaded only when you press Send.",
+    "freeSends": "Free: 3 documents a month. New accounts confirm their email address before the first send. Your PDF is uploaded only when you press Send.",
     "generatorMode": "How to create your signature",
     "draw": "Draw",
     "type": "Type",

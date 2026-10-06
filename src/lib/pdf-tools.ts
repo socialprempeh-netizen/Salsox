@@ -13,7 +13,7 @@
  * run a tool over it and read the result back.
  */
 import { PDFCheckBox, PDFDocument, PDFDropdown, PDFRadioGroup, PDFTextField } from "pdf-lib"
-import { stampFields, type StampField } from "@/lib/esign/pdf/stamp"
+import { stampFields, toWinAnsi, type StampField } from "@/lib/esign/pdf/stamp"
 
 /** Local files can be larger than uploads: nothing crosses the network. */
 export const MAX_TOOL_PDF_BYTES = 25 * 1024 * 1024
@@ -61,13 +61,17 @@ export function signedFileName(name: string): string {
 }
 
 /**
- * Turns placements into the stamper's fields. With `everyPage`, each mark on
- * page 1 is repeated at the same position on every page, which is what
- * initialling each page of a contract needs.
+ * Turns placements into the stamper's fields. With `everyPage`, every mark is
+ * repeated at the same position on every page, which is what initialling each
+ * page of a contract needs.
+ *
+ * It used to repeat only marks placed on page 1 (`p.page === 1`), so a mark
+ * placed on any other page with "every page" ticked was silently stamped
+ * once. The mark's own page no longer matters.
  */
 export function placementsToStampFields(placements: Placement[], options: { pageCount: number; everyPage?: boolean }): StampField[] {
   const expanded = options.everyPage
-    ? placements.flatMap((p) => (p.page === 1 ? Array.from({ length: options.pageCount }, (_, i) => ({ ...p, page: i + 1 })) : [p]))
+    ? placements.flatMap((p) => Array.from({ length: options.pageCount }, (_, i) => ({ ...p, page: i + 1 })))
     : placements
   return expanded
     .filter((p) => p.page >= 1 && p.page <= options.pageCount)
@@ -95,23 +99,57 @@ export function placementsToStampFields(placements: Placement[], options: { page
     .filter((f) => f.type === "CHECKBOX" || f.value || f.signature?.imageDataUrl || f.signature?.typedText)
 }
 
-export type FormFieldInfo =
-  | { name: string; type: "text"; value: string }
-  | { name: string; type: "checkbox"; value: boolean }
-  | { name: string; type: "choice"; value: string; options: string[] }
+/** Where a form field sits: its page (1-based) and box, in percent from the top-left, like placements. */
+export type FieldWidget = { page: number; x: number; y: number; width: number; height: number }
 
-/** The fillable fields a PDF already has (an AcroForm), in document order. */
+export type FormFieldInfo =
+  | { name: string; type: "text"; value: string; maxLength?: number; widgets: FieldWidget[] }
+  | { name: string; type: "checkbox"; value: boolean; widgets: FieldWidget[] }
+  | { name: string; type: "choice"; value: string; options: string[]; widgets: FieldWidget[] }
+
+/**
+ * The fillable fields a PDF already has (an AcroForm), in document order,
+ * with where each one sits on its page so the tool can put an input exactly
+ * over it. Filling in a side list with nothing appearing on the page is what
+ * made the form look broken; `widgets` is what lets it be filled in place.
+ */
 export async function readFormFields(bytes: Uint8Array): Promise<FormFieldInfo[]> {
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: false })
+  const pages = doc.getPages()
   const out: FormFieldInfo[] = []
   for (const field of doc.getForm().getFields()) {
     const name = field.getName()
-    if (field instanceof PDFTextField) out.push({ name, type: "text", value: field.getText() ?? "" })
-    else if (field instanceof PDFCheckBox) out.push({ name, type: "checkbox", value: field.isChecked() })
-    else if (field instanceof PDFDropdown) out.push({ name, type: "choice", value: field.getSelected()[0] ?? "", options: field.getOptions() })
-    else if (field instanceof PDFRadioGroup) out.push({ name, type: "choice", value: field.getSelected() ?? "", options: field.getOptions() })
+    const widgets: FieldWidget[] = field.acroField.getWidgets().flatMap((widget) => {
+      // The widget names its page (/P) in most files; otherwise find the page
+      // whose annotation list holds it.
+      const ref = widget.P() ?? null
+      let index = ref ? pages.findIndex((p) => p.ref === ref) : -1
+      if (index < 0) {
+        const own = doc.context.getObjectRef(widget.dict)
+        index = pages.findIndex((p) => p.node.Annots()?.asArray().some((a) => a === own))
+      }
+      if (index < 0) return []
+      const { width: pw, height: ph } = pages[index].getSize()
+      const r = widget.getRectangle()
+      return [{ page: index + 1, x: (r.x / pw) * 100, y: ((ph - r.y - r.height) / ph) * 100, width: (r.width / pw) * 100, height: (r.height / ph) * 100 }]
+    })
+    if (field instanceof PDFTextField) out.push({ name, type: "text", value: field.getText() ?? "", maxLength: field.getMaxLength(), widgets })
+    else if (field instanceof PDFCheckBox) out.push({ name, type: "checkbox", value: field.isChecked(), widgets })
+    else if (field instanceof PDFDropdown) out.push({ name, type: "choice", value: field.getSelected()[0] ?? "", options: field.getOptions(), widgets })
+    else if (field instanceof PDFRadioGroup) out.push({ name, type: "choice", value: field.getSelected() ?? "", options: field.getOptions(), widgets })
   }
   return out
+}
+
+/**
+ * A text value as the form can hold it: encodable by the standard fonts the
+ * field is drawn with (toWinAnsi: "Ọlá" becomes "Olá", "₵" becomes "GHS")
+ * and no longer than the field allows. pdf-lib throws on either, and it used
+ * to fail the whole download for one accented name or one long answer.
+ */
+export function formTextValue(value: string, maxLength?: number): string {
+  const safe = toWinAnsi(value)
+  return maxLength !== undefined && maxLength > 0 ? safe.slice(0, maxLength) : safe
 }
 
 export type FormValues = Record<string, string | boolean>
@@ -131,12 +169,18 @@ export async function buildSignedPdf(
   for (const [name, value] of Object.entries(options.formValues ?? {})) {
     const field = form.getFieldMaybe(name)
     if (!field) continue
-    if (field instanceof PDFTextField && typeof value === "string") field.setText(value)
-    else if (field instanceof PDFCheckBox) {
-      if (value) field.check()
-      else field.uncheck()
+    // One field that cannot take its value is skipped, not fatal: the rest of
+    // the form and every placed mark still make it into the file.
+    try {
+      if (field instanceof PDFTextField && typeof value === "string") field.setText(formTextValue(value, field.getMaxLength()))
+      else if (field instanceof PDFCheckBox) {
+        if (value) field.check()
+        else field.uncheck()
+      }
+      else if ((field instanceof PDFDropdown || field instanceof PDFRadioGroup) && typeof value === "string" && value) field.select(value)
+    } catch (error) {
+      console.warn("[pdf-tools] field not filled", name, error)
     }
-    else if ((field instanceof PDFDropdown || field instanceof PDFRadioGroup) && typeof value === "string" && value) field.select(value)
   }
   await stampFields(doc, placementsToStampFields(placements, { pageCount: doc.getPageCount(), everyPage: options.everyPage }))
   try {

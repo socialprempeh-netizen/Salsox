@@ -1,5 +1,8 @@
 "use client"
 
+// Superseded by nav-menu.tsx (grouped menus) and no longer rendered; kept so
+// the flat row of home-page anchors it replaced stays readable.
+
 import { useTranslations } from "next-intl"
 
 import Link from "next/link"

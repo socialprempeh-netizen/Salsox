@@ -31,9 +31,39 @@ export const INK = rgb(0.06, 0.09, 0.16)
  * The standard 14 fonts only encode WinAnsi. A name like "Kwame Nkrumah" is
  * fine; characters outside that set would make pdf-lib throw mid-seal, so they
  * are replaced rather than allowed to fail the whole document.
+ *
+ * Replaced with something closer than "?" where there is one, because the
+ * people signing are often Ghanaian or Nigerian: "Ọlá" keeps its letters as
+ * "Olá" (a letter with a mark WinAnsi lacks falls back to its base letter),
+ * the cedi and naira signs become "GHS" and "NGN", and WinAnsi's own
+ * punctuation (€, curly quotes, dashes, ellipsis) is kept. The previous
+ * version replaced every character outside Latin-1 with "?":
+ *   return text.replace(/[^\x20-\x7E\xA0-\xFF]/g, "?")
  */
+const WINANSI_EXTRA = new Set([..."€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ"])
+const NAMED: Record<string, string> = { "₵": "GHS ", "₦": "NGN ", " ": " " }
+
+function encodable(ch: string): boolean {
+  const code = ch.codePointAt(0)!
+  return (code >= 0x20 && code <= 0x7e) || (code >= 0xa0 && code <= 0xff) || WINANSI_EXTRA.has(ch)
+}
+
 export function toWinAnsi(text: string): string {
-  return text.replace(/[^\x20-\x7E\xA0-\xFF]/g, "?")
+  let out = ""
+  for (const ch of text.normalize("NFC")) {
+    if (encodable(ch)) out += ch
+    else if (NAMED[ch]) out += NAMED[ch]
+    else if (ch === "\n" || ch === "\t") out += " "
+    // A tone or accent mark left as its own character (as in "Ẹ̀kọ́", where
+    // no precomposed letter exists) has nothing to show alone.
+    else if (/\p{M}/u.test(ch)) continue
+    else {
+      // "Ọ" is "O" plus a combining dot: keep whatever of it can be encoded.
+      const base = ch.normalize("NFD").replace(/\p{M}/gu, "")
+      out += base && [...base].every(encodable) ? base : "?"
+    }
+  }
+  return out
 }
 
 function fitFontSize(font: PDFFont, text: string, maxWidth: number, maxHeight: number): number {

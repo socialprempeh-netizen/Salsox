@@ -6,6 +6,9 @@
  * dropdown is not part of every public page's first load
  * (src/hooks/use-deferred.ts). This was mobile-menu.tsx itself; it moved here
  * unchanged apart from opening at once when mounted.
+ *
+ * Superseded by mobile-nav-panel.tsx (the grouped menu) and no longer
+ * loaded; kept so the earlier flat dropdown stays readable.
  */
 
 import { useTranslations } from "next-intl"

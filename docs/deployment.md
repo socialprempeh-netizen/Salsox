@@ -28,6 +28,15 @@ Set the variables from [.env.example](../.env.example) in the Vercel dashboard (
 
 The last three are enforced. In production the server **refuses to start** when any of them is missing, and the boot log says which one and what would break: without storage, documents go to a disk that is wiped; without email, invitations are logged instead of sent; without the secret, the scheduled job never runs. None of those fails with an error on its own, which is why the check exists. A `DEMO_MODE="true"` deployment is exempt, and `SKIP_ENV_VALIDATION="true"` turns the whole check off for a build step that has no secrets.
 
+### Email that is sent but never received
+
+Resend accepting an email is not delivery, so the app can say "Sent" while the recipient sees nothing. Before inviting real signers:
+
+- **Send from your own domain.** Add it in Resend (Domains), publish the SPF and DKIM records it shows, and add a DMARC record (`v=DMARC1; p=none` is a fine start). Mail from a domain without them lands in spam or is dropped.
+- **Do not use `onboarding@resend.dev`.** Resend's test sender only delivers to the address that owns the Resend account; an invitation to anyone else is never received. The server refuses to start in production with it, or with the `yourdomain.com` placeholder, as `EMAIL_FROM`.
+- **Look it up.** Every invitation Resend accepts is logged as `[esign email] <kind> accepted by Resend: <id>`. Search that id in Resend (Emails) to see whether it was delivered, bounced or marked as spam.
+- **New accounts confirm first.** When email is configured, a new account's first send waits until its address is confirmed, and Quick Send says so at the button.
+
 ## Deploying somewhere other than Vercel
 
 The kit is a standard Next.js app, so Docker, a VPS or any Node host works, and since 2.0 there is no extra variable to set for it.

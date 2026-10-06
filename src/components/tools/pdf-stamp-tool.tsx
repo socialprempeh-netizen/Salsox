@@ -19,7 +19,7 @@
  * bar under the toolbar rather than inside a tiny box, which is what works on
  * a phone. Square corners; panels appear with a short framer-motion fade.
  */
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { CalendarDays, Check, Download, FileText, PenLine, RefreshCcw, Trash2, Type, X } from "lucide-react"
 import { PdfPages } from "@/components/esign/pdf-pages"
@@ -31,6 +31,7 @@ import { track } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 import { PdfDrop, type PickedPdf } from "./pdf-drop"
 import { HANDOFF_KEY } from "./handoff"
+import { FormFieldInput } from "./form-field-input"
 import { AnimatePresence, Appear, ToolMotion } from "./tool-motion"
 
 export type StampToolConfig = {
@@ -41,6 +42,9 @@ export type StampToolConfig = {
 }
 
 const KIND_ICON: Partial<Record<PlacementKind, typeof PenLine>> = { signature: PenLine, date: CalendarDays, text: Type, name: Type, check: Check }
+
+/** Marks whose content is typed: they are edited in an input on the page itself. */
+const isTextKind = (kind: PlacementKind) => kind === "text" || kind === "name" || kind === "date"
 
 const today = () => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date())
 
@@ -121,7 +125,24 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
     setArmed(armed === kind ? null : kind)
   }
 
-  function placeAt(page: number, e: React.PointerEvent<HTMLDivElement>) {
+  // A newly placed text, name or date mark takes the keyboard at once. Done
+  // after the render that creates its input, and after the tap is over, so
+  // nothing in the pointer sequence can take focus back.
+  const focusNext = useRef<string | null>(null)
+  useEffect(() => {
+    const id = focusNext.current
+    if (!id) return
+    focusNext.current = null
+    requestAnimationFrame(() => document.getElementById(`mark-input-${id}`)?.focus({ preventScroll: true }))
+  }, [placements])
+
+  /**
+   * Places the armed mark where the page was tapped. A click, not a
+   * pointerdown: it used to place on pointerdown, so on a phone every finger
+   * that started scrolling the PDF dropped another mark. A click only fires
+   * for a tap, never for a scroll.
+   */
+  function placeAt(page: number, e: React.MouseEvent<HTMLDivElement>) {
     if (!armed) return setSelected(null)
     const rect = e.currentTarget.getBoundingClientRect()
     const size = DEFAULT_PLACEMENT_SIZE[armed]
@@ -138,12 +159,20 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
     }
     setPlacements((prev) => [...prev, mark])
     setSelected(mark.id)
+    if (isTextKind(armed)) focusNext.current = mark.id
     // Text needs typing next; signatures and dates are often placed several times.
     if (armed === "text" || armed === "name") setArmed(null)
   }
 
   function onMarkPointerDown(e: React.PointerEvent, mark: Placement, mode: "move" | "resize") {
     e.stopPropagation()
+    // A press inside a mark's own text box is for the caret, not a drag:
+    // capturing the pointer here is what kept the input from ever taking
+    // focus, so typed keys went nowhere (bug: "typing does nothing").
+    if ((e.target as HTMLElement).closest("input, select")) {
+      setSelected(mark.id)
+      return
+    }
     e.currentTarget.setPointerCapture(e.pointerId)
     setSelected(mark.id)
     drag.current = { id: mark.id, mode, startX: e.clientX, startY: e.clientY, orig: mark }
@@ -196,7 +225,7 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
     }
   }
 
-  function preview(mark: Placement) {
+  function preview(mark: Placement, editable: boolean) {
     if (mark.kind === "signature") {
       if (signature?.imageDataUrl) {
         // eslint-disable-next-line @next/next/no-img-element
@@ -205,7 +234,24 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
       return <span className="truncate font-serif text-lg italic text-slate-900">{signature?.typedText}</span>
     }
     if (mark.kind === "check") return <span className="text-sm font-bold text-slate-900">X</span>
-    return <span className="truncate px-1 text-xs text-slate-900">{mark.value || t(`kinds.${mark.kind}`)}</span>
+    // Typed marks are edited where they sit, in a real input. Was a <span>
+    // here plus a separate input in the toolbar: the box on the page looked
+    // editable, took focus when tapped, and swallowed every key (Backspace
+    // even deleted it), so text only arrived by pasting into the toolbar.
+    // A repeated copy on another page is shown, not edited.
+    if (!editable) return <span className="truncate px-1 text-xs text-slate-900">{mark.value || t(`kinds.${mark.kind}`)}</span>
+    return (
+      <input
+        id={`mark-input-${mark.id}`}
+        aria-label={t("textLabel")}
+        value={mark.value ?? ""}
+        placeholder={t(`kinds.${mark.kind}`)}
+        onChange={(e) => update(mark.id, { value: e.target.value.slice(0, 120) })}
+        onFocus={() => setSelected(mark.id)}
+        onKeyDown={(e) => e.stopPropagation()}
+        className="h-full w-full min-w-0 cursor-text bg-transparent px-1 text-[clamp(10px,2.6vw,14px)] text-slate-900 outline-none placeholder:text-slate-500"
+      />
+    )
   }
 
   if (!pdf) {
@@ -253,23 +299,12 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
           </div>
           <p className="text-xs text-muted-foreground">{armed ? t("tapToPlace") : t("pickMark")}</p>
 
-          {selectedMark && (selectedMark.kind === "text" || selectedMark.kind === "name" || selectedMark.kind === "date") && (
-            <div className="flex items-center gap-2 border-t border-border pt-2">
-              <label className="sr-only" htmlFor="mark-text">{t("textLabel")}</label>
-              <input
-                id="mark-text"
-                autoFocus
-                value={selectedMark.value ?? ""}
-                onChange={(e) => update(selectedMark.id, { value: e.target.value.slice(0, 120) })}
-                placeholder={t("textPlaceholder")}
-                className="h-10 min-w-0 flex-1 border border-border bg-background px-3 text-base"
-              />
-              <button type="button" aria-label={t("remove")} onClick={() => { setPlacements((p) => p.filter((m) => m.id !== selectedMark.id)); setSelected(null) }} className="inline-flex h-10 w-10 items-center justify-center border border-border text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-          {selectedMark && !(selectedMark.kind === "text" || selectedMark.kind === "name" || selectedMark.kind === "date") && (
+          {/* The toolbar's text input for the selected mark was removed:
+              typing now happens in the mark on the page (see preview()).
+              It was:
+              <input id="mark-text" autoFocus value={selectedMark.value ?? ""}
+                onChange={(e) => update(selectedMark.id, { value: e.target.value.slice(0, 120) })} … /> */}
+          {selectedMark && (
             <div className="flex items-center justify-between gap-2 border-t border-border pt-2 text-sm">
               <span>{t(`kinds.${selectedMark.kind}`)}</span>
               <button type="button" onClick={() => { setPlacements((p) => p.filter((m) => m.id !== selectedMark.id)); setSelected(null) }} className="inline-flex h-9 items-center gap-1.5 px-2 text-destructive">
@@ -345,9 +380,29 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
           data={data}
           onPageRef={(page, el) => (el ? pageEls.current.set(page, el) : pageEls.current.delete(page))}
           renderOverlay={(page) => (
-            <div className={cn("absolute inset-0", armed && "cursor-crosshair")} onPointerDown={(e) => placeAt(page, e)}>
+            <div className={cn("absolute inset-0", armed && "cursor-crosshair")} onClick={(e) => placeAt(page, e)}>
+              {/* The PDF's own form fields, filled where they are printed.
+                  Values used to be typed only in the list above while the
+                  page showed empty boxes, which read as "nothing happens". */}
+              {config.formFields &&
+                formFields.flatMap((field) =>
+                  field.widgets
+                    .filter((w) => w.page === page)
+                    .map((w, i) => (
+                      <FormFieldInput
+                        key={`${field.name}-${i}`}
+                        field={field}
+                        widget={w}
+                        value={formValues[field.name]}
+                        chooseLabel={t("choose")}
+                        onChange={(value) => setFormValues((v) => ({ ...v, [field.name]: value }))}
+                      />
+                    ))
+                )}
+              {/* With "every page" on, every mark shows on every page (was:
+                  only marks placed on page 1, `everyPage && p.page === 1`). */}
               {placements
-                .filter((p) => p.page === page || (everyPage && p.page === 1))
+                .filter((p) => p.page === page || everyPage)
                 .map((p) => (
                   <div
                     key={`${p.id}-${page}`}
@@ -357,7 +412,12 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
                     onPointerDown={(e) => (p.page === page ? onMarkPointerDown(e, p, "move") : e.stopPropagation())}
                     onPointerMove={onMarkPointerMove}
                     onPointerUp={() => (drag.current = null)}
+                    // A tap on a mark selects it; it must not reach the page
+                    // underneath and place another one.
+                    onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
+                      // Only when the mark itself has focus, never while typing in it.
+                      if (e.target !== e.currentTarget) return
                       if (e.key === "Delete" || e.key === "Backspace") setPlacements((prev) => prev.filter((m) => m.id !== p.id))
                     }}
                     className={cn(
@@ -367,7 +427,7 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
                     )}
                     style={{ left: `${p.x}%`, top: `${p.y}%`, width: `${p.width}%`, height: `${p.height}%` }}
                   >
-                    {preview(p)}
+                    {preview(p, p.page === page)}
                     {selected === p.id && p.page === page && (
                       <span onPointerDown={(e) => onMarkPointerDown(e, p, "resize")} className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize bg-primary" aria-hidden="true" />
                     )}

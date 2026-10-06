@@ -20,7 +20,9 @@ function esignEmailStrings() {
   return getTranslations({ locale: routing.defaultLocale, namespace: "esignEmail" })
 }
 
-const FROM_ADDRESS = process.env.EMAIL_FROM ?? `${siteConfig.name} <${siteConfig.contactEmail}>`
+// `||`, not `??`: .env.example ships EMAIL_FROM="", and an empty sender must
+// fall back rather than be sent to Resend as "from: ''".
+const FROM_ADDRESS = process.env.EMAIL_FROM || `${siteConfig.name} <${siteConfig.contactEmail}>`
 
 /**
  * Bold, for values dropped into a message. The markup lives here rather than
@@ -75,7 +77,17 @@ async function send(kind: string, to: string, subject: string, html: string, dev
   }
   const resend = new Resend(key)
   try {
-    const accepted = await deliver(kind, () => resend.emails.send({ from: FROM_ADDRESS, to, subject, html }))
+    let id: string | undefined
+    const accepted = await deliver(kind, async () => {
+      const result = await resend.emails.send({ from: FROM_ADDRESS, to, subject, html })
+      id = result.data?.id
+      return result
+    })
+    // Resend's message id, never the address: it is what to search for in
+    // Resend's dashboard (Emails) to see whether this invitation was
+    // delivered, bounced or marked as spam. "Accepted" here only means
+    // Resend took it; delivery is decided after.
+    if (accepted) console.info(`[esign email] ${kind} accepted by Resend: ${id ?? "no id"}`)
     return accepted ? "sent" : "failed"
   } catch (error) {
     // A failed email must never fail the signing action that triggered it:

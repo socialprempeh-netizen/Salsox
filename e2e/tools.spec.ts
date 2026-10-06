@@ -62,6 +62,18 @@ test("Sign PDF: typed signature and date, downloaded as a valid PDF", async ({ b
   await page.getByRole("button", { name: "Date", exact: true }).click()
   await tapPage(page, 1, { x: 0.75, y: 0.7 })
 
+  // A text mark is typed into where it sits, key by key: it used to accept
+  // only pasted text. Re-selecting it later must still take typing.
+  await page.getByRole("toolbar").getByRole("button", { name: "Text", exact: true }).click()
+  await tapPage(page, 1, { x: 0.4, y: 0.3 })
+  const text = page.locator('[data-page="1"]').getByPlaceholder("Text", { exact: true })
+  await expect(text).toBeFocused()
+  await page.keyboard.type("Ama")
+  await tapPage(page, 1, { x: 0.2, y: 0.85 })
+  await text.click()
+  await page.keyboard.type(" Mensah")
+  await expect(text).toHaveValue("Ama Mensah")
+
   const out = await downloaded(page, () => page.getByRole("button", { name: "Download signed PDF" }).click())
   const signed = await PDFDocument.load(out)
   expect(signed.getPageCount()).toBe(2)
@@ -75,8 +87,13 @@ test("Fill and sign PDF: the form's own fields are filled and flattened", async 
   await page.goto("/fill-and-sign-pdf", { waitUntil: "networkidle" })
   await page.locator('input[type="file"]').first().setInputFiles({ name: "Form.pdf", mimeType: "application/pdf", buffer: await formPdf() })
   await expect(page.getByText("This PDF has 2 fillable fields")).toBeVisible()
-  await page.getByLabel("full_name").fill("Kofi Owusu")
-  await page.getByLabel("agree").check()
+  // Filled on the page itself, where the form's field sits; the list below
+  // the document shows the same value. An accented name and the cedi sign
+  // used to make the download fail (the form font cannot encode them).
+  await page.locator('[data-page="1"]').getByLabel("full_name").click()
+  await page.keyboard.type("Kọ́fí Owusu ₵")
+  await page.locator('[data-page="1"]').getByLabel("agree").check()
+  await expect(page.locator("input[value='Kọ́fí Owusu ₵']")).toHaveCount(2)
 
   const out = await downloaded(page, () => page.getByRole("button", { name: "Download signed PDF" }).click())
   const filled = await PDFDocument.load(out)
@@ -100,9 +117,12 @@ test("Signature generator: a transparent PNG, handed to Add signature to PDF and
   await page.locator('input[type="file"]').first().setInputFiles({ name: "Contract.pdf", mimeType: "application/pdf", buffer: await samplePdf(3) })
   // The generated signature arrived: no pad to fill in.
   await expect(page.getByRole("button", { name: "Change signature" })).toBeVisible()
+  // Placed on page 2, not page 1: every page gets it either way. Repeating
+  // used to copy only marks that sat on page 1.
   await page.getByRole("button", { name: "Signature", exact: true }).click()
-  await tapPage(page, 1)
+  await tapPage(page, 2)
   await page.getByText("Repeat on every page", { exact: true }).click()
+  await expect(page.locator('[data-page="3"] [aria-label="Signature"]')).toHaveCount(1)
 
   const out = await downloaded(page, () => page.getByRole("button", { name: "Download signed PDF" }).click())
   expect((await PDFDocument.load(out)).getPageCount()).toBe(3)

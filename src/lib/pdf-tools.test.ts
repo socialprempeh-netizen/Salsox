@@ -8,6 +8,7 @@ import { PDFDocument, StandardFonts } from "pdf-lib"
 import {
   MAX_TOOL_PDF_BYTES,
   buildSignedPdf,
+  formTextValue,
   placementsToStampFields,
   readFormFields,
   signedFileName,
@@ -65,8 +66,15 @@ describe("placementsToStampFields", () => {
     expect(fields.map((f) => f.type)).toEqual(["SIGNATURE", "DATE", "CHECKBOX", "TEXT"])
   })
 
-  it("repeats page-1 marks on every page when asked, for initialling", () => {
+  it("repeats marks on every page when asked, for initialling", () => {
     const fields = placementsToStampFields([mark({ kind: "initials", typedText: "AM" })], { pageCount: 3, everyPage: true })
+    expect(fields.map((f) => f.page)).toEqual([1, 2, 3])
+  })
+
+  // It used to repeat only marks placed on page 1, so a signature placed on
+  // page 2 with "every page" ticked was stamped once.
+  it("repeats a mark placed on any page, not just page 1", () => {
+    const fields = placementsToStampFields([mark({ page: 2, typedText: "AM" })], { pageCount: 3, everyPage: true })
     expect(fields.map((f) => f.page)).toEqual([1, 2, 3])
   })
 
@@ -76,13 +84,38 @@ describe("placementsToStampFields", () => {
 })
 
 describe("readFormFields and buildSignedPdf", () => {
-  it("lists a PDF's own fields", async () => {
+  it("lists a PDF's own fields with where each sits on the page", async () => {
     const fields = await readFormFields(await pdf(1, true))
-    expect(fields).toEqual([
-      { name: "full_name", type: "text", value: "" },
+    expect(fields.map((f) => Object.fromEntries(Object.entries(f).filter(([k]) => k !== "widgets")))).toEqual([
+      { name: "full_name", type: "text", value: "", maxLength: undefined },
       { name: "agree", type: "checkbox", value: false },
       { name: "plan", type: "choice", value: "", options: ["Basic", "Pro"] },
     ])
+    // full_name was added at x=50, y=600 (from the bottom), 200x20 on a 600x800 page.
+    const [box] = fields[0].widgets
+    expect(box.page).toBe(1)
+    // Within half a percent: pdf-lib pads the rectangle by half the border width.
+    expect(box.x).toBeCloseTo((50 / 600) * 100, 0)
+    expect(box.y).toBeCloseTo(((800 - 600 - 20) / 800) * 100, 0)
+    expect(box.width).toBeCloseTo((200 / 600) * 100, 0)
+    expect(box.height).toBeCloseTo((20 / 800) * 100, 0)
+  })
+
+  // Each of these used to throw inside pdf-lib and fail the whole download.
+  it("fills names and amounts the standard fonts cannot draw, and clips to maxLength", async () => {
+    expect(formTextValue("Ọlá Adé")).toBe("Olá Adé")
+    expect(formTextValue("₵200")).toBe("GHS 200")
+    expect(formTextValue("123456", 4)).toBe("1234")
+
+    const doc = await PDFDocument.create()
+    const page = doc.addPage([600, 800])
+    const form = doc.getForm()
+    form.createTextField("name").addToPage(page, { x: 50, y: 700, width: 200, height: 20 })
+    const code = form.createTextField("code")
+    code.setMaxLength(4)
+    code.addToPage(page, { x: 50, y: 650, width: 80, height: 20 })
+    const out = await buildSignedPdf(await doc.save(), [], { formValues: { name: "Ọlá Adé ₵200", code: "123456" } })
+    expect((await PDFDocument.load(out)).getForm().getFields()).toHaveLength(0)
   })
 
   it("fills, stamps and flattens, leaving a valid PDF with no editable fields", async () => {

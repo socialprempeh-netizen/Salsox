@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { SENDER_PROBLEM_MESSAGES, senderAddressProblem } from "./email-sender"
 
 /**
  * Environment validation, checked once when the server boots (see
@@ -144,6 +145,16 @@ export const envSchema = z
     requireTogether("GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "the Google sign-in button would break")
     requireTogether("GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "the GitHub sign-in button would break")
     requireTogether("GITHUB_CLIENT_SECRET", "GITHUB_CLIENT_ID", "the GitHub sign-in button would break")
+
+    // A sender that cannot reach real recipients (Resend's test sender, the
+    // .env.example placeholder): Resend accepts each request, the app says
+    // "Sent", and nobody but the Resend account owner receives anything.
+    // Production only: in development the test sender is how you try email
+    // on your own address.
+    const senderProblem = senderAddressProblem(env.EMAIL_FROM)
+    if (env.NODE_ENV === "production" && env.RESEND_API_KEY && senderProblem) {
+      ctx.addIssue({ code: "custom", path: ["EMAIL_FROM"], message: SENDER_PROBLEM_MESSAGES[senderProblem] })
+    }
 
     if (env.NODE_ENV === "production" && !env.AUTH_SECRET) {
       ctx.addIssue({

@@ -192,7 +192,11 @@ export async function registerUser(formData: FormData) {
     // flow achieved both by sending a magic link instead; the destination is
     // the same and there is one fewer trick in the middle.
     await auth.api.signUpEmail({
-      body: { email, password, name: name ?? email.split("@")[0] },
+      // callbackURL is where the confirmation link lands. It defaulted to the
+      // home page, so someone who signed up from the request-a-signature tool
+      // confirmed their address and never saw their prepared request again.
+      // Now it returns to the same validated `next` as the redirect below.
+      body: { email, password, name: name ?? email.split("@")[0], callbackURL: safeNext(formData.get("next")) },
       headers: await headers(),
     })
   } catch (error) {

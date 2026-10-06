@@ -11,13 +11,17 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
 import { LogoLink } from "@/components/landing/logo-link"
 import { MobileMenu } from "@/components/landing/mobile-menu"
-import { NavLinks } from "@/components/landing/nav-links"
+// Replaced by NavMenu, the grouped menus built from getSiteNav().
+// import { NavLinks } from "@/components/landing/nav-links"
+import { NavMenu } from "@/components/landing/nav-menu"
+import { getSiteNav } from "@/components/landing/site-nav-data"
 // import { GithubIcon } from "@/components/icons/github"
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
 import { NavbarWrapper } from "@/components/landing/navbar-wrapper"
 import { getStartedHref } from "@/lib/landing-cta"
-import { hasPosts } from "@/lib/blog"
+// The blog check moved into getSiteNav().
+// import { hasPosts } from "@/lib/blog"
 
 export async function Navbar() {
   // Both moved with the buttons into NavbarAuthActions.
@@ -39,16 +43,21 @@ export async function Navbar() {
    */
   const starHref = isKitSite ? siteConfig.links.github : null
   // Read here because both menus below are client components.
-  const showBlog = hasPosts()
+  // const showBlog = hasPosts()
+  // The grouped navigation (Why, Free tools, Compare, Resources, Pricing),
+  // shared by the desktop menus, the phone menu and the footer.
+  const nav = await getSiteNav()
 
   return (
     <NavbarWrapper>
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 rounded-full border border-border bg-background/70 px-4 pl-5 shadow-soft backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      {/* Squared (was rounded-full) per the site-wide square-corners rule. */}
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 border border-border bg-background/70 px-4 pl-5 shadow-soft backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <LogoLink className="flex items-center gap-2">
           <Logo animated wordmarkClassName="text-base font-bold" />
         </LogoLink>
 
-        <NavLinks showBlog={showBlog} />
+        {/* Was <NavLinks showBlog={showBlog} />: a flat row of home-page anchors. */}
+        <NavMenu nav={nav} />
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -61,7 +70,7 @@ export async function Navbar() {
           <MobileMenu
             signInHref={siteConfig.links.demo ?? "/login"}
             starHref={starHref}
-            showBlog={showBlog}
+            nav={nav}
           />
         </div>
       </div>
