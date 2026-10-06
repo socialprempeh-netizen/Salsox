@@ -39,6 +39,10 @@ for (const width of WIDTHS) {
     await check("/terms", "terms")
     await check("/cookies", "cookies")
     await check("/login", "login")
+    // Public document verification: the empty form, and an answer for a code
+    // that matches nothing (the result card has to fit too).
+    await check("/verify", "verify")
+    await check("/verify?code=AAAA-BBBB-CCCC", "verify-not-found")
 
     await signUp(page)
     const signerEmail = freshEmail("mobile")
@@ -51,6 +55,8 @@ for (const width of WIDTHS) {
     await check(`/dashboard/documents/${documentId}`, "document-detail")
     await check("/dashboard/billing", "billing")
     await check("/dashboard/payouts", "payouts")
+    await check("/dashboard/settings", "settings")
+    await check("/dashboard/settings/sessions", "devices")
 
     const token = await tokenFor(documentId, signerEmail)
     await check(`/sign/${token}`, "sign-intro")

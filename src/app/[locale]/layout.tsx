@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
-import { hasLocale, NextIntlClientProvider } from "next-intl"
-import { getMessages, setRequestLocale } from "next-intl/server"
+import { hasLocale } from "next-intl"
+import { setRequestLocale } from "next-intl/server"
+import { ClientMessagesProvider } from "@/i18n/client-provider"
 import { routing } from "@/i18n/routing"
 
 /**
@@ -53,9 +54,13 @@ export default async function LocaleLayout({
    * admin panel, the sign-in pages and the 404, which always render in the
    * default locale but still read their strings from the message files.
    */
+  // Was: <NextIntlClientProvider locale={locale} messages={await getMessages({ locale })}>,
+  // every message, on top of the root layout's every message. Now the public
+  // pages' client namespaces only (src/i18n/client-messages.ts), still with
+  // the locale passed explicitly for the reason above.
   return (
-    <NextIntlClientProvider locale={locale} messages={await getMessages({ locale })}>
+    <ClientMessagesProvider area="public" locale={locale}>
       {children}
-    </NextIntlClientProvider>
+    </ClientMessagesProvider>
   )
 }

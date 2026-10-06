@@ -5,11 +5,17 @@ import { Toaster } from "@/components/ui/sonner"
 import { siteConfig } from "@/config/site"
 import { brandOverrideCss } from "@/config/brand"
 import { getLocale } from "next-intl/server"
-import { NextIntlClientProvider } from "next-intl"
+// The bare provider passed every message to the client; replaced by the
+// per-area provider below (src/i18n/client-messages.ts).
+// import { NextIntlClientProvider } from "next-intl"
+import { ClientMessagesProvider } from "@/i18n/client-provider"
 import "./globals.css"
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] })
+// Not preloaded: the mono face is used by code blocks and the contact dialog,
+// never above the fold, and a preload made it compete with the hero for the
+// first round trips on a phone. It still loads, when first used.
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], preload: false })
 
 export const metadata: Metadata = {
   // Absolute base for every relative URL in the metadata: without it the
@@ -59,9 +65,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             translations too. Those areas are outside the locale prefix and
             always render in the default locale, but their strings still live
             in the message files rather than in the components. */}
-        <NextIntlClientProvider>
+        {/* Was a bare <NextIntlClientProvider>, which serialized the whole
+            message file into every page. Now only what renders anywhere
+            (dialogs, theme switch, spinner, the 404 page): each area's layout
+            adds its own set, and the localized layout the public one. */}
+        <ClientMessagesProvider area="shell">
           {children}
-        </NextIntlClientProvider>
+        </ClientMessagesProvider>
         <Toaster />
         {/* Vercel Analytics, unless this deployment says otherwise. It ships
             mounted because that is the useful default on Vercel, and it can be

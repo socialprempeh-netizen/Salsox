@@ -1,3 +1,4 @@
+import { ClientMessagesProvider } from "@/i18n/client-provider"
 import { getCurrentUser } from "@/lib/auth"
 import { getTranslations } from "next-intl/server"
 import { redirect } from "next/navigation"
@@ -15,7 +16,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect("/login")
   if (user.role !== "ADMIN") redirect("/dashboard")
 
+  // Client components here get only the "app" messages (src/i18n/client-messages.ts).
   return (
+    <ClientMessagesProvider area="app">
     <div className="flex min-h-screen bg-muted/20">
       <aside className="sticky top-0 hidden h-screen w-60 flex-col border-r border-border bg-background transition-[width] duration-200 md:flex sidebar-collapsed:w-16">
         <div className="flex h-16 items-center border-b border-border px-5 sidebar-collapsed:justify-center sidebar-collapsed:px-0">
@@ -67,5 +70,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <main className="mx-auto w-full max-w-6xl flex-1 p-6">{children}</main>
       </div>
     </div>
+    </ClientMessagesProvider>
   )
 }

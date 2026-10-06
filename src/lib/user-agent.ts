@@ -70,3 +70,18 @@ export function formatIpAddress(ip?: string | null): string | null {
   if (loopback.includes(trimmed) || /^0+(:0+)*$/.test(trimmed)) return null
   return trimmed
 }
+
+export type DeviceKind = "phone" | "tablet" | "desktop"
+
+/**
+ * Phone, tablet or computer, for the icon beside a session. Same humility as
+ * the rest of this file: null when the string does not say, rather than a
+ * guess drawn as a fact.
+ */
+export function deviceKind(userAgent?: string | null): DeviceKind | null {
+  if (!userAgent) return null
+  if (/iPad|Tablet/.test(userAgent) || (/Android/.test(userAgent) && !/Mobile/.test(userAgent))) return "tablet"
+  if (/iPhone|iPod|Mobile/.test(userAgent)) return "phone"
+  if (/Windows NT|Macintosh|Mac OS X|Linux|CrOS/.test(userAgent)) return "desktop"
+  return null
+}

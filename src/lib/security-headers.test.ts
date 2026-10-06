@@ -47,6 +47,26 @@ describe("contentSecurityPolicy", () => {
     expect(prod["connect-src"]).toEqual(["'self'"])
   })
 
+  // Was `https:`, any host. Profile pictures come from two known hosts.
+  it("loads images only from this origin and the OAuth avatar hosts", () => {
+    expect(prod["img-src"]).not.toContain("https:")
+    expect(prod["img-src"]).toEqual(
+      expect.arrayContaining(["'self'", "https://*.googleusercontent.com", "https://avatars.githubusercontent.com"])
+    )
+  })
+
+  it("names no third-party script, style or font host in production", () => {
+    for (const directive of ["style-src", "font-src"]) {
+      expect(prod[directive].filter((v) => v.startsWith("http"))).toEqual([])
+    }
+    expect(prod["script-src"].filter((v) => v.startsWith("http"))).toEqual(["https://va.vercel-scripts.com"])
+  })
+
+  it("upgrades insecure requests in production only, where there is HTTPS", () => {
+    expect(prod).toHaveProperty("upgrade-insecure-requests")
+    expect(dev).not.toHaveProperty("upgrade-insecure-requests")
+  })
+
   it("is one header value, with no line breaks", () => {
     expect(contentSecurityPolicy({ dev: false })).not.toMatch(/[\r\n]/)
   })
@@ -55,8 +75,23 @@ describe("contentSecurityPolicy", () => {
 describe("securityHeaders", () => {
   it("sends each standard header exactly once", () => {
     const keys = securityHeaders({ dev: false }).map((h) => h.key)
-    for (const key of ["Content-Security-Policy", "Strict-Transport-Security", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]) {
+    for (const key of [
+      "Content-Security-Policy",
+      "Strict-Transport-Security",
+      "X-Frame-Options",
+      "X-Content-Type-Options",
+      "Referrer-Policy",
+      "Permissions-Policy",
+      "Cross-Origin-Opener-Policy",
+    ]) {
       expect(keys.filter((k) => k === key)).toHaveLength(1)
+    }
+  })
+
+  it("switches off the powerful browser features the app never uses", () => {
+    const policy = securityHeaders({ dev: false }).find((h) => h.key === "Permissions-Policy")!.value
+    for (const feature of ["camera", "microphone", "geolocation", "payment", "usb", "browsing-topics"]) {
+      expect(policy).toContain(`${feature}=()`)
     }
   })
 })

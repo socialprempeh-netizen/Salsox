@@ -90,6 +90,15 @@ export const envSchema = z
     SIGNING_P12_BASE64: optional,
     SIGNING_P12_PASSPHRASE: optional,
     RESEND_AUDIENCE_ID: optional,
+    // SMS reminders (src/lib/esign/sms.ts). Deliberately not shape-checked
+    // here: placeholder values must not stop the boot. The feature checks the
+    // shapes itself and stays off until all of them look real.
+    TWILIO_ACCOUNT_SID: optional,
+    TWILIO_AUTH_TOKEN: optional,
+    TWILIO_FROM_NUMBER: optional,
+    TWILIO_MESSAGING_SERVICE_SID: optional,
+    // Kill switch: "false" turns SMS off with the credentials still set.
+    SMS_REMINDERS_ENABLED: flag,
     EMAIL_FROM: optional,
 
     KIT_SITE: flag,

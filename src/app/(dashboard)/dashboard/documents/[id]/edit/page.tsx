@@ -12,6 +12,7 @@ import { DocumentEditor } from "@/components/esign/document-editor"
 import { DocumentActions } from "@/components/esign/document-actions"
 import { senderPlan } from "@/lib/esign/sender"
 import { hasFeature } from "@/lib/esign/plans"
+import { smsConfigured } from "@/lib/esign/sms"
 
 export default async function EditDocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -44,6 +45,7 @@ export default async function EditDocumentPage({ params }: { params: Promise<{ i
         fileUrl={`/api/documents/${document.id}/original?inline=1`}
         pageCount={document.pageCount}
         readyProviders={payouts.map((p) => p.provider)}
+        smsAvailable={smsConfigured()}
         plan={{
           signAndPay: hasFeature(tier, "signAndPay"),
           sequentialSigning: hasFeature(tier, "sequentialSigning"),
@@ -72,6 +74,7 @@ export default async function EditDocumentPage({ params }: { params: Promise<{ i
             document.paymentAmount && document.paymentCurrency && payer
               ? { amount: (document.paymentAmount / 100).toFixed(2), currency: document.paymentCurrency, recipientKey: payer.id }
               : null,
+          smsReminders: document.smsReminders,
         }}
       />
     </div>

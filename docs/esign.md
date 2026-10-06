@@ -92,6 +92,16 @@ In a sequential document, the next signer is claimed (a guarded write of `sentAt
   - An email goes out 7 days (monthly) or 14 days (yearly) before every renewal.
   - `/api/export` streams a ZIP of every original, sealed PDF and audit trail, on any plan and after cancelling.
 
+## Public verification
+
+Every sealed copy carries a verification code (`XXXX-XXXX-XXXX`) and a QR code on its certificate page. Both lead to `/verify`, a public page where anyone holding the PDF can check that it is a genuine, completed record: when it was sealed, who signed it (names, roles, signing dates, emails masked to `a•••@example.com`) and its SHA-256 fingerprints. The title and the content are never shown. The visitor can also drop the PDF on the page: it is hashed in their browser and only the fingerprint is compared, so a changed or re-saved file is flagged.
+
+Only completed, sealed documents verify; everything else answers "not found", so the page cannot reveal that a pending document exists. Lookups are rate limited per IP. Documents sealed before codes existed verify by their document ID, which their certificate already prints. The rules are in `src/lib/esign/verify.ts`.
+
+## SMS reminders
+
+Senders can opt a document into SMS reminders, in the editor or later from the document's page. Each reminder (the automatic one every three days, or the Remind button) then also texts each pending signer who has a phone number with a country code. Invitations stay email-only. The provider is Twilio's REST API (`src/lib/esign/sms.ts`). Without real credentials the option is not shown and nothing is sent, so the placeholders in `.env.example` are safe to deploy.
+
 ## Configuration
 
 | Variable | Needed for |
@@ -103,6 +113,7 @@ In a sequential document, the next signer is claimed (a guarded write of `sentAt
 | `PAYSTACK_SECRET_KEY`, `PAYSTACK_COUNTRY` | Sign & Pay through Paystack. Point a webhook at `/api/webhooks/paystack`. Country defaults to `ghana`. |
 | `SIGN_AND_PAY_FEE_BPS` | Optional platform fee in basis points (150 = 1.5%). Defaults to 0. |
 | `SIGNING_P12_BASE64`, `SIGNING_P12_PASSPHRASE` | Optional digital seal: a base64 PKCS#12 certificate. Without it, PDFs are sealed with the certificate page and SHA-256 hashes, but no cryptographic signature. |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` (or `TWILIO_MESSAGING_SERVICE_SID`) | Optional SMS reminders. The feature stays off until all of them look real (`AC` + 32 hex, a 32-hex token, a `+` number or an `MG` service). `SMS_REMINDERS_ENABLED="false"` switches it off with the credentials in place. |
 
 ## Known limits
 

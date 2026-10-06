@@ -8,7 +8,18 @@ const schema = vi.hoisted(() => ({
 }))
 vi.mock("@/lib/schema-status", () => ({ getSchemaStatus: async () => schema.current }))
 
-import { GET } from "./route"
+// The database ping. `up` false makes it throw, as a refused connection does.
+const db = vi.hoisted(() => ({ up: true }))
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    $queryRaw: async () => {
+      if (!db.up) throw new Error("connection refused")
+      return [{ "?column?": 1 }]
+    },
+  },
+}))
+
+import { GET, HEAD } from "./route"
 import { siteConfig } from "@/config/site"
 
 const original = { ...process.env }
@@ -17,6 +28,7 @@ const read = async () => (await GET()).json()
 afterEach(() => {
   process.env = { ...original }
   schema.current = { aligned: true, pending: 0 }
+  db.up = true
 })
 
 beforeEach(() => {
@@ -66,6 +78,33 @@ describe("GET /api/health", () => {
   it("never names a migration", async () => {
     schema.current = { aligned: false, pending: 2 }
     expect(Object.keys((await read()).schema).sort()).toEqual(["aligned", "pending"])
+  })
+
+  // The contract with an uptime monitor: the status code alone says whether
+  // the database answers.
+  it("answers 200 with the database check when the database is up", async () => {
+    const response = await GET()
+    expect(response.status).toBe(200)
+    expect((await response.json()).checks).toEqual({ database: "ok" })
+  })
+
+  it("answers 503 and names the failed check when the database is down", async () => {
+    db.up = false
+    const response = await GET()
+    expect(response.status).toBe(503)
+    const body = await response.json()
+    expect(body.status).toBe("error")
+    expect(body.checks).toEqual({ database: "unreachable" })
+  })
+
+  // UptimeRobot and others send HEAD by default.
+  it("answers HEAD with the same status code and no body", async () => {
+    const up = await HEAD()
+    expect(up.status).toBe(200)
+    expect(await up.text()).toBe("")
+
+    db.up = false
+    expect((await HEAD()).status).toBe(503)
   })
 
   // A cached health response reports the version of whatever build filled the

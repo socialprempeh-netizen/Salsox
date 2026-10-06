@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { describeUserAgent, formatDevice, formatIpAddress } from "./user-agent"
+import { describeUserAgent, formatDevice, formatIpAddress, deviceKind } from "./user-agent"
 
 /**
  * The ordering cases are the ones worth having. Every modern user agent lies
@@ -85,5 +85,20 @@ describe("formatIpAddress", () => {
   it("treats empty and missing the same way", () => {
     expect(formatIpAddress("   ")).toBeNull()
     expect(formatIpAddress(null)).toBeNull()
+  })
+})
+
+describe("deviceKind", () => {
+  it("tells phones, tablets and computers apart", () => {
+    expect(deviceKind("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1")).toBe("phone")
+    expect(deviceKind("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/128.0 Mobile Safari/537.36")).toBe("phone")
+    expect(deviceKind("Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148")).toBe("tablet")
+    expect(deviceKind("Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 Chrome/128.0 Safari/537.36")).toBe("tablet")
+    expect(deviceKind("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36")).toBe("desktop")
+  })
+
+  it("says nothing rather than guess", () => {
+    expect(deviceKind(null)).toBeNull()
+    expect(deviceKind("curl/8.4.0")).toBeNull()
   })
 })

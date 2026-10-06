@@ -126,6 +126,7 @@ describe("saveDocumentSetup with a crafted currency", () => {
     recipients: [{ key: "r1", name: "Ama", email: "ama@example.com", phone: undefined, role: "SIGNER", order: 0 }],
     fields: [],
     payment: { amount: "12.50", currency, recipientKey: "r1" },
+    smsReminders: false,
   })
 
   beforeEach(() => {
@@ -160,6 +161,7 @@ describe("plan gates on the setup", () => {
     recipients: [{ key: "r1", name: "Ama", email: "ama@example.com", phone: undefined, role: "SIGNER", order: 0 }],
     fields: [],
     payment: null,
+    smsReminders: false,
   }
 
   beforeEach(() => {

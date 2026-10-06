@@ -2,7 +2,7 @@
 title: Deployment
 description: "In produzione su Vercel: variabili, migrazioni, webhook, e come diventare amministratore."
 translated_from: deployment.md
-source_checksum: 694cd24530d6
+source_checksum: 1239a545378f
 ---
 
 # Deployment
@@ -79,6 +79,8 @@ Usa la stringa di connessione diretta, che su Neon è l'host senza `-pooler`. Il
 Eseguili prima del primo deploy, e prima di pubblicare ogni release che aggiunge una migrazione, a meno che le sue [note di aggiornamento](./upgrading.md) dicano altrimenti. Poi inserisci i piani una volta sola: `npx prisma db seed`.
 
 Dopo un deploy, `/api/health` riporta `schema: { aligned, pending }`, e `npm run smoke -- https://iltuodominio.com` fallisce quando il database è indietro rispetto al build.
+
+**Monitoraggio dell'uptime.** Punta UptimeRobot (o qualsiasi monitor) a `https://iltuodominio.com/api/health`. Non richiede autenticazione, risponde a `GET` e `HEAD`, e restituisce 200 quando il database risponde a un ping entro tre secondi, 503 altrimenti, con `checks.database` che dice quale controllo è fallito.
 
 ## Webhook Stripe in produzione
 

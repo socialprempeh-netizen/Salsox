@@ -16,11 +16,13 @@ import { useMemo, useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react"
+import { ArrowDown, ArrowUp, MessageSquareText, Plus, Trash2, X } from "lucide-react"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { saveAndSendAction, saveSetupAction } from "@/app/actions/documents"
 import { clampPercent, clientToPercent } from "@/lib/esign/pdf/coords"
 import { SIGN_AND_PAY_CURRENCIES } from "@/lib/esign/payments/select"
 import { MAX_RECIPIENTS, type DocumentSetup } from "@/lib/esign/schemas"
+import { toE164 } from "@/lib/esign/phone"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -64,6 +66,7 @@ type Props = {
     recipients: EditorRecipient[]
     fields: EditorField[]
     payment: { amount: string; currency: string; recipientKey: string } | null
+    smsReminders: boolean
   }
   readyProviders: ("STRIPE" | "PAYSTACK")[]
   /**
@@ -73,12 +76,18 @@ type Props = {
    * server refuses the setup either way.
    */
   plan: { signAndPay: boolean; sequentialSigning: boolean; approvers: boolean }
+  /**
+   * Whether this deployment can send SMS (src/lib/esign/sms.ts). Without a
+   * provider the option is not shown at all; a draft that had it switched on
+   * keeps the setting, which simply sends nothing.
+   */
+  smsAvailable: boolean
 }
 
 let counter = 0
 const localId = (prefix: string) => `${prefix}_${Date.now().toString(36)}_${(counter++).toString(36)}`
 
-export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyProviders, plan }: Props) {
+export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyProviders, plan, smsAvailable }: Props) {
   const t = useTranslations("esign.editor")
   const tPlans = useTranslations("esign.plans")
   const showError = useActionErrorToast()
@@ -98,6 +107,8 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
   const [selected, setSelected] = useState<string | null>(null)
   const [payOn, setPayOn] = useState(initial.payment !== null)
   const [payment, setPayment] = useState(initial.payment ?? { amount: "", currency: "USD", recipientKey: "" })
+  const [smsOn, setSmsOn] = useState(initial.smsReminders)
+  const reduceMotion = useReducedMotion()
   const [pending, startTransition] = useTransition()
   const pageEls = useRef(new Map<number, HTMLDivElement>())
   const drag = useRef<{ id: string; mode: "move" | "resize"; startX: number; startY: number; orig: EditorField } | null>(null)
@@ -107,6 +118,9 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
     return (key: string) => map.get(key) ?? "#64748b"
   }, [recipients])
   const actionable = recipients.filter((r) => r.role === "SIGNER" || r.role === "APPROVER")
+  // Who an SMS reminder could reach: signers and approvers with a number in
+  // international form. The same rule the sender applies (toE164).
+  const smsReach = actionable.filter((r) => toE164(r.phone) !== null).length
   const currentRecipient = actionable.find((r) => r.key === activeRecipient) ?? actionable[0]
 
   // ── Recipients ───────────────────────────────────────────────────────────
@@ -209,6 +223,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
         payOn && payment.amount
           ? { amount: payment.amount, currency: payment.currency, recipientKey: payment.recipientKey || actionable[0]?.key || "" }
           : null,
+      smsReminders: smsOn,
     }
   }
 
@@ -514,7 +529,34 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
             )}
           </div>
 
-          <div className="rounded-xl bg-muted/60 p-4 text-sm">
+          {/* SMS reminders: opt-in, and only offered when the deployment has
+              an SMS provider. Square like the Sign & Pay block above. */}
+          {smsAvailable && (
+            <div className="space-y-2 border p-4">
+              <label className="flex min-h-11 items-center gap-3 font-medium">
+                <input type="checkbox" className="h-5 w-5" checked={smsOn} onChange={(e) => setSmsOn(e.target.checked)} />
+                <MessageSquareText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {t("smsReminders")}
+              </label>
+              <p className="text-sm text-muted-foreground">{t("smsRemindersHint")}</p>
+              <AnimatePresence initial={false}>
+                {smsOn && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+                    className={cn("overflow-hidden text-sm", smsReach === 0 ? "text-amber-700 dark:text-amber-400" : "text-foreground")}
+                  >
+                    {smsReach === 0 ? t("smsNoPhones") : t("smsReach", { count: smsReach, total: actionable.length })}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Squared as part of the SMS edit (was rounded-xl). */}
+          <div className="bg-muted/60 p-4 text-sm">
             {t("summary", { recipients: recipients.length, fields: fields.length })}
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">

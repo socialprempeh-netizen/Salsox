@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label"
 import { ProfileForm } from "@/components/dashboard/profile-form"
 import { DeleteAccount } from "@/components/dashboard/delete-account"
 import { TwoFactorCard } from "@/components/settings/two-factor-card"
-import { ActiveSessions } from "@/components/settings/active-sessions"
+// The full list moved to its own page (/dashboard/settings/sessions); this
+// card now shows a summary that links there.
+// import { ActiveSessions } from "@/components/settings/active-sessions"
+import { SessionsSummary } from "@/components/settings/sessions-summary"
 import { PendingButton } from "@/components/auth/pending-button"
 import { changeEmail, linkProvider, unlinkProvider, updatePassword } from "@/app/actions/account"
 
@@ -247,13 +250,15 @@ export async function SettingsView({
 
       {/* After the second factor, because both answer the same question — who
           can get in — and this one is the evidence for it. */}
-      <Card>
+      {/* Squared when it became a summary of the Devices page. */}
+      <Card className="rounded-none">
         <CardHeader>
           <CardTitle>{t("sessions.title")}</CardTitle>
           <CardDescription>{t("sessions.description")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <ActiveSessions />
+          {/* Was <ActiveSessions />, the full list with its sign-out buttons. */}
+          <SessionsSummary />
         </CardContent>
       </Card>
 

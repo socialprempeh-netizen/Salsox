@@ -71,6 +71,9 @@ export const documentSetupSchema = z.object({
   recipients: z.array(recipientInputSchema).min(1).max(MAX_RECIPIENTS),
   fields: z.array(fieldInputSchema).max(500),
   payment: paymentInputSchema.nullable().default(null),
+  // Opt-in SMS reminders for recipients with a phone number (sms.ts). Saved
+  // whatever the deployment supports; only sent when an SMS provider is set.
+  smsReminders: z.boolean().default(false),
 })
 
 export type RecipientInput = z.infer<typeof recipientInputSchema>

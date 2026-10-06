@@ -52,14 +52,21 @@ test("settings works when the session is old, and a device can still be ended", 
     await context.addCookies(cookies.filter((c) => !c.name.includes("session_data")))
 
     // 1. The page renders. It used to throw "Session is not fresh" here.
+    // Settings now shows a summary of devices; the full list, with addresses
+    // and sign-outs, is the Devices page.
     await page.goto("/dashboard/settings")
     await expect(page.getByRole("heading", { name: /settings/i })).toBeVisible()
+    await expect(page.getByText("Safari on iOS")).toBeVisible()
+    await page.getByRole("link", { name: "Manage devices" }).click()
+    await page.waitForURL(/\/dashboard\/settings\/sessions/)
     await expect(page.getByText("Safari on iOS")).toBeVisible()
     await expect(page.getByText("203.0.113.7")).toBeVisible()
 
     // 2. And ending the other device works, from that same old session.
-    await page.getByRole("button", { name: /end all other sessions/i }).click()
-    await page.waitForURL(/\/dashboard\/settings\?ok=sessions-revoked/, { timeout: 20_000 })
+    // (Was the "End all other sessions" button on the settings card.)
+    await page.getByRole("button", { name: "Sign out 1 other device" }).click()
+    await page.getByRole("alertdialog").getByRole("button", { name: "Sign out 1 other device" }).click()
+    await page.waitForURL(/\/dashboard\/settings\/sessions\?ok=sessions-revoked/, { timeout: 20_000 })
     await expect(page.getByText("Safari on iOS")).toHaveCount(0)
 
     // 3. The row is gone from the database, not just from the page.

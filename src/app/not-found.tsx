@@ -1,4 +1,7 @@
-import { NotFoundView } from "@/components/not-found-view"
+// Imported through a lazy client boundary, so framer-motion stays off every
+// page that is not a 404 (see not-found-lazy.tsx).
+// import { NotFoundView } from "@/components/not-found-view"
+import { LazyNotFoundView } from "@/components/not-found-lazy"
 import { hasPosts } from "@/lib/blog"
 
 /**
@@ -12,7 +15,8 @@ import { hasPosts } from "@/lib/blog"
  */
 export default function NotFound() {
   // The view is a client component and cannot read content/blog/ itself.
-  return <NotFoundView showBlog={hasPosts()} />
+  // return <NotFoundView showBlog={hasPosts()} />
+  return <LazyNotFoundView showBlog={hasPosts()} />
 }
 
 // Replaced by the server component above and NotFoundView. The old page sent

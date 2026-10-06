@@ -1,10 +1,11 @@
 import { requireUser } from "@/lib/auth"
-import { getFormatter, getTranslations } from "next-intl/server"
+import { getFormatter, getLocale, getTranslations } from "next-intl/server"
 import { prisma } from "@/lib/prisma"
 import { describeDiscount, getEntitlement, trialDaysFor, type DiscountSummary } from "@/lib/billing"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+// Used by the invoice table that PaymentHistory replaced (kept at the end of this file).
+// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ManageBillingButton } from "@/components/billing/manage-billing-button"
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge"
 import { PlanCards, type PlanCardData } from "@/components/billing/plan-cards"
@@ -13,6 +14,9 @@ import { CheckoutStatusToast } from "@/components/billing/checkout-status-toast"
 import { CancelSubscription } from "@/components/billing/cancel-subscription"
 import { Button } from "@/components/ui/button"
 import { EXPORT_DOCUMENTS_PER_PART, exportPartCount } from "@/lib/esign/zip-stream"
+import { listReceipts } from "@/lib/billing-receipts"
+import { formatAmount, receiptHref } from "@/lib/receipts"
+import { PaymentHistory, type PaymentHistoryRow } from "@/components/billing/payment-history"
 
 // Invoice statuses come from Stripe as stable codes, like subscription ones;
 // their labels live in the message files under `dashboard.billing.invoiceStatus`.
@@ -67,9 +71,10 @@ export default async function BillingPage() {
       : entitlement.kind === "lifetime"
         ? entitlement.subscription
         : null
-  const [invoices, discounts] = await Promise.all([
+  const [invoices, discounts, receipts] = await Promise.all([
     getInvoices(user?.stripeCustomerId ?? null),
     getDiscounts(!purchase && subscription ? subscription.stripeSubscriptionId : null),
+    listReceipts(currentUser.id),
   ])
 
   // Metered plans are excluded from the grid: they exist for the usage-based
@@ -120,6 +125,44 @@ export default async function BillingPage() {
       : null
   const purchaseDate = purchase ? longDate(purchase.createdAt) : null
 
+  // One history for every payment, whatever took it (src/lib/receipts.ts):
+  // paid subscription invoices, one-time purchases and Sign & Pay money
+  // received, each with a PDF receipt. Invoices still waiting for payment are
+  // listed too, with Stripe's own page to pay them, and no receipt yet.
+  const shortDate = (date: Date) => format.dateTime(date, { year: "numeric", month: "short", day: "numeric" })
+  const kindLabels = { invoice: t("historyKindInvoice"), purchase: t("historyKindPurchase"), signAndPay: t("historyKindSignAndPay") }
+  const locale = await getLocale()
+  const hostedInvoice = new Map(invoices.map((invoice) => [invoice.id, invoice.hosted_invoice_url ?? null]))
+  const dated: [number, PaymentHistoryRow][] = [
+    ...receipts.map((receipt): [number, PaymentHistoryRow] => [receipt.issuedAt.getTime(), {
+      key: `${receipt.kind}:${receipt.id}`,
+      date: shortDate(receipt.issuedAt),
+      description: receipt.description,
+      kindLabel: kindLabels[receipt.kind],
+      provider: receipt.provider,
+      amount: formatAmount(receipt.total, receipt.currency, locale),
+      status: receipt.status,
+      statusLabel: receipt.status === "refunded" ? t("historyRefunded") : t("invoiceStatus.paid"),
+      receiptHref: receiptHref(receipt),
+      invoiceHref: receipt.kind === "invoice" ? hostedInvoice.get(receipt.id) ?? null : null,
+    }]),
+    ...invoices
+      .filter((invoice) => invoice.status === "open" || invoice.status === "uncollectible")
+      .map((invoice): [number, PaymentHistoryRow] => [(invoice.created ?? 0) * 1000, {
+        key: `invoice:${invoice.id}`,
+        date: shortDate(new Date((invoice.created ?? 0) * 1000)),
+        description: invoice.lines?.data?.[0]?.description ?? kindLabels.invoice,
+        kindLabel: kindLabels.invoice,
+        provider: "Stripe" as const,
+        amount: formatAmount(invoice.total ?? 0, invoice.currency, locale),
+        status: invoice.status ?? "open",
+        statusLabel: invoice.status && INVOICE_STATUSES.includes(invoice.status) ? t(`invoiceStatus.${invoice.status}`) : t("statusUnknown"),
+        receiptHref: null,
+        invoiceHref: invoice.hosted_invoice_url ?? null,
+      }]),
+  ]
+  const historyRows = dated.sort((a, b) => b[0] - a[0]).map(([, row]) => row)
+
   const discountLines = discounts.map((d) => {
     const off =
       d.percentOff != null
@@ -143,7 +186,7 @@ export default async function BillingPage() {
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <Card>
+      <Card className="rounded-none">
         <CardHeader>
           <CardTitle>{t("currentPlan")}</CardTitle>
           <CardDescription>
@@ -198,7 +241,7 @@ export default async function BillingPage() {
           {/* Stated up front, not in the terms: when it renews, and that we
               email first. Cancel is right here, not only inside the portal. */}
           {!purchase && subscription && !subscription.cancelAtPeriodEnd && renewalDate && (
-            <p className="rounded-xl bg-muted/60 p-3 text-sm">{tEsign("renewalNotice", { date: renewalDate })}</p>
+            <p className="bg-muted/60 p-3 text-sm">{tEsign("renewalNotice", { date: renewalDate })}</p>
           )}
           {(subscription || (purchase && user?.stripeCustomerId)) && (
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
@@ -233,7 +276,7 @@ export default async function BillingPage() {
         </div>
       )}
 
-      <Card>
+      <Card className="rounded-none">
         <CardHeader>
           <CardTitle>{tEsign("exportTitle")}</CardTitle>
           <CardDescription>{tEsign("exportBody")}</CardDescription>
@@ -264,81 +307,105 @@ export default async function BillingPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-none">
         <CardHeader>
-          <CardTitle>{t("invoiceHistory")}</CardTitle>
-          <CardDescription>{t("invoiceHistoryHint")}</CardDescription>
+          <CardTitle>{t("paymentHistory")}</CardTitle>
+          <CardDescription>{t("paymentHistoryHint")}</CardDescription>
         </CardHeader>
         <CardContent>
-          {invoices.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {process.env.STRIPE_SECRET_KEY ? t("noInvoices") : t("noInvoicesStripe")}
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("colDate")}</TableHead>
-                  <TableHead>{t("colAmount")}</TableHead>
-                  <TableHead>{t("colStatus")}</TableHead>
-                  <TableHead>{t("colInvoice")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell>
-                      {format.dateTime(new Date((invoice.created ?? 0) * 1000), {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </TableCell>
-                    {/* The invoice total in its own currency. The total, not what
-                        has been paid so far, which reads as zero on an open one. */}
-                    <TableCell>{money(invoice.total ?? 0, invoice.currency)}</TableCell>
-                    <TableCell>
-                      <Badge variant={invoice.status === "paid" ? "success" : "secondary"}>
-                        {invoice.status && INVOICE_STATUSES.includes(invoice.status)
-                          ? t(`invoiceStatus.${invoice.status}`)
-                          : invoice.status ?? t("statusUnknown")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {invoice.hosted_invoice_url || invoice.invoice_pdf ? (
-                        <div className="flex gap-3">
-                          {invoice.hosted_invoice_url && (
-                            <a
-                              href={invoice.hosted_invoice_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline"
-                            >
-                              {t("viewInvoice")}
-                            </a>
-                          )}
-                          {invoice.invoice_pdf && (
-                            <a
-                              href={invoice.invoice_pdf}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline"
-                            >
-                              {t("downloadPdf")}
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <PaymentHistory
+            rows={historyRows}
+            labels={{
+              receipt: t("historyReceipt"),
+              receiptFor: t("historyReceiptFor"),
+              invoice: t("historyInvoice"),
+              empty: process.env.STRIPE_SECRET_KEY || historyRows.length > 0 ? t("historyEmpty") : t("noInvoicesStripe"),
+            }}
+          />
         </CardContent>
       </Card>
+
     </div>
   )
 }
+
+// Replaced by <PaymentHistory> in the page above, which lists one-time
+// purchases and Sign & Pay payments (Stripe and Paystack) beside the
+// subscription invoices, each with a downloadable PDF receipt. This card
+// listed Stripe invoices only, as a four-column table that scrolled sideways
+// on a phone, and linked to Stripe for the PDF.
+// <Card>
+//   <CardHeader>
+//     <CardTitle>{t("invoiceHistory")}</CardTitle>
+//     <CardDescription>{t("invoiceHistoryHint")}</CardDescription>
+//   </CardHeader>
+//   <CardContent>
+//     {invoices.length === 0 ? (
+//       <p className="py-6 text-center text-sm text-muted-foreground">
+//         {process.env.STRIPE_SECRET_KEY ? t("noInvoices") : t("noInvoicesStripe")}
+//       </p>
+//     ) : (
+//       <Table>
+//         <TableHeader>
+//           <TableRow>
+//             <TableHead>{t("colDate")}</TableHead>
+//             <TableHead>{t("colAmount")}</TableHead>
+//             <TableHead>{t("colStatus")}</TableHead>
+//             <TableHead>{t("colInvoice")}</TableHead>
+//           </TableRow>
+//         </TableHeader>
+//         <TableBody>
+//           {invoices.map((invoice) => (
+//             <TableRow key={invoice.id}>
+//               <TableCell>
+//                 {format.dateTime(new Date((invoice.created ?? 0) * 1000), {
+//                   year: "numeric",
+//                   month: "short",
+//                   day: "numeric",
+//                 })}
+//               </TableCell>
+//               {/* The invoice total in its own currency. The total, not what
+//                   has been paid so far, which reads as zero on an open one. */}
+//               <TableCell>{money(invoice.total ?? 0, invoice.currency)}</TableCell>
+//               <TableCell>
+//                 <Badge variant={invoice.status === "paid" ? "success" : "secondary"}>
+//                   {invoice.status && INVOICE_STATUSES.includes(invoice.status)
+//                     ? t(`invoiceStatus.${invoice.status}`)
+//                     : invoice.status ?? t("statusUnknown")}
+//                 </Badge>
+//               </TableCell>
+//               <TableCell>
+//                 {invoice.hosted_invoice_url || invoice.invoice_pdf ? (
+//                   <div className="flex gap-3">
+//                     {invoice.hosted_invoice_url && (
+//                       <a
+//                         href={invoice.hosted_invoice_url}
+//                         target="_blank"
+//                         rel="noopener noreferrer"
+//                         className="text-sm text-primary hover:underline"
+//                       >
+//                         {t("viewInvoice")}
+//                       </a>
+//                     )}
+//                     {invoice.invoice_pdf && (
+//                       <a
+//                         href={invoice.invoice_pdf}
+//                         target="_blank"
+//                         rel="noopener noreferrer"
+//                         className="text-sm text-primary hover:underline"
+//                       >
+//                         {t("downloadPdf")}
+//                       </a>
+//                     )}
+//                   </div>
+//                 ) : (
+//                   <span className="text-sm text-muted-foreground">-</span>
+//                 )}
+//               </TableCell>
+//             </TableRow>
+//           ))}
+//         </TableBody>
+//       </Table>
+//     )}
+//   </CardContent>
+// </Card>

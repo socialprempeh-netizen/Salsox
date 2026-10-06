@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: 5f6c10ea2b17
+source_checksum: 7325fc17636c
 ---
 
 # Firme elettroniche (Salsox)
@@ -106,6 +106,16 @@ In un documento sequenziale il firmatario successivo viene rivendicato (una scri
   - Un'email parte 7 giorni (mensile) o 14 giorni (annuale) prima di ogni rinnovo.
   - `/api/export` genera in streaming uno ZIP con tutti gli originali, i PDF sigillati e i registri di audit, su qualsiasi piano e anche dopo l'annullamento.
 
+## Verifica pubblica
+
+Ogni copia sigillata riporta sulla pagina di certificato un codice di verifica (`XXXX-XXXX-XXXX`) e un codice QR. Entrambi portano a `/verify`, una pagina pubblica dove chiunque abbia il PDF può controllare che sia un documento autentico e completato: quando è stato sigillato, chi l'ha firmato (nomi, ruoli, date di firma, email mascherate come `a•••@example.com`) e le sue impronte SHA-256. Titolo e contenuto non vengono mai mostrati. Il visitatore può anche trascinare il PDF sulla pagina: viene calcolata l'impronta nel suo browser e si confronta solo quella, così un file modificato o salvato di nuovo viene segnalato.
+
+Si verificano solo i documenti completati e sigillati; tutto il resto risponde "non trovato", così la pagina non rivela che esiste un documento in attesa. Le ricerche sono limitate per IP. I documenti sigillati prima dei codici si verificano con l'ID del documento, che il loro certificato già riporta. Le regole sono in `src/lib/esign/verify.ts`.
+
+## Promemoria via SMS
+
+Chi invia può attivare i promemoria via SMS per un documento, nell'editor o in seguito dalla pagina del documento. Ogni promemoria (quello automatico ogni tre giorni, o il pulsante Ricorda) invia allora anche un SMS a ogni firmatario in attesa che abbia un numero con prefisso internazionale. Gli inviti restano solo via email. Il fornitore è la REST API di Twilio (`src/lib/esign/sms.ts`). Senza credenziali reali l'opzione non compare e non parte nulla, quindi i segnaposto di `.env.example` si possono pubblicare senza rischi.
+
 ## Configurazione
 
 | Variabile | Serve per |
@@ -117,6 +127,7 @@ In un documento sequenziale il firmatario successivo viene rivendicato (una scri
 | `PAYSTACK_SECRET_KEY`, `PAYSTACK_COUNTRY` | Sign & Pay tramite Paystack. Punta un webhook a `/api/webhooks/paystack`. Il paese predefinito è `ghana`. |
 | `SIGN_AND_PAY_FEE_BPS` | Commissione della piattaforma opzionale, in punti base (150 = 1,5%). Predefinita 0. |
 | `SIGNING_P12_BASE64`, `SIGNING_P12_PASSPHRASE` | Sigillo digitale opzionale: un certificato PKCS#12 in base64. Senza, i PDF sono sigillati con pagina di certificato e hash SHA-256, ma senza firma crittografica. |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` (o `TWILIO_MESSAGING_SERVICE_SID`) | Promemoria via SMS opzionali. La funzione resta spenta finché tutti i valori non sembrano reali (`AC` + 32 cifre esadecimali, un token di 32, un numero con `+` o un servizio `MG`). `SMS_REMINDERS_ENABLED="false"` la spegne lasciando le credenziali al loro posto. |
 
 ## Limiti noti
 

@@ -328,6 +328,15 @@ model Document {
   paymentAmount   Int?
   paymentCurrency String?
   paymentProvider PaymentProvider?
+  // Printed on the certificate page of the sealed copy and looked up by the
+  // public /verify page (src/lib/esign/verify.ts). Set once, in the same
+  // commit that stores the sealed copy; null on anything not completed, and
+  // on documents completed before codes existed (those verify by their id).
+  verificationCode String?        @unique
+  // Sender opted in to SMS reminders for recipients with a phone number, on
+  // top of the email ones (src/lib/esign/sms.ts). Ignored when the deployment
+  // has no SMS provider configured.
+  smsReminders    Boolean          @default(false)
   sentAt          DateTime?
   completedAt     DateTime?
   cancelledAt     DateTime?

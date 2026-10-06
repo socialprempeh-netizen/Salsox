@@ -196,6 +196,33 @@ test("upload → fields for two recipients → send → both sign via their link
   expect(text).toContain(ama)
   expect(text).toContain(kwame)
 
+  // ── Public verification (src/lib/esign/verify.ts) ─────────────────────────
+  // The code is stored with the seal and printed on its certificate page.
+  const code = (await db().document.findUniqueOrThrow({ where: { id: documentId } })).verificationCode
+  expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/)
+  expect(text).toContain(code!)
+
+  // Anyone can check it, from the phone the signer already has open, with the
+  // exact file they downloaded: hashed in the browser, never uploaded.
+  await kwamePage.goto(`/verify?code=${code}`)
+  await expect(kwamePage.getByRole("heading", { name: "Genuine signed document" })).toBeVisible()
+  // Both signers by name, with masked addresses; never the title.
+  await expect(kwamePage.getByText("Ama Owusu")).toBeVisible()
+  await expect(kwamePage.getByText("Kwame Asante")).toBeVisible()
+  await expect(kwamePage.getByText(ama)).toHaveCount(0)
+  await expect(kwamePage.getByText(/Consulting agreement/)).toHaveCount(0)
+  await kwamePage.locator('input[type="file"]').setInputFiles({ name: "signed.pdf", mimeType: "application/pdf", buffer: sealedBytes })
+  await kwamePage.getByRole("button", { name: "Verify document" }).click()
+  await expect(kwamePage.getByText("This file is the sealed copy")).toBeVisible()
+  await shot(kwamePage, "09b-verify-phone")
+
+  // One changed byte is a different file.
+  await kwamePage.getByRole("button", { name: "Remove file" }).click()
+  const altered = Buffer.concat([sealedBytes, Buffer.from("\n")])
+  await kwamePage.locator('input[type="file"]').setInputFiles({ name: "edited.pdf", mimeType: "application/pdf", buffer: altered })
+  await kwamePage.getByRole("button", { name: "Verify document" }).click()
+  await expect(kwamePage.getByText("This file is not the sealed copy")).toBeVisible()
+
   // ── The sender's view: completed, with the audit trail ────────────────────
   await sender.goto(`/dashboard/documents/${documentId}`)
   await expect(sender.getByText("Completed", { exact: true })).toBeVisible()

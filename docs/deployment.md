@@ -73,6 +73,8 @@ Run them before the first deploy, and before deploying every release that adds a
 
 After a deploy, `/api/health` reports `schema: { aligned, pending }`, and `npm run smoke -- https://yourdomain.com` fails when the database is behind the build.
 
+**Uptime monitoring.** Point UptimeRobot (or any monitor) at `https://yourdomain.com/api/health`. It needs no auth, answers `GET` and `HEAD`, and returns 200 when the database answers a ping within three seconds, 503 otherwise, with `checks.database` saying which.
+
 ## Stripe webhooks in production
 
 Create an endpoint in the Stripe dashboard (Developers → Webhooks) pointing to:

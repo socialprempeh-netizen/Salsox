@@ -19,6 +19,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
 import { fitInside, percentToPdfRect } from "./coords"
 import { inspectSignatureBytes } from "./signature-image"
+import { encode } from "uqr"
 
 export type SealField = {
   type: "SIGNATURE" | "INITIALS" | "NAME" | "EMAIL" | "DATE" | "TEXT" | "CHECKBOX"
@@ -66,6 +67,12 @@ export type SealInput = {
    */
   certificate?: boolean
   p12?: { certificate: Uint8Array; passphrase: string } | null
+  /**
+   * The public verification code and its link (src/lib/esign/verify.ts),
+   * printed on the certificate with a QR code. Absent on documents sealed
+   * before codes existed, which verify by their document ID.
+   */
+  verification?: { code: string; url: string } | null
 }
 
 const INK = rgb(0.06, 0.09, 0.16)
@@ -183,6 +190,23 @@ async function appendCertificate(doc: PDFDocument, input: SealInput) {
   line(`Original SHA-256: ${input.originalSha256}`)
   line(`${input.rejected ? "Closed" : "Completed"}: ${input.completedAt.toISOString()}`, { gap: 14 })
 
+  if (input.verification) {
+    // Its own block rather than a corner of the heading, which a long title
+    // would run into: a QR a phone can be pointed at, and the code and link
+    // beside it for anyone typing them.
+    const qr = 72
+    const top = y + 9
+    drawQrCode(page, input.verification.url, { x: margin, y: top - qr, size: qr })
+    const textX = margin + qr + 14
+    const beside = (text: string, dy: number, font: PDFFont, size: number, color = INK) =>
+      page.drawText(toWinAnsi(text).slice(0, 90), { x: textX, y: top - dy, size, font, color })
+    beside("Verify this document", 14, bold, 11)
+    beside(`Verification code: ${input.verification.code}`, 32, bold, 10)
+    beside(input.verification.url, 48, regular, 8, MUTED)
+    beside("Shows who signed and when. The content of the document is never shown.", 62, regular, 8, MUTED)
+    y = top - qr - 16
+  }
+
   line("Recipients", { font: bold, size: 12, gap: 8 })
   for (const r of input.recipients) {
     line(`${r.name} <${r.email}> - ${r.role}`, { font: bold })
@@ -195,6 +219,23 @@ async function appendCertificate(doc: PDFDocument, input: SealInput) {
     const who = e.actorEmail ? ` by ${e.actorEmail}` : ""
     const ip = e.ipAddress ? ` from ${e.ipAddress}` : ""
     line(`${e.createdAt.toISOString()}  ${e.type}${who}${ip}`, { size: 8, gap: 4 })
+  }
+}
+
+/**
+ * Draws a QR code as vector squares, so it stays sharp at any print size and
+ * needs no image encoder. Dark modules only, on a white square with the quiet
+ * zone the encoder adds around it.
+ */
+function drawQrCode(page: PDFPage, text: string, box: { x: number; y: number; size: number }) {
+  const { data, size } = encode(text, { ecc: "M" })
+  const cell = box.size / size
+  page.drawRectangle({ x: box.x, y: box.y, width: box.size, height: box.size, color: rgb(1, 1, 1) })
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      if (!data[row][col]) continue
+      page.drawRectangle({ x: box.x + col * cell, y: box.y + box.size - (row + 1) * cell, width: cell, height: cell, color: INK })
+    }
   }
 }
 

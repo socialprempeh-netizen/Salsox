@@ -21,6 +21,7 @@ import {
   renewDocument,
   saveDocumentSetup,
   sendDocument,
+  setSmsReminders,
 } from "@/lib/esign/documents"
 import { resendToRecipient, updateRecipient } from "@/lib/esign/recipients"
 import { documentSetupSchema, parseEmailList, recipientInputSchema, MAX_RECIPIENTS, TITLE_MAX } from "@/lib/esign/schemas"
@@ -37,7 +38,8 @@ import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
  */
 // `upgrade` marks an error that a higher plan would lift (plans.ts), so the
 // form can offer the way to upgrade next to the message.
-export type ActionState = { error?: string; upgrade?: boolean; ok?: boolean; documentId?: string; undelivered?: number; notEmailed?: number }
+// `texted` is how many recipients a reminder also reached by SMS (sms.ts).
+export type ActionState = { error?: string; upgrade?: boolean; ok?: boolean; documentId?: string; undelivered?: number; notEmailed?: number; texted?: number }
 
 // Replaced by BURST_LIMITS in src/lib/esign/sending-limits.ts. 120 sends per
 // 10 minutes, at 25 recipients each, was 3,000 emails from one account before
@@ -156,7 +158,7 @@ export async function quickSendAction(_prev: ActionState, formData: FormData): P
 
 async function simple(
   documentId: string,
-  run: (userId: string, id: string) => Promise<{ ok: true; undelivered?: number; notEmailed?: number } | { ok: false; error: string }>,
+  run: (userId: string, id: string) => Promise<{ ok: true; undelivered?: number; notEmailed?: number; texted?: number } | { ok: false; error: string }>,
   // Set for the actions that email recipients: a per-document burst budget.
   burst?: keyof typeof BURST_LIMITS
 ): Promise<ActionState> {
@@ -166,7 +168,7 @@ async function simple(
   const result = await run(user.id, documentId)
   if (!result.ok) return fail(result.error)
   revalidateDocument(documentId)
-  return { ok: true, documentId, undelivered: result.undelivered ?? 0, notEmailed: result.notEmailed ?? 0 }
+  return { ok: true, documentId, undelivered: result.undelivered ?? 0, notEmailed: result.notEmailed ?? 0, texted: result.texted ?? 0 }
 }
 
 // Renewing and reminding each email every pending signer, so they share one
@@ -178,6 +180,17 @@ export async function renewDocumentAction(documentId: string) {
 
 export async function remindDocumentAction(documentId: string) {
   return simple(documentId, remindDocument, "nudge")
+}
+
+/** The SMS reminder switch on a sent document's page. */
+export async function setSmsRemindersAction(documentId: string, enabled: unknown): Promise<ActionState> {
+  if (typeof enabled !== "boolean") return fail("invalidInput")
+  const user = await getCurrentUser()
+  if (!user) return fail("unauthorized")
+  const result = await setSmsReminders(user.id, String(documentId), enabled)
+  if (!result.ok) return fail(result.error)
+  revalidateDocument(documentId)
+  return { ok: true, documentId }
 }
 
 export async function cancelDocumentAction(documentId: string) {

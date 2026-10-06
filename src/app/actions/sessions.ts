@@ -29,22 +29,36 @@ import { prisma } from "@/lib/prisma"
 
 const SETTINGS = "/dashboard/settings"
 
+/**
+ * Where to come back to with the result. Settings shows a summary and the
+ * device page (/dashboard/settings/sessions) the full list, and both post
+ * here. An allowlist, not a free path: an open redirect is one hidden field
+ * away otherwise.
+ */
+const RETURN_TO = new Set([SETTINGS, "/dashboard/settings/sessions"])
+
+function backTo(formData?: FormData | null): string {
+  const requested = String(formData?.get("returnTo") ?? "")
+  return RETURN_TO.has(requested) ? requested : SETTINGS
+}
+
 export async function revokeSession(formData: FormData) {
   const currentUser = await getCurrentUser()
   if (!currentUser) redirect("/login")
 
+  const back = backTo(formData)
   const id = String(formData.get("sessionId") ?? "")
-  if (!id) redirect(`${SETTINGS}?error=session`)
+  if (!id) redirect(`${back}?error=session`)
 
   // Ownership is enforced by the query, not by a check after the fact.
   const session = await prisma.session.findFirst({
     where: { id, userId: currentUser.id },
     select: { token: true },
   })
-  if (!session) redirect(`${SETTINGS}?error=session`)
+  if (!session) redirect(`${back}?error=session`)
 
   await auth.api.revokeSession({ body: { token: session.token }, headers: await headers() })
-  redirect(`${SETTINGS}?ok=session-revoked`)
+  redirect(`${back}?ok=session-revoked`)
 }
 
 /**
@@ -52,10 +66,10 @@ export async function revokeSession(formData: FormData) {
  * somebody suspects a device is not theirs any more, so it does not ask which:
  * it ends all of them and leaves the person who pressed it signed in.
  */
-export async function revokeOtherSessions() {
+export async function revokeOtherSessions(formData?: FormData) {
   const currentUser = await getCurrentUser()
   if (!currentUser) redirect("/login")
 
   await auth.api.revokeOtherSessions({ headers: await headers() })
-  redirect(`${SETTINGS}?ok=sessions-revoked`)
+  redirect(`${backTo(formData)}?ok=sessions-revoked`)
 }

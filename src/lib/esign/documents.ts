@@ -50,6 +50,8 @@ import { hasFeature, planErrorCode, setupBlocker, tierForEntitlement } from "./p
 import { getEntitlement } from "@/lib/billing"
 import { DEFAULT_EXPIRY_DAYS } from "./limits"
 import { closeOpenCheckouts } from "./payments/settle"
+import { newVerificationCode, verificationUrl } from "./verify"
+import { sendSigningReminderSms, smsConfigured, toE164 } from "./sms"
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
@@ -183,10 +185,26 @@ export async function saveDocumentSetup(userId: string, documentId: string, setu
         paymentAmount: payment?.amount ?? null,
         paymentCurrency: payment?.currency ?? null,
         paymentProvider: payment?.provider ?? null,
+        smsReminders: setup.smsReminders,
       },
     })
   })
   return { ok: true }
+}
+
+/**
+ * Switches SMS reminders on or off for a document that is out for signature,
+ * from its page. Drafts set it in the editor (saveDocumentSetup). Refused when
+ * the deployment has no SMS provider, so the switch cannot claim a channel
+ * that will never send.
+ */
+export async function setSmsReminders(userId: string, documentId: string, enabled: boolean): Promise<Result> {
+  if (enabled && !smsConfigured()) return { ok: false, error: "smsNotConfigured" }
+  const updated = await prisma.document.updateMany({
+    where: { id: documentId, userId, status: { in: ["DRAFT", "PENDING"] } },
+    data: { smsReminders: enabled },
+  })
+  return updated.count === 1 ? { ok: true } : { ok: false, error: "notFound" }
 }
 
 // ─── Send ─────────────────────────────────────────────────────────────────────
@@ -204,11 +222,17 @@ type DocWithPeople = Prisma.DocumentGetPayload<{ include: { recipients: true; us
  * and not before. It used to be written for every target whatever the
  * provider answered, and then for every target except refusals, which still
  * stamped "Sent" on a deployment that had no email at all.
+ *
+ * On a reminder, a document whose sender opted into SMS also texts each
+ * target that has an international phone number (sms.ts). `texted` are the
+ * ones the SMS provider accepted. A text counts as a reminder (it stamps
+ * `lastReminderAt`, so the sweep does not text again the next day) but never
+ * as an invitation: `sentAt` stays about email.
  */
 async function notifyNext(
   document: DocWithPeople,
   opts: { reminder?: boolean } = {}
-): Promise<{ notified: string[]; notEmailed: string[]; undelivered: string[] }> {
+): Promise<{ notified: string[]; notEmailed: string[]; undelivered: string[]; texted: string[] }> {
   const targets = recipientsToNotify(document.recipients, document.signingOrder)
   const notified: string[] = []
   const notEmailed: string[] = []
@@ -241,17 +265,33 @@ async function notifyNext(
   //   })
   // }
   // return targets.map((r) => r.id)
-  if (notified.length > 0) {
+  const texted: string[] = []
+  if (opts.reminder && document.smsReminders && smsConfigured()) {
+    for (const r of targets) {
+      if (!r.phone || !toE164(r.phone)) continue
+      const outcome = await sendSigningReminderSms({
+        to: r.phone,
+        senderName: document.user.name || document.user.email,
+        title: document.title,
+        url: signingUrl(appUrl(), r.token),
+      })
+      if (outcome === "sent") texted.push(r.id)
+    }
+  }
+  // Previous condition, before SMS: only email could make a reminder happen.
+  // if (notified.length > 0) {
+  const reminded = [...new Set([...notified, ...texted])]
+  if (notified.length > 0 || (opts.reminder && reminded.length > 0)) {
     const now = new Date()
     if (opts.reminder) {
-      await prisma.recipient.updateMany({ where: { id: { in: notified } }, data: { lastReminderAt: now } })
+      await prisma.recipient.updateMany({ where: { id: { in: reminded } }, data: { lastReminderAt: now } })
       // A reminder that gets through also settles an invite that did not.
       await prisma.recipient.updateMany({ where: { id: { in: notified }, sentAt: null }, data: { sentAt: now } })
     } else {
       await prisma.recipient.updateMany({ where: { id: { in: notified } }, data: { sentAt: now } })
     }
   }
-  return { notified, notEmailed, undelivered }
+  return { notified, notEmailed, undelivered, texted }
 }
 
 /**
@@ -403,7 +443,7 @@ export async function renewDocument(userId: string, documentId: string): Promise
   return { ok: true, undelivered: undelivered.length, notEmailed: notEmailed.length }
 }
 
-export async function remindDocument(userId: string, documentId: string): Promise<Result<{ undelivered: number }>> {
+export async function remindDocument(userId: string, documentId: string): Promise<Result<{ undelivered: number; texted: number }>> {
   const document = await prisma.document.findFirst({
     where: { id: documentId, userId, status: "PENDING" },
     include: { recipients: true, user: true },
@@ -411,14 +451,21 @@ export async function remindDocument(userId: string, documentId: string): Promis
   if (!document) return { ok: false, error: "notFound" }
   const blocked = await senderBlocker(userId, 0)
   if (blocked) return { ok: false, error: blocked }
-  const { notified, notEmailed, undelivered } = await notifyNext(document, { reminder: true })
-  // A reminder is nothing but its emails: if none got through, nothing
-  // happened, and the audit trail must not say a reminder was sent.
-  if (notified.length === 0 && undelivered.length > 0) return { ok: false, error: "emailFailed" }
+  const { notified, notEmailed, undelivered, texted } = await notifyNext(document, { reminder: true })
+  // A reminder is nothing but its messages: if none got through, by email or
+  // by SMS, nothing happened, and the audit trail must not say a reminder was
+  // sent. (Before SMS these two checks read `notified.length === 0` alone.)
+  if (notified.length === 0 && texted.length === 0 && undelivered.length > 0) return { ok: false, error: "emailFailed" }
   // Same with no provider at all: nothing went out, so nothing is recorded.
-  if (notified.length === 0 && notEmailed.length > 0) return { ok: false, error: "emailNotConfigured" }
-  await recordAudit(prisma, { documentId, type: AUDIT.REMINDER_SENT, actorEmail: document.user.email, data: { recipients: notified.length } })
-  return { ok: true, undelivered: undelivered.length }
+  if (notified.length === 0 && texted.length === 0 && notEmailed.length > 0) return { ok: false, error: "emailNotConfigured" }
+  // await recordAudit(prisma, { documentId, type: AUDIT.REMINDER_SENT, actorEmail: document.user.email, data: { recipients: notified.length } })
+  await recordAudit(prisma, {
+    documentId,
+    type: AUDIT.REMINDER_SENT,
+    actorEmail: document.user.email,
+    data: texted.length > 0 ? { recipients: notified.length, sms: texted.length } : { recipients: notified.length },
+  })
+  return { ok: true, undelivered: undelivered.length, texted: texted.length }
 }
 
 export async function cancelDocument(userId: string, documentId: string): Promise<Result> {
@@ -554,7 +601,13 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
     : { type: AUDIT.COMPLETED, createdAt: completedAt, actorEmail: null, ipAddress: null }
   const audit = completedEvent ? [...document.auditEvents, completedEvent] : document.auditEvents
   const p12Base64 = withCertificate ? process.env.SIGNING_P12_BASE64 : undefined
+  // Minted per attempt and committed with the seal it is printed on, so the
+  // stored code is always the one on the stored copy. A document that already
+  // has one (sealed again by recovery) keeps it. Printed only with the
+  // certificate page; without it the document still verifies by its id.
+  const verificationCode = document.verificationCode ?? newVerificationCode()
   const sealed = await sealDocument({
+    verification: withCertificate ? { code: verificationCode, url: verificationUrl(appUrl(), verificationCode) } : null,
     certificate: withCertificate,
     original: await getFile(document.originalKey),
     documentId: document.id,
@@ -587,7 +640,7 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
       if (events !== document.auditEvents.length) throw new FinalizeConflict("stale")
       const claimed = await tx.document.updateMany({
         where: { id: documentId, sealedKey: null, status: step === "SEAL_AND_COMPLETE" ? "PENDING" : "COMPLETED" },
-        data: { status: "COMPLETED", completedAt, sealedKey: key, sealedSha256 },
+        data: { status: "COMPLETED", completedAt, sealedKey: key, sealedSha256, verificationCode },
       })
       if (claimed.count === 0) throw new FinalizeConflict("taken")
       if (completedEvent) {
@@ -773,10 +826,16 @@ export async function reminderSweep(now = new Date()): Promise<number> {
         r.lastReminderAt && r.lastReminderAt > threshold ? { ...r, signingStatus: "SIGNED" as const } : r
       ),
     }
-    const { notified: ids } = await notifyNext(due, { reminder: true })
-    if (ids.length > 0) {
-      sent += ids.length
-      await recordAudit(prisma, { documentId: document.id, type: AUDIT.REMINDER_SENT, data: { recipients: ids.length, automatic: true } })
+    // const { notified: ids } = await notifyNext(due, { reminder: true })
+    const { notified: ids, texted } = await notifyNext(due, { reminder: true })
+    const reached = new Set([...ids, ...texted]).size
+    if (reached > 0) {
+      sent += reached
+      await recordAudit(prisma, {
+        documentId: document.id,
+        type: AUDIT.REMINDER_SENT,
+        data: texted.length > 0 ? { recipients: ids.length, sms: texted.length, automatic: true } : { recipients: ids.length, automatic: true },
+      })
     }
   }
   return sent

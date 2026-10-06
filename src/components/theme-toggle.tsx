@@ -1,22 +1,35 @@
 "use client"
 
-import { useEffect, useState } from "react"
+/**
+ * The theme switch: owns the stored theme and how it is applied, and renders
+ * the trigger. The dropdown itself (theme-menu.tsx) loads on first hover,
+ * focus or tap, so its Radix primitives are not part of every page's first
+ * load (src/hooks/use-deferred.ts). Until then the trigger is a plain button
+ * that looks the same; a click mounts the menu already open.
+ */
+import { cloneElement, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
-import { Sun, Moon, Monitor, Check } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
+import { Sun, Moon } from "lucide-react"
+// The dropdown moved to ./theme-menu, loaded on demand.
+// import { Sun, Moon, Monitor, Check } from "lucide-react"
+// import {
+//   DropdownMenu,
+//   DropdownMenuTrigger,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+// } from "@/components/ui/dropdown-menu"
+import { useDeferred } from "@/hooks/use-deferred"
+import type { Theme } from "./theme-menu"
 
-type Theme = "light" | "dark" | "system"
+// type Theme = "light" | "dark" | "system"
+//
+// const options: { value: Theme; icon: typeof Sun }[] = [
+//   { value: "light", icon: Sun },
+//   { value: "dark", icon: Moon },
+//   { value: "system", icon: Monitor },
+// ]
 
-const options: { value: Theme; icon: typeof Sun }[] = [
-  { value: "light", icon: Sun },
-  { value: "dark", icon: Moon },
-  { value: "system", icon: Monitor },
-]
+const loadMenu = () => import("./theme-menu")
 
 export function ThemeToggle() {
   const t = useTranslations("theme")
@@ -68,25 +81,41 @@ export function ThemeToggle() {
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches)
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          aria-label={t("label")}
-          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          {theme === null ? null : isDark ? <Moon size={18} /> : <Sun size={18} />}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[8rem]">
-        {options.map(({ value, icon: Icon }) => (
-          <DropdownMenuItem key={value} onClick={() => apply(value)}>
-            <Icon />
-            {labels[value]}
-            {theme === value && <Check className="ml-auto" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+  const { Component: ThemeMenu, triggerProps } = useDeferred(loadMenu)
+  const trigger = (
+    <button
+      type="button"
+      aria-label={t("label")}
+      aria-haspopup="menu"
+      className="flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+    >
+      {theme === null ? null : isDark ? <Moon size={18} /> : <Sun size={18} />}
+    </button>
   )
+
+  if (!ThemeMenu) return cloneElement(trigger, triggerProps)
+  return <ThemeMenu trigger={trigger} theme={theme} labels={labels} onSelect={apply} />
+
+  // Before the menu was deferred:
+  // return (
+  //   <DropdownMenu>
+  //     <DropdownMenuTrigger asChild>
+  //       <button
+  //         aria-label={t("label")}
+  //         className="flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+  //       >
+  //         {theme === null ? null : isDark ? <Moon size={18} /> : <Sun size={18} />}
+  //       </button>
+  //     </DropdownMenuTrigger>
+  //     <DropdownMenuContent align="end" className="min-w-[8rem]">
+  //       {options.map(({ value, icon: Icon }) => (
+  //         <DropdownMenuItem key={value} onClick={() => apply(value)}>
+  //           <Icon />
+  //           {labels[value]}
+  //           {theme === value && <Check className="ml-auto" />}
+  //         </DropdownMenuItem>
+  //       ))}
+  //     </DropdownMenuContent>
+  //   </DropdownMenu>
+  // )
 }

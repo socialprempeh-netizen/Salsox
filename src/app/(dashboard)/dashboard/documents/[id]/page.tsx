@@ -2,12 +2,17 @@
  * Document detail: status, who has signed, per-recipient links (copy /
  * WhatsApp / SMS / email), one-click renew or recipient correction, the
  * Sign & Pay status, downloads, and the full audit trail.
+ *
+ * Also, since the hardening batch: the SMS reminder switch while the document
+ * is out for signature (when the deployment can send SMS), and the public
+ * verification code once it is sealed. Cards, rows and banners on this page
+ * were squared in the same edit, per the design rules.
  */
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { after } from "next/server"
 import { getFormatter, getTranslations } from "next-intl/server"
-import { CheckCircle2, Circle, Download, FileText, XCircle } from "lucide-react"
+import { CheckCircle2, Circle, Download, ExternalLink, FileText, ShieldCheck, XCircle } from "lucide-react"
 import { requireUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
@@ -17,6 +22,10 @@ import { recoverIfStuck } from "@/lib/esign/documents"
 import { reconcilePayments } from "@/lib/esign/payments/reconcile"
 import { signingUrl } from "@/lib/esign/share"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
+import { smsConfigured } from "@/lib/esign/sms"
+import { toE164 } from "@/lib/esign/phone"
+import { verificationUrl } from "@/lib/esign/verify"
+import { SmsReminderToggle } from "@/components/esign/sms-reminder-toggle"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -117,12 +126,19 @@ export default async function DocumentPage({
           <UndeliveredNotice title={t("undeliveredTitle", { count: undelivered.size })} body={t("undeliveredBody")} />
         )}
         {document.status === "EXPIRED" && (
-          <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm">{t("expiredBanner")}</p>
+          <p className="border border-amber-500/40 bg-amber-500/10 p-3 text-sm">{t("expiredBanner")}</p>
         )}
         <DocumentActions documentId={document.id} status={document.status} />
+        {document.status === "PENDING" && smsConfigured() && (
+          <SmsReminderToggle
+            documentId={document.id}
+            enabled={document.smsReminders}
+            reachable={document.recipients.filter((r) => isActionable(r.role) && r.signingStatus === "NOT_SIGNED" && r.phone && toE164(r.phone)).length}
+          />
+        )}
       </div>
 
-      <Card>
+      <Card className="rounded-none">
         <CardHeader>
           <CardTitle className="text-base">{t("recipients")}</CardTitle>
           <CardDescription>{t("recipientsHint")}</CardDescription>
@@ -133,7 +149,7 @@ export default async function DocumentPage({
             const paid = r.payments.some((p) => p.status === "PAID")
             const live = document.status === "PENDING" || document.status === "EXPIRED"
             return (
-              <div key={r.id} className="space-y-3 rounded-xl border p-3">
+              <div key={r.id} className="space-y-3 border p-3">
                 <div className="flex items-start gap-3">
                   {r.signingStatus === "SIGNED" ? (
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -192,7 +208,7 @@ export default async function DocumentPage({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-none">
         <CardHeader>
           <CardTitle className="text-base">{t("files")}</CardTitle>
           <CardDescription>{t("filesHint")}</CardDescription>
@@ -207,9 +223,32 @@ export default async function DocumentPage({
             </Button>
           )}
         </CardContent>
+        {/* What anyone holding the signed PDF can check on the public
+            /verify page. Documents sealed before codes existed verify by
+            their id, so the link falls back to it. */}
+        {document.status === "COMPLETED" && document.sealedKey && (
+          <CardContent className="border-t pt-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{t("verificationTitle")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {document.verificationCode ? t("verificationCode", { code: document.verificationCode }) : t("verificationById")}
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="outline" size="sm" className="rounded-none">
+                <a href={verificationUrl("", document.verificationCode ?? document.id)} target="_blank" rel="noopener noreferrer">
+                  {t("verificationOpen")} <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
-      <Card>
+      <Card className="rounded-none">
         <CardHeader>
           <CardTitle className="text-base">{t("audit")}</CardTitle>
           <CardDescription>{t(sealedWithoutCertificate ? "auditHintPlain" : "auditHint")}</CardDescription>

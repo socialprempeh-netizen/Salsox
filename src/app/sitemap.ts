@@ -72,6 +72,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // found them by following links. Contact is the form in your app; the
     // kit's own site has a dialog instead and keeps that page out.
     { url: `${siteConfig.url}/about`, changeFrequency: "monthly", priority: 0.5 },
+    // The public verification page (src/app/[locale]/(public)/verify). Its
+    // ?code= results are noindex; the page itself is worth finding.
+    { url: `${siteConfig.url}/verify`, changeFrequency: "yearly", priority: 0.3 },
     ...(isKitSite
       ? []
       : [{ url: `${siteConfig.url}/contact`, changeFrequency: "yearly" as const, priority: 0.4 }]),

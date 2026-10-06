@@ -1,3 +1,4 @@
+import { ClientMessagesProvider } from "@/i18n/client-provider"
 import { requireUser } from "@/lib/auth"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -12,7 +13,9 @@ import { SignOutDialog } from "@/components/dashboard/sign-out-dialog"
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser()
 
+  // Client components here get only the "app" messages (src/i18n/client-messages.ts).
   return (
+    <ClientMessagesProvider area="app">
     <div className="flex min-h-screen bg-muted/20">
       <aside className="sticky top-0 hidden h-screen w-60 flex-col border-r border-border bg-background transition-[width] duration-200 md:flex sidebar-collapsed:w-16">
         <div className="flex h-16 items-center border-b border-border px-5 sidebar-collapsed:justify-center sidebar-collapsed:px-0">
@@ -73,5 +76,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </footer>
       </div>
     </div>
+    </ClientMessagesProvider>
   )
 }

@@ -72,6 +72,8 @@ export function Footer() {
                 <li><Link href="/blog" className="transition-colors hover:text-foreground">{t("blog")}</Link></li>
               )}
               <li><Link href="/changelog" className="transition-colors hover:text-foreground">{t("changelog")}</Link></li>
+              {/* Public check that a signed PDF is genuine: see /verify. */}
+              <li><Link href="/verify" className="transition-colors hover:text-foreground">{t("verify")}</Link></li>
               {/* Was a literal "Demo" → /login when no demo deployment was
                   set; see footerTryLink. */}
               <li>

@@ -45,6 +45,8 @@ export function DocumentActions({ documentId, status }: { documentId: string; st
       if (result.undelivered) toast.error(t("undeliveredToast", { count: result.undelivered }), retry)
       // No email provider: the links were renewed, but nobody was emailed.
       else if (result.notEmailed) toast.warning(t("notEmailedToast"))
+      // A reminder that also went out by SMS says so (sms.ts).
+      else if (result.texted) toast.success(t("remindedWithSms", { count: result.texted }))
       else toast.success(success)
       if (opts.after) opts.after()
       else router.refresh()

@@ -33,6 +33,19 @@ describe("inspectPdf", () => {
 })
 
 describe("sealDocument", () => {
+  // The public verification block (verify.ts): a QR and the code beside it.
+  // Drawn as vector squares, so the certificate page gains many rectangles
+  // and stays a single page.
+  it("prints the verification code and its QR on the certificate page", async () => {
+    const input = { ...base, original: await samplePdf(1), fields: [] }
+    const plainBytes = await sealDocument(input)
+    const verifiedBytes = await sealDocument({ ...input, verification: { code: "7K3M-Q9TX-2HVD", url: "https://app.example.com/verify?code=7K3M-Q9TX-2HVD" } })
+    const [plain, verified] = await Promise.all([PDFDocument.load(plainBytes), PDFDocument.load(verifiedBytes)])
+    expect(verified.getPageCount()).toBe(plain.getPageCount())
+    // Hundreds of QR modules plus three lines of text.
+    expect(verifiedBytes.length).toBeGreaterThan(plainBytes.length + 2000)
+  })
+
   it("stamps fields and appends a certificate page", async () => {
     const sealed = await sealDocument({
       ...base,

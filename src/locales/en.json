@@ -260,6 +260,29 @@
       "dangerZone": {
         "title": "Danger zone",
         "blurb": "Some actions cannot be undone. Proceed with care."
+      },
+      "devices": {
+        "title": "Devices",
+        "subtitle": "{count, plural, one {# device is signed in to your account.} other {# devices are signed in to your account.}}",
+        "back": "Back to settings",
+        "summary": "{count, plural, one {# device is signed in right now.} other {# devices are signed in right now.}}",
+        "manage": "Manage devices",
+        "thisDevice": "This device",
+        "unknownDevice": "Unknown device",
+        "activeNow": "Active now",
+        "lastActive": "Last active {when}",
+        "signedIn": "Signed in {when}",
+        "signOut": "Sign out",
+        "signOutTitle": "Sign out this device?",
+        "signOutBody": "{device} will be signed out and has to sign in again to get back in.",
+        "cancel": "Cancel",
+        "signOutOthersTitle": "Sign out everywhere else",
+        "signOutOthersBody": "Ends every session except the one on this device. Use it if a device is lost or you do not recognise one.",
+        "signOutOthers": "{count, plural, one {Sign out # other device} other {Sign out # other devices}}",
+        "signOutOthersConfirmTitle": "{count, plural, one {Sign out # other device?} other {Sign out # other devices?}}",
+        "signOutOthersConfirmBody": "You stay signed in here. Everyone else, including you on your other devices, has to sign in again.",
+        "tip": "Do not recognise a device? Sign it out, then change your password and turn on two-factor authentication.",
+        "caveat": "A device you sign out can stay signed in for up to a minute, because the session is cached in a cookie for that long. Changing your password ends every other session at once."
       }
     },
     "billing": {
@@ -313,7 +336,17 @@
         "paid": "Paid",
         "uncollectible": "Uncollectible",
         "void": "Void"
-      }
+      },
+      "paymentHistory": "Payments and receipts",
+      "paymentHistoryHint": "Every payment on this account, with a PDF receipt for each: subscription invoices, one-time purchases, and Sign & Pay payments you received.",
+      "historyKindInvoice": "Subscription",
+      "historyKindPurchase": "One-time purchase",
+      "historyKindSignAndPay": "Sign & Pay",
+      "historyRefunded": "Refunded",
+      "historyEmpty": "No payments yet. Receipts appear here as soon as one goes through.",
+      "historyReceipt": "Receipt",
+      "historyReceiptFor": "Download the receipt for",
+      "historyInvoice": "Invoice"
     },
     "profile": {
       "updated": "Profile updated",
@@ -708,7 +741,8 @@
     "terms": "Terms of Service",
     "cookies": "Cookie Policy",
     "copyright": "© {year} {site}. All rights reserved.",
-    "license": "MIT License · Built with Next.js"
+    "license": "MIT License · Built with Next.js",
+    "verify": "Verify a document"
   },
   "about": {
     "$kit": {
@@ -1151,7 +1185,8 @@
       "payoutRejected": "The payout account was rejected. Check the bank details and try again.",
       "paymentFailed": "The payment could not be started. Please try again.",
       "paymentInProgress": "Your payment page is still opening. Wait a few seconds, then tap Pay again.",
-      "noSubscription": "There is no active subscription to change."
+      "noSubscription": "There is no active subscription to change.",
+      "smsNotConfigured": "SMS is not set up on this deployment."
     },
     "confirmEmail": {
       "title": "Confirm your email to start sending",
@@ -1293,7 +1328,11 @@
       "sent": "Sent!",
       "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page.",
       "sentNotEmailed": "The document is live, but email isn't configured, so no invitations went out. Share each signing link manually from the document page.",
-      "signerNeedsField": "{name} has no fields yet. Place at least one."
+      "signerNeedsField": "{name} has no fields yet. Place at least one.",
+      "smsReminders": "Also send reminders by SMS",
+      "smsRemindersHint": "Recipients who have not signed get a text with their link alongside each reminder email. Only numbers with a country code (+233…) can be texted.",
+      "smsNoPhones": "No signer has a phone number with a country code yet, so nobody will be texted. Add one on the recipients step.",
+      "smsReach": "{count, plural, one {# of {total} signers can be texted.} other {# of {total} signers can be texted.}}"
     },
     "detail": {
       "back": "All documents",
@@ -1366,7 +1405,18 @@
         "DOCUMENT_EXPIRED": "Links expired"
       },
       "downloadSignedPlain": "Signed PDF",
-      "auditHintPlain": "Every action, with time, email and IP. On Business, this trail is printed on a certificate page in the signed PDF."
+      "auditHintPlain": "Every action, with time, email and IP. On Business, this trail is printed on a certificate page in the signed PDF.",
+      "smsToggle": "SMS reminders",
+      "smsOffHint": "Reminders go by email only. Switch this on to also text signers who have a phone number.",
+      "smsOnHint": "{count, plural, one {Reminders also go by SMS to # signer.} other {Reminders also go by SMS to # signers.}}",
+      "smsNoPhones": "On, but no pending signer has a phone number with a country code. Edit a recipient to add one.",
+      "smsOnToast": "SMS reminders switched on.",
+      "smsOffToast": "SMS reminders switched off.",
+      "remindedWithSms": "{count, plural, one {Reminder sent, and texted to # signer.} other {Reminder sent, and texted to # signers.}}",
+      "verificationTitle": "Public verification",
+      "verificationCode": "Verification code {code}, printed on the certificate page.",
+      "verificationById": "This document verifies by its document ID.",
+      "verificationOpen": "Open verification page"
     },
     "recipient": {
       "share": "Share link",
@@ -1503,6 +1553,83 @@
       "exportCta": "Download ZIP",
       "exportParts": "Your documents come in {parts} ZIP files of up to {perPart} documents each, oldest first.",
       "exportPart": "Part {part} of {parts}"
+    }
+  },
+  "verify": {
+    "metaTitle": "Verify a signed document",
+    "metaDescription": "Check that a signed PDF is a genuine, completed record: who signed it and when, without revealing what it says.",
+    "eyebrow": "Public verification",
+    "title": "Verify a signed document",
+    "intro": "Enter the verification code from the certificate page of a document signed with {app}. You will see whether it is a genuine, completed record, who signed it and when. The document's content is never shown.",
+    "inputLabel": "Verification code or document ID",
+    "inputPlaceholder": "XXXX-XXXX-XXXX",
+    "inputHint": "Printed on the certificate page, under the QR code. Older documents show only a document ID, which works too.",
+    "fileLabel": "Also check the file (optional)",
+    "filePick": "Choose or drop the signed PDF",
+    "fileHint": "Checked on this device. The file is never uploaded.",
+    "hashing": "Reading the file…",
+    "fileRemove": "Remove file",
+    "fileNotPdf": "That is not a PDF. Choose the signed PDF you were given.",
+    "fileTooLarge": "That file is too large to be a signed copy.",
+    "fileUnreadable": "This file could not be read. Try choosing it again.",
+    "submit": "Verify document",
+    "checking": "Checking…",
+    "invalid": "That does not look like a verification code or a document ID. Check it against the certificate page.",
+    "rateLimited": "Too many checks from this connection. Wait a few minutes and try again.",
+    "notFoundTitle": "No signed document matches",
+    "notFoundBody": "Nothing completed and sealed here matches that code. Check it for typos. A document that is still waiting for signatures cannot be verified until everyone has signed.",
+    "verifiedTitle": "Genuine signed document",
+    "verifiedBody": "This is a completed record, signed by everyone it was sent to and sealed on {date}.",
+    "fileMatchTitle": "This file is the sealed copy",
+    "fileMatchBody": "Its fingerprint matches the one recorded when the document was sealed, byte for byte. It has not been changed since.",
+    "fileMismatchTitle": "This file is not the sealed copy",
+    "fileMismatchBody": "The record above is genuine, but the file you chose differs from the sealed copy. It may have been edited, re-saved or printed to PDF. Ask the sender for the original download.",
+    "status": "Status",
+    "statusCompleted": "Completed and sealed",
+    "completed": "Sealed on",
+    "code": "Verification code",
+    "documentId": "Document ID",
+    "signersTitle": "{count, plural, one {Signed by # person} other {Signed by # people}}",
+    "roleSigner": "Signer",
+    "roleApprover": "Approver",
+    "signedOn": "Signed {date}",
+    "fingerprints": "Technical fingerprints",
+    "fingerprintsHint": "SHA-256 fingerprints identify a file exactly. Any change to the file, however small, changes its fingerprint.",
+    "sealedFingerprint": "Sealed copy (SHA-256)",
+    "originalFingerprint": "Original upload (SHA-256)",
+    "how1Title": "Find the code",
+    "how1Body": "It is on the certificate page at the end of the signed PDF. Scanning the QR code opens this page with it filled in.",
+    "how2Title": "Optionally add the file",
+    "how2Body": "Your browser computes its fingerprint locally and only that is compared.",
+    "how3Title": "See the record",
+    "how3Body": "Who signed, in which role and when. Never the title or the content.",
+    "privacyNote": "Signer addresses are shown masked. Only completed documents can be verified; anything else answers as not found."
+  },
+  "esignSms": {
+    "reminder": "{sender} is waiting for your signature on \"{title}\". Sign here: {url}"
+  },
+  "receipts": {
+    "subscription": "Subscription",
+    "discount": "Discount",
+    "tax": "Tax",
+    "purchase": "{plan} (one-time purchase)",
+    "signAndPay": "Sign & Pay: {title}",
+    "pdf": {
+      "title": "Receipt",
+      "paid": "PAID",
+      "refunded": "REFUNDED",
+      "number": "Receipt number",
+      "date": "Date paid",
+      "method": "Paid through",
+      "reference": "Reference",
+      "billedTo": "BILLED TO",
+      "from": "FROM",
+      "description": "DESCRIPTION",
+      "amount": "AMOUNT",
+      "total": "Total",
+      "amountPaid": "Amount paid",
+      "refundNote": "This payment was refunded in full after it was made.",
+      "footer": "Issued by {site}. Questions about this receipt: {email}"
     }
   }
 }
