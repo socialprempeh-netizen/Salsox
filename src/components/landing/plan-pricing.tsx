@@ -17,6 +17,30 @@ import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
  * `pricing.tsx` is a hand-written alternative (free tier plus a waitlist for
  * a paid one), enabled with KIT_SITE="true".
  */
+/**
+ * The plans, read when the page is (re)generated rather than per visit: the
+ * landing and pricing pages are static now, regenerated every few minutes.
+ *
+ * Two failures are handled differently on purpose. At build time a database
+ * that cannot be reached must not fail the deploy (builds never needed one
+ * before the page was static), so the section is left out and the first
+ * regeneration fills it in. During a regeneration the error is thrown: Next
+ * then keeps serving the last good page instead of caching one with no
+ * pricing for the next five minutes.
+ */
+async function loadPlanRows() {
+  try {
+    return await prisma.plan.findMany({
+      where: { isActive: true, meterEventName: null, interval: { not: "ONE_TIME" } },
+      orderBy: { price: "asc" },
+    })
+  } catch (error) {
+    if (process.env.NEXT_PHASE !== "phase-production-build") throw error
+    console.warn("[pricing] database unreachable at build time; the section fills in on the first regeneration")
+    return []
+  }
+}
+
 export async function PlanPricing({
   heading = "h2",
   withJsonLd = false,
@@ -32,10 +56,9 @@ export async function PlanPricing({
 
   // Metered plans stay docs-only; one-time plans (Lifetime) live on the
   // billing page, the landing shows the classic recurring triad.
-  const planRows = await prisma.plan.findMany({
-    where: { isActive: true, meterEventName: null, interval: { not: "ONE_TIME" } },
-    orderBy: { price: "asc" },
-  })
+  // const planRows = await prisma.plan.findMany({ ... }), read per request
+  // until the landing page became static; see loadPlanRows below.
+  const planRows = await loadPlanRows()
   if (planRows.length === 0) return null
 
   const plans: PlanCardData[] = planRows.map((p) => ({

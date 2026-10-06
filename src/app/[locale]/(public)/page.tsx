@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { setRequestLocale } from "next-intl/server"
 import { Hero } from "@/components/landing/hero"
 import { Features } from "@/components/landing/features"
 import { Pricing } from "@/components/landing/pricing"
@@ -11,7 +12,8 @@ import { jsonLdScript } from "@/lib/json-ld"
 import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data"
 import { pendingSetup } from "@/lib/setup-status"
 import { SetupGuide } from "@/components/setup-guide"
-import { getCurrentUser } from "@/lib/auth"
+// Not read here any more: see `revalidate` below.
+// import { getCurrentUser } from "@/lib/auth"
 import { heroCtaHref } from "@/lib/landing-cta"
 
 export const metadata: Metadata = pageMetadata({
@@ -37,7 +39,21 @@ export const metadata: Metadata = pageMetadata({
 //   sameAs: [siteConfig.links.githubOrg, siteConfig.links.x].filter(Boolean),
 // }
 
-export default async function LandingPage() {
+/**
+ * Static, regenerated at most every five minutes. The page used to read the
+ * session for the hero's button, which rendered it per request with
+ * `Cache-Control: no-store`; that choice is now made in the browser
+ * (src/components/landing/session-aware.tsx). Five minutes is how long a
+ * change to the plans (prices, copy) can take to show in the pricing section.
+ */
+export const revalidate = 300
+
+export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
+  // Every layout and page under [locale] states its locale itself: Next
+  // renders them independently, so the call in [locale]/layout.tsx does not
+  // reach this one, and without it next-intl reads a request header, which
+  // makes the page dynamic (next-intl's static rendering setup).
+  setRequestLocale((await params).locale)
   // A fresh clone has no database yet, and the plans below come from one: this
   // page used to open on a stack trace. Development only, and not on the kit's
   // own site, whose tiers are hand-written and need no database.
@@ -53,7 +69,8 @@ export default async function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript([organizationJsonLd(), websiteJsonLd()]) }}
       />
-      <Hero ctaHref={heroCtaHref({ isKitSite, signedIn: Boolean(await getCurrentUser()) })} />
+      {/* <Hero ctaHref={heroCtaHref({ isKitSite, signedIn: Boolean(await getCurrentUser()) })} /> */}
+      <Hero ctaHrefs={{ signedOut: heroCtaHref({ isKitSite, signedIn: false }), signedIn: heroCtaHref({ isKitSite, signedIn: true }) }} />
       <Features />
       {isKitSite ? <Pricing /> : <PlanPricing />}
       <FAQ withJsonLd />

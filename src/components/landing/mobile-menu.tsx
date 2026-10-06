@@ -14,6 +14,7 @@ import { cloneElement } from "react"
 import { useTranslations } from "next-intl"
 import { Menu } from "lucide-react"
 import { useDeferred } from "@/hooks/use-deferred"
+import { useSignedIn } from "@/components/landing/session-aware"
 
 const loadDropdown = () => import("./mobile-menu-dropdown")
 
@@ -21,14 +22,17 @@ export function MobileMenu(props: {
   signInHref: string
   /** Set only on the kit's own site: see the comment in `navbar.tsx`. */
   starHref?: string | null
-  isAuthenticated: boolean
+  // Was passed by the navbar from the server session; now asked from the
+  // browser (session-aware.tsx) so the navbar can be static.
+  // isAuthenticated: boolean
   /** From the server (`hasPosts()`): an empty blog gets no menu entry. */
   showBlog?: boolean
 }) {
   const t = useTranslations("nav")
   const { Component: Dropdown, triggerProps } = useDeferred(loadDropdown)
+  const signedIn = useSignedIn()
 
-  if (Dropdown) return <Dropdown {...props} />
+  if (Dropdown) return <Dropdown {...props} isAuthenticated={signedIn === true} />
   return cloneElement(
     <button
       type="button"

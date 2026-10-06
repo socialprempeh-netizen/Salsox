@@ -83,13 +83,19 @@ const AUTH_ROUTES = ["/login", "/signup", "/2fa"]
 // lives in requireUser() and requireAdmin(), on the page.
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
-  const session = await auth.api.getSession({ headers: req.headers })
-  const isLoggedIn = !!session
-  const isAdmin = session?.user?.role === "ADMIN"
-
+  // Was read first, for every request:
+  // const session = await auth.api.getSession({ headers: req.headers })
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r))
   const isAdminRoute = ADMIN_ROUTES.some((r) => pathname.startsWith(r))
   const isProtectedRoute = PROTECTED_ROUTES.some((r) => pathname.startsWith(r))
+
+  // The session is only looked up where one of the guards below uses it.
+  // Every public page (the landing page above all, now static and cached)
+  // used to pay a session lookup here on each visit, a database round trip
+  // for a signed-in visitor once the cookie cache expired, to decide nothing.
+  const session = isAuthRoute || isAdminRoute || isProtectedRoute ? await auth.api.getSession({ headers: req.headers }) : null
+  const isLoggedIn = !!session
+  const isAdmin = session?.user?.role === "ADMIN"
 
   // `/api/auth` and the inbound webhooks (e.g. Stripe) carry no session and
   // need no special case here: they are not in the lists above, so they pass.

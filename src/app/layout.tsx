@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/sonner"
 import { siteConfig } from "@/config/site"
 import { brandOverrideCss } from "@/config/brand"
 import { getLocale } from "next-intl/server"
+import { routing } from "@/i18n/routing"
+import { singleLocale } from "@/i18n/static-locale"
 // The bare provider passed every message to the client; replaced by the
 // per-area provider below (src/i18n/client-messages.ts).
 // import { NextIntlClientProvider } from "next-intl"
@@ -54,7 +56,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // already resolved when it renders. Outside the localized surface (dashboard,
   // admin, sign-in) this returns the default locale, which is correct: those
   // pages are not translated.
-  const locale = await getLocale()
+  // const locale = await getLocale()
+  // With one locale it is known without reading the request, which is what
+  // lets the public pages be static (src/i18n/static-locale.ts).
+  const locale = singleLocale(routing.locales, routing.defaultLocale) ?? (await getLocale())
   return (
     <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
@@ -69,7 +74,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             message file into every page. Now only what renders anywhere
             (dialogs, theme switch, spinner, the 404 page): each area's layout
             adds its own set, and the localized layout the public one. */}
-        <ClientMessagesProvider area="shell">
+        <ClientMessagesProvider area="shell" locale={locale}>
           {children}
         </ClientMessagesProvider>
         <Toaster />

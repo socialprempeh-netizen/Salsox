@@ -1,6 +1,7 @@
 import Link from "next/link"
 import {
-  ArrowRight,
+  // ArrowRight moved into HeroCta (session-aware.tsx).
+  // ArrowRight,
   Sparkles,
   LayoutGrid,
   FileSignature,
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
 import { siteConfig } from "@/config/site"
 import { heroSecondaryCta } from "@/lib/landing-cta"
+import { HeroCta } from "@/components/landing/session-aware"
 
 /**
  * The hero copy lives in the message files, under two parallel namespaces:
@@ -52,10 +54,12 @@ const mockStats = [
 const mockBars = [38, 52, 45, 63, 58, 74, 69, 85, 78, 92, 88, 100]
 
 /**
- * `ctaHref` is decided by the page (heroCtaHref in src/lib/landing-cta.ts),
- * which knows whether the visitor is signed in.
+ * Was `ctaHref`, decided by the page from the server session, which made the
+ * page dynamic. The page now passes both destinations (heroCtaHref in
+ * src/lib/landing-cta.ts, once per state) and HeroCta picks in the browser.
  */
-export function Hero({ ctaHref }: { ctaHref: string }) {
+// export function Hero({ ctaHref }: { ctaHref: string }) {
+export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: string } }) {
   const t = useTranslations("hero")
   const tm = useTranslations("hero.mock")
   const secondary = heroSecondaryCta(siteConfig.links.demo)
@@ -114,11 +118,15 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
               {t("cta")} <ArrowRight className="h-5 w-5" />
             </a>
           </Button> */}
+          {/* Replaced by <HeroCta>, which reads the session in the browser:
           <Button asChild variant="gradient" size="xl">
             <Link href={ctaHref}>
               {t("cta")} <ArrowRight className="h-5 w-5" />
             </Link>
-          </Button>
+          </Button> */}
+          <HeroCta signedOutHref={ctaHrefs.signedOut} signedInHref={ctaHrefs.signedIn}>
+            {t("cta")}
+          </HeroCta>
           {/* Was "Live demo" → /login whenever no demo deployment was set,
               which opened a sign-in form (see heroSecondaryCta). */}
           <Button asChild variant="outline" size="xl">

@@ -27,3 +27,22 @@ test("on a desktop, 'Get started' in the navigation opens sign up", async ({ pag
   await getStarted.click()
   await page.waitForURL("**/signup")
 })
+
+// The landing page is static and rendered for a signed-out visitor; a signed-in
+// one gets the swap after hydration (src/components/landing/session-aware.tsx).
+test("signed in, the landing page offers the dashboard and a new document", async ({ browser }) => {
+  const { signUp } = await import("./helpers/esign")
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+  const page = await ctx.newPage()
+  await signUp(page)
+  await page.goto("/")
+  await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Get started" })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Send your first document" })).toHaveAttribute("href", "/dashboard/documents/new")
+
+  // And on a phone, the menu carries the Dashboard link instead of Sign in.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole("button", { name: "Open menu" }).click()
+  await expect(page.getByRole("menuitem", { name: "Dashboard" })).toBeVisible()
+  await ctx.close()
+})

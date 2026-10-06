@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server"
 import { Pricing } from "@/components/landing/pricing"
 import { PlanPricing } from "@/components/landing/plan-pricing"
 import { FAQ } from "@/components/landing/faq"
@@ -15,7 +16,16 @@ export const metadata = pageMetadata({
   path: "/pricing",
 })
 
-export default async function PricingPage() {
+// Static like the landing page, and regenerated on the same schedule, since
+// both render the plans (src/components/landing/plan-pricing.tsx).
+export const revalidate = 300
+
+export default async function PricingPage({ params }: { params: Promise<{ locale: string }> }) {
+  // Every layout and page under [locale] states its locale itself: Next
+  // renders them independently, so the call in [locale]/layout.tsx does not
+  // reach this one, and without it next-intl reads a request header, which
+  // makes the page dynamic (next-intl's static rendering setup).
+  setRequestLocale((await params).locale)
   // The plans on this page come from the database, so before one is ready it
   // says what to do instead of failing. Development only, and not on the kit's
   // own site, where the tiers are hand-written and need no database.

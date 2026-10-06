@@ -94,7 +94,8 @@ export default function MobileMenuDropdown({
         <DropdownMenuSeparator />
         {isAuthenticated ? (
           <DropdownMenuItem asChild>
-            <Link href="/dashboard">Dashboard</Link>
+            {/* Was the literal "Dashboard". */}
+            <Link href="/dashboard">{t("dashboard")}</Link>
           </DropdownMenuItem>
         ) : (
           <>

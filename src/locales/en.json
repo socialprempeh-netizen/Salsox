@@ -792,7 +792,8 @@
     "signIn": "Sign in",
     "getStarted": "Get started",
     "openMenu": "Open menu",
-    "backToTop": "Back to top"
+    "backToTop": "Back to top",
+    "dashboard": "Dashboard"
   },
   "faq": {
     "title": "Frequently asked questions",
