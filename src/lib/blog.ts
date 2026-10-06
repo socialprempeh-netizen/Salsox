@@ -2,6 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import matter from "gray-matter"
 import { isKitSite } from "@/config/kit"
+import { siteConfig } from "@/config/site"
 
 /**
  * File-based blog: every .mdx (or .md) file in content/blog/ is a post.
@@ -48,6 +49,13 @@ export type Post = {
    * replace it.
    */
   faq?: PostFaq[]
+  /**
+   * Site paths this post leads on to (a tool, a product page, another post),
+   * from the optional `related:` frontmatter. Shown at the end of the post:
+   * it is how a reader who learned something finds the page that does it,
+   * and how search engines see which pages a guide supports.
+   */
+  related: string[]
   content: string
   readingMinutes: number
 }
@@ -120,6 +128,18 @@ export function getAllPosts(): Post[] {
         return { q, a }
       })
     }
+    // Optional related paths: site-relative only, so a typo cannot send a
+    // reader off-site. Whether each one exists is checked by the SEO tests.
+    let related: string[] = []
+    if (data.related !== undefined) {
+      if (!Array.isArray(data.related) || data.related.some((r: unknown) => typeof r !== "string" || !r.startsWith("/"))) {
+        throw new Error(`content/blog/${file}: "related" must be a list of site paths starting with /`)
+      }
+      related = data.related
+    }
+    // `{site}` is the product name, as in content/pages: filled in before MDX
+    // sees it, because MDX would read `{site}` as a JavaScript expression.
+    const fill = (text: string) => text.replaceAll("{site}", siteConfig.name)
     const words = content.split(/\s+/).filter(Boolean).length
     // gray-matter parses unquoted dates as Date objects: normalize both.
     const date = isoDate(data.date)
@@ -127,14 +147,15 @@ export function getAllPosts(): Post[] {
     assertRevisionOrder(file, date, updated)
     posts.push({
       slug: file.replace(/\.mdx?$/, ""),
-      title: String(data.title),
-      description: String(data.description),
+      title: fill(String(data.title)),
+      description: fill(String(data.description)),
       date,
       updated,
       category: String(data.category),
       cover: data.cover ? String(data.cover) : undefined,
-      faq,
-      content,
+      faq: faq?.map(({ q, a }) => ({ q: fill(q), a: fill(a) })),
+      related,
+      content: fill(content),
       readingMinutes: Math.max(1, Math.round(words / 220)),
     })
   }

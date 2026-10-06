@@ -329,7 +329,13 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        after: async (user) => {
+        // `ctx` carries the request that created the account (sign-up form or
+        // OAuth callback), whose first-party sx_src cookie says where the
+        // visitor came from. Recorded first and never throws
+        // (src/lib/seo/attribution-store.ts).
+        after: async (user, ctx) => {
+          const { recordSignupAttribution } = await import("@/lib/seo/attribution-store")
+          await recordSignupAttribution(user.id, ctx?.headers ?? ctx?.request?.headers)
           if (user.email && process.env.RESEND_API_KEY) {
             const { sendWelcomeEmail } = await import("@/lib/email")
             // Awaited for the same reason as the webhook emails: nothing

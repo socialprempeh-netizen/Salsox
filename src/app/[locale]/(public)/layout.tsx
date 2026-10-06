@@ -4,6 +4,7 @@ import { Footer } from "@/components/landing/footer"
 import { BackToTop } from "@/components/landing/back-to-top"
 import { DemoBanner } from "@/components/landing/demo-banner"
 import { StickyHeader } from "@/components/landing/sticky-header"
+import { FirstTouch } from "@/components/analytics/first-touch"
 
 /**
  * The public pages' frame: header, footer, back-to-top.
@@ -27,6 +28,8 @@ export default async function PublicLayout({ children, params }: { children: Rea
       <main className="flex-1">{children}</main>
       <Footer />
       <BackToTop />
+      {/* Records where a visitor first came from, for signup attribution. */}
+      <FirstTouch />
     </div>
   )
 }

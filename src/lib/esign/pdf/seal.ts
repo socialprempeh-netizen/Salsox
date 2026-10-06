@@ -17,21 +17,15 @@
  * bytes, which is what makes it testable against a generated PDF.
  */
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
-import { fitInside, percentToPdfRect } from "./coords"
+import { stampFields, toWinAnsi, INK, type StampField } from "./stamp"
 import { inspectSignatureBytes } from "./signature-image"
 import { encode } from "uqr"
 
-export type SealField = {
-  type: "SIGNATURE" | "INITIALS" | "NAME" | "EMAIL" | "DATE" | "TEXT" | "CHECKBOX"
-  page: number
-  x: number
-  y: number
-  width: number
-  height: number
-  value: string | null
-  inserted: boolean
-  signature?: { imageDataUrl: string | null; typedText: string | null } | null
-}
+export { toWinAnsi }
+
+// The field shape and the stamper moved to ./stamp (shared with the free
+// PDF tools, which stamp in the browser); re-exported under the old names.
+export type SealField = StampField
 
 export type SealRecipient = {
   name: string
@@ -75,80 +69,7 @@ export type SealInput = {
   verification?: { code: string; url: string } | null
 }
 
-const INK = rgb(0.06, 0.09, 0.16)
 const MUTED = rgb(0.39, 0.45, 0.55)
-
-/**
- * The standard 14 fonts only encode WinAnsi. A name like "Kwame Nkrumah" is
- * fine; characters outside that set would make pdf-lib throw mid-seal, so they
- * are replaced rather than allowed to fail the whole document.
- */
-export function toWinAnsi(text: string): string {
-  return text.replace(/[^\x20-\x7E\xA0-\xFF]/g, "?")
-}
-
-function fitFontSize(font: PDFFont, text: string, maxWidth: number, maxHeight: number): number {
-  let size = Math.min(maxHeight * 0.7, 28)
-  while (size > 5 && font.widthOfTextAtSize(text, size) > maxWidth) size -= 0.5
-  return size
-}
-
-function drawFittedText(page: PDFPage, text: string, box: { x: number; y: number; width: number; height: number }, font: PDFFont) {
-  const safe = toWinAnsi(text)
-  const size = fitFontSize(font, safe, box.width - 4, box.height)
-  page.drawText(safe, {
-    x: box.x + 2,
-    y: box.y + (box.height - size) / 2 + size * 0.2,
-    size,
-    font,
-    color: INK,
-  })
-}
-
-function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; kind: "png" | "jpg" } | null {
-  const match = /^data:image\/(png|jpe?g);base64,(.+)$/.exec(dataUrl)
-  if (!match) return null
-  return { bytes: new Uint8Array(Buffer.from(match[2], "base64")), kind: match[1] === "png" ? "png" : "jpg" }
-}
-
-async function stampFields(doc: PDFDocument, fields: SealField[]) {
-  const regular = await doc.embedFont(StandardFonts.Helvetica)
-  const script = await doc.embedFont(StandardFonts.TimesRomanItalic)
-  const pages = doc.getPages()
-
-  for (const field of fields) {
-    if (!field.inserted) continue
-    const page = pages[field.page - 1]
-    if (!page) continue
-    const { width, height } = page.getSize()
-    const box = percentToPdfRect(field, width, height)
-
-    if (field.type === "SIGNATURE" || field.type === "INITIALS") {
-      const image = field.signature?.imageDataUrl ? dataUrlToBytes(field.signature.imageDataUrl) : null
-      if (image) {
-        // Signatures are validated when they are submitted, so this should
-        // never fire. It is here because pdf-lib does not fail on a damaged
-        // PNG, it loops forever: an image that reached the database some
-        // other way must stop the seal with an error that says why, not hang
-        // the request until the platform kills it.
-        const structure = inspectSignatureBytes(image.bytes, image.kind)
-        if (!structure.ok) throw new Error(`Signature image cannot be stamped (${structure.reason})`)
-        const embedded = image.kind === "png" ? await doc.embedPng(image.bytes) : await doc.embedJpg(image.bytes)
-        page.drawImage(embedded, fitInside(embedded.width, embedded.height, box))
-      } else if (field.signature?.typedText) {
-        drawFittedText(page, field.signature.typedText, box, script)
-      }
-      continue
-    }
-
-    if (field.type === "CHECKBOX") {
-      if (field.value === "true") drawFittedText(page, "X", box, regular)
-      continue
-    }
-
-    if (field.value) drawFittedText(page, field.value, box, regular)
-  }
-}
 
 function stampRejected(doc: PDFDocument, font: PDFFont) {
   for (const page of doc.getPages()) {
@@ -269,7 +190,7 @@ export async function sealDocument(input: SealInput): Promise<Uint8Array> {
     doc.addPage([last.width, last.height])
   }
 
-  await stampFields(doc, input.fields)
+  await stampFields(doc, input.fields, inspectSignatureBytes)
   try {
     doc.getForm().flatten()
   } catch {

@@ -53,8 +53,19 @@ export const FORM_ACTION_HOSTS = [
  */
 export const AVATAR_HOSTS = ["https://*.googleusercontent.com", "https://avatars.githubusercontent.com"] as const
 
+/**
+ * Google Analytics 4's hosts, allowed only when the deployment sets
+ * NEXT_PUBLIC_GA_MEASUREMENT_ID (src/components/analytics/google-analytics.tsx).
+ * Without it the policy names no Google host at all.
+ */
+export const GA_HOSTS = {
+  script: ["https://www.googletagmanager.com"],
+  connect: ["https://*.google-analytics.com", "https://*.analytics.google.com", "https://www.googletagmanager.com"],
+  img: ["https://*.google-analytics.com", "https://www.googletagmanager.com"],
+} as const
+
 /** Builds the Content-Security-Policy header value. */
-export function contentSecurityPolicy({ dev }: { dev: boolean }): string {
+export function contentSecurityPolicy({ dev, ga = false }: { dev: boolean; ga?: boolean }): string {
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
     // `'unsafe-eval'` in development only: React uses eval there to rebuild
@@ -65,6 +76,7 @@ export function contentSecurityPolicy({ dev }: { dev: boolean }): string {
       "'unsafe-inline'",
       "'wasm-unsafe-eval'",
       "https://va.vercel-scripts.com",
+      ...(ga ? GA_HOSTS.script : []),
       ...(dev ? ["'unsafe-eval'"] : []),
     ],
     // Inline style attributes are everywhere (React `style`, the brand
@@ -72,10 +84,10 @@ export function contentSecurityPolicy({ dev }: { dev: boolean }): string {
     "style-src": ["'self'", "'unsafe-inline'"],
     // Was ["'self'", "data:", "blob:", "https:"]: any HTTPS host, for OAuth
     // profile pictures. Those come from two known hosts, so only they are let in.
-    "img-src": ["'self'", "data:", "blob:", ...AVATAR_HOSTS],
+    "img-src": ["'self'", "data:", "blob:", ...AVATAR_HOSTS, ...(ga ? GA_HOSTS.img : [])],
     "font-src": ["'self'", "data:"],
     // Development adds the hot-reload websocket.
-    "connect-src": ["'self'", ...(dev ? ["ws:", "wss:"] : [])],
+    "connect-src": ["'self'", ...(ga ? GA_HOSTS.connect : []), ...(dev ? ["ws:", "wss:"] : [])],
     "worker-src": ["'self'", "blob:"],
     "media-src": ["'self'", "blob:", "data:"],
     "frame-src": ["'self'"],
@@ -95,7 +107,7 @@ export function contentSecurityPolicy({ dev }: { dev: boolean }): string {
 }
 
 /** The headers applied to every route by next.config.ts. */
-export function securityHeaders({ dev }: { dev: boolean }): { key: string; value: string }[] {
+export function securityHeaders({ dev, ga = false }: { dev: boolean; ga?: boolean }): { key: string; value: string }[] {
   return [
     // Force HTTPS for 2 years, including subdomains. Browsers ignore this over
     // plain HTTP, so it's harmless in local dev. No `preload`: getting onto the
@@ -107,7 +119,7 @@ export function securityHeaders({ dev }: { dev: boolean }): { key: string; value
     // `frame-ancestors` in the policy says the same to current browsers; this
     // header covers the ones that predate it.
     { key: "X-Frame-Options", value: "DENY" },
-    { key: "Content-Security-Policy", value: contentSecurityPolicy({ dev }) },
+    { key: "Content-Security-Policy", value: contentSecurityPolicy({ dev, ga }) },
     // Send only the origin on cross-origin navigations (no full path/query
     // leak). This matters here: signing links carry their token in the path.
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

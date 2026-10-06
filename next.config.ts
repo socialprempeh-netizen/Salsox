@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/esign/limits";
 import { securityHeaders as buildSecurityHeaders } from "./src/lib/security-headers";
+import { seoRedirectsForNext } from "./src/lib/seo/redirects";
 
 // Points next-intl at the request config that loads the message files.
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
@@ -30,7 +31,12 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 //   // Drop browser features we don't use.
 //   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 // ];
-const securityHeaders = buildSecurityHeaders({ dev: process.env.NODE_ENV === "development" });
+// `ga` opens the policy to Google Analytics only when a valid measurement id
+// is configured (src/components/analytics/google-analytics.tsx).
+const securityHeaders = buildSecurityHeaders({
+  dev: process.env.NODE_ENV === "development",
+  ga: /^G-[A-Z0-9]{4,20}$/.test(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? ""),
+});
 
 const nextConfig: NextConfig = {
   // The /docs pages render the repo's docs/*.md at request time (the navbar
@@ -71,6 +77,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/it", destination: "/", permanent: true },
       { source: "/it/:path*", destination: "/:path*", permanent: true },
+      // One page per search intent: overlapping URLs 301 to the page that
+      // owns the intent (src/lib/seo/redirects.ts says which and why).
+      ...seoRedirectsForNext(),
     ];
   },
   async headers() {
@@ -82,7 +91,10 @@ const nextConfig: NextConfig = {
       // (PDF downloads, JSON) that have no <head> to put one in. robots.txt
       // blocks the crawl of some of these; this is what keeps a URL found
       // through an outside link from being indexed anyway.
-      ...["/sign/:path*", "/dashboard/:path*", "/admin/:path*", "/api/:path*"].map((source) => ({
+      // The sign-in pages joined the list with the SEO work: their layout
+      // already sets noindex, and the header covers any response without a
+      // <head> as well.
+      ...["/sign/:path*", "/dashboard/:path*", "/admin/:path*", "/api/:path*", "/login", "/signup", "/2fa", "/forgot-password", "/reset-password", "/verify-request"].map((source) => ({
         source,
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       })),

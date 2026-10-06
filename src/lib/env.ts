@@ -116,6 +116,12 @@ export const envSchema = z
     INDEXNOW_KEY: blankAsUnset(z.string().regex(/^[a-zA-Z0-9-]{8,128}$/, "8 to 128 letters, digits or dashes").optional()),
 
     NEXT_PUBLIC_APP_URL: optional,
+    // Search and analytics (docs/seo.md). All optional: verification tokens
+    // for Search Console and Bing Webmaster Tools (DNS verification needs
+    // neither), and a GA4 measurement id, which also opens the CSP to Google.
+    GOOGLE_SITE_VERIFICATION: optional,
+    BING_SITE_VERIFICATION: optional,
+    NEXT_PUBLIC_GA_MEASUREMENT_ID: blankAsUnset(z.string().regex(/^G-[A-Z0-9]{4,20}$/, "a GA4 measurement id starts with G-").optional()),
     NEXT_PUBLIC_DEMO_URL: optional,
     NEXT_PUBLIC_CONTACT_EMAIL: optional,
   })

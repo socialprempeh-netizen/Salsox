@@ -59,6 +59,13 @@ model User {
   // When the user dismissed the "Get started" checklist; the checklist items
   // themselves are derived live (name, documents, billing), only this persists.
   onboardingDismissedAt DateTime?
+  // Where the account came from: the first public page the visitor landed on,
+  // the referring host and utm tags, recorded from the first-party sx_src
+  // cookie at signup (src/lib/seo/attribution.ts). `signupChannel` is the
+  // classification (organic_search, social, ...), kept as a column so the
+  // admin SEO page can count signups per channel without scanning JSON.
+  acquisition           Json?
+  signupChannel         String?
   accounts              Account[]
   sessions              Session[]
   twoFactor             TwoFactor[]
@@ -68,6 +75,8 @@ model User {
   payoutAccounts        PayoutAccount[]
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
+
+  @@index([signupChannel, createdAt])
 }
 
 // One row per way of signing in. OAuth accounts and the email+password

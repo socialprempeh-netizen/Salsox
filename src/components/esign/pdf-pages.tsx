@@ -21,7 +21,14 @@ import { useTranslations } from "next-intl"
 import { Spinner } from "@/components/ui/spinner"
 
 type Props = {
-  url: string
+  /** Where to fetch the PDF from. Either this or `data`. */
+  url?: string
+  /**
+   * The PDF's bytes, for a file the visitor opened locally (the free tools).
+   * Passed straight to pdf.js, so nothing is fetched: a blob: URL would need
+   * the Content-Security-Policy to allow blob: connections.
+   */
+  data?: Uint8Array
   extraPages?: number
   renderOverlay?: (page: number) => ReactNode
   /** Called with the page element so callers can convert pointer positions. */
@@ -30,13 +37,15 @@ type Props = {
 }
 
 /** Starts loading; the returned task is what gets destroyed on unmount. */
-async function loadPdf(url: string) {
+async function loadPdf(source: { url?: string; data?: Uint8Array }) {
   const pdfjs = await import("pdfjs-dist")
   pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
-  return pdfjs.getDocument({ url })
+  // pdf.js takes ownership of (detaches) the buffer it is given, so it gets a
+  // copy and the caller's bytes stay usable for signing.
+  return source.data ? pdfjs.getDocument({ data: source.data.slice() }) : pdfjs.getDocument({ url: source.url! })
 }
 
-export function PdfPages({ url, extraPages = 0, renderOverlay, onPageRef, className }: Props) {
+export function PdfPages({ url, data, extraPages = 0, renderOverlay, onPageRef, className }: Props) {
   const t = useTranslations("esign.viewer")
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null)
   const [error, setError] = useState(false)
@@ -47,7 +56,7 @@ export function PdfPages({ url, extraPages = 0, renderOverlay, onPageRef, classN
   useEffect(() => {
     let cancelled = false
     let task: Awaited<ReturnType<typeof loadPdf>> | null = null
-    loadPdf(url)
+    loadPdf({ url, data })
       .then(async (loadingTask) => {
         task = loadingTask
         const loaded = await loadingTask.promise
@@ -67,12 +76,12 @@ export function PdfPages({ url, extraPages = 0, renderOverlay, onPageRef, classN
       cancelled = true
       void task?.destroy()
     }
-  }, [url])
+  }, [url, data])
 
-  if (error) return <p className="rounded-xl border p-6 text-center text-sm text-destructive">{t("loadError")}</p>
+  if (error) return <p className="border p-6 text-center text-sm text-destructive">{t("loadError")}</p>
   if (!pdf) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-xl border p-10 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 border p-10 text-sm text-muted-foreground">
         <Spinner /> {t("loading")}
       </div>
     )
@@ -163,7 +172,7 @@ function PdfPage({
       role="img"
       aria-label={label}
       data-page={pageNumber}
-      className="relative w-full overflow-hidden rounded-md border bg-white shadow-sm"
+      className="relative w-full overflow-hidden border bg-white shadow-sm"
       style={{ aspectRatio: `1 / ${ratio}` }}
     >
       {!blank && <canvas ref={canvas} className="absolute inset-0 h-full w-full" />}

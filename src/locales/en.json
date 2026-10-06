@@ -386,7 +386,8 @@
       "openNavigation": "Open navigation",
       "documents": "Documents",
       "quickSend": "Quick Send",
-      "payouts": "Payouts"
+      "payouts": "Payouts",
+      "seo": "SEO health"
     }
   },
   "adminCustomers": {
@@ -742,7 +743,10 @@
     "cookies": "Cookie Policy",
     "copyright": "© {year} {site}. All rights reserved.",
     "license": "MIT License · Built with Next.js",
-    "verify": "Verify a document"
+    "verify": "Verify a document",
+    "freeTools": "Free tools",
+    "compare": "Compare",
+    "useCases": "Use cases"
   },
   "about": {
     "$kit": {
@@ -1267,7 +1271,8 @@
       "submit": "{count, plural, =0 {Send for signature} one {Send to # signer} other {Send to # signers}}",
       "sent": "Sent! You can also share each link by WhatsApp or SMS.",
       "sentUndelivered": "The document is live, but {count, plural, one {# invitation email} other {# invitation emails}} could not be delivered. Resend from the document page.",
-      "sentNotEmailed": "The document is live, but email isn't configured, so no invitations went out. Share each signing link manually from the document page."
+      "sentNotEmailed": "The document is live, but email isn't configured, so no invitations went out. Share each signing link manually from the document page.",
+      "draftLoaded": "Your prepared request is filled in. Check it, then send."
     },
     "editor": {
       "subtitle": "Add recipients, place fields, then send.",
@@ -1631,6 +1636,252 @@
       "amountPaid": "Amount paid",
       "refundNote": "This payment was refunded in full after it was made.",
       "footer": "Issued by {site}. Questions about this receipt: {email}"
+    }
+  },
+  "seoPages": {
+    "eyebrow": {
+      "solution": "eSignature",
+      "tool": "Free tool",
+      "comparison": "Comparison",
+      "alternative": "Alternative",
+      "use-case": "Use case"
+    },
+    "breadcrumbHome": "Home",
+    "breadcrumbTools": "Free tools",
+    "breadcrumbCompare": "Compare",
+    "breadcrumbUseCases": "Use cases",
+    "ctaPrimary": "Start free",
+    "ctaSecondary": "See pricing",
+    "benefits": "Why use it",
+    "howItWorks": "How it works",
+    "faq": "Frequently asked questions",
+    "related": "Keep exploring",
+    "checked": "Facts about {competitor} were checked on {date} against:",
+    "updated": "Last updated {date}",
+    "toolPrivacy": "Runs in your browser. Your file is never uploaded.",
+    "ctaTitle": "Send your first document for signature",
+    "ctaToolTitle": "Need someone else's signature?",
+    "ctaBody": "A free account sends 3 documents a month for signature. Signers need no account, and every step is recorded in an audit trail.",
+    "ctaButton": "Create a free account",
+    "ctaPricing": "Compare plans",
+    "fixedLinks": {
+      "pricing": {
+        "name": "Pricing",
+        "description": "Free, Personal and Business plans, with no envelope counting on paid plans."
+      },
+      "verify": {
+        "name": "Verify a signed document",
+        "description": "Check that a signed PDF is a genuine, completed record, without seeing its content."
+      },
+      "blog": {
+        "name": "Guides",
+        "description": "How to sign PDFs, send documents for signature and when e-signatures are legal."
+      },
+      "tools": {
+        "name": "Free PDF tools",
+        "description": "Sign, fill and add signatures to PDFs in your browser. No account, no upload."
+      },
+      "compare": {
+        "name": "Comparisons",
+        "description": "How {site} compares with DocuSign, Dropbox Sign and PandaDoc, on published facts."
+      },
+      "useCases": {
+        "name": "Use cases",
+        "description": "E-signatures for real estate, HR and freelancers."
+      },
+      "docs": {
+        "name": "Help and docs",
+        "description": "Getting started, billing and plans."
+      }
+    },
+    "hubs": {
+      "tools": {
+        "metaTitle": "Free PDF tools: sign, fill and add signatures",
+        "metaDescription": "Free PDF signing tools that run in your browser: sign a PDF, add a signature image, fill and sign forms, make a signature, prepare a signature request.",
+        "breadcrumb": "Free tools",
+        "h1": "Free PDF signing tools",
+        "lede": "Sign, fill and add signatures to PDFs without an account. Every tool runs in your browser, so your files never leave your device."
+      },
+      "compare": {
+        "metaTitle": "Compare e-signature tools: DocuSign, Dropbox Sign, PandaDoc",
+        "metaDescription": "Side-by-side comparisons of {site} with DocuSign, Dropbox Sign and PandaDoc, using each company's published prices and features, with sources.",
+        "breadcrumb": "Compare",
+        "h1": "Compare e-signature tools",
+        "lede": "Factual comparisons using each company's published prices and features, with the date they were checked and links to the sources. Including where the others are stronger."
+      },
+      "useCases": {
+        "metaTitle": "E-signature use cases: real estate, HR, freelancers",
+        "metaDescription": "How e-signatures fit real estate, HR and freelance work: the documents involved, collecting payment at signing, approvals, and where ink is still required.",
+        "breadcrumb": "Use cases",
+        "h1": "E-signatures for your kind of work",
+        "lede": "The documents each line of work sends, what tends to go wrong, and how to set up signing so it doesn't."
+      }
+    }
+  },
+  "tools": {
+    "choosePdf": "Choose a PDF or drop it here",
+    "reading": "Opening…",
+    "unreadable": "This file could not be read. Try choosing it again.",
+    "notPdf": "That is not a PDF. Choose a .pdf file.",
+    "tooLarge": "That file is larger than {mb} MB.",
+    "protected": "This PDF is protected or damaged, so it cannot be changed. Ask the sender for an unprotected copy.",
+    "hintLocal": "Up to {mb} MB. Opened on your device, never uploaded.",
+    "hintSend": "Up to {mb} MB. Checked on your device first.",
+    "changeFile": "Change file",
+    "marks": "Marks to place",
+    "kinds": {
+      "signature": "Signature",
+      "initials": "Initials",
+      "name": "Name",
+      "date": "Date",
+      "text": "Text",
+      "check": "Checkmark"
+    },
+    "editSignature": "Change signature",
+    "tapToPlace": "Tap the page where it goes. Drag to move, use the corner to resize.",
+    "pickMark": "Choose what to add, then tap the page.",
+    "textLabel": "Text for the selected mark",
+    "textPlaceholder": "Type here",
+    "remove": "Remove",
+    "createSignature": "Create your signature",
+    "cancel": "Close",
+    "useSignature": "Use this signature",
+    "formTitle": "{count, plural, one {This PDF has # fillable field} other {This PDF has # fillable fields}}",
+    "formHint": "Fill them in here. Your answers are added to the form when you download.",
+    "choose": "Choose…",
+    "everyPage": "Repeat on every page",
+    "everyPageHint": "Marks on page 1 are copied to the same spot on every page, for initials.",
+    "nothingToSave": "Add a signature, text or a filled field first.",
+    "saveFailed": "The signed PDF could not be created. Try again, or try another copy of the file.",
+    "downloaded": "Downloaded. Check your downloads folder.",
+    "saving": "Creating your PDF…",
+    "download": "Download signed PDF",
+    "pages": "{count, plural, one {# page} other {# pages}}",
+    "signersLabel": "Who needs to sign?",
+    "signersPlaceholder": "ama@example.com, kofi@example.com",
+    "signersHint": "{count, plural, =0 {Up to {max} email addresses, separated by commas or new lines.} one {# signer} other {# signers}}",
+    "invalidEmails": "Check these addresses: {list}",
+    "tooManySigners": "A document can go to at most {max} people.",
+    "previewTitle": "Where each signature goes",
+    "previewLastPage": "A signature and a date for each signer, at the bottom of the last page.",
+    "previewOwnPage": "With this many signers, a signature page is added at the end.",
+    "previewSignature": "Signature: {who}",
+    "previewDate": "Date",
+    "draftFailed": "Your request could not be saved on this device. Try again.",
+    "continueToSend": "Continue to send",
+    "signUpToSend": "Create a free account to send",
+    "freeSends": "Free: 3 documents a month. Your PDF is uploaded only when you press Send.",
+    "generatorMode": "How to create your signature",
+    "draw": "Draw",
+    "type": "Type",
+    "drawArea": "Signature drawing area",
+    "drawHint": "Draw with your finger, a stylus or the mouse.",
+    "clear": "Clear",
+    "yourName": "Your name",
+    "namePlaceholder": "Your name",
+    "style": "Handwriting style",
+    "ink": "Ink",
+    "inks": {
+      "black": "Black ink",
+      "blue": "Dark blue ink",
+      "green": "Dark green ink"
+    },
+    "pngPreview": "Preview (the checks show where the background is transparent)",
+    "pngAlt": "Your signature as a transparent PNG",
+    "downloadPng": "Download PNG",
+    "useOnPdf": "Use it to sign a PDF"
+  },
+  "explore": {
+    "title": "Everything about getting documents signed",
+    "subtitle": "Guides to e-signatures, free tools that run in your browser, and honest comparisons with the alternatives.",
+    "solutions": "E-signatures",
+    "tools": "Free PDF tools",
+    "toolsAll": "All free tools",
+    "compare": "Compare",
+    "compareAll": "All comparisons",
+    "toolsBody": "{count, plural, one {# free tool} other {# free tools}} that sign, fill and add signatures to PDFs in your browser, with no account and no upload.",
+    "compareBody": "{count, plural, one {# comparison} other {# comparisons}} with DocuSign, Dropbox Sign and PandaDoc, on published facts, with sources."
+  },
+  "adminSeo": {
+    "title": "SEO health",
+    "subtitle": "Whether this deployment is set up to be found by search engines, and whether anything on the public site is broken for them.",
+    "setup": {
+      "title": "Setup",
+      "description": "Configuration search engines depend on. Warnings are optional extras; errors stop pages being indexed.",
+      "siteUrl": "Public site URL",
+      "siteUrlBad": "{url} is not a public https address. Set NEXT_PUBLIC_APP_URL.",
+      "indexing": "Indexing",
+      "indexingOn": "Public pages are open to search engines.",
+      "demo": "DEMO_MODE is on: every page is noindex and the sitemap is empty.",
+      "sitemap": "Sitemap",
+      "robots": "robots.txt",
+      "google": "Google Search Console",
+      "bing": "Bing Webmaster Tools",
+      "verificationSet": "Verification tag is set.",
+      "googleMissing": "Not verified by meta tag. Set GOOGLE_SITE_VERIFICATION, or verify by DNS.",
+      "bingMissing": "Not verified by meta tag. Set BING_SITE_VERIFICATION, or verify by DNS or import from Search Console.",
+      "indexNow": "IndexNow (Bing and others)",
+      "indexNowOn": "On: new and updated sitemap URLs are submitted daily. Submission asks for a crawl; it does not guarantee indexing.",
+      "indexNowOff": "Off. Set INDEXNOW_KEY, or CRON_SECRET to derive one.",
+      "analytics": "Google Analytics",
+      "analyticsOn": "On: page views and tool, signup and CTA events.",
+      "analyticsOff": "Off. Set NEXT_PUBLIC_GA_MEASUREMENT_ID to a G- id to turn it on.",
+      "queries": "Search queries and impressions are only available in Google Search Console and Bing Webmaster Tools. Submit the sitemap URL above in both."
+    },
+    "sitemap": {
+      "title": "Sitemap",
+      "description": "{count, plural, one {# URL submitted, by section.} other {# URLs submitted, by section.}}",
+      "newest": "Most recent change: {date}.",
+      "undated": "{count, plural, =0 {Every URL has a last-modified date.} one {# URL has no last-modified date.} other {# URLs have no last-modified date.}}"
+    },
+    "sections": {
+      "tools": "Free tools",
+      "solutions": "Solution pages",
+      "compare": "Comparisons",
+      "useCases": "Use cases",
+      "blog": "Blog",
+      "docs": "Docs",
+      "other": "Other pages"
+    },
+    "content": {
+      "title": "Content quality",
+      "description": "{count, plural, one {# landing, tool or comparison page checked} other {# landing, tool and comparison pages checked}} for duplicate intents, thin text, near-duplicates and broken related links.",
+      "ok": "Every page passes."
+    },
+    "signups": {
+      "title": "Signups by channel",
+      "description": "{total, plural, one {# signup} other {# signups}} in the last {days} days, by where the visitor first came from.",
+      "organicPages": "Landing pages of organic signups",
+      "none": "No signups from organic search yet."
+    },
+    "channels": {
+      "organic_search": "Organic search",
+      "paid_search": "Paid search",
+      "social": "Social",
+      "email": "Email",
+      "referral": "Referral",
+      "campaign": "Campaign",
+      "direct": "Direct or unknown referrer",
+      "unknown": "Not recorded (before tracking, or opted out)"
+    },
+    "crawl": {
+      "title": "Crawl",
+      "description": "Fetch every sitemap URL from this deployment and check it the way a crawler would: status, canonical, robots, title, description, one H1, Open Graph, structured data, alt text and leaked secrets. Private pages are checked for noindex.",
+      "run": "{count, plural, one {Crawl # URL} other {Crawl # URLs}}",
+      "rerun": "Crawl again",
+      "pages": "Pages",
+      "indexable": "Indexable",
+      "errors": "Errors",
+      "warnings": "Warnings",
+      "took": "Took {seconds} s.",
+      "issues": "Issues",
+      "private": "Private pages (must not be indexable)",
+      "unreachable": "unreachable",
+      "canonicals": "Canonical and structured data, per page",
+      "url": "URL",
+      "status": "Status",
+      "canonical": "Canonical",
+      "structured": "Structured data"
     }
   }
 }

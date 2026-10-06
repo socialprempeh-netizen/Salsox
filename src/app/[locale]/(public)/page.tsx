@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { setRequestLocale } from "next-intl/server"
 import { Hero } from "@/components/landing/hero"
 import { Features } from "@/components/landing/features"
+import { ExploreLinks } from "@/components/landing/explore-links"
 import { Pricing } from "@/components/landing/pricing"
 import { PlanPricing } from "@/components/landing/plan-pricing"
 import { FAQ } from "@/components/landing/faq"
@@ -72,6 +73,9 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       {/* <Hero ctaHref={heroCtaHref({ isKitSite, signedIn: Boolean(await getCurrentUser()) })} /> */}
       <Hero ctaHrefs={{ signedOut: heroCtaHref({ isKitSite, signedIn: false }), signedIn: heroCtaHref({ isKitSite, signedIn: true }) }} />
       <Features />
+      {/* Links into the solutions, free tools and comparisons: the start of
+          the internal linking plan (explore-links.tsx). */}
+      <ExploreLinks />
       {isKitSite ? <Pricing /> : <PlanPricing />}
       <FAQ withJsonLd />
     </>

@@ -12,6 +12,7 @@ import { singleLocale } from "@/i18n/static-locale"
 // import { NextIntlClientProvider } from "next-intl"
 import { ClientMessagesProvider } from "@/i18n/client-provider"
 import "./globals.css"
+import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 // Not preloaded: the mono face is used by code blocks and the contact dialog,
@@ -36,6 +37,13 @@ export const metadata: Metadata = {
   // does it: robots.txt only stops the crawl, and a page that is never fetched
   // can never be de-indexed either.
   robots: process.env.DEMO_MODE === "true" ? { index: false, follow: false } : undefined,
+  // Ownership proofs for Google Search Console and Bing Webmaster Tools, as
+  // meta tags, when the tokens are set (docs/seo.md). Either can also be
+  // verified by DNS instead, which needs nothing here.
+  verification: {
+    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+    ...(process.env.BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } } : {}),
+  },
 }
 
 // Applies the stored/system theme before first paint — inline and blocking
@@ -83,6 +91,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             turned off without editing the layout: a kit that sends data from
             someone else's product should at least let them decline. */}
         {process.env.NEXT_PUBLIC_DISABLE_ANALYTICS !== "true" && <Analytics />}
+        {/* GA4, only when NEXT_PUBLIC_GA_MEASUREMENT_ID is set; loads when idle. */}
+        <GoogleAnalytics />
       </body>
     </html>
   )

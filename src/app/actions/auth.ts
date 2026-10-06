@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { safeNext } from "@/lib/safe-next"
 import { APIError } from "better-auth/api"
 import { z } from "zod"
 import { auth } from "@/auth"
@@ -198,7 +199,11 @@ export async function registerUser(formData: FormData) {
     if (error instanceof APIError) redirect("/signup?error=invalid")
     throw error
   }
-  redirect("/dashboard")
+  // Was redirect("/dashboard"). A public tool can ask to land somewhere
+  // specific in the dashboard (`next`, from the signup form); safeNext refuses
+  // anything that is not a dashboard path, so this cannot become an open
+  // redirect.
+  redirect(safeNext(formData.get("next")))
 }
 
 // ─── Password reset ───────────────────────────────────────────────────────────

@@ -60,6 +60,8 @@ async function downscaleImage(file: File, maxWidth = 600): Promise<string> {
   }
 }
 
+// Squared (tabs, pad and boxes were rounded) when the free PDF tools began
+// reusing this pad on the public site, per the design rules.
 export function SignaturePad({
   defaultName,
   initials = false,
@@ -141,7 +143,7 @@ export function SignaturePad({
 
   return (
     <div className="space-y-3">
-      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
+      <div role="tablist" className="grid grid-cols-3 gap-1 bg-muted p-1">
         {tabs.map(({ mode: m, label, icon: Icon }) => (
           <button
             key={m}
@@ -150,7 +152,7 @@ export function SignaturePad({
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              "flex min-h-11 items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors",
+              "flex min-h-11 items-center justify-center gap-1.5 text-sm font-medium transition-colors",
               mode === m ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
             )}
           >
@@ -164,7 +166,7 @@ export function SignaturePad({
           <canvas
             ref={canvasRef}
             aria-label={t("drawArea")}
-            className="h-44 w-full touch-none rounded-xl border-2 border-dashed border-border bg-white sm:h-52"
+            className="h-44 w-full touch-none border-2 border-dashed border-border bg-white sm:h-52"
             onPointerDown={(e) => {
               e.currentTarget.setPointerCapture(e.pointerId)
               current.current = [point(e)]
@@ -212,7 +214,7 @@ export function SignaturePad({
             aria-label={t("typeLabel")}
             className="h-12 text-base"
           />
-          <div className="flex h-24 items-center justify-center overflow-hidden rounded-xl border bg-white px-4 font-serif text-3xl italic text-slate-900">
+          <div className="flex h-24 items-center justify-center overflow-hidden border bg-white px-4 font-serif text-3xl italic text-slate-900">
             {typed || " "}
           </div>
         </div>
@@ -220,7 +222,7 @@ export function SignaturePad({
 
       {mode === "upload" && (
         <div className="space-y-2">
-          <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-sm text-muted-foreground">
+          <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed p-4 text-sm text-muted-foreground">
             {uploaded ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={uploaded} alt={t("uploadPreview")} className="max-h-24 bg-white object-contain" />

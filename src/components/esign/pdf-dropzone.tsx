@@ -5,7 +5,7 @@
  * button on phones (where "drag and drop" means nothing). Shows the chosen
  * file's name and rejects non-PDFs and oversize files before any upload.
  */
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { FileUp, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -16,11 +16,31 @@ import { MAX_PDF_MB, pdfFileProblem } from "@/lib/esign/limits"
 // /** Kept in sync with MAX_PDF_BYTES on the server (src/lib/esign/pdf/inspect.ts). */
 // const MAX_BYTES = 4 * 1024 * 1024
 
-export function PdfDropzone({ name = "file", onFile }: { name?: string; onFile?: (file: File | null) => void }) {
+export function PdfDropzone({
+  name = "file",
+  onFile,
+  initialFile,
+}: {
+  name?: string
+  onFile?: (file: File | null) => void
+  /**
+   * A file to start with: a request prepared on the public request-a-signature
+   * tool and handed to Quick Send (src/lib/request-draft.ts). Goes through the
+   * same checks as a chosen file, and into the real input, so the form submits it.
+   */
+  initialFile?: File | null
+}) {
   const t = useTranslations("esign.upload")
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (initialFile) accept(initialFile, inputRef.current)
+    // Once per handed-over file; `accept` is stable in behaviour.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFile])
 
   // Replaced: a dropped file was copied into the input before this ran, and
   // the rejection paths cleared the input only when one was passed, which
@@ -109,6 +129,7 @@ export function PdfDropzone({ name = "file", onFile }: { name?: string; onFile?:
         )}
         <input
           type="file"
+          ref={inputRef}
           name={name}
           accept="application/pdf,.pdf"
           required

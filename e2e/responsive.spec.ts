@@ -39,6 +39,28 @@ for (const width of WIDTHS) {
     await check("/terms", "terms")
     await check("/cookies", "cookies")
     await check("/login", "login")
+    // SEO pages: every free tool, a page of each other kind, the hubs and a
+    // guide with a comparison table, so a wide table or a long tool toolbar
+    // cannot push the page sideways.
+    for (const path of [
+      "/sign-pdf",
+      "/add-signature-to-pdf",
+      "/fill-and-sign-pdf",
+      "/request-signature",
+      "/pdf-signature-generator",
+      "/online-esignature",
+      "/free-esignature",
+      "/compare/docusign",
+      "/alternatives/docusign",
+      "/esignature-for/real-estate",
+      "/tools",
+      "/compare",
+      "/esignature-for",
+      "/blog/how-to-sign-a-pdf",
+      "/docs/getting-started",
+    ]) {
+      await check(path, path.slice(1).replaceAll("/", "-"))
+    }
     // Public document verification: the empty form, and an answer for a code
     // that matches nothing (the result card has to fit too).
     await check("/verify", "verify")

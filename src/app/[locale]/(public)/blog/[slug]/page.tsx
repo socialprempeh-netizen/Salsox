@@ -17,6 +17,9 @@ import { NewsletterSignup } from "@/components/blog/newsletter-signup"
 import { Badge } from "@/components/ui/badge"
 import { siteConfig } from "@/config/site"
 import { jsonLdScript } from "@/lib/json-ld"
+import { resolveLinks } from "@/lib/seo/links"
+import { fixedLinkLabels } from "@/components/seo/fixed-links"
+import { ArrowRight } from "lucide-react"
 
 // Posts are files, so every valid address is known at build time. Anything
 // else is a 404 without rendering: with no posts at all, an on-demand render
@@ -136,6 +139,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const post = getPost(slug)
   const toc = post ? extractToc(post.content) : []
   if (!post) notFound()
+  const tSeo = await getTranslations("seoPages")
+  const related = resolveLinks(post.related, await fixedLinkLabels())
 
   // Structured data: the post as an Article, plus a FAQPage when it declares
   // `faq:` in its frontmatter. The rule that makes the second one safe, and
@@ -228,6 +233,28 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             options={{ mdxOptions: { remarkPlugins: [remarkGfm], rehypePlugins: [rehypeShikiPlugin] } }}
           />
         </article>
+
+        {/* Where this guide leads: the tool or page that does what it
+            explains (`related:` in the post's frontmatter). The guide-to-
+            product step of the internal linking plan. */}
+        {related.length > 0 && (
+          <section className="mt-12 border-t border-border pt-8" aria-labelledby="related-heading">
+            <h2 id="related-heading" className="text-xl font-bold tracking-tight">{tSeo("related")}</h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {related.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="group flex h-full flex-col border border-border p-4 transition-colors hover:border-primary/50 hover:bg-primary/5">
+                    <span className="flex items-center justify-between gap-2 font-semibold">
+                      {link.name}
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    </span>
+                    <span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{link.description}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         </div>
 
         {/* Sticky the way the docs do it, down to the same expression: pinned

@@ -10,7 +10,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/admin", "/api/", "/verify-request", "/reset-password"],
+      // Was ["/dashboard", "/admin", "/api/", "/verify-request", "/reset-password"].
+      // Added: signing links (private tokens; also X-Robots-Tag noindex) and
+      // verification results, whose ?code= URLs are per-document and noindex.
+      // Sign-in and sign-up stay crawlable on purpose: they carry noindex,
+      // and a crawler blocked by robots.txt can never read a noindex.
+      disallow: ["/dashboard", "/admin", "/api/", "/verify-request", "/reset-password", "/sign/", "/verify?"],
     },
     // A demo deployment is `noindex` (see the root layout) and stays crawlable
     // on purpose, so engines can read that noindex. It just has no sitemap to

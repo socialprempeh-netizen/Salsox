@@ -9,14 +9,25 @@ import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { SidebarNav } from "@/components/dashboard/sidebar-nav"
 import { SidebarCollapseToggle } from "@/components/dashboard/sidebar-collapse-toggle"
 import { SignOutDialog } from "@/components/dashboard/sign-out-dialog"
+import { SignupEvent } from "@/components/analytics/signup-event"
+import { prisma } from "@/lib/prisma"
+
+/** How recent an account must be for its first dashboard visit to count as the signup. */
+const NEW_ACCOUNT_MS = 15 * 60 * 1000
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser()
+  // For the analytics `sign_up` conversion (signup-event.tsx): one indexed
+  // lookup, and the event only renders for an account minutes old.
+  const account = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true, signupChannel: true } })
+  // eslint-disable-next-line react-hooks/purity
+  const isNew = account ? Date.now() - account.createdAt.getTime() < NEW_ACCOUNT_MS : false
 
   // Client components here get only the "app" messages (src/i18n/client-messages.ts).
   return (
     <ClientMessagesProvider area="app">
     <div className="flex min-h-screen bg-muted/20">
+      {isNew && <SignupEvent userId={user.id} channel={account?.signupChannel ?? "unknown"} />}
       <aside className="sticky top-0 hidden h-screen w-60 flex-col border-r border-border bg-background transition-[width] duration-200 md:flex sidebar-collapsed:w-16">
         <div className="flex h-16 items-center border-b border-border px-5 sidebar-collapsed:justify-center sidebar-collapsed:px-0">
           <Link href="/" className="flex items-center gap-2 font-bold text-foreground">

@@ -72,6 +72,15 @@ describe("contentSecurityPolicy", () => {
   })
 })
 
+describe("analytics hosts", () => {
+  it("names no Google host unless analytics is configured", () => {
+    expect(contentSecurityPolicy({ dev: false })).not.toMatch(/googletagmanager|google-analytics/)
+    const ga = parse(contentSecurityPolicy({ dev: false, ga: true }))
+    expect(ga["script-src"]).toContain("https://www.googletagmanager.com")
+    expect(ga["connect-src"]).toContain("https://*.google-analytics.com")
+  })
+})
+
 describe("securityHeaders", () => {
   it("sends each standard header exactly once", () => {
     const keys = securityHeaders({ dev: false }).map((h) => h.key)

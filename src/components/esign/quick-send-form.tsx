@@ -5,8 +5,13 @@
  * button. Signature and date fields are placed automatically for each signer.
  * On success the sender lands on the document page, where every signing link
  * can also be copied or shared over WhatsApp and SMS.
+ *
+ * Opened with `?draft=1`, it picks up a request prepared on the public
+ * request-a-signature tool (src/lib/request-draft.ts): the PDF, the signers
+ * and a title, saved on this device before signup. The draft is used once
+ * and is only filled in, never sent: the sender still presses Send.
  */
-import { useActionState, useEffect, useMemo, useState } from "react"
+import { useActionState, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Send } from "lucide-react"
@@ -20,6 +25,7 @@ import { toast } from "@/components/ui/sonner"
 import { PdfDropzone } from "./pdf-dropzone"
 import { useActionErrorToast } from "./plan-upsell"
 import { DEFAULT_EXPIRY_DAYS } from "@/lib/esign/limits"
+import { takeRequestDraft } from "@/lib/request-draft"
 
 export function QuickSendForm() {
   const t = useTranslations("esign.quickSend")
@@ -28,6 +34,23 @@ export function QuickSendForm() {
   const [emails, setEmails] = useState("")
   const [state, action, pending] = useActionState<ActionState, FormData>(quickSendAction, {})
   const parsed = useMemo(() => parseEmailList(emails), [emails])
+  const [draftFile, setDraftFile] = useState<File | null>(null)
+  const titleRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("draft") !== "1") return
+    let live = true
+    takeRequestDraft().then((draft) => {
+      if (!live || !draft) return
+      setDraftFile(new File([draft.bytes as BlobPart], draft.name, { type: "application/pdf" }))
+      setEmails(draft.emails)
+      if (titleRef.current) titleRef.current.value = draft.title.slice(0, 140)
+      toast.success(t("draftLoaded"))
+    })
+    return () => {
+      live = false
+    }
+  }, [t])
 
   useEffect(() => {
     if (state.error) showError(state.error, state.upgrade)
@@ -52,7 +75,7 @@ export function QuickSendForm() {
 
   return (
     <form action={action} className="space-y-5">
-      <PdfDropzone />
+      <PdfDropzone initialFile={draftFile} />
       <div className="space-y-2">
         <Label htmlFor="emails">{t("emailsLabel")}</Label>
         <Textarea
@@ -78,7 +101,7 @@ export function QuickSendForm() {
         <div className="mt-4 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">{t("titleLabel")}</Label>
-            <Input id="title" name="title" maxLength={140} placeholder={t("titlePlaceholder")} />
+            <Input ref={titleRef} id="title" name="title" maxLength={140} placeholder={t("titlePlaceholder")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="message">{t("messageLabel")}</Label>

@@ -31,9 +31,13 @@ const clientComponents = files(SRC)
  * several areas must be covered by each.
  */
 function areasOf(file: string): ClientMessageArea[] {
-  if (/^components\/esign\/(signing-wizard|signature-pad|pdf-pages)\.tsx$/.test(file)) return ["sign", "app"]
+  // The signature pad and PDF viewer also render in the free tools.
+  if (/^components\/esign\/(signature-pad|pdf-pages)\.tsx$/.test(file)) return ["sign", "app", "tools"]
+  if (/^components\/esign\/signing-wizard\.tsx$/.test(file)) return ["sign", "app"]
+  if (/^components\/tools\//.test(file)) return ["tools"]
+  if (/^components\/(seo|analytics)\//.test(file)) return ["public"]
   if (/^components\/billing\/(plan-cards|upgrade-button)\.tsx$/.test(file)) return ["public", "app"]
-  if (/^components\/landing\/contact-dialog\.tsx$/.test(file)) return ["public", "app"]
+  if (/^components\/landing\/contact-dialog(-content)?\.tsx$/.test(file)) return ["public", "app"]
   if (/^components\/(ui\/|theme-toggle|not-found-view|landing\/related-links)/.test(file)) return ["shell"]
   if (/^components\/(landing|blog|docs|verify)\//.test(file)) return ["public"]
   if (/^components\/(esign|dashboard|settings|admin|billing|auth)\//.test(file)) return ["app"]

@@ -7,6 +7,7 @@ import { PendingButton } from "@/components/auth/pending-button"
 import { AuthNotice } from "@/components/auth/auth-notice"
 import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
+import { safeNext } from "@/lib/safe-next"
 import type { Metadata } from "next"
 
 // Its own title in the tab and in any result that slips through; the
@@ -19,9 +20,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; next?: string }>
 }) {
-  const { error } = await searchParams
+  const { error, next } = await searchParams
+  // Where to land after signing up, when a public tool asked (the request a
+  // signature tool hands its draft to Quick Send). Dashboard paths only.
+  const after = safeNext(next)
   const t = await getTranslations("auth.signup")
   // An unknown code must not throw: the query string is user controlled, so a
   // key that does not exist falls back to the generic message.
@@ -38,10 +42,12 @@ export default async function SignupPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-3xl border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
+      {/* Squared when `next` was added (was rounded-3xl, inputs and button
+          rounded-full), per the design rules. */}
+      <div className="border border-border bg-card/80 p-6 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl sm:p-8">
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
-            <LogoMark className="h-12 w-12 rounded-2xl ring-1 ring-primary/15" iconClassName="h-7 w-7" />
+            <LogoMark className="h-12 w-12 ring-1 ring-primary/15" iconClassName="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -75,14 +81,15 @@ export default async function SignupPage({
         )}
 
         {errorMessage && (
-          <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
+          <p className="mb-4 border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
             {errorMessage}
           </p>
         )}
 
         <form action={registerUser} className="flex flex-col gap-3">
-          <Input name="name" type="text" placeholder={t("namePlaceholder")} autoComplete="name" maxLength={100} disabled={isDemo} className="h-12 rounded-full px-4" />
-          <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required disabled={isDemo} className="h-12 rounded-full px-4" />
+          {after !== "/dashboard" && <input type="hidden" name="next" value={after} />}
+          <Input name="name" type="text" placeholder={t("namePlaceholder")} autoComplete="name" maxLength={100} disabled={isDemo} className="h-12 rounded-none px-4" />
+          <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required disabled={isDemo} className="h-12 rounded-none px-4" />
           <Input
             name="password"
             type="password"
@@ -92,11 +99,11 @@ export default async function SignupPage({
             minLength={8}
             maxLength={72}
             disabled={isDemo}
-            className="h-12 rounded-full px-4"
+            className="h-12 rounded-none px-4"
           />
           <PendingButton
             disabled={isDemo}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+            className="flex h-12 w-full items-center justify-center gap-2 bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
           >
             {t("submit")}
           </PendingButton>

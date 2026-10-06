@@ -6,6 +6,7 @@ import { routing } from "@/i18n/routing"
 import { localizedPath } from "@/i18n/alternates"
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
+import { getPages, type SitePage } from "@/lib/seo/pages"
 
 /**
  * Sitemap built from the real public routes plus the blog content on disk,
@@ -114,5 +115,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...newest(allPosts.filter((p) => categorySlug(p.category) === c.slug).map(postDate)),
   }))
 
-  return [...staticRoutes, ...docs, ...posts, ...categories]
+  // The landing, tool, comparison and use-case pages (src/lib/seo/pages.ts),
+  // each with the date it was last revised, and the hubs that list them,
+  // dated by their newest page. Only published English pages; a translation
+  // would be listed with hreflang alternates by `localized`, once it exists.
+  const seoPages = getPages()
+  const updatedOf = (pages: SitePage[]) => newest(pages.map((p) => p.updated))
+  const registry: MetadataRoute.Sitemap = seoPages.flatMap((p) =>
+    localized(p.path, p.locales, {
+      lastModified: new Date(`${p.updated}T00:00:00Z`),
+      changeFrequency: "monthly",
+      priority: p.kind === "tool" || p.kind === "solution" ? 0.8 : 0.6,
+    })
+  )
+  const hubs: MetadataRoute.Sitemap = [
+    { path: "/tools", pages: seoPages.filter((p) => p.kind === "tool") },
+    { path: "/compare", pages: seoPages.filter((p) => p.kind === "comparison" || p.kind === "alternative") },
+    { path: "/esignature-for", pages: seoPages.filter((p) => p.kind === "use-case") },
+  ]
+    .filter((hub) => hub.pages.length > 0)
+    .map((hub) => ({ url: `${siteConfig.url}${hub.path}`, changeFrequency: "monthly" as const, priority: 0.6, ...updatedOf(hub.pages) }))
+
+  return [...staticRoutes, ...registry, ...hubs, ...docs, ...posts, ...categories]
 }

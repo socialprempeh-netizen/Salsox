@@ -43,9 +43,16 @@ export const CLIENT_MESSAGES = {
     // Plan cards render on the landing and pricing pages as well as in billing.
     "billing.plans",
     "billing.upgrade",
+    // The free tools' messages were listed here at first; that sent them to
+    // every public page, about 3 KB of payload the homepage never used. They
+    // have their own area below, wrapped around the tool on tool pages only.
   ],
   app: [...SHELL, "admin", "billing", "dashboard", "esign", "contactDialog"],
   sign: [...SHELL, "esign.sign", "esign.signature", "esign.viewer"],
+  // The free PDF tools (src/components/tools) and the signing pieces they
+  // reuse (the signature pad, the PDF viewer). Mounted around the tool itself
+  // on /sign-pdf and the other tool pages ([page]/page.tsx).
+  tools: [...SHELL, "tools", "esign.signature", "esign.viewer"],
 } as const satisfies Record<string, readonly string[]>
 
 export type ClientMessageArea = keyof typeof CLIENT_MESSAGES
