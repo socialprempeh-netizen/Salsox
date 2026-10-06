@@ -96,6 +96,11 @@ export function SignaturePad({
     canvas.width = canvas.clientWidth * dpr
     canvas.height = canvas.clientHeight * dpr
     redraw()
+    // Back on Draw: report the drawing (or its absence) again. Only the other
+    // two modes were reported on a switch, so after Type → Draw the parent
+    // still held the typed name while the visitor looked at the drawing.
+    exportDrawing()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode])
 
   // Report the current value whenever the source of truth changes. `onChange`

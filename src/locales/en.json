@@ -508,7 +508,15 @@
       "payOnce": "Pay once",
       "upgradeTo": "Upgrade to {plan}",
       "get": "Get {plan}",
-      "trial": "{days}-day free trial"
+      "trial": "{days}-day free trial",
+      "interval": "Billing interval",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "perMonth": "/ month",
+      "billedMonthly": "billed monthly",
+      "billedYearly": "billed yearly, {price} a year",
+      "oneTime": "one time",
+      "choose": "Choose {plan}"
     }
   },
   "email": {

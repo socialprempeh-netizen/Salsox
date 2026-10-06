@@ -59,6 +59,8 @@ type Tier = {
   yearly?: PlanCardData
 }
 
+const CARD = "flex flex-col rounded-none md:odd:last:col-span-2 lg:odd:last:col-span-1"
+
 function formatPrice(cents: number) {
   return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`
 }
@@ -86,7 +88,7 @@ function ContactTierCard({ card, onYearly }: { card: ContactCardData; onYearly: 
   const note = (onYearly ? card.yearly?.note : undefined) ?? card.note
 
   return (
-    <Card className="flex flex-col">
+    <Card className={CARD}>
       <CardHeader>
         <CardTitle className="text-lg">{card.name}</CardTitle>
         <CardDescription>{card.description}</CardDescription>
@@ -116,8 +118,9 @@ function ContactTierCard({ card, onYearly }: { card: ContactCardData; onYearly: 
   )
 }
 
-/** Names the toggle for anyone who reaches it without seeing the prices. */
-const intervalGroupLabel = "Billing interval"
+// The toggle's name now comes from the messages (billing.plans.interval).
+// /** Names the toggle for anyone who reaches it without seeing the prices. */
+// const intervalGroupLabel = "Billing interval"
 
 export function PlanCards({
   plans,
@@ -158,7 +161,7 @@ export function PlanCards({
   const [interval, setInterval] = useState<"MONTH" | "YEAR">("MONTH")
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {hasBothIntervals && (
         /* Two buttons in a group, not tabs.
            It looked like tabs and was built with them, but there were no tab
@@ -170,8 +173,10 @@ export function PlanCards({
            on. Same markup classes, so nothing moves visually. */
         <div
           role="group"
-          aria-label={intervalGroupLabel}
-          className="inline-flex h-10 items-center justify-center rounded-[var(--radius)] bg-muted p-1 text-muted-foreground"
+          aria-label={t("interval")}
+          // Centred under the centred heading (was inline-flex at the left
+          // edge), and squared per the site-wide rule (was rounded).
+          className="mx-auto flex h-10 w-fit items-center justify-center bg-muted p-1 text-muted-foreground"
         >
           {(["MONTH", "YEAR"] as const).map((value) => (
             <button
@@ -180,16 +185,18 @@ export function PlanCards({
               aria-pressed={interval === value}
               onClick={() => setInterval(value)}
               className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-[calc(var(--radius)-2px)] px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex items-center justify-center whitespace-nowrap px-4 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 interval === value && "bg-background text-foreground shadow-soft"
               )}
             >
-              {value === "MONTH" ? "Monthly" : "Yearly"}
+              {value === "MONTH" ? t("monthly") : t("yearly")}
             </button>
           ))}
         </div>
       )}
 
+      {/* An odd last card spans both columns at md, instead of sitting alone
+          in half a row; squared cards (were rounded) per the site-wide rule. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {tiers.map((tier) => {
           // Name, description, features and button label come from the base
@@ -202,7 +209,7 @@ export function PlanCards({
           // Yearly prices are shown as their monthly equivalent.
           const monthlyPrice = active.interval === "YEAR" ? Math.round(active.price / 12) : active.price
           return (
-            <Card key={tier.key} className="flex flex-col">
+            <Card key={tier.key} className={CARD}>
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-lg">{base.name}</CardTitle>
@@ -213,10 +220,10 @@ export function PlanCards({
                   <span className="text-4xl font-extrabold text-foreground">
                     {formatPrice(monthlyPrice)}
                   </span>
-                  <span className="ml-1.5 text-sm text-muted-foreground">/ month</span>
+                  <span className="ml-1.5 text-sm text-muted-foreground">{t("perMonth")}</span>
                   {tier.monthly && tier.yearly && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {active.interval === "YEAR" ? "billed yearly" : "billed monthly"}
+                      {active.interval === "YEAR" ? t("billedYearly", { price: formatPrice(active.price) }) : t("billedMonthly")}
                     </p>
                   )}
                   {active.trialDays ? (
@@ -232,7 +239,7 @@ export function PlanCards({
               <CardFooter>
                 {ctaHref ? (
                   <Button asChild className="w-full">
-                    <Link href={ctaHref}>{`Choose ${base.name}`}</Link>
+                    <Link href={ctaHref}>{t("choose", { plan: base.name })}</Link>
                   </Button>
                 ) : (
                   <UpgradeButton
@@ -251,7 +258,7 @@ export function PlanCards({
         {oneTime.map((plan) => {
           const isCurrent = plan.id === currentPlanId
           return (
-            <Card key={plan.id} className="flex flex-col">
+            <Card key={plan.id} className={CARD}>
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-lg">{plan.name}</CardTitle>
@@ -262,7 +269,7 @@ export function PlanCards({
                   <span className="text-4xl font-extrabold text-foreground">
                     {formatPrice(plan.price)}
                   </span>
-                  <span className="ml-1.5 text-sm text-muted-foreground">one time</span>
+                  <span className="ml-1.5 text-sm text-muted-foreground">{t("oneTime")}</span>
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
@@ -271,7 +278,7 @@ export function PlanCards({
               <CardFooter>
                 {ctaHref ? (
                   <Button asChild className="w-full">
-                    <Link href={ctaHref}>{`Get ${plan.name}`}</Link>
+                    <Link href={ctaHref}>{t("get", { plan: plan.name })}</Link>
                   </Button>
                 ) : (
                   <UpgradeButton

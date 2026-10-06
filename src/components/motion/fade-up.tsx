@@ -36,7 +36,10 @@
  * Under reduced motion it only fades, without the slide.
  */
 import { useEffect } from "react"
-import { inView, useAnimate, useReducedMotion } from "framer-motion"
+// `inView` replaced by whenReached (see below).
+// import { inView, useAnimate, useReducedMotion } from "framer-motion"
+import { useAnimate, useReducedMotion } from "framer-motion"
+import { whenReached } from "@/lib/when-reached"
 
 export function FadeUp({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const [scope, animate] = useAnimate<HTMLDivElement>()
@@ -47,16 +50,21 @@ export function FadeUp({ children, className, delay = 0 }: { children: React.Rea
     if (!el || el.getBoundingClientRect().top < window.innerHeight) return
 
     animate(el, { opacity: 0, y: reduceMotion ? 0 : 12 }, { duration: 0 })
-    const stop = inView(
-      el,
-      () => {
-        animate(el, { opacity: 1, y: 0 }, { duration: 0.35, ease: "easeOut", delay: reduceMotion ? 0 : delay })
-      },
-      // Any part of the block in view, not a share of it: the legal pages wrap
-      // a whole document, and with `amount: 0.15` one taller than the screen
-      // could never reach 15% visible and stayed hidden for good.
-      { amount: "some", margin: "0px 0px -10% 0px" }
-    )
+    // Was framer-motion's inView, an observer that never fired for a block
+    // the page jumped past (End key, anchor, Back), leaving it hidden.
+    // const stop = inView(
+    //   el,
+    //   () => {
+    //     animate(el, { opacity: 1, y: 0 }, { duration: 0.35, ease: "easeOut", delay: reduceMotion ? 0 : delay })
+    //   },
+    //   // Any part of the block in view, not a share of it: the legal pages wrap
+    //   // a whole document, and with `amount: 0.15` one taller than the screen
+    //   // could never reach 15% visible and stayed hidden for good.
+    //   { amount: "some", margin: "0px 0px -10% 0px" }
+    // )
+    const stop = whenReached(el, () => {
+      animate(el, { opacity: 1, y: 0 }, { duration: 0.35, ease: "easeOut", delay: reduceMotion ? 0 : delay })
+    })
     return () => {
       stop()
       // Never leave content hidden behind an observer that is gone.

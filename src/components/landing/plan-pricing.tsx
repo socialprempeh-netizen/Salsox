@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { jsonLdScript } from "@/lib/json-ld"
 import { softwareApplicationJsonLd } from "@/lib/pricing-jsonld"
 import { PlanCards, type PlanCardData } from "@/components/billing/plan-cards"
-import { exampleEnterpriseCard } from "@/components/billing/enterprise-card"
+// The example "Enterprise / Custom" card is no longer shown here: see below.
+// import { exampleEnterpriseCard } from "@/components/billing/enterprise-card"
 import { Reveal } from "@/components/landing/reveal"
 import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 
@@ -31,7 +32,10 @@ import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 async function loadPlanRows() {
   try {
     return await prisma.plan.findMany({
-      where: { isActive: true, meterEventName: null, interval: { not: "ONE_TIME" } },
+      // One-time plans (Lifetime) are included now: they were left to the
+      // billing page, so the public page never showed the $299 Lifetime offer.
+      // where: { isActive: true, meterEventName: null, interval: { not: "ONE_TIME" } },
+      where: { isActive: true, meterEventName: null },
       orderBy: { price: "asc" },
     })
   } catch (error) {
@@ -54,8 +58,9 @@ export async function PlanPricing({
   // heading of /pricing. The styling does not change.
   const Heading = heading
 
-  // Metered plans stay docs-only; one-time plans (Lifetime) live on the
-  // billing page, the landing shows the classic recurring triad.
+  // Metered plans stay docs-only. Was: "one-time plans (Lifetime) live on the
+  // billing page, the landing shows the classic recurring triad": the cards
+  // are now Personal and Business (monthly or yearly) and Lifetime.
   // const planRows = await prisma.plan.findMany({ ... }), read per request
   // until the landing page became static; see loadPlanRows below.
   const planRows = await loadPlanRows()
@@ -70,6 +75,9 @@ export async function PlanPricing({
     interval: p.interval,
     stripePriceId: p.stripePriceId,
     features: p.features,
+    // A visitor has never subscribed, so the trial is theirs to take: shown
+    // here as on the billing page (it was left out, hiding Business's trial).
+    trialDays: p.trialDays,
   }))
 
   return (
@@ -105,7 +113,11 @@ export async function PlanPricing({
 
         <Reveal delay={100}>
           <div className="mx-auto max-w-5xl">
-            <PlanCards plans={plans} ctaHref="/login" contactCard={await exampleEnterpriseCard()} />
+            {/* Was contactCard={await exampleEnterpriseCard()}: a kit example
+                ("Enterprise, Custom") that took the place where Lifetime
+                belongs. Removed from the public page; the billing page
+                still shows it. */}
+            <PlanCards plans={plans} ctaHref="/login" />
           </div>
         </Reveal>
       </div>

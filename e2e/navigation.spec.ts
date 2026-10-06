@@ -82,6 +82,32 @@ for (const width of [360, 390]) {
   })
 }
 
+test("desktop: 'All use cases' opens the use-case hub with its pages listed", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+  const page = await ctx.newPage()
+  // From a long page, scrolled to its end, as a visitor would arrive at it.
+  await page.goto("/pdf-signature-generator", { waitUntil: "networkidle" })
+  await page.keyboard.press("End")
+  const nav = page.getByRole("navigation", { name: "Main" })
+  await nav.getByRole("button", { name: /^Why / }).hover()
+  await nav.getByRole("link", { name: "All use cases" }).click()
+  await page.waitForURL("**/esignature-for")
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+  const first = page.locator("main").getByRole("link", { name: /Real estate|HR|Freelancers/ }).first()
+  await expect(first).toBeVisible()
+  await ctx.close()
+})
+
+test("long pages: jumping to the end leaves no section invisible", async ({ page }) => {
+  for (const path of ["/pdf-signature-generator", "/sign-pdf", "/"]) {
+    await page.goto(path, { waitUntil: "networkidle" })
+    await page.keyboard.press("End")
+    await page.waitForTimeout(600)
+    const hidden = await page.evaluate(() => [...document.querySelectorAll("main .opacity-0")].filter((el) => el.getBoundingClientRect().height > 40).length)
+    expect(hidden, `${path}: sections left at opacity 0 after jumping to the end`).toBe(0)
+  }
+})
+
 test("footer: grouped like the top menu, with a Company column", async ({ page }) => {
   await page.goto("/tools", { waitUntil: "networkidle" })
   const footer = page.locator("footer")

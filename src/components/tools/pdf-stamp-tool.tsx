@@ -21,9 +21,11 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
-import { CalendarDays, Check, Download, FileText, PenLine, RefreshCcw, Trash2, Type, X } from "lucide-react"
+import { CalendarDays, Check, Download, FileText, PenLine, RefreshCcw, Trash2, Type } from "lucide-react"
 import { PdfPages } from "@/components/esign/pdf-pages"
-import { SignaturePad, type SignatureValue } from "@/components/esign/signature-pad"
+// SignaturePad is rendered by SignaturePadDialog now.
+// import { SignaturePad, type SignatureValue } from "@/components/esign/signature-pad"
+import type { SignatureValue } from "@/components/esign/signature-pad"
 import { DEFAULT_PLACEMENT_SIZE, MAX_TOOL_PDF_BYTES, signedFileName, toolFileProblem, type FormFieldInfo, type FormValues, type Placement, type PlacementKind } from "@/lib/pdf-tools"
 import { clampPercent } from "@/lib/esign/pdf/coords"
 import { trimDataUrl } from "@/lib/image-trim"
@@ -32,6 +34,7 @@ import { cn } from "@/lib/utils"
 import { PdfDrop, type PickedPdf } from "./pdf-drop"
 import { HANDOFF_KEY } from "./handoff"
 import { FormFieldInput } from "./form-field-input"
+import { SignaturePadDialog } from "./signature-pad-dialog"
 import { AnimatePresence, Appear, ToolMotion } from "./tool-motion"
 
 export type StampToolConfig = {
@@ -314,21 +317,28 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
           )}
         </div>
 
-        <AnimatePresence>
-          {padOpen && (
+        {/* The pad opens as a dialog over the page (signature-pad-dialog.tsx):
+            inline here, it opened off screen whenever Signature was pressed
+            while scrolled to the pages, and under the sticky download bar on
+            phones. It was:
+            <AnimatePresence>
+            {padOpen && (
             <Appear id="pad" className="space-y-3 border border-primary/40 bg-card p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">{t("createSignature")}</h3>
-                <button type="button" aria-label={t("cancel")} onClick={() => setPadOpen(false)} className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <SignaturePad defaultName="" onChange={setDraft} />
-              <button type="button" disabled={!draft} onClick={() => void applyDraftSignature()} className="inline-flex h-11 w-full items-center justify-center gap-2 bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50 sm:w-auto">
-                <Check className="h-4 w-4" aria-hidden="true" /> {t("useSignature")}
-              </button>
+            <div className="flex items-center justify-between">
+            <h3 className="font-semibold">{t("createSignature")}</h3>
+            <button type="button" aria-label={t("cancel")} onClick={() => setPadOpen(false)} className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground">
+            <X className="h-4 w-4" />
+            </button>
+            </div>
+            <SignaturePad defaultName="" onChange={setDraft} />
+            <button type="button" disabled={!draft} onClick={() => void applyDraftSignature()} className="inline-flex h-11 w-full items-center justify-center gap-2 bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50 sm:w-auto">
+            <Check className="h-4 w-4" aria-hidden="true" /> {t("useSignature")}
+            </button>
             </Appear>
-          )}
+            )}
+            </AnimatePresence> */}
+        <AnimatePresence>
+          {padOpen && <SignaturePadDialog canUse={Boolean(draft)} onDraft={setDraft} onUse={() => void applyDraftSignature()} onClose={() => setPadOpen(false)} />}
         </AnimatePresence>
 
         {config.formFields && formFields.length > 0 && (

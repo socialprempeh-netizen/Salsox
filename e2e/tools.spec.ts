@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
-import { PDFDocument, StandardFonts } from "pdf-lib"
+import { PDFDict, PDFDocument, PDFName, StandardFonts } from "pdf-lib"
 import { freshEmail, password, samplePdf } from "./helpers/esign"
 
 /**
@@ -126,6 +126,57 @@ test("Signature generator: a transparent PNG, handed to Add signature to PDF and
 
   const out = await downloaded(page, () => page.getByRole("button", { name: "Download signed PDF" }).click())
   expect((await PDFDocument.load(out)).getPageCount()).toBe(3)
+  await ctx.close()
+})
+
+/**
+ * A finger stroke across the drawing area, sent as raw touch events (the
+ * only way to drag a finger in Playwright). Chrome's harness never turns the
+ * first tap after such a drag into a click, on any page, so one throwaway
+ * tap follows; a person's taps are unaffected.
+ */
+async function fingerDraw(page: Page, area: ReturnType<Page["locator"]>) {
+  const box = (await area.boundingBox())!
+  const cdp = await page.context().newCDPSession(page)
+  const at = (i: number) => [{ x: box.x + box.width * (0.15 + 0.035 * i), y: box.y + box.height * (0.5 + 0.2 * Math.sin(i / 3)), id: 1, radiusX: 2, radiusY: 2, force: 0.5 }]
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: at(0) })
+  for (let i = 1; i <= 20; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: at(i) })
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+  await page.touchscreen.tap(2, 2)
+}
+
+/** Image XObjects on each page of a PDF: a drawn signature is one. */
+async function imagesPerPage(bytes: Buffer): Promise<number[]> {
+  const doc = await PDFDocument.load(bytes)
+  return doc.getPages().map((p) => p.node.Resources()?.lookup(PDFName.of("XObject"), PDFDict)?.keys().length ?? 0)
+}
+
+test("Add signature to PDF on a phone: the pad opens on screen from page 2, a finger-drawn signature lands in the file", async ({ browser }) => {
+  const ctx = await browser.newContext(phone)
+  const page = await ctx.newPage()
+  await page.goto("/add-signature-to-pdf", { waitUntil: "networkidle" })
+  await page.locator('input[type="file"]').first().setInputFiles({ name: "Lease.pdf", mimeType: "application/pdf", buffer: await samplePdf(3) })
+  // Scrolled down to the page being signed, as one is when pressing the
+  // sticky toolbar's Signature: the pad used to open far above the screen.
+  await page.locator('[data-page="2"]').scrollIntoViewIfNeeded()
+  await page.getByRole("toolbar").getByRole("button", { name: "Signature", exact: true }).click()
+  const pad = page.getByRole("dialog", { name: "Create your signature" })
+  const area = pad.getByLabel("Signature drawing area")
+  await expect(area).toBeInViewport({ ratio: 1 })
+
+  // Type, then back to Draw: what is used must be the drawing on screen.
+  await pad.getByRole("tab", { name: "Type" }).click()
+  await pad.getByRole("textbox").fill("Ama Mensah")
+  await pad.getByRole("tab", { name: "Draw" }).click()
+  await expect(pad.getByRole("button", { name: "Use this signature" })).toBeDisabled()
+  await fingerDraw(page, area)
+  await pad.getByRole("button", { name: "Use this signature" }).click()
+  await expect(pad).toHaveCount(0)
+
+  await tapPage(page, 2)
+  await expect(page.locator('[data-page="2"] [aria-label="Signature"] img')).toBeVisible()
+  const out = await downloaded(page, () => page.getByRole("button", { name: "Download signed PDF" }).click())
+  expect(await imagesPerPage(out)).toEqual([0, 1, 0])
   await ctx.close()
 })
 

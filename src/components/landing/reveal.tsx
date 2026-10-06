@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { whenReached } from "@/lib/when-reached"
 // `useState` and `cn` were used only by the replaced version below.
 // import { useState } from "react"
 // import { cn } from "@/lib/utils"
@@ -85,22 +86,28 @@ export function Reveal({ children, className, delay = 0, as = "div" }: RevealPro
     if (el.getBoundingClientRect().top < window.innerHeight) return
 
     el.classList.add("opacity-0")
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.style.animationDelay = `${delay}ms`
-          el.classList.replace("opacity-0", "animate-fade-in-up")
-          observer.disconnect()
-        }
-      },
-      // Was `threshold: 0.15`: a section taller than the screen could never
-      // reach 15% visible and stayed hidden. Any part in view is enough.
-      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
-    )
-
-    observer.observe(el)
+    // Was an IntersectionObserver alone, which never fired for a section the
+    // page jumped past (End key, anchor, Back): it stayed hidden for good.
+    // whenReached also counts a section already scrolled past.
+    // const observer = new IntersectionObserver(
+    //   ([entry]) => {
+    //     if (entry.isIntersecting) {
+    //       el.style.animationDelay = `${delay}ms`
+    //       el.classList.replace("opacity-0", "animate-fade-in-up")
+    //       observer.disconnect()
+    //     }
+    //   },
+    //   // Was `threshold: 0.15`: a section taller than the screen could never
+    //   // reach 15% visible and stayed hidden. Any part in view is enough.
+    //   { threshold: 0, rootMargin: "0px 0px -10% 0px" }
+    // )
+    // observer.observe(el)
+    const stop = whenReached(el, () => {
+      el.style.animationDelay = `${delay}ms`
+      el.classList.replace("opacity-0", "animate-fade-in-up")
+    })
     return () => {
-      observer.disconnect()
+      stop()
       // Never leave content hidden behind an observer that is gone.
       el.classList.remove("opacity-0")
     }
