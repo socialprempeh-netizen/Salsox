@@ -52,7 +52,7 @@ export function WaitlistForm({
 
   if (state === "sent") {
     return (
-      <p className="w-full rounded-lg bg-primary/10 px-4 py-3 text-center text-sm font-medium text-primary">
+      <p className="w-full rounded-lg bg-primary/10 px-4 py-3 text-center text-sm font-medium text-primary-hover">
         {t("sent")}
       </p>
     )

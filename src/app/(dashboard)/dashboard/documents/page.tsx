@@ -79,8 +79,8 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
               href={href(f)}
               aria-current={status === f ? "page" : undefined}
               className={cn(
-                "shrink-0 rounded-full border px-4 py-2 text-sm font-medium",
-                status === f ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+                "shrink-0  border px-4 py-2 text-sm font-medium",
+                status === f ? "border-primary bg-primary/10 text-primary-hover" : "text-muted-foreground hover:text-foreground"
               )}
             >
               {t(`filter.${f}`)}
@@ -96,7 +96,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
 
       {documents.length === 0 ? (
         <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary-hover">
             <FileSignature className="h-6 w-6" />
           </span>
           <p className="mt-4 font-medium">{query || status !== "ALL" ? t("noResults") : t("emptyTitle")}</p>

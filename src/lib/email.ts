@@ -1,6 +1,6 @@
 import { Resend } from "resend"
 import { siteConfig } from "@/config/site"
-import { emailAccent } from "@/config/brand"
+import { brand, emailAccent } from "@/config/brand"
 import { getTranslations } from "next-intl/server"
 import { routing } from "@/i18n/routing"
 import { deliver } from "@/lib/email-delivery"
@@ -141,44 +141,99 @@ export async function sendSubscriptionCancelledEmail(to: string, name: string, e
   )
 }
 
+/**
+ * Every email's frame, in the visual system of the site (src/app/globals.css):
+ * cream backdrop, white sheet, ink text, square corners, the accent only on
+ * the button. The header carries the deployment's mark (NEXT_PUBLIC_BRAND_MARK)
+ * beside the name; without one it is the name alone. Was a full-width accent
+ * banner with a lightning-bolt emoji, rounded corners and slate greys (kept,
+ * commented, below).
+ */
 export function baseTemplate(content: string) {
+  // Absolute, since an email has no site to resolve a path against.
+  const mark = brand.mark ? (/^https?:\/\//.test(brand.mark) ? brand.mark : `${siteConfig.url}${brand.mark.startsWith("/") ? "" : "/"}${brand.mark}`) : null
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { margin: 0; padding: 0; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-  .container { max-width: 560px; margin: 40px auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
-  .header { background: ${emailAccent}; padding: 32px 40px; text-align: center; }
-  .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-  .header p { color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px; }
-  .body { padding: 40px; color: #1e293b; }
-  .body p { margin: 0 0 16px; line-height: 1.6; font-size: 15px; color: #475569; }
-  .highlight { background: #f1f5f9; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
-  .highlight p { margin: 4px 0; font-size: 14px; }
-  .highlight strong { color: #0f172a; }
-  .btn { display: inline-block; background: ${emailAccent}; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; margin: 8px 0; }
-  .footer { padding: 24px 40px; border-top: 1px solid #f1f5f9; text-align: center; }
-  .footer p { margin: 0; font-size: 12px; color: #94a3b8; }
+  body { margin: 0; padding: 0; background: #f8f5f3; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .container { max-width: 560px; margin: 40px auto; background: #ffffff; border: 1px solid #e4ddd6; overflow: hidden; }
+  .header { padding: 24px 40px; border-bottom: 1px solid #e4ddd6; }
+  .header table { border-collapse: collapse; }
+  .header img { display: block; width: 36px; height: 36px; border: 0; }
+  .header .name { color: #242424; font-size: 20px; font-weight: 700; padding-left: 12px; }
+  .header p { color: #5e5c59; margin: 6px 0 0; font-size: 14px; }
+  .body { padding: 40px; color: #242424; }
+  .body p { margin: 0 0 16px; line-height: 1.6; font-size: 16px; color: #3d3c3a; }
+  .highlight { background: #f8f5f3; border-left: 3px solid ${emailAccent}; padding: 20px 24px; margin: 24px 0; }
+  .highlight p { margin: 4px 0; font-size: 15px; }
+  .highlight strong { color: #242424; }
+  .btn { display: inline-block; background: ${emailAccent}; color: #ffffff !important; text-decoration: none; padding: 14px 24px; font-weight: 600; font-size: 16px; margin: 8px 0; }
+  .footer { padding: 24px 40px; border-top: 1px solid #e4ddd6; text-align: center; }
+  .footer p { margin: 0; font-size: 12px; color: #5e5c59; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>⚡ ${siteConfig.name}</h1>
+    <table role="presentation"><tr>
+      ${mark ? `<td><img src="${mark}" alt="" width="36" height="36"></td>` : ""}
+      <td class="name"${mark ? "" : ' style="padding-left:0"'}>${siteConfig.name}</td>
+    </tr></table>
     <p>${siteConfig.tagline}</p>
   </div>
   <div class="body">
     ${content}
   </div>
   <div class="footer">
-    <p>© ${new Date().getFullYear()} ${siteConfig.name} · <a href="${siteConfig.url}" style="color:#94a3b8">${siteConfig.url.replace(/^https?:\/\//, "")}</a></p>
+    <p>© ${new Date().getFullYear()} ${siteConfig.name} · <a href="${siteConfig.url}" style="color:#5e5c59">${siteConfig.url.replace(/^https?:\/\//, "")}</a></p>
   </div>
 </div>
 </body>
 </html>`
 }
+
+// The frame before the visual system:
+// export function baseTemplate(content: string) {
+//   return `<!DOCTYPE html>
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8">
+// <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// <style>
+//   body { margin: 0; padding: 0; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+//   .container { max-width: 560px; margin: 40px auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+//   .header { background: ${emailAccent}; padding: 32px 40px; text-align: center; }
+//   .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+//   .header p { color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px; }
+//   .body { padding: 40px; color: #1e293b; }
+//   .body p { margin: 0 0 16px; line-height: 1.6; font-size: 15px; color: #475569; }
+//   .highlight { background: #f1f5f9; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
+//   .highlight p { margin: 4px 0; font-size: 14px; }
+//   .highlight strong { color: #0f172a; }
+//   .btn { display: inline-block; background: ${emailAccent}; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; margin: 8px 0; }
+//   .footer { padding: 24px 40px; border-top: 1px solid #f1f5f9; text-align: center; }
+//   .footer p { margin: 0; font-size: 12px; color: #94a3b8; }
+// </style>
+// </head>
+// <body>
+// <div class="container">
+//   <div class="header">
+//     <h1>⚡ ${siteConfig.name}</h1>
+//     <p>${siteConfig.tagline}</p>
+//   </div>
+//   <div class="body">
+//     ${content}
+//   </div>
+//   <div class="footer">
+//     <p>© ${new Date().getFullYear()} ${siteConfig.name} · <a href="${siteConfig.url}" style="color:#94a3b8">${siteConfig.url.replace(/^https?:\/\//, "")}</a></p>
+//   </div>
+// </div>
+// </body>
+// </html>`
+// }
 
 async function welcomeTemplate(name: string) {
   const t = await emailStrings()

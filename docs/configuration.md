@@ -124,8 +124,9 @@ The kit ships **brand-neutral**: a placeholder name and a black + grayscale them
 | `NEXT_PUBLIC_MAINTAINER_NAME`, `NEXT_PUBLIC_MAINTAINER_URL` | Who builds the product, shown in a "Who builds it" section on the About page. The section hides entirely when the name is unset; the URL is optional and the name renders without a link. |
 | `NEXT_PUBLIC_GITHUB_ORG_URL`, `NEXT_PUBLIC_X_URL` | Social links; footer icons hide when unset. |
 | `NEXT_PUBLIC_BRAND_WORDMARK_ACCENT` | Substring of the name to gradient-highlight in the logo. |
-| `NEXT_PUBLIC_BRAND_PRIMARY`, `NEXT_PUBLIC_BRAND_PRIMARY_2` | Accent colors (hex). The gradient, glow and Open Graph images follow them automatically. |
-| `NEXT_PUBLIC_BRAND_GRADIENT` | Full CSS gradient, if you prefer to set it explicitly instead of deriving it. |
+| `NEXT_PUBLIC_BRAND_PRIMARY`, `NEXT_PUBLIC_BRAND_PRIMARY_2` | Accent colors (hex). Buttons, links, focus rings and Open Graph images follow them automatically. The interface is flat: the accent is used solid, not as a gradient. |
+| `NEXT_PUBLIC_BRAND_GRADIENT` | Full CSS gradient, if you want one where the accent is painted (it is solid otherwise). |
+| `NEXT_PUBLIC_BRAND_MARK` | Your mark: a square image under `public/` (for example `/brand/mark.png`) or an absolute URL. It replaces the neutral mark in the logo, the favicon, the home-screen icon and the header of every email. |
 
 The code is MIT, so use it for anything. The "Built with" footer badge is optional (`NEXT_PUBLIC_REMOVE_BRANDING="true"`).
 

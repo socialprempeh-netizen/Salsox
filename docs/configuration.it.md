@@ -2,7 +2,7 @@
 title: Configurazione
 description: "Ogni variabile d'ambiente spiegata: database, OAuth, Stripe, email, marchio."
 translated_from: configuration.md
-source_checksum: 644590b71298
+source_checksum: 08c18eb5eb43
 ---
 
 # Configurazione
@@ -131,8 +131,9 @@ Il kit arriva **neutro**: un nome segnaposto e un tema nero con scala di grigi, 
 | `NEXT_PUBLIC_MAINTAINER_NAME`, `NEXT_PUBLIC_MAINTAINER_URL` | Chi costruisce il prodotto, mostrato in una sezione «Who builds it» nella pagina About. La sezione sparisce del tutto quando il nome non è impostato; l'indirizzo è facoltativo e il nome rende comunque, senza link. |
 | `NEXT_PUBLIC_GITHUB_ORG_URL`, `NEXT_PUBLIC_X_URL` | Link social; le icone nel footer si nascondono quando non ci sono. |
 | `NEXT_PUBLIC_BRAND_WORDMARK_ACCENT` | La porzione del nome da evidenziare col gradiente nel logo. |
-| `NEXT_PUBLIC_BRAND_PRIMARY`, `NEXT_PUBLIC_BRAND_PRIMARY_2` | Colori d'accento (esadecimali). Gradiente, alone e immagini Open Graph li seguono da soli. |
-| `NEXT_PUBLIC_BRAND_GRADIENT` | Gradiente CSS completo, se preferisci scriverlo invece di farlo derivare. |
+| `NEXT_PUBLIC_BRAND_PRIMARY`, `NEXT_PUBLIC_BRAND_PRIMARY_2` | Colori d'accento (esadecimali). Pulsanti, link, anelli di focus e immagini Open Graph li seguono da soli. L'interfaccia è piatta: l'accento è usato pieno, non come gradiente. |
+| `NEXT_PUBLIC_BRAND_GRADIENT` | Gradiente CSS completo, se ne vuoi uno dove si dipinge l'accento (altrimenti è pieno). |
+| `NEXT_PUBLIC_BRAND_MARK` | Il tuo marchio: un'immagine quadrata in `public/` (per esempio `/brand/mark.png`) o un URL assoluto. Sostituisce il marchio neutro nel logo, nella favicon, nell'icona per la schermata home e nell'intestazione di ogni email. |
 
 Il codice è MIT, quindi usalo per qualsiasi cosa. Il badge «Built with» nel footer è facoltativo (`NEXT_PUBLIC_REMOVE_BRANDING="true"`).
 

@@ -18,7 +18,7 @@ export function DocsNav({ items }: { items: { slug: string; title: string }[] })
     cn(
       "block rounded-lg px-3 py-1.5 text-sm transition-colors",
       active
-        ? "bg-primary/10 font-medium text-primary"
+        ? "bg-primary/10 font-medium text-primary-hover"
         : "text-muted-foreground hover:bg-muted hover:text-foreground"
     )
 

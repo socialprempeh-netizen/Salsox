@@ -40,7 +40,7 @@ export function PlanLock({ plan, className }: { plan: "Business" | "Personal"; c
       transition={{ duration: 0.25, ease: "easeOut" }}
       className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground", className)}
     >
-      <span className="inline-flex items-center gap-1.5 border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+      <span className="inline-flex items-center gap-1.5 border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary-hover">
         <Lock className="h-3 w-3" aria-hidden="true" />
         {t("planBadge", { plan })}
       </span>

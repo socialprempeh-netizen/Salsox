@@ -153,7 +153,7 @@ export default async function AdminCustomersPage({
                 aria-current={s === sort ? "true" : undefined}
                 className={cn(
                   "border px-3 py-1.5 text-xs font-medium transition-colors",
-                  s === sort ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"
+                  s === sort ? "border-primary bg-primary/10 text-primary-hover" : "border-border text-muted-foreground hover:bg-muted"
                 )}
               >
                 {t(`sort.${s}`)}

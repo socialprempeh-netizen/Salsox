@@ -87,8 +87,8 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
         {/* Announcement pill: the current version, then what is new in it.
             The badge reads `version` from src/config/site.ts, so it moves with
             your releases; swap the sentence for whatever you are shipping. */}
-        <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 py-1.5 pl-2 pr-4 text-sm font-medium shadow-soft backdrop-blur">
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+        <div className="mb-7 inline-flex items-center gap-2  border border-border bg-card/70 py-1.5 pl-2 pr-4 text-sm font-medium shadow-soft backdrop-blur">
+          <span className="inline-flex items-center gap-1  bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary-hover">
             <Sparkles className="h-3 w-3" /> v{siteConfig.version}
           </span>
           <span className="text-muted-foreground">{t("pill")}</span>
@@ -183,7 +183,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
                     <div
                       key={key}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
-                        active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                        active ? "bg-primary/10 text-primary-hover" : "text-muted-foreground"
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -227,7 +227,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
                       <div key={key} className="rounded-xl border border-border bg-card p-3">
                         <p className="text-[11px] text-muted-foreground">{tm(key)}</p>
                         {badge ? (
-                          <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+                          <span className="mt-1.5 inline-flex items-center gap-1  bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             {valueKey ? tm(valueKey) : null}
                           </span>

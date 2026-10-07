@@ -87,7 +87,7 @@ export async function ActiveSessions() {
               {!isCurrent && (
                 <form action={revokeSession}>
                   <input type="hidden" name="sessionId" value={session.id} />
-                  <PendingButton className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+                  <PendingButton className="border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
                     {t("revoke")}
                   </PendingButton>
                 </form>
@@ -99,7 +99,7 @@ export async function ActiveSessions() {
 
       {others > 0 && (
         <form action={revokeOtherSessions}>
-          <PendingButton className="rounded-full border border-destructive/30 px-4 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/5">
+          <PendingButton className="border border-destructive/30 px-4 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/5">
             {t("revokeOthers", { count: others })}
           </PendingButton>
         </form>

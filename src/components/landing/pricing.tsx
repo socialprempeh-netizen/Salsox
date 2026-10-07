@@ -13,7 +13,7 @@ import { siteConfig } from "@/config/site"
 
 function CheckIcon() {
   return (
-    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-hover">
       <Check className="h-3 w-3" strokeWidth={3} />
     </span>
   )

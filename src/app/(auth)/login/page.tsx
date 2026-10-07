@@ -70,7 +70,7 @@ export default async function LoginPage({
           >
             <PendingButton
               disabled={isDemo}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+              className="flex h-12 w-full items-center justify-center gap-3  border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
                 <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/>
@@ -94,7 +94,7 @@ export default async function LoginPage({
           >
             <PendingButton
               disabled={isDemo}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+              className="flex h-12 w-full items-center justify-center gap-3  border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
             >
               <GithubIcon className="h-[18px] w-[18px]" />
               {t("github")}
@@ -138,15 +138,15 @@ export default async function LoginPage({
               </p>
             )}
             {reset === "1" && (
-              <p className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-center text-sm text-primary">
+              <p className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-center text-sm text-primary-hover">
                 {t("passwordUpdated")}
               </p>
             )}
 
             <form action={signInWithPassword} className="flex flex-col gap-3">
-              <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required className="h-12 rounded-full px-4" />
-              <Input name="password" type="password" placeholder={t("passwordPlaceholder")} autoComplete="current-password" required className="h-12 rounded-full px-4" />
-              <PendingButton className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
+              <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required className="h-12  px-4" />
+              <Input name="password" type="password" placeholder={t("passwordPlaceholder")} autoComplete="current-password" required className="h-12  px-4" />
+              <PendingButton className="flex h-12 w-full items-center justify-center gap-2  bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
                 {t("submit")}
               </PendingButton>
               {hasMagicLink && (
@@ -156,7 +156,7 @@ export default async function LoginPage({
                 <PendingButton
                   formAction={signInWithMagicLink}
                   formNoValidate
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-80"
+                  className="flex h-12 w-full items-center justify-center gap-2  border border-border px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-80"
                 >
                   {t("magicLink")}
                 </PendingButton>
@@ -208,7 +208,7 @@ export default async function LoginPage({
                 }}
               >
                 <input type="hidden" name="role" value="user" />
-                <PendingButton className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
+                <PendingButton className="flex h-12 w-full items-center justify-center gap-2  bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
                   <span>▶</span> {t("exploreUser")}
                 </PendingButton>
               </form>
@@ -224,7 +224,7 @@ export default async function LoginPage({
                 }}
               >
                 <input type="hidden" name="role" value="admin" />
-                <PendingButton className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-primary/40 px-4 text-sm font-semibold text-primary transition-all hover:-translate-y-0.5 hover:bg-primary/5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
+                <PendingButton className="flex h-12 w-full items-center justify-center gap-2  border border-primary/40 px-4 text-sm font-semibold text-primary-hover transition-all hover:-translate-y-0.5 hover:bg-primary/5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
                   <span>🛡</span> {t("exploreAdmin")}
                 </PendingButton>
               </form>
@@ -266,7 +266,7 @@ export default async function LoginPage({
               <input type="hidden" name="password" value="dev" />
               <button
                 type="submit"
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-dashed border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="flex h-12 w-full items-center justify-center gap-2 border border-dashed border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 <span>🔧</span> Dev Login (Admin)
               </button>

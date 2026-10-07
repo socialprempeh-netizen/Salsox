@@ -33,7 +33,7 @@ export type PaymentHistoryRow = {
 const STATUS_STYLES: Record<string, string> = {
   paid: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   refunded: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  open: "border-primary/30 bg-primary/10 text-primary",
+  open: "border-primary/30 bg-primary/10 text-primary-hover",
 }
 
 export function PaymentHistory({

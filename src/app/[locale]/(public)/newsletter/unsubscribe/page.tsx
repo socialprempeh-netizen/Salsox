@@ -69,7 +69,7 @@ export default async function NewsletterUnsubscribePage({
         )}
         <Link
           href="/"
-          className="mt-8 inline-block rounded-full px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft [background-image:var(--gradient-brand)]"
+          className="mt-8 inline-block  px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft [background-image:var(--gradient-brand)]"
         >
           {t("backToSite")}
         </Link>

@@ -19,7 +19,7 @@ export function NavLinks({ showBlog = true }: { showBlog?: boolean }) {
   const linkClass = (active: boolean) =>
     cn(
       "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      active ? "bg-primary/10 text-primary-hover" : "text-muted-foreground hover:bg-accent hover:text-foreground"
     )
 
   return (

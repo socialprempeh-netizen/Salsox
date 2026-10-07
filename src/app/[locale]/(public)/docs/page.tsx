@@ -62,7 +62,7 @@ export default async function DocsIndexPage() {
           <Link
             key={d.slug}
             href={`/docs/${d.slug}`}
-            className="group rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-soft"
+            className="group rounded-2xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-soft"
           >
             <h2 className="font-semibold text-foreground transition-colors group-hover:text-primary">
               {d.title}

@@ -78,10 +78,13 @@ export function NavMenu({ nav }: { nav: SiteNav }) {
     closeTimer.current = setTimeout(() => setOpened(null), HOVER_CLOSE_MS)
   }
 
+  // Visual system (globals.css): PandaDoc's navigation type, 15px at 600 in
+  // ink, turning to the accent on hover and for the current group. Was
+  // text-sm 500 in grey, with a tinted fill when active or hovered.
   const itemClass = (active: boolean) =>
     cn(
-      "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium transition-colors",
-      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      "inline-flex items-center gap-1 px-3 py-1.5 text-[15px] font-semibold transition-colors",
+      active ? "text-primary" : "text-foreground hover:text-primary"
     )
 
   return (

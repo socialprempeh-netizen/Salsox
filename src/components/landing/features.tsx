@@ -74,7 +74,7 @@ export function Features() {
             const Icon = feature.icon
             return (
               <Reveal key={feature.key} delay={(i % 3) * 80}>
-                <Card className="group h-full transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[var(--shadow-glow)]">
+                <Card className="group h-full transition-all duration-300 hover:border-primary/30 hover:shadow-[var(--shadow-glow)]">
                   <CardHeader>
                     <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary-2/10 text-primary ring-1 ring-primary/10 transition-transform duration-300 group-hover:scale-110">
                       <Icon className="h-5 w-5" />

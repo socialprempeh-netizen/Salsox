@@ -61,7 +61,7 @@ export default function ContactDialogContent({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="mb-1">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary-hover">
               <Mail className="h-5 w-5" />
             </span>
           </div>

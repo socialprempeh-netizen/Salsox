@@ -76,7 +76,7 @@ export default function MobileMenuDropdown({
               href={`/#${id}`}
               onClick={(e) => scrollToSection(e, id)}
               className={cn(
-                current === id && "bg-primary/10 font-medium text-primary"
+                current === id && "bg-primary/10 font-medium text-primary-hover"
               )}
             >
               {t(id)}

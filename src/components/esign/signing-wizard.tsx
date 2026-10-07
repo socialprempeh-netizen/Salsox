@@ -173,7 +173,7 @@ export function SigningWizard(props: Props) {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-6 px-4 py-10">
         <div className="space-y-2">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary-hover">
             <PenLine className="h-6 w-6" />
           </span>
           <h1 className="text-2xl font-bold leading-tight">{props.title}</h1>

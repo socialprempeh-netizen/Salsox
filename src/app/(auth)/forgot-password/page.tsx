@@ -71,15 +71,15 @@ export default async function ForgotPasswordPage({
         )}
 
         {sent === "1" && !formDisabled ? (
-          <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-center text-sm text-primary">
+          <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-center text-sm text-primary-hover">
             {t("sent")}
           </p>
         ) : (
           <form action={requestPasswordReset} className="flex flex-col gap-3">
-            <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required disabled={formDisabled} className="h-12 rounded-full px-4" />
+            <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required disabled={formDisabled} className="h-12  px-4" />
             <PendingButton
               disabled={formDisabled}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+              className="flex h-12 w-full items-center justify-center gap-2  bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
             >
               {t("submit")}
             </PendingButton>

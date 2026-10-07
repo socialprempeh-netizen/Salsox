@@ -66,9 +66,9 @@ export default async function ResetPasswordPage({
                 required
                 minLength={8}
                 maxLength={72}
-                className="h-12 rounded-full px-4"
+                className="h-12  px-4"
               />
-              <PendingButton className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
+              <PendingButton className="flex h-12 w-full items-center justify-center gap-2  bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
                 {t("submit")}
               </PendingButton>
             </form>

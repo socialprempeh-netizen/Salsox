@@ -80,7 +80,7 @@ export function NotFoundView({ showBlog }: { showBlog: boolean }) {
 
         <motion.p
           variants={item}
-          className="mt-2 inline-flex w-fit items-center border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary"
+          className="mt-2 inline-flex w-fit items-center border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary-hover"
         >
           {t("badge")}
         </motion.p>

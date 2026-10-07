@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+// Geist (sans) was the UI face until the visual system moved to Inter, the
+// open stand-in for PandaDoc's Graphik (see the note in globals.css).
+// import { Geist, Geist_Mono } from "next/font/google"
+import { Geist_Mono, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { siteConfig } from "@/config/site"
@@ -14,7 +17,10 @@ import { ClientMessagesProvider } from "@/i18n/client-provider"
 import "./globals.css"
 import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
+// const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
+// One family for everything, as on pandadoc.com: 400 body, 600 buttons and
+// navigation, 700 headings. Variable, so the weights cost one file.
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" })
 // Not preloaded: the mono face is used by code blocks and the contact dialog,
 // never above the fold, and a preload made it compete with the hero for the
 // first round trips on a phone. It still loads, when first used.
@@ -69,7 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // lets the public pages be static (src/i18n/static-locale.ts).
   const locale = singleLocale(routing.locales, routing.defaultLocale) ?? (await getLocale())
   return (
-    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang={locale} className={`${inter.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <script dangerouslySetInnerHTML={{ __html: `${themeInit};${sidebarInit}` }} />
         {brandCss && <style dangerouslySetInnerHTML={{ __html: brandCss }} />}

@@ -100,7 +100,7 @@ export function SessionList({ sessions }: { sessions: SessionRow[] }) {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-sm font-medium">{session.device ?? t("unknownDevice")}</p>
                       {session.current && (
-                        <span className="border border-primary/40 bg-primary/10 px-1.5 py-px text-[11px] font-semibold text-primary">{t("thisDevice")}</span>
+                        <span className="border border-primary/40 bg-primary/10 px-1.5 py-px text-[11px] font-semibold text-primary-hover">{t("thisDevice")}</span>
                       )}
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">

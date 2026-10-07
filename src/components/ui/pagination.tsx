@@ -60,7 +60,7 @@ export function Pagination({
               <span
                 aria-current="page"
                 aria-label={`${labels.page} ${n}`}
-                className={cn(base, "border-primary bg-primary/10 font-medium text-primary")}
+                className={cn(base, "border-primary bg-primary/10 font-medium text-primary-hover")}
               >
                 {n}
               </span>

@@ -114,7 +114,7 @@ export async function SettingsView({
           className={`rounded-lg border px-4 py-2.5 text-sm ${
             message.error
               ? "border-destructive/30 bg-destructive/10 text-destructive"
-              : "border-primary/30 bg-primary/10 text-primary"
+              : "border-primary/30 bg-primary/10 text-primary-hover"
           }`}
         >
           {message.text}
@@ -153,14 +153,14 @@ export async function SettingsView({
                 {accountId ? (
                   <form action={unlinkProvider}>
                     <input type="hidden" name="accountId" value={accountId} />
-                    <PendingButton className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+                    <PendingButton className="border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
                       {t("disconnect")}
                     </PendingButton>
                   </form>
                 ) : (
                   <form action={linkProvider}>
                     <input type="hidden" name="provider" value={provider} />
-                    <PendingButton className="rounded-full border border-primary/40 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/5">
+                    <PendingButton className="border border-primary/40 px-3 py-1.5 text-xs font-medium text-primary-hover transition-colors hover:bg-primary/5">
                       {t("connect")}
                     </PendingButton>
                   </form>
@@ -185,7 +185,7 @@ export async function SettingsView({
                 className="h-9 w-full sm:w-64"
                 required
               />
-              <PendingButton className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+              <PendingButton className="border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
                 {t("email.submit")}
               </PendingButton>
             </form>
@@ -219,7 +219,7 @@ export async function SettingsView({
                 minLength={8}
                 maxLength={72}
               />
-              <PendingButton className="self-start rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-all hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
+              <PendingButton className="self-start  bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-all hover:shadow-soft disabled:pointer-events-none disabled:opacity-80">
                 {hasPassword ? t("changePassword") : t("setPassword")}
               </PendingButton>
             </form>

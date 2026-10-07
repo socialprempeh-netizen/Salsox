@@ -3,11 +3,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { HTMLAttributes } from "react"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+  // Square (was rounded-full) and set like PandaDoc's tags: 12px, a weight
+  // up from the body (visual system, globals.css).
+  "inline-flex items-center px-2 py-0.5 text-xs font-semibold",
   {
     variants: {
       variant: {
-        default: "bg-primary/10 text-primary",
+        default: "bg-primary/10 text-primary-hover",
         secondary: "bg-secondary text-secondary-foreground",
         // green-700 is the lightest shade that clears 4.5:1 on its own 10% tint.
         success: "bg-green-500/10 text-green-700 dark:text-green-400",

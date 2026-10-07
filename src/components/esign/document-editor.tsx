@@ -272,7 +272,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
               aria-current={step === i ? "step" : undefined}
               className={cn(
                 "flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-2 text-sm font-medium disabled:opacity-50",
-                step === i ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"
+                step === i ? "border-primary bg-primary/10 text-primary-hover" : "text-muted-foreground"
               )}
             >
               <span className="hidden sm:inline">{i + 1}.</span> {label}
@@ -367,7 +367,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
                   key={r.key}
                   type="button"
                   onClick={() => setActiveRecipient(r.key)}
-                  className={cn("flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-sm", currentRecipient?.key === r.key && "border-foreground font-medium")}
+                  className={cn("flex min-h-9 shrink-0 items-center gap-2  border px-3 text-sm", currentRecipient?.key === r.key && "border-foreground font-medium")}
                 >
                   <span className="h-3 w-3 rounded-full" style={{ background: colorOf(r.key) }} />
                   {r.name || r.email}

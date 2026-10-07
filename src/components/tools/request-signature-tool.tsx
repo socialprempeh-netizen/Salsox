@@ -136,7 +136,7 @@ export function RequestSignatureTool() {
                       .map((f, i) => (
                         <div
                           key={i}
-                          className="absolute flex items-center overflow-hidden border-2 border-dashed border-primary bg-primary/10 px-1 text-[10px] font-medium text-primary sm:text-xs"
+                          className="absolute flex items-center overflow-hidden border-2 border-dashed border-primary bg-primary/10 px-1 text-[10px] font-medium text-primary-hover sm:text-xs"
                           style={{ left: `${f.x}%`, top: `${f.y}%`, width: `${f.width}%`, height: `${f.height}%` }}
                         >
                           <span className="truncate">

@@ -2,7 +2,7 @@ import { Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
-import { neutralMarkPath } from "@/config/brand"
+import { brand, neutralMarkPath } from "@/config/brand"
 
 /**
  * Your app's logo, in one place. Together with `src/config/site.ts` this is
@@ -41,6 +41,17 @@ export function LogoMark({
   generic?: boolean
 }) {
   const useOwnMark = isKitSite && !generic
+  // This deployment's own mark (NEXT_PUBLIC_BRAND_MARK, src/config/brand.ts):
+  // an image that is its own tile, so it replaces the tile and the head
+  // together. Never in mockups (`generic`), never on the kit's site.
+  if (brand.mark && !generic && !isKitSite) {
+    return (
+      // A plain img: the mark is a small static file, already square and
+      // sized by the caller, so next/image would add nothing but a wrapper.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={brand.mark} alt="" width={64} height={64} className={cn("h-8 w-8 shrink-0 object-contain", className)} />
+    )
+  }
   return (
     <span
       className={cn(
@@ -55,7 +66,7 @@ export function LogoMark({
           ? "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
           : cn(
               isKitSite ? "bg-[#2563eb]" : "bg-primary",
-              "text-white dark:bg-primary/10 dark:text-primary"
+              "text-white dark:bg-primary/10 dark:text-primary-hover"
             ),
         className
       )}

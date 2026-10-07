@@ -5,7 +5,10 @@ function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-card shadow-soft",
+        // Flat and square, as the visual system's cards are (globals.css):
+        // white on the cream canvas, edged by a hairline. Was
+        // "rounded-2xl border border-border bg-card shadow-soft".
+        "border border-border bg-card",
         className
       )}
       {...props}

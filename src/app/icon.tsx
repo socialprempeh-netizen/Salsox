@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og"
 import { brand, neutralMarkPath } from "@/config/brand"
 import { isKitSite } from "@/config/kit"
+import { markImageSrc } from "@/lib/brand-mark"
 
 /**
  * Favicon, generated instead of shipped as a static .ico so it follows your
@@ -24,6 +25,13 @@ export const size = { width: 32, height: 32 }
 export const contentType = "image/png"
 
 export default function Icon() {
+  // This deployment's own mark, when it has one (NEXT_PUBLIC_BRAND_MARK):
+  // the same image as the logo in the page, so the tab and the header match.
+  const mark = isKitSite ? null : markImageSrc(brand.mark)
+  if (mark) {
+    // eslint-disable-next-line @next/next/no-img-element -- Satori renders a plain img
+    return new ImageResponse(<img src={mark} alt="" width={32} height={32} />, size)
+  }
   return new ImageResponse(
     (
       <div

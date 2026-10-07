@@ -70,7 +70,7 @@ export async function SetupGuide({ step }: { step: SetupStep }) {
                 <span
                   className={
                     state === "done"
-                      ? "flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+                      ? "flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary-hover"
                       : state === "current" && failed
                         ? "flex h-6 w-6 items-center justify-center rounded-full bg-destructive/20 text-xs font-semibold text-destructive"
                         : "flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-semibold"

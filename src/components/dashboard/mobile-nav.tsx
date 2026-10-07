@@ -74,7 +74,7 @@ export function MobileNav({
       <DropdownMenuContent align="start" className="w-60 md:hidden">
         {menus[variant].map(({ href, key, icon: Icon }) => (
           <DropdownMenuItem key={href} asChild>
-            <Link href={href} className={isActive(href) ? "bg-primary/10 font-medium text-primary" : undefined}>
+            <Link href={href} className={isActive(href) ? "bg-primary/10 font-medium text-primary-hover" : undefined}>
               <Icon />
               {t(key)}
             </Link>

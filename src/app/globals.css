@@ -34,7 +34,8 @@
 .prose :not(pre) > code {
   background: var(--muted);
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
+  /* square (was 0.375rem) */
+  border-radius: 0;
   padding: 0.1rem 0.35rem;
   font-size: 0.85em;
   font-weight: 500;
@@ -55,15 +56,89 @@
    by SidebarCollapseToggle, persisted in localStorage). */
 @custom-variant sidebar-collapsed (&:where(html.sidebar-collapsed *));
 
+/* ── Visual system ──────────────────────────────────────────────────────
+   Salsox's layout and brand green, in the visual language of pandadoc.com
+   (docs/brand/visual-redesign-brief.md). Values marked "inspected" were read
+   from pandadoc.com's computed styles in a live browser on 2026-10-07;
+   "estimated" fills a role PandaDoc has no direct counterpart for.
+
+   Inspected on pandadoc.com:
+   - text #242424, secondary text the same ink at 70%
+   - page white, alternating sections cream #F8F5F3 (also mint #CDDED9 and
+     lilac #CBBEDB for feature bands, not used here)
+   - one family throughout (Graphik, 400/600/700): body 16/24, lead 18/27,
+     nav 15/600, h1 70/84 700, h2 42/50 700, no letter-spacing
+   - buttons 600 weight, large 18px h60 padding 17x23, small 15-16px h41-50,
+     2px border; primary green #248567 -> hover #136A50; secondary 2px ink
+     border at 60% -> full ink on hover; corners 4px
+   - inputs h56, white, 1px ink border at 30%, corners 4px
+   - cards flat (no shadow), corners 8-12px; badges 12px on ink, corners 8px
+   - transitions 0.25s cubic-bezier(0.4, 0, 0.2, 1); section padding 120px
+
+   Applied differently, on purpose:
+   - corners are 0 everywhere: the site-wide square-corners rule (CLAUDE.md)
+     wins over PandaDoc's 4/8/12px, as decided for this redesign
+   - the accent is Salsox's green (NEXT_PUBLIC_BRAND_PRIMARY), not PandaDoc's
+   - Graphik is a commercial typeface, so Inter stands in for it: the closest
+     open neo-grotesk, at PandaDoc's sizes and weights
+   - the canvas is the cream and cards are white, so content reads as raised
+     without shadows; PandaDoc's page is white with cream bands
+   - dark mode is Salsox's own (PandaDoc has none): the same warm ink inverted
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* inspected: PandaDoc cream and ink */
+  --background: #f8f5f3;
+  --foreground: #242424;
+  /* estimated: a deeper cream for fills (tabs, skeletons, table heads) */
+  --muted: #efe9e3;
+  /* inspected: ink at 70%, flattened onto the cream. Clears WCAG AA (4.5:1)
+     on the cream, on --muted and on the 5% primary tint it is drawn on. */
+  --muted-foreground: #5e5c59;
+  /* estimated: a warm hairline for card and section edges */
+  --border: #e4ddd6;
+  --ring: #242424;
+  /* Neutral until the deployment sets its brand (NEXT_PUBLIC_BRAND_PRIMARY,
+     src/config/brand.ts): Salsox's green comes from there. */
+  --primary: #242424;
+  --primary-foreground: #ffffff;
+  /* inspected: PandaDoc's hover is its green darkened by about a fifth
+     (#248567 -> #136A50); derived from whatever --primary is. Also the
+     colour of accent text on an accent tint (text-primary-hover on
+     bg-primary/10): on the cream canvas the plain accent fell just under
+     4.5:1 there, and the darker shade clears it for any brand colour. */
+  --primary-hover: color-mix(in srgb, var(--primary) 78%, #000000);
+  --secondary: #efe9e3;
+  --secondary-foreground: #242424;
+  --destructive: #c81e1e;
+  --success: #22c55e;
+  /* cards and popovers are white on the cream canvas */
+  --card: #ffffff;
+  --card-foreground: #242424;
+  --popover: #ffffff;
+  --popover-foreground: #242424;
+  --accent: #efe9e3;
+  --accent-foreground: #242424;
+  /* inspected: input borders are ink at 30% */
+  --input: #bdb9b5;
+  /* square corners, site-wide (CLAUDE.md) */
+  --radius: 0rem;
+  --primary-2: var(--primary);
+  /* Flat: PandaDoc has no gradients. Kept as a token so the components that
+     paint with it (pricing highlight, brand text) render the solid accent. */
+  --gradient-brand: linear-gradient(var(--primary), var(--primary));
+}
+
+/* The neutral kit palette this replaced:
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
   --muted: #fafafa;
-  /* Both of these are the lightest values that still clear WCAG AA (4.5:1) on
+  / * Both of these are the lightest values that still clear WCAG AA (4.5:1) on
      every surface they are drawn on, not only on white: muted text sits on the
      5% primary tint and on secondary, the destructive red is text on its own 5%
      and 10% tints (danger zones, error messages) and a background under white
-     text (the destructive button). Lighter than this and those fall under. */
+     text (the destructive button). Lighter than this and those fall under. * /
   --muted-foreground: #6b6b6b;
   --border: #e5e5e5;
   --ring: #0a0a0a;
@@ -81,15 +156,43 @@
   --accent-foreground: #0a0a0a;
   --input: #e5e5e5;
   --radius: 0.875rem;
-  /* Brand accent — neutral (true black + grayscale) premium default. Override
-     per-deploy with the NEXT_PUBLIC_BRAND_* env vars (see src/config/brand.ts). */
+  / * Brand accent — neutral (true black + grayscale) premium default. Override
+     per-deploy with the NEXT_PUBLIC_BRAND_* env vars (see src/config/brand.ts). * /
   --primary-2: #404040;
   --gradient-brand: linear-gradient(135deg, #0a0a0a 0%, #404040 100%);
 }
+*/
 
 .dark {
-  /* Background stays true black; surfaces (card/popover/muted) lift to a soft
-     warm "taupe" gray so cards read as raised, not fused with the black. */
+  /* Salsox's own dark mode: the warm ink of the light theme, inverted */
+  --background: #161514;
+  --foreground: #f8f5f3;
+  --muted: #24221f;
+  --muted-foreground: #aaa49d;
+  --border: #34312d;
+  --ring: #f8f5f3;
+  --primary: #f8f5f3;
+  --primary-foreground: #161514;
+  --primary-hover: color-mix(in srgb, var(--primary) 85%, #ffffff);
+  --secondary: #24221f;
+  --secondary-foreground: #f8f5f3;
+  --destructive: #ef4444;
+  --success: #22c55e;
+  --card: #1e1c1a;
+  --card-foreground: #f8f5f3;
+  --popover: #24221f;
+  --popover-foreground: #f8f5f3;
+  --accent: #2c2926;
+  --accent-foreground: #f8f5f3;
+  --input: #4a4641;
+  --primary-2: var(--primary);
+  --gradient-brand: linear-gradient(var(--primary), var(--primary));
+}
+
+/* The dark palette this replaced:
+.dark {
+  / * Background stays true black; surfaces (card/popover/muted) lift to a soft
+     warm "taupe" gray so cards read as raised, not fused with the black. * /
   --background: #0a0a0a;
   --foreground: #fafafa;
   --muted: #1c1a17;
@@ -112,6 +215,7 @@
   --primary-2: #a3a3a3;
   --gradient-brand: linear-gradient(135deg, #ffffff 0%, #d4d4d4 100%);
 }
+*/
 
 @theme inline {
   --color-background: var(--background);
@@ -133,13 +237,51 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-primary-2: var(--primary-2);
-  --font-sans: var(--font-geist-sans);
+  --color-primary-hover: var(--primary-hover);
+  /* Inter stands in for PandaDoc's Graphik (see the note above :root). */
+  /* --font-sans: var(--font-geist-sans); */
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  /* Soft, diffused shadows — depth without heaviness (Supastarter-like) */
+  /* Flat, as PandaDoc's cards are (inspected: no box-shadow): resting
+     surfaces separate by colour and border. Only floating layers (menus,
+     dialogs, sheets) keep a shadow, so they read as above the page.
+     Were: soft diffused shadows and a brand-tinted glow.
   --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px rgb(15 23 42 / 0.05);
   --shadow-soft-lg: 0 2px 4px rgb(15 23 42 / 0.04), 0 8px 28px rgb(15 23 42 / 0.07);
-  /* Glow tinted from the brand accent — follows --primary automatically */
-  --shadow-glow: 0 10px 30px -6px color-mix(in srgb, var(--primary) 35%, transparent), 0 4px 12px -4px color-mix(in srgb, var(--primary-2) 30%, transparent);
+  --shadow-glow: 0 10px 30px -6px color-mix(in srgb, var(--primary) 35%, transparent), 0 4px 12px -4px color-mix(in srgb, var(--primary-2) 30%, transparent); */
+  --shadow-soft: 0 0 #0000;
+  --shadow-soft-lg: 0 12px 32px -8px rgb(36 36 36 / 0.18), 0 2px 6px rgb(36 36 36 / 0.06);
+  --shadow-glow: 0 0 #0000;
+  /* Square corners everywhere (CLAUDE.md): every rounded-* size is 0, so a
+     component cannot round a box by accident. rounded-full stays round, for
+     the things that are circles (avatars, status dots, spinners). */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+  /* inspected: 0.25s cubic-bezier(0.4, 0, 0.2, 1) on every button and link */
+  --default-transition-duration: 250ms;
+  --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  /* inspected: headings are 700 and never heavier, with no letter-spacing.
+     The heavier weights the pages ask for resolve to 700, and "tight"
+     tracking is only the slight tightening Inter needs at display sizes. */
+  --font-weight-extrabold: 700;
+  --font-weight-black: 700;
+  --tracking-tight: -0.011em;
+  --tracking-tighter: -0.018em;
+  /* inspected type scale: h1 70/84, h2 42/50, all at line-height 1.2 */
+  --text-7xl: 4.375rem;
+  --text-7xl--line-height: 1.2;
+  --text-6xl--line-height: 1.2;
+  --text-5xl--line-height: 1.2;
+  --text-4xl: 2.625rem;
+  --text-4xl--line-height: 1.2;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 1.25;
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-fade-in-up: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -219,7 +361,8 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  /* font-family: var(--font-geist-sans), system-ui, sans-serif; */
+  font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -230,6 +373,8 @@ body {
 /* ── Decorative backgrounds (Light & Bold) ───────────────────────── */
 
 /* Subtle grid that fades toward the edges via radial mask */
+/* Flattened for the visual system: PandaDoc's pages carry no texture. The
+   rule below is kept for reference and switched off by the next one. */
 .bg-grid {
   background-image:
     linear-gradient(to right, var(--border) 1px, transparent 1px),
@@ -239,14 +384,25 @@ body {
   mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
 }
 
-/* Soft brand-tinted glow blob — sits behind hero/login content */
+.bg-grid {
+  background-image: none;
+}
+
+/* Soft brand-tinted glow blob — sits behind hero/login content. Switched off
+   by the rule after it, for the same reason. */
 .bg-glow {
   background:
     radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 70%),
     radial-gradient(40% 40% at 80% 10%, color-mix(in srgb, var(--primary-2) 14%, transparent) 0%, transparent 70%);
 }
 
-/* Gradient text helper for accent words in headlines */
+.bg-glow {
+  background: none;
+}
+
+/* Gradient text helper for accent words in headlines. Headlines are a single
+   ink colour in the visual system (as on pandadoc.com), so the override
+   after it paints the accent word like the rest of the line. */
 .text-gradient-brand {
   background: var(--gradient-brand);
   -webkit-background-clip: text;
@@ -254,7 +410,13 @@ body {
   color: transparent;
 }
 
-/* Animated gradient border for the highlighted pricing card */
+.text-gradient-brand {
+  background: none;
+  color: inherit;
+}
+
+/* Border for the highlighted pricing card: solid accent now, since
+   --gradient-brand is flat. */
 .border-gradient-brand {
   position: relative;
   background: var(--background);

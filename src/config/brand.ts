@@ -10,6 +10,14 @@ import { isKitSite } from "@/config/kit"
 const primary = process.env.NEXT_PUBLIC_BRAND_PRIMARY?.trim() || null
 const primary2 = process.env.NEXT_PUBLIC_BRAND_PRIMARY_2?.trim() || null
 const gradient = process.env.NEXT_PUBLIC_BRAND_GRADIENT?.trim() || null
+/**
+ * The deployment's own mark: a path under public/ (or an absolute URL) to a
+ * square image, e.g. "/brand/mark.png". Set, it replaces the neutral socket
+ * head everywhere the mark appears: the logo in the page, the favicon, the
+ * home-screen icon and the header of every email. Unset, the kit stays
+ * neutral.
+ */
+const mark = process.env.NEXT_PUBLIC_BRAND_MARK?.trim() || null
 
 /**
  * The kit's own palette, restored token by token on its site
@@ -52,9 +60,11 @@ export const brand = {
   isCustom: Boolean(primary || gradient),
   primary,
   primary2,
-  gradient:
-    gradient ||
-    (primary ? `linear-gradient(135deg, ${primary} 0%, ${primary2 ?? primary} 100%)` : null),
+  // Solid unless a gradient is set explicitly: the visual system is flat
+  // (src/app/globals.css). It used to blend primary into primary-2:
+  //   (primary ? `linear-gradient(135deg, ${primary} 0%, ${primary2 ?? primary} 100%)` : null),
+  gradient: gradient || (primary ? `linear-gradient(${primary}, ${primary})` : null),
+  mark,
 }
 
 /**

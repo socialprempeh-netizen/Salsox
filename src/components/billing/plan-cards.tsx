@@ -70,7 +70,7 @@ function FeatureList({ features }: { features: string[] }) {
     <ul className="space-y-2.5">
       {features.map((feature) => (
         <li key={feature} className="flex items-start gap-2.5 text-sm">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-hover">
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
           <span className="text-foreground">{feature}</span>
