@@ -36,10 +36,23 @@ type Props = {
   className?: string
 }
 
-/** Starts loading; the returned task is what gets destroyed on unmount. */
+/**
+ * Starts loading; the returned task is what gets destroyed on unmount.
+ *
+ * pdf.js's legacy build, not its default one. The default build calls the
+ * newest built-ins (Promise.try, Math.sumPrecise, Map.getOrInsertComputed,
+ * URL.parse) with no fallback, and the in-app browsers that open links from
+ * email apps (Gmail's above all) run an engine a release or more behind the
+ * phone's own browser. There the PDF never loaded: "Promise.try is not a
+ * function", and a signing link that opened fine when pasted into Chrome
+ * showed only an error when tapped in Gmail. The legacy build carries
+ * polyfills for exactly those calls. Was:
+ *   const pdfjs = await import("pdfjs-dist")
+ *   pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
+ */
 async function loadPdf(source: { url?: string; data?: Uint8Array }) {
-  const pdfjs = await import("pdfjs-dist")
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs")
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.min.mjs", import.meta.url).toString()
   // pdf.js takes ownership of (detaches) the buffer it is given, so it gets a
   // copy and the caller's bytes stay usable for signing.
   return source.data ? pdfjs.getDocument({ data: source.data.slice() }) : pdfjs.getDocument({ url: source.url! })
