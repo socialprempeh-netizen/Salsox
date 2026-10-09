@@ -1065,6 +1065,13 @@
   "demo": {
     "banner": "You're viewing the live demo - jump into the app"
   },
+  "errorBoundary": {
+    "title": "This page couldn't load",
+    "body": "Something failed while loading it. Try again, or go back to the home page. If it keeps happening, contact us and quote the reference below.",
+    "retry": "Try again",
+    "home": "Back to home",
+    "reference": "Reference: {digest}"
+  },
   "notFound": {
     "badge": "404 Error",
     "title": "Page not found",

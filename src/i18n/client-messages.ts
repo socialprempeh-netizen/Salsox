@@ -26,7 +26,9 @@
  * mistake (a new namespace in a new component) fails `npm test` first.
  */
 
-const SHELL = ["common", "theme", "loading", "notFound", "related"] as const
+// `errorBoundary`: the app's error boundary (src/app/error.tsx) renders in the
+// root layout, under this set, wherever the error happened.
+const SHELL = ["common", "theme", "loading", "notFound", "related", "errorBoundary"] as const
 
 export const CLIENT_MESSAGES = {
   shell: [...SHELL],

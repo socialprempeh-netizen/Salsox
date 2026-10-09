@@ -125,6 +125,13 @@ export const envSchema = z
     NEXT_PUBLIC_GA_MEASUREMENT_ID: blankAsUnset(z.string().regex(/^G-[A-Z0-9]{4,20}$/, "a GA4 measurement id starts with G-").optional()),
     NEXT_PUBLIC_DEMO_URL: optional,
     NEXT_PUBLIC_CONTACT_EMAIL: optional,
+    // Error tracking (src/lib/sentry.ts). All optional: without the DSN
+    // Sentry stays off. The other three are read at build time only, for the
+    // source map upload (next.config.ts).
+    NEXT_PUBLIC_SENTRY_DSN: blankAsUnset(z.string().regex(/^https:\/\/[A-Za-z0-9]+@[A-Za-z0-9.-]+(?::\d+)?\/\d+$/, "a Sentry DSN looks like https://<key>@<host>/<project id>").optional()),
+    SENTRY_AUTH_TOKEN: optional,
+    SENTRY_ORG: optional,
+    SENTRY_PROJECT: optional,
   })
   // Pairs that are useless alone. Each of these has a failure mode that only
   // shows up in production, which is why they are worth failing the boot for.

@@ -83,6 +83,19 @@ Sono facoltative di proposito: una variabile obbligatoria avrebbe reso una major
 
 Vale la pena sapere quale limite spostare per primo, perché non proteggono la stessa cosa. Il limite sull'accesso protegge i tentativi di password, e lì il costo di bcrypt porta gran parte del peso. I limiti su magic link, registrazione e reset proteggono **l'invio di email**: ognuno stabilisce quanti messaggi può innescare un singolo indirizzo, e bcrypt non c'entra niente. Se quello che stai proteggendo è la bolletta di Resend o la tua reputazione da mittente, è quello che guadagna di più da un archivio condiviso. Il resto sta in [Autenticazione](./authentication.md).
 
+## Tracciamento degli errori (Sentry)
+
+| Variabile | Note |
+|---|---|
+| `NEXT_PUBLIC_SENTRY_DSN` | Facoltativa. Il DSN dalle impostazioni del progetto Sentry (Client Keys). Impostata, gli errori vengono segnalati dal browser, dal server e dall'edge; non impostata, Sentry resta spento e la Content-Security-Policy non nomina nessun host di Sentry. Pubblica per natura: un DSN permette solo di inviare eventi al progetto. |
+| `SENTRY_AUTH_TOKEN` | Facoltativa, solo in fase di build. Un token di autenticazione dell'organizzazione (Settings > Auth Tokens). Con le due qui sotto carica le source map durante la build, così le stack trace mostrano il TypeScript originale, poi le elimina dall'output perché non vengano mai servite. |
+| `SENTRY_ORG` | Facoltativa, solo in fase di build. Lo slug dell'organizzazione, dall'URL del progetto. |
+| `SENTRY_PROJECT` | Facoltativa, solo in fase di build. Lo slug del progetto. Senza tutte e tre il caricamento viene saltato e gli errori arrivano comunque, con stack trace minificate. |
+
+Cosa viene segnalato: gli errori non gestiti e le promise rifiutate nel browser, ogni errore che Next intercetta sul server (server component, server action, route handler, il proxy) tramite `onRequestError` in `src/instrumentation.ts`, e gli errori intercettati dai boundary dell'app (`src/app/error.tsx`, e `src/app/global-error.tsx` quando fallisce il layout radice). Solo errori: niente tracciamento delle prestazioni né session replay, che si pagano a evento.
+
+Cosa non viene inviato: i token di firma. Un link di firma porta il token nel percorso, e il token è l'unica credenziale di chi firma, quindi `src/lib/sentry.ts` riscrive `/sign/<token>` in `/sign/[token]` in ogni evento e breadcrumb prima che parta. I dati personali predefiniti (indirizzi IP, cookie, corpi delle richieste) sono disattivati.
+
 ## Interruttori ed extra
 
 | Variabile | Note |

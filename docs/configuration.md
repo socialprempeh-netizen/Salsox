@@ -76,6 +76,19 @@ Both are optional on purpose: a required variable would have made the release th
 
 Worth knowing which limit to move first, because they are not protecting the same thing. The limit on sign-in guards password attempts, and there bcrypt's cost carries most of the weight. The limits on magic link, signup and reset guard **outbound email**: each caps how many messages one address can trigger, and bcrypt has nothing to do with it. If what you are protecting is your Resend bill or your sending reputation, that is the one that gains most from a shared store. [Authentication](./authentication.md#rate-limiting-honestly) has the rest.
 
+## Error tracking (Sentry)
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional. The DSN from the Sentry project's settings (Client Keys). Set, errors are reported from the browser, the server and the edge; unset, Sentry stays off and the Content-Security-Policy names no Sentry host. Public by design: a DSN only lets someone send events to the project. |
+| `SENTRY_AUTH_TOKEN` | Optional, build time only. An organization auth token (Settings > Auth Tokens). With the two below it uploads source maps during the build, so stack traces show the original TypeScript, then deletes the maps from the output so they are never served. |
+| `SENTRY_ORG` | Optional, build time only. The organization slug from the project's URL. |
+| `SENTRY_PROJECT` | Optional, build time only. The project slug. Without all three, the upload is skipped and errors still arrive, with minified stack traces. |
+
+What is reported: uncaught errors and unhandled rejections in the browser, every error Next catches on the server (server components, server actions, route handlers, the proxy) through `onRequestError` in `src/instrumentation.ts`, and errors caught by the app's error boundaries (`src/app/error.tsx`, and `src/app/global-error.tsx` when the root layout fails). Errors only: no performance tracing and no session replay, which are billed per event.
+
+What is not sent: signing tokens. A signing link carries its token in the path, and the token is the signer's only credential, so `src/lib/sentry.ts` rewrites `/sign/<token>` to `/sign/[token]` in every event and breadcrumb before it leaves. Default PII (IP addresses, cookies, request bodies) is off.
+
 ## Flags and extras
 
 | Variable | Notes |

@@ -79,6 +79,14 @@ describe("analytics hosts", () => {
     expect(ga["script-src"]).toContain("https://www.googletagmanager.com")
     expect(ga["connect-src"]).toContain("https://*.google-analytics.com")
   })
+
+  it("lets the browser reach Sentry's ingest origin only when it is on", () => {
+    expect(contentSecurityPolicy({ dev: false })).not.toMatch(/sentry/)
+    const on = parse(contentSecurityPolicy({ dev: false, sentry: "https://o1.ingest.us.sentry.io" }))
+    expect(on["connect-src"]).toEqual(["'self'", "https://o1.ingest.us.sentry.io"])
+    // Nothing else opens up for it.
+    expect(on["script-src"]).toEqual(prod["script-src"])
+  })
 })
 
 describe("securityHeaders", () => {

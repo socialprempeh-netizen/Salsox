@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+// From the /config entry point: in Sentry 11 it is no longer on the main one.
+import { withSentryConfig } from "@sentry/nextjs/config";
 import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/esign/limits";
 import { securityHeaders as buildSecurityHeaders } from "./src/lib/security-headers";
+import { sentryIngestOrigin } from "./src/lib/sentry";
 import { seoRedirectsForNext } from "./src/lib/seo/redirects";
 
 // Points next-intl at the request config that loads the message files.
@@ -36,6 +39,8 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const securityHeaders = buildSecurityHeaders({
   dev: process.env.NODE_ENV === "development",
   ga: /^G-[A-Z0-9]{4,20}$/.test(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? ""),
+  // Sentry's ingest origin, read from the DSN, or null when it is off.
+  sentry: sentryIngestOrigin(process.env.NEXT_PUBLIC_SENTRY_DSN),
 });
 
 const nextConfig: NextConfig = {
@@ -102,4 +107,32 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+// Sentry's build step (src/lib/sentry.ts has the runtime side). Uploads the
+// browser and server source maps, so a stack trace in Sentry points at the
+// original TypeScript rather than minified chunks, then deletes the maps from
+// the build output so they are never served publicly.
+//
+// The upload needs three build-time variables, none of them read at runtime:
+// SENTRY_AUTH_TOKEN (an organization auth token with the project:releases and
+// org:read scopes), SENTRY_ORG and SENTRY_PROJECT (the slugs in the project's
+// URL). Without the token the upload is switched off rather than attempted,
+// and errors are still reported, with minified stack traces.
+const sentryUpload = Boolean(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT);
+
+// Was: export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: { disable: !sentryUpload, deleteSourcemapsAfterUpload: true },
+  // Every client chunk, not only the app's own, so frames inside Next and
+  // the libraries resolve too.
+  widenClientFileUpload: true,
+  // Quiet locally; CI and Vercel logs show what was uploaded.
+  silent: !process.env.CI,
+  // No usage data about this build sent to Sentry.
+  telemetry: false,
+  // No `webpack.treeshake` (dropping tracing and debug code from the browser
+  // bundle): Sentry applies it to webpack builds only, and Next 16 builds
+  // with Turbopack, where it would be a setting that does nothing.
+});
