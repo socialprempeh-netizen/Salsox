@@ -55,3 +55,10 @@ and Paystack. Animation libraries: framer-motion and gsap, both installed.
 
 Use judgment, pick the option that fits the rules above, and say which choice
 was made.
+
+## Security: temporary production credential files
+Whenever you create a local file to hold a production secret pulled from
+Neon or elsewhere (e.g. .env.production.local) for a one-off command like
+a migration, DELETE the file immediately after the command finishes
+(Remove-Item). Never leave it sitting on disk. This applies to Claude Code
+and to manual terminal steps alike.
