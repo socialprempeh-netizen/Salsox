@@ -13,7 +13,7 @@
  */
 import { prisma } from "@/lib/prisma"
 import { getEntitlement } from "@/lib/billing"
-import { documentsLeft, hasFeature, tierForEntitlement, type PlanTier } from "./plans"
+import { documentsLeft, hasFeature, monthStartUtc, requestToolUsesLeft, tierForEntitlement, type PlanTier } from "./plans"
 import {
   dailyWindowStart,
   emailConfirmationRequired,
@@ -53,25 +53,28 @@ export async function senderBlocker(
 
 /**
  * The sender's plan, for the gates in plans.ts: their tier, and how many
- * signature requests they may still send (null when unlimited). Read from
+ * documents they may still send this month (null when unlimited). Read from
  * billing on every call, like the standing above, so an upgrade applies as
  * soon as the Stripe webhook lands.
- *
- * Counted from every document the account has ever sent, not this month's:
- * the free allowance is one request in total (FREE_SIGNATURE_REQUESTS). A
- * sent document cannot be deleted (only drafts can, deleteDraft), so the
- * count cannot be reset by deleting what was sent. `now` is unused since the
- * count stopped being monthly; it stays so callers need not change.
  */
 export async function senderPlan(userId: string, now = new Date()): Promise<{ tier: PlanTier; documentsLeft: number | null }> {
-  void now
   const tier = tierForEntitlement(await getEntitlement(userId))
   if (hasFeature(tier, "unlimitedDocuments")) return { tier, documentsLeft: null }
-  const sentEver = await prisma.document.count({ where: { userId, sentAt: { not: null } } })
-  return { tier, documentsLeft: documentsLeft(tier, sentEver) }
-  // Was this month's sends only:
-  // const sentThisMonth = await prisma.document.count({ where: { userId, sentAt: { gte: monthStartUtc(now) } } })
-  // return { tier, documentsLeft: documentsLeft(tier, sentThisMonth) }
+  const sentThisMonth = await prisma.document.count({ where: { userId, sentAt: { gte: monthStartUtc(now) } } })
+  return { tier, documentsLeft: documentsLeft(tier, sentThisMonth) }
+}
+
+/**
+ * How many requests the sender may still send from the public
+ * request-a-signature tool (null when unlimited). Counted from every document
+ * they have sent from it: sent documents cannot be deleted (only drafts can,
+ * deleteDraft), so the free use cannot be won back by deleting one.
+ */
+export async function requestToolLeft(userId: string): Promise<number | null> {
+  const tier = tierForEntitlement(await getEntitlement(userId))
+  if (hasFeature(tier, "unlimitedDocuments")) return null
+  const used = await prisma.document.count({ where: { userId, fromRequestTool: true, sentAt: { not: null } } })
+  return requestToolUsesLeft(tier, used)
 }
 
 /** For the dashboard notice: the address still to confirm, or null when nothing is needed. */

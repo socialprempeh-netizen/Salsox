@@ -332,6 +332,10 @@ model Document {
   expiresInDays   Int?
   // Created from the one-screen Quick Send flow (fields placed automatically).
   quickSend       Boolean          @default(false)
+  // Sent from a request prepared on the public request-a-signature tool
+  // (/request-signature). Free accounts get one such send in their lifetime
+  // (FREE_REQUEST_TOOL_USES in src/lib/esign/plans.ts), counted from this.
+  fromRequestTool Boolean          @default(false)
   // Sign & Pay. Amount is in the currency's minor unit (cents, pesewas, kobo).
   // Null amount means the document collects no payment.
   paymentAmount   Int?

@@ -27,8 +27,8 @@ import { resendToRecipient, updateRecipient } from "@/lib/esign/recipients"
 import { documentSetupSchema, parseEmailList, recipientInputSchema, MAX_RECIPIENTS, TITLE_MAX } from "@/lib/esign/schemas"
 import { BURST_LIMITS } from "@/lib/esign/sending-limits"
 import { MAX_PDF_MB, parseExpiryChoice } from "@/lib/esign/limits"
-import { FREE_SIGNATURE_REQUESTS } from "@/lib/esign/plans"
-import { senderPlan } from "@/lib/esign/sender"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
+import { requestToolLeft } from "@/lib/esign/sender"
 
 /**
  * `undelivered` is how many emails the provider refused on an action that
@@ -60,8 +60,8 @@ async function errorText(code: string): Promise<string> {
   // `max` is read by the one message that states the recipient cap, so the
   // number shown and the number enforced are the same value.
   // `maxMb` likewise, for the file-size message.
-  // `free` likewise, for the free signature request allowance.
-  return t.has(code) ? t(code, { max: MAX_RECIPIENTS, maxMb: MAX_PDF_MB, free: FREE_SIGNATURE_REQUESTS }) : t("generic")
+  // `free` likewise, for the free monthly allowance.
+  return t.has(code) ? t(code, { max: MAX_RECIPIENTS, maxMb: MAX_PDF_MB, free: FREE_DOCUMENTS_PER_MONTH }) : t("generic")
 }
 
 async function fail(code: string): Promise<ActionState> {
@@ -149,6 +149,9 @@ export async function quickSendAction(_prev: ActionState, formData: FormData): P
     signers: emails,
     message: String(formData.get("message") ?? "").trim().slice(0, 2000) || undefined,
     expiresInDays,
+    // Set by the form when it was filled from a request-a-signature tool
+    // draft. The engine refuses it once a free account has used the tool.
+    fromRequestTool: formData.get("fromRequestTool") === "1",
   })
   if (!result.ok) return fail(result.error)
   revalidateDocument(result.documentId)
@@ -234,14 +237,17 @@ export async function resendRecipientAction(recipientId: string, documentId: str
 }
 
 /**
- * For the public request-a-signature tool: how many signature requests the
- * signed-in visitor has left (`left` null when their plan is unlimited), or
- * null when nobody is signed in. Lets the tool show the upgrade before the
- * visitor prepares a request their account can no longer send. Only a read:
- * the send itself is refused by the engine whatever this said.
+ * For the public request-a-signature tool: how many requests the signed-in
+ * visitor may still send from it (`left` null when their plan is unlimited),
+ * or null when nobody is signed in. Lets the tool show the upgrade before the
+ * visitor prepares a request their account can no longer send from it. Only
+ * a read: the send itself is refused by the engine whatever this said.
+ *
+ * Was signatureRequestsLeft, which answered the account-wide allowance from
+ * when the free tier was one request in total for every way of sending.
  */
-export async function signatureRequestsLeft(): Promise<{ left: number | null } | null> {
+export async function requestToolUsesLeft(): Promise<{ left: number | null } | null> {
   const user = await getCurrentUser()
   if (!user) return null
-  return { left: (await senderPlan(user.id)).documentsLeft }
+  return { left: await requestToolLeft(user.id) }
 }

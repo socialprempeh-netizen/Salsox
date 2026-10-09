@@ -86,6 +86,9 @@ export function QuickSendForm({ confirmationNeeded = false }: { confirmationNeed
 
   return (
     <form action={action} className="space-y-5">
+      {/* A send filled from the public tool's draft counts as a use of the
+          tool (FREE_REQUEST_TOOL_USES in src/lib/esign/plans.ts). */}
+      {draftFile && <input type="hidden" name="fromRequestTool" value="1" />}
       <PdfDropzone initialFile={draftFile} />
       <div className="space-y-2">
         <Label htmlFor="emails">{t("emailsLabel")}</Label>

@@ -45,7 +45,7 @@ import { chooseProvider, formatMinorUnits, isSignAndPayCurrency, toMinorUnits } 
 import { nameFromEmail, type DocumentSetup } from "./schemas"
 import { signingUrl } from "./share"
 import { sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
-import { senderBlocker, senderPlan } from "./sender"
+import { requestToolLeft, senderBlocker, senderPlan } from "./sender"
 import { hasFeature, planErrorCode, setupBlocker, tierForEntitlement } from "./plans"
 import { getEntitlement } from "@/lib/billing"
 import { DEFAULT_EXPIRY_DAYS } from "./limits"
@@ -363,6 +363,8 @@ export async function quickSend(args: {
   signers: { email: string; name?: string }[]
   message?: string
   expiresInDays: number | null
+  /** Sent from a request prepared on the public request-a-signature tool. */
+  fromRequestTool?: boolean
 }): Promise<Result<{ documentId: string; undelivered: number; notEmailed: number }>> {
   // Asked before anything is stored, so a sender who may not send is told now
   // and is not left with a draft they never asked for. `sendDocument` asks
@@ -371,12 +373,16 @@ export async function quickSend(args: {
   if (blocked) return { ok: false, error: blocked }
   // Same for a free account that has used its documents this month.
   if ((await senderPlan(args.userId)).documentsLeft === 0) return { ok: false, error: planErrorCode("unlimitedDocuments") }
+  // And a free account that has used its one request from the public tool.
+  // Only the tool is gated: the same account may still send this document
+  // through Quick Send itself, within the monthly allowance above.
+  if (args.fromRequestTool && (await requestToolLeft(args.userId)) === 0) return { ok: false, error: planErrorCode("requestTool") }
 
   const created = await createDraftFromUpload({ userId: args.userId, title: args.title, bytes: args.bytes })
   if (!created.ok) return created
   const document = await prisma.document.update({
     where: { id: created.documentId },
-    data: { quickSend: true, message: args.message || null, expiresInDays: args.expiresInDays },
+    data: { quickSend: true, fromRequestTool: Boolean(args.fromRequestTool), message: args.message || null, expiresInDays: args.expiresInDays },
   })
 
   const placed = autoPlaceFields(document.pageCount, args.signers.length)

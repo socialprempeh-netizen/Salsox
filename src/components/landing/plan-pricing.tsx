@@ -6,7 +6,7 @@ import { PlanCards, type PlanCardData } from "@/components/billing/plan-cards"
 // The example "Enterprise / Custom" card is no longer shown here: see below.
 // import { exampleEnterpriseCard } from "@/components/billing/enterprise-card"
 import { Reveal } from "@/components/landing/reveal"
-import { FREE_SIGNATURE_REQUESTS } from "@/lib/esign/plans"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 
 /**
  * The pricing section, rendered from your `Plan` rows: this is what the kit
@@ -107,7 +107,7 @@ export async function PlanPricing({
             {t("title")}
           </Heading>
           <p className="mt-4 text-lg text-muted-foreground">
-            {isDemo ? t("subtitleDemo") : t("subtitle", { free: FREE_SIGNATURE_REQUESTS })}
+            {isDemo ? t("subtitleDemo") : t("subtitle", { free: FREE_DOCUMENTS_PER_MONTH })}
           </p>
         </Reveal>
 

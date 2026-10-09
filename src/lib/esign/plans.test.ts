@@ -2,10 +2,12 @@ import { describe, it, expect } from "vitest"
 
 import {
   documentsLeft,
-  FREE_SIGNATURE_REQUESTS,
+  FREE_DOCUMENTS_PER_MONTH,
+  FREE_REQUEST_TOOL_USES,
   hasFeature,
   monthStartUtc,
   planErrorCode,
+  requestToolUsesLeft,
   setupBlocker,
   tierForEntitlement,
   tierForPlanSlug,
@@ -81,12 +83,29 @@ describe("documentsLeft", () => {
     expect(documentsLeft("business", 0)).toBeNull()
   })
 
-  it("gives a free account one signature request in total, then none", () => {
-    expect(FREE_SIGNATURE_REQUESTS).toBe(1)
-    expect(documentsLeft("free", 0)).toBe(1)
-    expect(documentsLeft("free", 1)).toBe(0)
-    // Documents sent while on a paid plan still count once it ends.
-    expect(documentsLeft("free", 40)).toBe(0)
+  it("counts down the free allowance and stops at zero", () => {
+    expect(documentsLeft("free", 0)).toBe(FREE_DOCUMENTS_PER_MONTH)
+    expect(documentsLeft("free", FREE_DOCUMENTS_PER_MONTH - 1)).toBe(1)
+    expect(documentsLeft("free", FREE_DOCUMENTS_PER_MONTH + 4)).toBe(0)
+  })
+})
+
+describe("requestToolUsesLeft", () => {
+  it("gives a free account one use of the request tool, then none", () => {
+    expect(FREE_REQUEST_TOOL_USES).toBe(1)
+    expect(requestToolUsesLeft("free", 0)).toBe(1)
+    expect(requestToolUsesLeft("free", 1)).toBe(0)
+    // Tool sends made while on a paid plan still count once it ends.
+    expect(requestToolUsesLeft("free", 12)).toBe(0)
+  })
+
+  it("is unlimited from Personal up", () => {
+    expect(requestToolUsesLeft("personal", 50)).toBeNull()
+    expect(requestToolUsesLeft("business", 0)).toBeNull()
+  })
+
+  it("has its own upgrade error code", () => {
+    expect(planErrorCode("requestTool")).toBe("plan_requestTool")
   })
 })
 

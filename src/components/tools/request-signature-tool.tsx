@@ -16,10 +16,11 @@
  * for a signed-in visitor, after signup for a new one (`next`, validated by
  * src/lib/safe-next.ts). The PDF is uploaded only when they press Send there.
  *
- * A free account sends one signature request in total (plans.ts). A
- * signed-in visitor who has used it sees the upgrade here, before preparing
- * anything, instead of a "Continue to send" that would end at a refusal. A
- * new visitor's first request is the free one, so nothing changes for them.
+ * A free account sends one request from this tool in its lifetime
+ * (FREE_REQUEST_TOOL_USES in plans.ts); Quick Send keeps its own monthly
+ * allowance. A signed-in visitor who has used the tool sees the upgrade here,
+ * before preparing anything, instead of a "Continue to send" that would end
+ * at a refusal. A new visitor's first request is the free one.
  */
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -33,7 +34,7 @@ import { MAX_RECIPIENTS, parseEmailList } from "@/lib/esign/schemas"
 import { autoPlaceFields, needsSignaturePage } from "@/lib/esign/quick-send"
 import { saveRequestDraft } from "@/lib/request-draft"
 import { track } from "@/lib/analytics"
-import { signatureRequestsLeft } from "@/app/actions/documents"
+import { requestToolUsesLeft } from "@/app/actions/documents"
 import { PdfDrop, type PickedPdf } from "./pdf-drop"
 import { Appear, ToolMotion } from "./tool-motion"
 
@@ -44,13 +45,13 @@ export function RequestSignatureTool() {
   const t = useTranslations("tools")
   const router = useRouter()
   const signedIn = useSignedIn()
-  // Signature requests the signed-in visitor has left: undefined until known
+  // Requests the signed-in visitor may still send from this tool: undefined until known
   // (or when signed out), null when their plan is unlimited.
   const [requestsLeft, setRequestsLeft] = useState<number | null | undefined>(undefined)
   useEffect(() => {
     if (!signedIn) return
     let live = true
-    signatureRequestsLeft()
+    requestToolUsesLeft()
       .then((result) => live && setRequestsLeft(result ? result.left : undefined))
       // Unknown is treated as allowed: Quick Send and the engine still check.
       .catch(() => undefined)
@@ -107,9 +108,12 @@ export function RequestSignatureTool() {
       <div className="space-y-4">
         {limitReached && (
           <Appear id="limit">
-            <div role="alert" className="relative flex flex-col gap-4 border bg-card p-4 pl-5 sm:flex-row sm:items-center sm:justify-between sm:p-5 sm:pl-6">
-              {/* A bar rather than a border colour, which globals.css overrides. */}
-              <span aria-hidden="true" className="absolute inset-y-0 -left-px w-1 bg-primary" />
+            {/* A border colour accent again, now that globals.css's default
+                border colour sits in @layer base. Was a bar while that rule
+                outranked the utilities:
+                className="relative flex ... border bg-card p-4 pl-5 ... sm:pl-6"
+                <span aria-hidden="true" className="absolute inset-y-0 -left-px w-1 bg-primary" /> */}
+            <div role="alert" className="flex flex-col gap-4 border border-l-4 border-l-primary bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
               <div className="flex min-w-0 gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-primary/30 bg-primary/10 text-primary">
                   <Lock className="h-4 w-4" aria-hidden="true" />

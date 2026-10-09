@@ -16,4 +16,5 @@ export const MIGRATIONS = [
   "20260929173111_esign",
   "20261006120000_verification_and_sms",
   "20261006180000_signup_attribution",
+  "20261009120000_request_tool_flag",
 ] as const

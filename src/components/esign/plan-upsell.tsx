@@ -9,10 +9,11 @@
  * - `PlanLock`: the note under a control the plan does not include (Sign &
  *   Pay, signing order, approvers), naming the plan that does, with a link to
  *   billing.
- * - `FreeAllowanceNotice`: on the upload pages, a free account's signature
- *   request still to use (was: documents left this month).
- * - `RequestLimitReached`: in place of the send form once that request is
- *   used, with what each plan adds and the way to billing.
+ * - `FreeAllowanceNotice`: on the upload pages, a free account's documents
+ *   left this month, and once spent, the upgrade.
+ * - `RequestLimitReached`: in place of Quick Send's form when it opens with a
+ *   request from the public request-a-signature tool whose one free use is
+ *   spent, with what each plan adds and the way to billing.
  * - `useActionErrorToast`: shows an action's error, with an "Upgrade" button
  *   when the action said a plan would lift it (`ActionState.upgrade`).
  *
@@ -96,9 +97,11 @@ export function FreeAllowanceNotice({ left, total }: { left: number | null; tota
 }
 
 /**
- * Takes the place of a send form once a free account has used its signature
- * request (FREE_SIGNATURE_REQUESTS in plans.ts): rather than letting the
- * sender fill in a form the engine will refuse, it says the request is used,
+ * Takes the place of Quick Send's form when a free account arrives from the
+ * request-a-signature tool having used its one free request from it
+ * (FREE_REQUEST_TOOL_USES in plans.ts; for a while this gated every send,
+ * account-wide). Rather than letting the sender fill in a form the engine
+ * will refuse, it says the tool's free use is spent,
  * what each plan adds, and goes to billing. Children enter one after another
  * (a short stagger, no movement under reduced motion), so the eye lands on
  * the heading first and the plans second.
@@ -121,12 +124,13 @@ export function RequestLimitReached({ total }: { total: number }) {
       initial="hidden"
       animate="shown"
       variants={{ hidden: {}, shown: { transition: { staggerChildren: reduceMotion ? 0 : 0.06 } } }}
-      className="relative border bg-card p-5 pt-6 sm:p-8 sm:pt-9"
+      // The accent edge is a border colour again now that globals.css sets
+      // the default border colour inside @layer base, below the utilities.
+      // It was drawn as a bar while that rule outranked them:
+      //   className="relative border bg-card p-5 pt-6 sm:p-8 sm:pt-9"
+      //   <span aria-hidden="true" className="absolute inset-x-0 -top-px h-1 bg-primary" />
+      className="border border-t-4 border-t-primary bg-card p-5 sm:p-8"
     >
-      {/* The accent edge is a bar, not a border colour: globals.css sets
-          border-color on every element outside a layer, which outranks the
-          border-colour utilities. */}
-      <span aria-hidden="true" className="absolute inset-x-0 -top-px h-1 bg-primary" />
       <motion.span variants={item} className="flex h-11 w-11 items-center justify-center border border-primary/30 bg-primary/10 text-primary">
         <Lock className="h-5 w-5" aria-hidden="true" />
       </motion.span>
