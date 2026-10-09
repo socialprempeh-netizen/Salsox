@@ -123,7 +123,7 @@
       "none": "None",
       "$product": {
         "upsellTitle": "Get paid as you get signed",
-        "upsellBody": "Free accounts send {free} documents a month. Personal sends unlimited documents; Business adds Sign & Pay, signing order and sealed PDFs with an audit certificate. Cancel in one click, and you'll get a reminder before any renewal.",
+        "upsellBody": "A free account sends {free, plural, one {one signature request} other {# signature requests}} in total. Personal sends unlimited documents; Business adds Sign & Pay, signing order and sealed PDFs with an audit certificate. Cancel in one click, and you'll get a reminder before any renewal.",
         "upsellCta": "See plans"
       },
       "$kit": {
@@ -663,7 +663,7 @@
       "subtitle": "Built around the complaints people have about the big e-signature tools.",
       "c1": {
         "title": "Unlimited sending",
-        "description": "No envelope caps on Personal or Business, and no counting. Free accounts send {free} documents a month to try it. Fair-use limits apply to prevent spam."
+        "description": "No envelope caps on Personal or Business, and no counting. A free account sends {free, plural, one {one signature request} other {# signature requests}} to try it. Fair-use limits apply to prevent spam."
       },
       "c2": {
         "title": "Fix a wrong email in one click",
@@ -809,8 +809,8 @@
     "dashboard": "Dashboard",
     "menu": {
       "why": "Why {site}",
-      "whatYouCanDo": "What you can do",
       "useCases": "Use cases",
+      "byIndustry": "By industry",
       "exploreFeatures": "Explore all features",
       "allUseCases": "All use cases",
       "tools": "Free tools",
@@ -842,7 +842,7 @@
       "items": [
         {
           "question": "Is there really no limit on how many documents I send?",
-          "answer": "On Personal and Business, none: {site} doesn't count envelopes, and Business adds features like Sign & Pay and signing order, never more sends. A free account sends {free} documents a month, so you can try it before you pay. Fair-use limits apply on every plan to prevent spam."
+          "answer": "On Personal and Business, none: {site} doesn't count envelopes, and Business adds features like Sign & Pay and signing order, never more sends. A free account sends one signature request, so you can try it before you pay. Fair-use limits apply on every plan to prevent spam."
         },
         {
           "question": "Are electronic signatures legally binding?",
@@ -932,7 +932,7 @@
     "$product": {
       "title": "Simple, transparent pricing",
       "subtitleDemo": "These are example plans, rendered live from the database with monthly and yearly tiers. Sign in to the demo to see the full billing flow, including a one-time lifetime purchase.",
-      "subtitle": "Start free with {free} documents a month. Upgrade for unlimited documents, then to Business for Sign & Pay, signing order and sealed PDFs with an audit certificate."
+      "subtitle": "Start free with {free, plural, one {one signature request} other {# signature requests}}. Upgrade for unlimited documents, then to Business for Sign & Pay, signing order and sealed PDFs with an audit certificate."
     }
   },
   "setup": {
@@ -1176,10 +1176,18 @@
       "lockedHint": "Included in the {plan} plan.",
       "upgrade": "Upgrade",
       "approverOption": "Approves ({plan})",
-      "allowanceLeft": "{left} of {total} free documents left this month",
-      "allowanceSpent": "You've sent your {total} free documents this month",
-      "allowanceBody": "Personal sends unlimited documents. Business adds Sign & Pay, signing order and sealed PDFs with an audit certificate.",
-      "allowanceCta": "See plans"
+      "allowanceLeft": "Your free account includes {total, plural, one {one signature request} other {# signature requests}}: {left} left",
+      "allowanceSpent": "You've used your free signature {total, plural, one {request} other {requests}}",
+      "allowanceBody": "Sending for signature again needs a paid plan. Personal sends unlimited documents; Business adds Sign & Pay, signing order and sealed PDFs with an audit certificate.",
+      "allowanceCta": "See plans",
+      "limitTitle": "You've used your free signature {total, plural, one {request} other {requests}}",
+      "limitBody": "A free account includes {total, plural, one {one signature request} other {# signature requests}}. To send another document for signature, choose a plan. Documents you've already sent stay open for signing.",
+      "limitPersonalName": "Personal",
+      "limitPersonal": "Unlimited documents for signature.",
+      "limitBusinessName": "Business",
+      "limitBusiness": "Everything in Personal, plus Sign & Pay, signing order and sealed PDFs with an audit certificate.",
+      "limitCta": "See plans",
+      "limitBack": "Back to documents"
     },
     "errors": {
       "generic": "Something went wrong. Please try again.",
@@ -1208,7 +1216,7 @@
       "plan_signAndPay": "Sign & Pay is part of the Business plan. Upgrade to collect payments as people sign.",
       "plan_sequentialSigning": "Signing in order is part of the Business plan. Upgrade to set a signing order.",
       "plan_approvers": "Approvers are part of the Business plan. Upgrade to add one, or make them a signer.",
-      "plan_unlimitedDocuments": "You've sent your {free} free documents this month. Upgrade to Personal for unlimited documents.",
+      "plan_unlimitedDocuments": "You've used your free signature {free, plural, one {request} other {requests}}. Upgrade to Personal to send unlimited documents for signature.",
       "ENCRYPTED": "This PDF is password-protected. Remove the password and upload it again.",
       "UNREADABLE": "This PDF could not be read. Try exporting it again.",
       "EMPTY": "This PDF has no pages.",
@@ -1699,7 +1707,7 @@
     "toolPrivacy": "Runs in your browser. Your file is never uploaded.",
     "ctaTitle": "Send your first document for signature",
     "ctaToolTitle": "Need someone else's signature?",
-    "ctaBody": "A free account sends 3 documents a month for signature. Signers need no account, and every step is recorded in an audit trail.",
+    "ctaBody": "A free account sends your first document for signature. Signers need no account, and every step is recorded in an audit trail.",
     "ctaButton": "Create a free account",
     "ctaPricing": "Compare plans",
     "fixedLinks": {
@@ -1725,7 +1733,7 @@
       },
       "useCases": {
         "name": "Use cases",
-        "description": "E-signatures for real estate, HR and freelancers."
+        "description": "Sending for signature, signing PDFs online, and e-signatures for real estate, HR and freelancers."
       },
       "docs": {
         "name": "Help and docs",
@@ -1749,10 +1757,10 @@
       },
       "useCases": {
         "metaTitle": "E-signature use cases: real estate, HR, freelancers",
-        "metaDescription": "How e-signatures fit real estate, HR and freelance work: the documents involved, collecting payment at signing, approvals, and where ink is still required.",
+        "metaDescription": "Every way to use e-signatures: sending documents for signature, signing PDFs online, free and business e-signing, and the documents real estate, HR and freelance work sends.",
         "breadcrumb": "Use cases",
         "h1": "E-signatures for your kind of work",
-        "lede": "The documents each line of work sends, what tends to go wrong, and how to set up signing so it doesn't."
+        "lede": "What you can sign and send, and the documents each line of work handles: what tends to go wrong, and how to set up signing so it doesn't."
       }
     }
   },
@@ -1807,7 +1815,10 @@
     "draftFailed": "Your request could not be saved on this device. Try again.",
     "continueToSend": "Continue to send",
     "signUpToSend": "Create a free account to send",
-    "freeSends": "Free: 3 documents a month. New accounts confirm their email address before the first send. Your PDF is uploaded only when you press Send.",
+    "limitTitle": "You've used your free signature request",
+    "limitBody": "Sending another document for signature needs a paid plan. Personal sends unlimited documents; Business adds Sign & Pay and signing order.",
+    "limitCta": "See plans",
+    "freeSends": "Your first signature request is free; after that, a paid plan sends unlimited documents. New accounts confirm their email address before the first send. Your PDF is uploaded only when you press Send.",
     "generatorMode": "How to create your signature",
     "draw": "Draw",
     "type": "Type",

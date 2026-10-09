@@ -15,11 +15,17 @@
  * this device (src/lib/request-draft.ts) and opened in Quick Send: directly
  * for a signed-in visitor, after signup for a new one (`next`, validated by
  * src/lib/safe-next.ts). The PDF is uploaded only when they press Send there.
+ *
+ * A free account sends one signature request in total (plans.ts). A
+ * signed-in visitor who has used it sees the upgrade here, before preparing
+ * anything, instead of a "Continue to send" that would end at a refusal. A
+ * new visitor's first request is the free one, so nothing changes for them.
  */
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ArrowRight, FileText, RefreshCcw, UserPlus } from "lucide-react"
+import { ArrowRight, FileText, Lock, RefreshCcw, UserPlus } from "lucide-react"
 import { PdfPages } from "@/components/esign/pdf-pages"
 import { useSignedIn } from "@/components/landing/session-aware"
 import { MAX_PDF_MB, pdfFileProblem } from "@/lib/esign/limits"
@@ -27,15 +33,32 @@ import { MAX_RECIPIENTS, parseEmailList } from "@/lib/esign/schemas"
 import { autoPlaceFields, needsSignaturePage } from "@/lib/esign/quick-send"
 import { saveRequestDraft } from "@/lib/request-draft"
 import { track } from "@/lib/analytics"
+import { signatureRequestsLeft } from "@/app/actions/documents"
 import { PdfDrop, type PickedPdf } from "./pdf-drop"
 import { Appear, ToolMotion } from "./tool-motion"
 
 const QUICK_SEND_DRAFT = "/dashboard/documents/quick-send?draft=1"
+const BILLING = "/dashboard/billing"
 
 export function RequestSignatureTool() {
   const t = useTranslations("tools")
   const router = useRouter()
   const signedIn = useSignedIn()
+  // Signature requests the signed-in visitor has left: undefined until known
+  // (or when signed out), null when their plan is unlimited.
+  const [requestsLeft, setRequestsLeft] = useState<number | null | undefined>(undefined)
+  useEffect(() => {
+    if (!signedIn) return
+    let live = true
+    signatureRequestsLeft()
+      .then((result) => live && setRequestsLeft(result ? result.left : undefined))
+      // Unknown is treated as allowed: Quick Send and the engine still check.
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [signedIn])
+  const limitReached = Boolean(signedIn) && requestsLeft === 0
   const [pdf, setPdf] = useState<PickedPdf | null>(null)
   const [pageCount, setPageCount] = useState(0)
   const [emails, setEmails] = useState("")
@@ -82,6 +105,31 @@ export function RequestSignatureTool() {
   return (
     <ToolMotion>
       <div className="space-y-4">
+        {limitReached && (
+          <Appear id="limit">
+            <div role="alert" className="relative flex flex-col gap-4 border bg-card p-4 pl-5 sm:flex-row sm:items-center sm:justify-between sm:p-5 sm:pl-6">
+              {/* A bar rather than a border colour, which globals.css overrides. */}
+              <span aria-hidden="true" className="absolute inset-y-0 -left-px w-1 bg-primary" />
+              <div className="flex min-w-0 gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-primary/30 bg-primary/10 text-primary">
+                  <Lock className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{t("limitTitle")}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{t("limitBody")}</p>
+                </div>
+              </div>
+              <Link
+                href={BILLING}
+                onClick={() => track("cta_clicked", { location: "tool:request-signature", target: "billing" })}
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                {t("limitCta")}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </Appear>
+        )}
         {!pdf ? (
           <PdfDrop onPicked={picked} check={fileCheck} hint={t("hintSend", { mb: MAX_PDF_MB })} />
         ) : (
@@ -153,13 +201,16 @@ export function RequestSignatureTool() {
 
         {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <button type="button" disabled={!ready || busy} onClick={() => void continueToSend()} className="inline-flex h-12 w-full items-center justify-center gap-2 bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto">
-            {signedIn ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : <UserPlus className="h-4 w-4" aria-hidden="true" />}
-            {signedIn ? t("continueToSend") : t("signUpToSend")}
-          </button>
-          {!signedIn && <p className="text-xs text-muted-foreground">{t("freeSends")}</p>}
-        </div>
+        {/* Hidden once the free request is used: the upgrade above is the way on. */}
+        {!limitReached && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <button type="button" disabled={!ready || busy} onClick={() => void continueToSend()} className="inline-flex h-12 w-full items-center justify-center gap-2 bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto">
+              {signedIn ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : <UserPlus className="h-4 w-4" aria-hidden="true" />}
+              {signedIn ? t("continueToSend") : t("signUpToSend")}
+            </button>
+            {!signedIn && <p className="text-xs text-muted-foreground">{t("freeSends")}</p>}
+          </div>
+        )}
       </div>
     </ToolMotion>
   )

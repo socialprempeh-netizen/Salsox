@@ -13,7 +13,7 @@
  */
 import { prisma } from "@/lib/prisma"
 import { getEntitlement } from "@/lib/billing"
-import { documentsLeft, hasFeature, monthStartUtc, tierForEntitlement, type PlanTier } from "./plans"
+import { documentsLeft, hasFeature, tierForEntitlement, type PlanTier } from "./plans"
 import {
   dailyWindowStart,
   emailConfirmationRequired,
@@ -53,15 +53,25 @@ export async function senderBlocker(
 
 /**
  * The sender's plan, for the gates in plans.ts: their tier, and how many
- * documents they may still send this month (null when unlimited). Read from
+ * signature requests they may still send (null when unlimited). Read from
  * billing on every call, like the standing above, so an upgrade applies as
  * soon as the Stripe webhook lands.
+ *
+ * Counted from every document the account has ever sent, not this month's:
+ * the free allowance is one request in total (FREE_SIGNATURE_REQUESTS). A
+ * sent document cannot be deleted (only drafts can, deleteDraft), so the
+ * count cannot be reset by deleting what was sent. `now` is unused since the
+ * count stopped being monthly; it stays so callers need not change.
  */
 export async function senderPlan(userId: string, now = new Date()): Promise<{ tier: PlanTier; documentsLeft: number | null }> {
+  void now
   const tier = tierForEntitlement(await getEntitlement(userId))
   if (hasFeature(tier, "unlimitedDocuments")) return { tier, documentsLeft: null }
-  const sentThisMonth = await prisma.document.count({ where: { userId, sentAt: { gte: monthStartUtc(now) } } })
-  return { tier, documentsLeft: documentsLeft(tier, sentThisMonth) }
+  const sentEver = await prisma.document.count({ where: { userId, sentAt: { not: null } } })
+  return { tier, documentsLeft: documentsLeft(tier, sentEver) }
+  // Was this month's sends only:
+  // const sentThisMonth = await prisma.document.count({ where: { userId, sentAt: { gte: monthStartUtc(now) } } })
+  // return { tier, documentsLeft: documentsLeft(tier, sentThisMonth) }
 }
 
 /** For the dashboard notice: the address still to confirm, or null when nothing is needed. */

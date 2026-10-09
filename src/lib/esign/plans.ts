@@ -7,7 +7,8 @@
  * asks it before saving a setup, before sending and before sealing, and the
  * dashboard asks it to lock and upsell the same controls.
  *
- *   free      3 documents a month, Quick Send, WhatsApp/SMS links
+ *   free      1 signature request, ever (then a paid plan), Quick Send,
+ *             WhatsApp/SMS links. Was 3 documents a month.
  *   personal  unlimited documents (Personal, $9/mo)
  *   business  Sign & Pay, sequential signing and approvers, sealed PDFs with
  *             the audit certificate (Business, $19/mo, and Lifetime)
@@ -35,8 +36,16 @@ export const FEATURE_TIER: Record<PlanFeature, PlanTier> = {
 
 const RANK: Record<PlanTier, number> = { free: 0, personal: 1, business: 2 }
 
-/** Documents a free account may send per calendar month (UTC). */
-export const FREE_DOCUMENTS_PER_MONTH = 3
+/**
+ * Signature requests a free account may send, in its lifetime. Sending for
+ * signature is the product's core paid feature, so a free account gets one
+ * to try it, and the next needs a plan. Replaced a monthly allowance that
+ * came back every month, which made the paid feature free for anyone who
+ * sends a few documents a month. Was:
+ *   /** Documents a free account may send per calendar month (UTC). *\/
+ *   export const FREE_DOCUMENTS_PER_MONTH = 3
+ */
+export const FREE_SIGNATURE_REQUESTS = 1
 
 export function hasFeature(tier: PlanTier, feature: PlanFeature): boolean {
   return RANK[tier] >= RANK[FEATURE_TIER[feature]]
@@ -90,13 +99,20 @@ export function monthStartUtc(now: Date): Date {
 }
 
 /**
- * Documents the tier may still send this month: null when unlimited,
- * otherwise what is left of the free allowance (never below zero).
+ * Signature requests the tier may still send: null when unlimited, otherwise
+ * what is left of the free allowance (never below zero). `sentEver` counts
+ * every document the account has sent, on any plan: one sent while
+ * subscribed still uses the free request once the subscription ends.
  */
-export function documentsLeft(tier: PlanTier, sentThisMonth: number): number | null {
+export function documentsLeft(tier: PlanTier, sentEver: number): number | null {
   if (hasFeature(tier, "unlimitedDocuments")) return null
-  return Math.max(0, FREE_DOCUMENTS_PER_MONTH - sentThisMonth)
+  return Math.max(0, FREE_SIGNATURE_REQUESTS - sentEver)
 }
+// Was the monthly allowance:
+// export function documentsLeft(tier: PlanTier, sentThisMonth: number): number | null {
+//   if (hasFeature(tier, "unlimitedDocuments")) return null
+//   return Math.max(0, FREE_DOCUMENTS_PER_MONTH - sentThisMonth)
+// }
 
 /** The error code an action returns for a feature the plan lacks. */
 export function planErrorCode(feature: PlanFeature): string {

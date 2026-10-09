@@ -6,7 +6,7 @@ lede: "For a freelancer, the gap between \"sounds good\" and a signed contract w
 primaryKeyword: "esignature for freelancers"
 aliases: ["freelancer esignature", "esignature for consultants", "freelance contract signing", "client contract esignature"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-09
 breadcrumb: "Freelancers"
 faq:
   - q: "What should a freelance contract include before I send it for signature?"
@@ -14,7 +14,7 @@ faq:
   - q: "Can my client pay the deposit when they sign?"
     a: "Yes, on the Business plan. Set the deposit on the contract; the client pays by card through Stripe, or by card or mobile money through Paystack where it is available, as the last step of signing. The money goes to your own account."
   - q: "Is the free plan enough for a freelancer?"
-    a: "If you sign up three clients or fewer a month, it may be. It sends 3 documents a month with the full signing experience. The free PDF tools also let you sign documents clients send you."
+    a: "It is enough to try: a free account sends one document for signature with the full signing experience, and the free PDF tools let you sign documents clients send you. Sending to clients regularly needs Personal, which has no document count."
   - q: "What if my client is not technical?"
     a: "They need nothing but the link. No account, no app; it works on a phone, and you can send the link by WhatsApp or SMS if they do not check email."
 related: ["/business-esignature", "/compare/pandadoc", "/free-esignature", "/sign-pdf", "/pricing"]
@@ -50,4 +50,4 @@ Sometimes the client sends the paperwork: an NDA, a supplier form, a framework a
 
 ## Which plan
 
-Start free: three documents a month, every month. When you are signing up more clients than that, Personal removes the count; Business adds the deposit at signing and costs less per year than chasing one late invoice. Compare the plans on the [pricing page](/pricing), or read how {site} compares with [PandaDoc](/compare/pandadoc) if you also need proposal templates.
+Start free: your first contract goes out on a free account. From the second client on, Personal sends without a count; Business adds the deposit at signing and costs less per year than chasing one late invoice. Compare the plans on the [pricing page](/pricing), or read how {site} compares with [PandaDoc](/compare/pandadoc) if you also need proposal templates.

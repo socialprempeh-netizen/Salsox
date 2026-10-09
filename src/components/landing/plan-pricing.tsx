@@ -6,7 +6,7 @@ import { PlanCards, type PlanCardData } from "@/components/billing/plan-cards"
 // The example "Enterprise / Custom" card is no longer shown here: see below.
 // import { exampleEnterpriseCard } from "@/components/billing/enterprise-card"
 import { Reveal } from "@/components/landing/reveal"
-import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
+import { FREE_SIGNATURE_REQUESTS } from "@/lib/esign/plans"
 
 /**
  * The pricing section, rendered from your `Plan` rows: this is what the kit
@@ -107,12 +107,15 @@ export async function PlanPricing({
             {t("title")}
           </Heading>
           <p className="mt-4 text-lg text-muted-foreground">
-            {isDemo ? t("subtitleDemo") : t("subtitle", { free: FREE_DOCUMENTS_PER_MONTH })}
+            {isDemo ? t("subtitleDemo") : t("subtitle", { free: FREE_SIGNATURE_REQUESTS })}
           </p>
         </Reveal>
 
         <Reveal delay={100}>
-          <div className="mx-auto max-w-5xl">
+          {/* `plans`: where the menu's Pricing link lands (PRICING_HREF in
+              src/lib/site-nav.ts), so the cards open in view instead of
+              below the heading. html's scroll-padding-top clears the navbar. */}
+          <div id="plans" className="mx-auto max-w-5xl">
             {/* Was contactCard={await exampleEnterpriseCard()}: a kit example
                 ("Enterprise, Custom") that took the place where Lifetime
                 belongs. Removed from the public page; the billing page

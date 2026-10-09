@@ -3,14 +3,16 @@
 /**
  * The upgrade prompts for plan-gated features (rules in src/lib/esign/plans.ts).
  *
- * Three pieces, so a gate always says why and offers the way past it instead
+ * Four pieces, so a gate always says why and offers the way past it instead
  * of failing silently or not at all:
  *
  * - `PlanLock`: the note under a control the plan does not include (Sign &
  *   Pay, signing order, approvers), naming the plan that does, with a link to
  *   billing.
- * - `FreeAllowanceNotice`: on the upload pages, a free account's documents
- *   left this month, and once spent, the upgrade.
+ * - `FreeAllowanceNotice`: on the upload pages, a free account's signature
+ *   request still to use (was: documents left this month).
+ * - `RequestLimitReached`: in place of the send form once that request is
+ *   used, with what each plan adds and the way to billing.
  * - `useActionErrorToast`: shows an action's error, with an "Upgrade" button
  *   when the action said a plan would lift it (`ActionState.upgrade`).
  *
@@ -90,6 +92,74 @@ export function FreeAllowanceNotice({ left, total }: { left: number | null; tota
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </motion.div>
+  )
+}
+
+/**
+ * Takes the place of a send form once a free account has used its signature
+ * request (FREE_SIGNATURE_REQUESTS in plans.ts): rather than letting the
+ * sender fill in a form the engine will refuse, it says the request is used,
+ * what each plan adds, and goes to billing. Children enter one after another
+ * (a short stagger, no movement under reduced motion), so the eye lands on
+ * the heading first and the plans second.
+ */
+export function RequestLimitReached({ total }: { total: number }) {
+  const t = useTranslations("esign.plans")
+  const reduceMotion = useReducedMotion()
+  const item = {
+    hidden: { opacity: 0, y: reduceMotion ? 0 : 8 },
+    shown: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
+  }
+  const plans = [
+    { name: t("limitPersonalName"), body: t("limitPersonal") },
+    { name: t("limitBusinessName"), body: t("limitBusiness") },
+  ]
+  return (
+    <motion.section
+      role="alert"
+      aria-labelledby="request-limit-title"
+      initial="hidden"
+      animate="shown"
+      variants={{ hidden: {}, shown: { transition: { staggerChildren: reduceMotion ? 0 : 0.06 } } }}
+      className="relative border bg-card p-5 pt-6 sm:p-8 sm:pt-9"
+    >
+      {/* The accent edge is a bar, not a border colour: globals.css sets
+          border-color on every element outside a layer, which outranks the
+          border-colour utilities. */}
+      <span aria-hidden="true" className="absolute inset-x-0 -top-px h-1 bg-primary" />
+      <motion.span variants={item} className="flex h-11 w-11 items-center justify-center border border-primary/30 bg-primary/10 text-primary">
+        <Lock className="h-5 w-5" aria-hidden="true" />
+      </motion.span>
+      <motion.h2 variants={item} id="request-limit-title" className="mt-5 text-xl font-bold tracking-tight sm:text-2xl">
+        {t("limitTitle", { total })}
+      </motion.h2>
+      <motion.p variants={item} className="mt-2 max-w-prose text-sm text-muted-foreground sm:text-base">
+        {t("limitBody", { total })}
+      </motion.p>
+      <motion.dl variants={item} className="mt-6 divide-y divide-border border-y border-border">
+        {plans.map((plan) => (
+          <div key={plan.name} className="grid gap-1 py-3 sm:grid-cols-[8rem_1fr] sm:gap-4">
+            <dt className="text-sm font-semibold text-foreground">{plan.name}</dt>
+            <dd className="text-sm text-muted-foreground">{plan.body}</dd>
+          </div>
+        ))}
+      </motion.dl>
+      <motion.div variants={item} className="mt-6 flex flex-col gap-2 sm:flex-row">
+        <Link
+          href={BILLING}
+          className="group inline-flex h-11 items-center justify-center gap-1.5 bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          {t("limitCta")}
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+        </Link>
+        <Link
+          href="/dashboard/documents"
+          className="inline-flex h-11 items-center justify-center border border-border px-5 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          {t("limitBack")}
+        </Link>
+      </motion.div>
+    </motion.section>
   )
 }
 

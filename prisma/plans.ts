@@ -44,7 +44,8 @@ export const examplePlans: {
     slug: "starter-monthly",
     name: "Personal",
     // Was "... Unlimited sending — fair-use limits apply to prevent spam.":
-    // free accounts are capped at 3 documents a month, so "unlimited" is
+    // free accounts are capped (one signature request in total, was 3
+    // documents a month: src/lib/esign/plans.ts), so "unlimited" is
     // what this plan adds, not what every plan has.
     description: "For freelancers and individuals. Unlimited documents, with fair-use limits that stop spam.",
     price: 900,

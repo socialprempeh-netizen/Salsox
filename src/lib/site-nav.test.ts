@@ -8,8 +8,8 @@ import { buildSiteNav, isCurrent, type NavPage, type NavText } from "./site-nav"
 
 const text: NavText = {
   why: "Why us",
-  whatYouCanDo: "What you can do",
   useCases: "Use cases",
+  byIndustry: "By industry",
   exploreFeatures: "Explore features",
   allUseCases: "All use cases",
   tools: "Free tools",
@@ -54,10 +54,11 @@ describe("buildSiteNav", () => {
   it("puts every registry page in its group, in four groups plus Pricing", () => {
     const nav = buildSiteNav({ pages, showBlog: true, text, toolOrder: ["sign-pdf", "fill-and-sign-pdf"] })
     expect(nav.groups.map((g) => g.id)).toEqual(["why", "tools", "compare", "resources"])
-    expect(hrefs(nav, "why")).toEqual(["/pdf-signature", "/#features", "/esignature-for/hr"])
+    expect(hrefs(nav, "why")).toEqual(["/pdf-signature", "/esignature-for/hr", "/#features"])
     expect(hrefs(nav, "tools")).toEqual(["/sign-pdf", "/fill-and-sign-pdf"])
     expect(hrefs(nav, "compare")).toEqual(["/compare/docusign", "/alternatives/docusign"])
-    expect(nav.pricing.href).toBe("/pricing")
+    // Straight to the plan cards, not the page's heading.
+    expect(nav.pricing.href).toBe("/pricing#plans")
   })
 
   it("ends each group at its hub page", () => {
@@ -89,5 +90,8 @@ describe("isCurrent", () => {
     expect(isCurrent("/sign-pdf", "/sign-pdf")).toBe(true)
     expect(isCurrent("/sign-pdf", "/sign-pdf-online")).toBe(false)
     expect(isCurrent("/#faq", "/")).toBe(false)
+    // An anchor into another page marks that page.
+    expect(isCurrent("/pricing#plans", "/pricing")).toBe(true)
+    expect(isCurrent("/pricing#plans", "/")).toBe(false)
   })
 })

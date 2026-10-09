@@ -12,7 +12,7 @@ Everything about your plan lives on the **Billing** page. You never need to writ
 
 | | Free | Personal | Business |
 |---|---|---|---|
-| Documents | 3 a month | Unlimited | Unlimited |
+| Documents for signature | 1 in total | Unlimited | Unlimited |
 | Quick Send, WhatsApp and SMS links | ✓ | ✓ | ✓ |
 | Sign & Pay (collect a payment as people sign) | | | ✓ |
 | Signing in order, and approvers | | | ✓ |

@@ -7,7 +7,7 @@ lede: "Place your signature image exactly where it belongs, repeat it on every p
 primaryKeyword: "add signature to pdf"
 aliases: ["insert signature in pdf", "put signature on pdf", "add signature image to pdf", "initial every page pdf"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-09
 breadcrumb: "Add signature to PDF"
 howItWorks:
   - title: "Choose the PDF"
@@ -60,4 +60,4 @@ The tool reads your PDF, draws each placed image onto its page at the position y
 
 ## When you need more than an image
 
-An image on a page shows intent; it does not prove who put it there. If the other party might later ask who signed and when, collect the signature through a signing workflow instead, which records an audit trail. You can [request a signature](/request-signature) here, and a free account sends three documents a month.
+An image on a page shows intent; it does not prove who put it there. If the other party might later ask who signed and when, collect the signature through a signing workflow instead, which records an audit trail. You can [request a signature](/request-signature) here, and a free account sends your first one.

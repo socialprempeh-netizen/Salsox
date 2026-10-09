@@ -6,7 +6,7 @@ lede: "PandaDoc and {site} overlap on e-signatures but are built for different j
 primaryKeyword: "pandadoc"
 aliases: ["salsox vs pandadoc", "pandadoc vs salsox", "pandadoc comparison", "pandadoc alternative"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-09
 breadcrumb: "vs PandaDoc"
 competitor:
   name: "PandaDoc"
@@ -41,7 +41,7 @@ PandaDoc's figures were taken from its pricing page on **6 October 2026**, in US
 
 | | {site} | PandaDoc |
 |---|---|---|
-| Free option | 3 documents a month, plus free PDF tools | A free eSign plan with a document limit |
+| Free option | 1 document for signature, plus free PDF tools | A free eSign plan with a document limit |
 | Paid plans | Personal $9/month, Business $19/month (or yearly) | Starter $19 and Business $49 per seat per month, billed annually |
 | Pricing basis | Per account | Per seat |
 | Document creation | No (PDF in, signed PDF out) | Templates, content library, document editor |

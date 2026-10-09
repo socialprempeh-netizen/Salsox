@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest"
 
 import {
   documentsLeft,
-  FREE_DOCUMENTS_PER_MONTH,
+  FREE_SIGNATURE_REQUESTS,
   hasFeature,
   monthStartUtc,
   planErrorCode,
@@ -81,10 +81,12 @@ describe("documentsLeft", () => {
     expect(documentsLeft("business", 0)).toBeNull()
   })
 
-  it("counts down the free allowance and stops at zero", () => {
-    expect(documentsLeft("free", 0)).toBe(FREE_DOCUMENTS_PER_MONTH)
-    expect(documentsLeft("free", FREE_DOCUMENTS_PER_MONTH - 1)).toBe(1)
-    expect(documentsLeft("free", FREE_DOCUMENTS_PER_MONTH + 4)).toBe(0)
+  it("gives a free account one signature request in total, then none", () => {
+    expect(FREE_SIGNATURE_REQUESTS).toBe(1)
+    expect(documentsLeft("free", 0)).toBe(1)
+    expect(documentsLeft("free", 1)).toBe(0)
+    // Documents sent while on a paid plan still count once it ends.
+    expect(documentsLeft("free", 40)).toBe(0)
   })
 })
 

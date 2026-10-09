@@ -66,7 +66,8 @@ export function Pricing({
           </p>
         </Reveal>
 
-        <div className="mx-auto grid max-w-4xl grid-cols-1 items-stretch gap-6 md:grid-cols-2">
+        {/* `plans`: the menu's Pricing link lands here (see plan-pricing.tsx). */}
+        <div id="plans" className="mx-auto grid max-w-4xl grid-cols-1 items-stretch gap-6 md:grid-cols-2">
           {/* Free */}
           <Reveal>
             <Card className="flex h-full flex-col">

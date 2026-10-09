@@ -12,7 +12,7 @@ This guide takes you from a new account to a signed document. Most people are do
 
 Sign up with Google, GitHub, or an email address and a password. If you use email, confirm the address from the message we send you: documents can only go out from a confirmed address, so nobody can send in your name.
 
-A free account sends 3 documents a month. That is enough to try everything on this page. Upgrade from **Billing** whenever you need more.
+A free account sends one document for signature, enough to try everything on this page once. To send more, upgrade from **Billing**.
 
 ## Send your first document
 

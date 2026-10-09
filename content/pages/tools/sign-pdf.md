@@ -7,7 +7,7 @@ lede: "Open a PDF, add your signature and the date, and download the signed copy
 primaryKeyword: "sign pdf"
 aliases: ["sign pdf online", "sign pdf free", "sign a pdf", "how to sign a pdf online"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-09
 breadcrumb: "Sign PDF"
 howItWorks:
   - title: "Open your PDF"
@@ -35,7 +35,7 @@ faq:
   - q: "What size of PDF can I sign?"
     a: "Up to 25 MB. Very large scanned documents may be slow on an older phone, because your device does the processing."
   - q: "How do I get someone else to sign?"
-    a: "Use the request a signature tool, or create a free account to send up to three documents a month for signature with links, reminders and an audit trail."
+    a: "Use the request a signature tool, or create a free account to send your first document for signature with links, reminders and an audit trail."
 related: ["/add-signature-to-pdf", "/fill-and-sign-pdf", "/request-signature", "/pdf-signature", "/blog/how-to-sign-a-pdf"]
 ---
 

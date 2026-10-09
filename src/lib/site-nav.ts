@@ -30,8 +30,11 @@ export type NavPage = { kind: PageKind; path: string; breadcrumb: string; tool?:
 /** Every word the navigation shows, translated by the caller. */
 export type NavText = {
   why: string
-  whatYouCanDo: string
+  // Replaced by `byIndustry`: the solution pages moved under "Use cases" (see
+  // the why group below), and the industry pages took a heading of their own.
+  // whatYouCanDo: string
   useCases: string
+  byIndustry: string
   exploreFeatures: string
   allUseCases: string
   tools: string
@@ -55,6 +58,13 @@ export type NavText = {
 
 export const HUB_PATHS = { tools: "/tools", compare: "/compare", useCases: "/esignature-for" } as const
 
+/**
+ * Where the menu's Pricing link lands: the plan cards themselves (the anchor
+ * on the cards in plan-pricing.tsx and pricing.tsx), not the top of the page,
+ * whose heading and intro pushed the cards below the fold on arrival.
+ */
+export const PRICING_HREF = "/pricing#plans"
+
 export function buildSiteNav({
   pages,
   showBlog,
@@ -74,12 +84,19 @@ export function buildSiteNav({
   const of = (kind: PageKind) => pages.filter((p) => p.kind === kind)
   const link = (p: NavPage): NavLink => ({ href: p.path, label: p.breadcrumb })
 
+  // "Use cases" lists every solution page, the same list the footer shows
+  // under this group, and the industry pages follow under their own heading.
+  // It used to head only the three industry pages, beside a "What you can
+  // do" column holding the solutions, so the menu's use cases were three
+  // where the footer's were seven. Was:
+  //   { heading: text.whatYouCanDo, links: [...of("solution").map(link), { href: "/#features", label: text.exploreFeatures }] },
+  //   { heading: text.useCases, links: of("use-case").map(link) },
   const why: NavGroup = {
     id: "why",
     label: text.why,
     columns: [
-      { heading: text.whatYouCanDo, links: [...of("solution").map(link), { href: "/#features", label: text.exploreFeatures }] },
-      { heading: text.useCases, links: of("use-case").map(link) },
+      { heading: text.useCases, links: of("solution").map(link) },
+      { heading: text.byIndustry, links: [...of("use-case").map(link), { href: "/#features", label: text.exploreFeatures }] },
     ],
     footer: { href: HUB_PATHS.useCases, label: text.allUseCases },
   }
@@ -120,11 +137,16 @@ export function buildSiteNav({
   // A group with nothing in it (a deployment that removed every comparison)
   // is left out rather than shown as an empty dropdown.
   const groups = [why, tools, compare, resources].filter((g) => g.columns.some((c) => c.links.length > 0))
-  return { groups, pricing: { href: "/pricing", label: text.pricing } }
+  // Was href "/pricing": opened the page at its heading, cards out of sight.
+  return { groups, pricing: { href: PRICING_HREF, label: text.pricing } }
 }
 
 /** True when `pathname` is the link's page or below it: marks the open group's current page. */
 export function isCurrent(href: string, pathname: string): boolean {
-  if (href.includes("#")) return false
-  return pathname === href || pathname.startsWith(`${href}/`)
+  // A home-page section (/#features, /#faq) is never "the current page", but
+  // an anchor into another page (/pricing#plans) is that page. Was:
+  //   if (href.includes("#")) return false
+  if (href.startsWith("/#")) return false
+  const path = href.split("#")[0]
+  return pathname === path || pathname.startsWith(`${path}/`)
 }

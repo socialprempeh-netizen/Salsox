@@ -6,11 +6,11 @@ lede: "Most people who look for a DocuSign alternative are not unhappy with the 
 primaryKeyword: "docusign alternative"
 aliases: ["free docusign alternative", "docusign alternative for small business", "docusign alternatives", "cheaper than docusign", "alternative to docusign"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-09
 breadcrumb: "DocuSign alternative"
 faq:
   - q: "Is there a free DocuSign alternative?"
-    a: "Yes, with limits. {site}'s free plan sends 3 documents a month for signature and does not expire, and its PDF tools sign and fill documents in your browser free with no account."
+    a: "Yes, with limits. {site}'s free plan sends one document for signature and does not expire, and its PDF tools sign and fill documents in your browser free with no account."
   - q: "What is a good DocuSign alternative for a small business?"
     a: "One that matches how you send. If you send your own one-off contracts and want clients to pay a deposit at signing, a flat-priced tool like {site} fits. If you need templates, bulk send or CRM integrations, look at platforms built for that."
   - q: "Will my existing DocuSign documents still be valid if I switch?"
@@ -52,7 +52,7 @@ It is better to know this before you move than after:
 
 ## The free option
 
-If you send only a few documents a month, the free plan may be all you need: three documents a month for signature, every month, with no trial clock. For signing your own copies, the free [PDF tools](/tools) need no account at all. The [free e-signature page](/free-esignature) sets out exactly what is and is not included.
+The free plan lets you send one document for signature, with no trial clock, to try the whole flow before you pay. For signing your own copies, the free [PDF tools](/tools) need no account at all. The [free e-signature page](/free-esignature) sets out exactly what is and is not included.
 
 ## For small businesses
 
