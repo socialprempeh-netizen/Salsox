@@ -6,7 +6,7 @@ lede: "Most e-signature tools can put a signature on a PDF. The differences show
 primaryKeyword: "electronic signature software"
 aliases: ["e-signature software", "esignature software", "digital signature software for documents", "best electronic signature software"]
 published: 2026-10-06
-updated: 2026-10-09
+updated: 2026-10-06
 breadcrumb: "E-signature software"
 benefits:
   - title: "No envelope counting"
@@ -23,7 +23,7 @@ faq:
   - q: "What does {site} not do yet?"
     a: "It has no reusable templates, no bulk send, no public API and no CRM integrations. If you need those today, a larger platform may suit you better; the comparison pages say where."
   - q: "Can I try it without paying?"
-    a: "Yes. A free account sends one document for signature, and the free PDF tools work without an account."
+    a: "Yes. A free account sends 3 documents a month, and the free PDF tools work without an account."
 related: ["/online-esignature", "/document-signing-software", "/compare/docusign", "/business-esignature", "/pricing"]
 ---
 
@@ -35,7 +35,7 @@ Choosing e-signature software usually starts with a demo and a price, and both l
 
 Many providers sell plans by "envelopes" (documents sent for signature) per user, per month or per year, and charge for more. That model is fine if your volume is predictable and low; it turns into a recurring negotiation if it is not. Look for the exact wording on the pricing page: "5 per month", "100 per user per year" and "unlimited" mean very different bills.
 
-{site} does not count envelopes on its paid plans. Personal and Business can send as many documents as they need, subject to fair-use limits designed to stop spam, such as a cap on recipients per document and on very new accounts. The free plan sends one document for signature so you can try it.
+{site} does not count envelopes on its paid plans. Personal and Business can send as many documents as they need, subject to fair-use limits designed to stop spam, such as a cap on recipients per document and on very new accounts. The free plan sends three documents a month so you can try it.
 
 ### 2. What does a signer go through?
 

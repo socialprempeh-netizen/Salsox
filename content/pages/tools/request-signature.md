@@ -7,7 +7,7 @@ lede: "Add the document and the people who need to sign, and see exactly where t
 primaryKeyword: "request signature"
 aliases: ["request a signature", "signature request", "ask someone to sign a pdf", "get a pdf signed"]
 published: 2026-10-06
-updated: 2026-10-09
+updated: 2026-10-06
 breadcrumb: "Request a signature"
 howItWorks:
   - title: "Add the PDF"
@@ -29,7 +29,7 @@ faq:
   - q: "Why does sending need an account?"
     a: "A signature request is more than a file: it needs private links, delivery, reminders and an audit trail that proves who signed and when. That record has to be kept somewhere, under your name."
   - q: "How many requests can I send for free?"
-    a: "A free account sends one request, to up to ten people. After that, sending needs a paid plan, and paid plans have no document count."
+    a: "A free account sends 3 documents a month, each to up to ten people. Paid plans have no document count."
   - q: "Is my document uploaded while I prepare it?"
     a: "Not while you prepare it here. It is read in your browser. It is uploaded only when you continue to send, because the signers need to open it."
   - q: "Can I place the fields myself instead?"

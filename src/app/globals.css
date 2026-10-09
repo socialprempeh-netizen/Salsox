@@ -366,8 +366,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* The default border colour, in @layer base so the border-colour utilities
+   (border-primary/30, border-l-amber-500, border-t-primary, ...) win over it.
+   It used to sit outside any layer, and unlayered CSS outranks every layer,
+   utilities included: each of those classes rendered as this grey, site-wide.
+   Same selector and value; only the layer is new. Was:
 * {
   border-color: var(--border);
+}
+*/
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 }
 
 /* ── Decorative backgrounds (Light & Bold) ───────────────────────── */

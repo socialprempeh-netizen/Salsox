@@ -9,14 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { UploadForm } from "@/components/esign/upload-form"
 import { MAX_PDF_MB } from "@/lib/esign/limits"
 import { senderPlan } from "@/lib/esign/sender"
-import { FREE_SIGNATURE_REQUESTS } from "@/lib/esign/plans"
-import { FreeAllowanceNotice, RequestLimitReached } from "@/components/esign/plan-upsell"
+import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
+import { FreeAllowanceNotice } from "@/components/esign/plan-upsell"
 
 export default async function NewDocumentPage() {
   const user = await requireUser()
   const t = await getTranslations("esign.upload")
-  // Free accounts see whether their free signature request is still unused
-  // before they start (was: what was left of the month's documents).
+  // Free accounts see what is left of the month's documents before they start.
   const { documentsLeft } = await senderPlan(user.id)
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -29,24 +28,16 @@ export default async function NewDocumentPage() {
           </Link>
         </p>
       </div>
-      {/* Same as Quick Send: once the free request is used, the upgrade
-          replaces the upload, since the document could not be sent. */}
-      {documentsLeft === 0 ? (
-        <RequestLimitReached total={FREE_SIGNATURE_REQUESTS} />
-      ) : (
-        <>
-          <FreeAllowanceNotice left={documentsLeft} total={FREE_SIGNATURE_REQUESTS} />
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{t("cardTitle")}</CardTitle>
-              <CardDescription>{t("cardBody", { maxMb: MAX_PDF_MB })}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UploadForm />
-            </CardContent>
-          </Card>
-        </>
-      )}
+      <FreeAllowanceNotice left={documentsLeft} total={FREE_DOCUMENTS_PER_MONTH} />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t("cardTitle")}</CardTitle>
+          <CardDescription>{t("cardBody", { maxMb: MAX_PDF_MB })}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UploadForm />
+        </CardContent>
+      </Card>
     </div>
   )
 }

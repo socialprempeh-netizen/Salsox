@@ -6,7 +6,7 @@ lede: "DocuSign is the best-known e-signature platform, with a deep feature set 
 primaryKeyword: "docusign"
 aliases: ["salsox vs docusign", "docusign vs salsox", "docusign comparison", "compare docusign"]
 published: 2026-10-06
-updated: 2026-10-09
+updated: 2026-10-06
 breadcrumb: "vs DocuSign"
 competitor:
   name: "DocuSign"
@@ -19,7 +19,7 @@ faq:
   - q: "Is {site} cheaper than DocuSign?"
     a: "For a single sender, yes on published list prices: {site} Personal is $90 a year with no envelope count, against DocuSign Personal at $132 a year with 5 envelopes a month (as listed on 6 October 2026). For teams the comparison depends on seats, because DocuSign prices per user."
   - q: "Does {site} limit envelopes like DocuSign?"
-    a: "Paid {site} plans do not count envelopes. Fair-use limits (such as 10 recipients per document and caps for brand-new accounts) exist to stop spam. The free plan sends one document for signature."
+    a: "Paid {site} plans do not count envelopes. Fair-use limits (such as 10 recipients per document and caps for brand-new accounts) exist to stop spam. The free plan sends 3 documents a month."
   - q: "What does DocuSign do that {site} does not?"
     a: "A great deal: templates, bulk send, conditional routing, a public API, hundreds of integrations, team administration and enterprise controls. If you rely on those, DocuSign is the stronger choice."
   - q: "Can I move my signed documents from DocuSign to {site}?"
@@ -38,7 +38,7 @@ Prices below are what each company publishes for its e-signature product. DocuSi
 | Team plans | No team seats today | Standard: $360 per user per year, 100 envelopes per user per year |
 | Plan with payment collection | Business: $19/month or $190/year | Business Pro: $540 per user per year |
 | Bulk send | Not offered | Business Pro and above |
-| Free option | 1 document for signature, plus free PDF tools | Free trial |
+| Free option | 3 documents a month, plus free PDF tools | Free trial |
 | Pricing basis | Per account | Per user (seat) |
 
 List prices are a starting point, not the whole bill. DocuSign sells add-ons and negotiates larger contracts, and taxes vary by country; {site} adds nothing beyond the plan price, though payment providers charge their own fees on Sign & Pay transactions.

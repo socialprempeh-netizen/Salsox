@@ -6,7 +6,7 @@ lede: "Get a contract, form or agreement signed in minutes: upload the PDF, add 
 primaryKeyword: "online esignature"
 aliases: ["e-signature online", "esign online", "sign documents online", "electronic signature online"]
 published: 2026-10-06
-updated: 2026-10-09
+updated: 2026-10-06
 breadcrumb: "Online eSignature"
 benefits:
   - title: "Signers need nothing"
@@ -23,7 +23,7 @@ faq:
   - q: "Can I sign a document myself without sending it to anyone?"
     a: "Yes. The free Sign PDF tool lets you add your own signature to a PDF in your browser and download it, without an account and without uploading the file."
   - q: "How much does it cost?"
-    a: "A free account sends one document for signature. Personal is $9 a month for unlimited documents (with fair-use limits that stop spam), and Business is $19 a month and adds Sign & Pay, signing order and sealed PDFs."
+    a: "A free account sends 3 documents a month. Personal is $9 a month for unlimited documents (with fair-use limits that stop spam), and Business is $19 a month and adds Sign & Pay, signing order and sealed PDFs."
 related: ["/sign-pdf", "/send-documents-for-signature", "/electronic-signature-software", "/blog/how-electronic-signatures-work", "/pricing"]
 ---
 
@@ -53,4 +53,4 @@ It is not the right tool for documents your jurisdiction requires to be signed i
 
 ## Try it before you pay
 
-You can sign a PDF yourself with the free [Sign PDF tool](/sign-pdf), which works in your browser without an account. To collect signatures from other people, a free account sends your first document, with every signing feature that sending needs. When you outgrow that, [pricing](/pricing) is flat per account rather than per envelope: Personal and Business have no envelope counts at all.
+You can sign a PDF yourself with the free [Sign PDF tool](/sign-pdf), which works in your browser without an account. To collect signatures from other people, a free account sends three documents a month, with every signing feature that sending needs. When you outgrow that, [pricing](/pricing) is flat per account rather than per envelope: Personal and Business have no envelope counts at all.

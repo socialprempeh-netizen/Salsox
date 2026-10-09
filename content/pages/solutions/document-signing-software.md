@@ -6,7 +6,7 @@ lede: "A signature takes seconds. A document's life around it takes weeks: it wa
 primaryKeyword: "document signing software"
 aliases: ["document signing app", "pdf signing software", "contract signing software", "online document signing"]
 published: 2026-10-06
-updated: 2026-10-09
+updated: 2026-10-06
 breadcrumb: "Document signing software"
 benefits:
   - title: "Every state is visible"
@@ -60,4 +60,4 @@ Signed documents stay in your account. When you need them all, for an audit, a m
 
 ## Where it fits, and where it does not
 
-This lifecycle is built for people who send their own documents, one at a time or a few a day. {site} does not provide reusable templates, bulk sending to hundreds of recipients, or an API to start signing from another system. For a single document that needs your own text and fields, the free [Fill and sign PDF](/fill-and-sign-pdf) tool handles it in the browser; for anything that needs other people's signatures, a free account sends your first document and [paid plans](/pricing) send the rest.
+This lifecycle is built for people who send their own documents, one at a time or a few a day. {site} does not provide reusable templates, bulk sending to hundreds of recipients, or an API to start signing from another system. For a single document that needs your own text and fields, the free [Fill and sign PDF](/fill-and-sign-pdf) tool handles it in the browser; for anything that needs other people's signatures, a free account sends three documents a month and [paid plans](/pricing) remove the count.
