@@ -17,7 +17,7 @@
  * Every field is saved as soon as it is filled, so a phone that loses signal
  * or a tab that is closed loses nothing; reopening the link resumes.
  */
-import { useMemo, useRef, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Check, ChevronLeft, ChevronRight, PenLine } from "lucide-react"
@@ -30,6 +30,9 @@ import { toast } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { PdfPages } from "./pdf-pages"
 import { SignaturePad, type SignatureValue } from "./signature-pad"
+// Each step leaves a Sentry breadcrumb, so a failure here says how far the
+// signer got (signing-telemetry.tsx).
+import { reportSigningFailure, signingProblem, signingStep } from "./signing-telemetry"
 import {
   completeSigningAction,
   rejectSigningAction,
@@ -84,6 +87,11 @@ export function SigningWizard(props: Props) {
   const [pending, startTransition] = useTransition()
   const pageEls = useRef(new Map<number, HTMLDivElement>())
 
+  // The document view mounts once the intro is past: the PDF is requested now.
+  useEffect(() => {
+    if (started) signingStep("pdf.load")
+  }, [started])
+
   const required = useMemo(() => fields.filter((f) => f.required), [fields])
   const doneCount = required.filter((f) => f.inserted).length
   const nextEmpty = required.find((f) => !f.inserted) ?? null
@@ -95,6 +103,7 @@ export function SigningWizard(props: Props) {
   }
 
   function open(field: WizardField) {
+    signingStep("field.open", { type: field.type, page: field.page })
     setActive(field)
     setDraft(null)
     // Prefill what we already know: the signer's name, email, today's date.
@@ -118,9 +127,11 @@ export function SigningWizard(props: Props) {
   }
 
   function save(field: WizardField, input: { value?: string; imageDataUrl?: string; typedText?: string }) {
+    signingStep("field.save", { type: field.type, drawn: Boolean(input.imageDataUrl) })
     startTransition(async () => {
       const result = await saveFieldAction(props.token, field.id, input)
       if (result.error) {
+        signingProblem("field.save", result.error, { type: field.type })
         toast.error(result.error)
         return
       }
@@ -139,16 +150,20 @@ export function SigningWizard(props: Props) {
   function finish() {
     startTransition(async () => {
       if (props.payment.due) {
+        signingStep("payment.start")
         const pay = await startPaymentAction(props.token)
         if (pay.url) {
           window.location.href = pay.url
           return
         }
+        signingProblem("payment.start", pay.error ?? "no checkout URL")
         toast.error(pay.error ?? t("genericError"))
         return
       }
+      signingStep("signing.complete")
       const result = await completeSigningAction(props.token)
       if (result.error) {
+        signingProblem("signing.complete", result.error)
         toast.error(result.error)
         return
       }
@@ -157,9 +172,11 @@ export function SigningWizard(props: Props) {
   }
 
   function decline() {
+    signingStep("signing.decline")
     startTransition(async () => {
       const result = await rejectSigningAction(props.token, reason)
       if (result.error) {
+        signingProblem("signing.decline", result.error)
         toast.error(result.error)
         return
       }
@@ -195,7 +212,10 @@ export function SigningWizard(props: Props) {
           />
           <span>{t("consent")}</span>
         </label>
-        <Button size="lg" className="w-full" disabled={!consent} onClick={() => setStarted(true)}>
+        <Button size="lg" className="w-full" disabled={!consent} onClick={() => {
+          signingStep("intro.start")
+          setStarted(true)
+        }}>
           {t("start")}
         </Button>
         <button type="button" className="min-h-11 text-sm text-muted-foreground underline" onClick={() => setDeclineOpen(true)}>
@@ -231,6 +251,12 @@ export function SigningWizard(props: Props) {
         <PdfPages
           url={props.fileUrl}
           extraPages={props.extraPages}
+          // The document failing to load or draw is the failure most likely
+          // in an embedded browser, and the viewer handles it itself, so it
+          // is reported here rather than left to an error boundary.
+          onLoaded={(pages) => signingStep("pdf.loaded", { pages })}
+          onLoadError={(error) => reportSigningFailure(error, "pdf.load")}
+          onRenderError={(error, page) => reportSigningFailure(error, "pdf.render", { page })}
           onPageRef={(page, el) => (el ? pageEls.current.set(page, el) : pageEls.current.delete(page))}
           renderOverlay={(page) =>
             fields

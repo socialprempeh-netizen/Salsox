@@ -18,6 +18,7 @@ import { siteConfig } from "@/config/site"
 import { confirmPayment, getSigningContext, markViewed } from "@/lib/esign/signing"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
 import { SigningWizard, type WizardField } from "@/components/esign/signing-wizard"
+import * as Sentry from "@sentry/nextjs"
 
 export const metadata: Metadata = {
   // Signing links are private; keep them out of search engines and previews.
@@ -35,10 +36,18 @@ export default async function SignPage({
   const { payment } = await searchParams
   const t = await getTranslations("esign.sign")
 
+  // Server-side trail for this request, so a failure while rendering (the
+  // database, the payment check) reports which step it was in. The token is
+  // never added, and is scrubbed from the URL (src/lib/sentry.ts).
+  Sentry.setTag("area", "sign")
+  const step = (message: string) => Sentry.addBreadcrumb({ category: "signing", message, level: "info" })
+  step("server.context")
+
   let context = await getSigningContext(token)
   if (!context) notFound()
 
   if (payment && context.recipient.payments.some((p) => p.id === payment)) {
+    step("server.payment.confirm")
     try {
       await confirmPayment(payment)
     } catch (error) {
@@ -48,6 +57,7 @@ export default async function SignPage({
   }
 
   const { recipient, document, blocker } = context
+  step(blocker ? `server.blocked:${blocker}` : "server.view")
   if (!blocker || blocker === "NOT_YOUR_TURN") await markViewed(token)
   const sender = document.user.name || document.user.email
 

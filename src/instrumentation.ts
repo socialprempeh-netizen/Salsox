@@ -14,6 +14,7 @@
  * components, server actions, route handlers and the proxy.
  */
 import * as Sentry from "@sentry/nextjs"
+import type { Instrumentation } from "next"
 import { sentryOptions } from "@/lib/sentry"
 
 export async function register() {
@@ -26,4 +27,14 @@ export async function register() {
   validateEnv()
 }
 
-export const onRequestError = Sentry.captureRequestError
+// Was `export const onRequestError = Sentry.captureRequestError`. The error's
+// digest, the "Reference" the error page shows, is now a tag on the event:
+// a reference a person quotes (686474085) can be searched in Sentry instead
+// of only in the server logs.
+export const onRequestError: Instrumentation.onRequestError = (error, request, context) => {
+  const digest = typeof error === "object" && error !== null && "digest" in error ? String((error as { digest: unknown }).digest) : undefined
+  return Sentry.withScope((scope) => {
+    if (digest) scope.setTag("digest", digest)
+    return Sentry.captureRequestError(error, request, context)
+  })
+}

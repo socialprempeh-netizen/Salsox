@@ -25,9 +25,23 @@ import * as Sentry from "@sentry/nextjs"
 
 const ErrorView = dynamic(() => import("./error-view").then((m) => m.ErrorView))
 
-export function LazyErrorView({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export function LazyErrorView({
+  error,
+  retry,
+  tags,
+}: {
+  error: Error & { digest?: string }
+  retry: () => void
+  /** Extra tags for the report, such as which boundary caught it. */
+  tags?: Record<string, string>
+}) {
   useEffect(() => {
-    Sentry.captureException(error)
+    // The digest is Next's id for a server error, the "Reference" the visitor
+    // sees: tagged, so the reference a person quotes is searchable in Sentry.
+    // It was not, and ref 686474085 could only be found in the server logs.
+    Sentry.captureException(error, { tags: { ...tags, ...(error.digest ? { digest: error.digest } : {}) } })
+    // `tags` is a literal at each call site; the error is what changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error])
   return <ErrorView digest={error.digest} retry={retry} />
 }

@@ -33,6 +33,15 @@ type Props = {
   renderOverlay?: (page: number) => ReactNode
   /** Called with the page element so callers can convert pointer positions. */
   onPageRef?: (page: number, el: HTMLDivElement | null) => void
+  /**
+   * Told when the document has loaded, and when loading it or drawing a page
+   * fails. The viewer shows an error text or a blank page either way; these
+   * let a caller report it (the signing page sends it to Sentry). Optional,
+   * so the free tools and the editor are unchanged.
+   */
+  onLoaded?: (pages: number) => void
+  onLoadError?: (error: unknown) => void
+  onRenderError?: (error: unknown, page: number) => void
   className?: string
 }
 
@@ -58,7 +67,7 @@ async function loadPdf(source: { url?: string; data?: Uint8Array }) {
   return source.data ? pdfjs.getDocument({ data: source.data.slice() }) : pdfjs.getDocument({ url: source.url! })
 }
 
-export function PdfPages({ url, data, extraPages = 0, renderOverlay, onPageRef, className }: Props) {
+export function PdfPages({ url, data, extraPages = 0, renderOverlay, onPageRef, onLoaded, onLoadError, onRenderError, className }: Props) {
   const t = useTranslations("esign.viewer")
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null)
   const [error, setError] = useState(false)
@@ -82,13 +91,22 @@ export function PdfPages({ url, data, extraPages = 0, renderOverlay, onPageRef, 
         if (!cancelled) {
           setRatios(sizes)
           setPdf(loaded)
+          onLoaded?.(loaded.numPages)
         }
       })
-      .catch(() => !cancelled && setError(true))
+      // Was `.catch(() => !cancelled && setError(true))`: the failure was shown
+      // and never reported.
+      .catch((reason: unknown) => {
+        if (cancelled) return
+        setError(true)
+        onLoadError?.(reason)
+      })
     return () => {
       cancelled = true
       void task?.destroy()
     }
+    // The callbacks are reporting hooks; a new one must not reload the PDF.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, data])
 
   if (error) return <p className="border p-6 text-center text-sm text-destructive">{t("loadError")}</p>
@@ -113,6 +131,7 @@ export function PdfPages({ url, data, extraPages = 0, renderOverlay, onPageRef, 
           blank={i >= pdf.numPages}
           overlay={renderOverlay?.(i + 1)}
           onRef={(el) => onPageRef?.(i + 1, el)}
+          onRenderError={onRenderError}
           label={t("page", { page: i + 1, total })}
         />
       ))}
@@ -127,6 +146,7 @@ function PdfPage({
   blank,
   overlay,
   onRef,
+  onRenderError,
   label,
 }: {
   pdf: PDFDocumentProxy
@@ -135,16 +155,21 @@ function PdfPage({
   blank: boolean
   overlay?: ReactNode
   onRef: (el: HTMLDivElement | null) => void
+  onRenderError?: (error: unknown, page: number) => void
   label: string
 }) {
   const wrapper = useRef<HTMLDivElement | null>(null)
   const canvas = useRef<HTMLCanvasElement | null>(null)
-  const [visible, setVisible] = useState(false)
+  // No IntersectionObserver (an old embedded browser): every page counts as
+  // visible from the start, so all are drawn rather than none. Slower on a
+  // long document, but never blank. Only effects read this, so the server's
+  // value cannot cause a hydration mismatch.
+  const [visible, setVisible] = useState(() => typeof IntersectionObserver !== "function")
 
   // Render only once the page is near the viewport.
   useEffect(() => {
     const el = wrapper.current
-    if (!el || blank) return
+    if (!el || blank || typeof IntersectionObserver !== "function") return
     const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setVisible(true), {
       rootMargin: "600px 0px",
     })
@@ -168,12 +193,21 @@ function PdfPage({
       target.height = Math.floor(viewport.height)
       const render = page.render({ canvas: target, viewport })
       task = render
-      await render.promise.catch(() => undefined)
-    })()
+      await render.promise
+    })().catch((reason: unknown) => {
+      // Cancelling a render (scrolled away, unmounted) rejects too: not a
+      // failure. Anything else left the page blank and used to go unreported;
+      // on iOS that includes running out of canvas memory on a long document.
+      // Was: await render.promise.catch(() => undefined)
+      if (cancelled || (reason as { name?: string } | null)?.name === "RenderingCancelledException") return
+      onRenderError?.(reason, pageNumber)
+    })
     return () => {
       cancelled = true
       task?.cancel()
     }
+    // onRenderError only reports; a new one must not redraw the page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, blank, pdf, pageNumber])
 
   return (
