@@ -10,10 +10,12 @@
  * October 2026: every signed-out visitor who chose Google, including everyone
  * arriving from an email link in Gmail's in-app browser, which has no session).
  *
- * Now the auth config registers, and the sign-in and settings pages offer,
- * only the providers listed here; the actions check it too, since a form can
- * be posted without its button. Setting both variables brings a provider
- * back, with no code change. Pure: takes the environment as an argument.
+ * The auth config registers, and the settings page offers, only the providers
+ * listed here; the actions check it too, since a form can be posted without
+ * its button. Google is the exception on the sign-in page: its button is
+ * always shown and its action uses `isOAuthProviderConfigured` to send the
+ * visitor back with a message instead (src/app/(auth)/login/page.tsx).
+ * Pure: takes the environment as an argument.
  */
 
 export const OAUTH_PROVIDERS = ["google", "github"] as const

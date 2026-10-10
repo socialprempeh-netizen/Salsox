@@ -79,6 +79,7 @@
       "demoAccounts": "One click, no email - shared accounts with fake data, reset periodically.",
       "errors": {
         "credentials": "Invalid email or password.",
+        "google_unavailable": "Google sign-in isn't available right now. Sign in with your email and password instead.",
         "email": "Enter a valid email address.",
         "rate": "Too many attempts. Try again in a few minutes.",
         "Verification": "That sign-in link is invalid or has expired. Request a new one.",

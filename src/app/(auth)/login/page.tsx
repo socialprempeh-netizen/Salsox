@@ -10,6 +10,7 @@ import { PendingButton } from "@/components/auth/pending-button"
 import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
 import { configuredOAuthProviders, isOAuthProviderConfigured } from "@/lib/oauth-providers"
+import * as Sentry from "@sentry/nextjs"
 import type { Metadata } from "next"
 
 // Its own title in the tab and in any result that slips through; the
@@ -40,13 +41,16 @@ export default async function LoginPage({
   // Magic link needs Resend configured; without it the kit still offers
   // OAuth and email+password.
   const hasMagicLink = !!process.env.RESEND_API_KEY
-  // Only the providers this deployment has credentials for. Both buttons
-  // were always shown, and pressing one without credentials threw
-  // CLIENT_ID_AND_SECRET_REQUIRED: the error page with reference 686474085
-  // (src/lib/oauth-providers.ts). Demo deployments keep showing both,
+  // Google is always offered. Its action below checks the credentials before
+  // calling Better Auth, and sends the visitor back here with a message when
+  // they are missing: pressing it once threw CLIENT_ID_AND_SECRET_REQUIRED and
+  // showed the error page (reference 686474085). GitHub is offered only when
+  // configured (src/lib/oauth-providers.ts). Demo deployments show both,
   // disabled, as the stand-in for real OAuth they always were.
+  // For a while Google was hidden without credentials too. Was:
+  //   const showGoogle = isDemo || oauth.includes("google")
   const oauth = configuredOAuthProviders(process.env)
-  const showGoogle = isDemo || oauth.includes("google")
+  const showGoogle = true
   const showGithub = isDemo || oauth.includes("github")
 
   // Marketing deployments delegate sign-in to the demo deployment
@@ -71,12 +75,26 @@ export default async function LoginPage({
             <form
               action={async () => {
                 "use server"
-                // A form can be posted without its button: checked here too.
-                if (!isOAuthProviderConfigured("google", process.env)) redirect("/login")
-                const { url } = await auth.api.signInSocial({
-                  body: { provider: "google", callbackURL: "/dashboard" },
-                  headers: await headers(),
-                })
+                // No credentials: back to this page with a message, never the
+                // error page. Reported, so the missing setup is noticed.
+                // Was: if (!isOAuthProviderConfigured("google", process.env)) redirect("/login")
+                if (!isOAuthProviderConfigured("google", process.env)) {
+                  Sentry.captureMessage("Google sign-in pressed, but GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set", "warning")
+                  redirect("/login?error=google_unavailable")
+                }
+                // Any other failure starting the flow (Google refusing, a
+                // network error) ends the same way. Only the call is inside the
+                // try: redirect() works by throwing, and must not be caught.
+                let url: string | undefined
+                try {
+                  ;({ url } = await auth.api.signInSocial({
+                    body: { provider: "google", callbackURL: "/dashboard" },
+                    headers: await headers(),
+                  }))
+                } catch (error) {
+                  Sentry.captureException(error, { tags: { area: "auth", provider: "google" } })
+                  redirect("/login?error=google_unavailable")
+                }
                 if (url) redirect(url)
               }}
             >
@@ -139,8 +157,11 @@ export default async function LoginPage({
 
         {!isDemo && (
           <>
-            {/* "Or continue with email" only when there is something above it. */}
-            {oauth.length > 0 && (
+            {/* "Or continue with email" whenever a provider button is above
+                it. Was `oauth.length > 0`, which counted only configured
+                providers and dropped the divider under an always-shown
+                Google button. */}
+            {(showGoogle || showGithub) && (
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border" />

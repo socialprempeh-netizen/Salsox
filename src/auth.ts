@@ -279,12 +279,29 @@ export const auth = betterAuth({
     },
   },
 
-  // Only the providers with both credentials set (src/lib/oauth-providers.ts).
-  // Registering both unconditionally made "Continue with Google" throw
-  // CLIENT_ID_AND_SECRET_REQUIRED on a deployment without them. Was:
+  // Google is registered again, always, read from its two variables: the
+  // sign-in page always offers it. Its OAuth redirect URI is
+  // `${NEXT_PUBLIC_APP_URL}/api/auth/callback/google` (Better Auth builds it
+  // from baseURL above and the default /api/auth base path the route handler
+  // is mounted at): https://salsox.com/api/auth/callback/google in production.
+  // Without the credentials Better Auth only warns at startup; the sign-in
+  // action checks them before calling it, so a click sends the visitor back
+  // to /login with a message instead of the error page (login/page.tsx).
+  // GitHub stays registered only when configured (src/lib/oauth-providers.ts).
+  //
+  // History. First, both unconditionally, with non-null assertions:
   //   google: { clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET! },
   //   github: { clientId: process.env.GITHUB_CLIENT_ID!, clientSecret: process.env.GITHUB_CLIENT_SECRET! },
-  socialProviders: socialProvidersConfig(process.env),
+  // which threw CLIENT_ID_AND_SECRET_REQUIRED on the click when they were
+  // unset. Then only the configured ones, which hid the Google button:
+  //   socialProviders: socialProvidersConfig(process.env),
+  socialProviders: {
+    ...socialProvidersConfig(process.env),
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID?.trim() ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim() ?? "",
+    },
+  },
 
   account: {
     // What Auth.js needed `allowDangerousEmailAccountLinking` for. Here it is
