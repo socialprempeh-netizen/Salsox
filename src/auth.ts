@@ -12,6 +12,7 @@ import { trustedOriginsFor } from "@/lib/app-url"
 import { generateBackupCodes } from "@/lib/backup-codes"
 import { refusesAutomaticLink } from "@/lib/account-linking"
 import { siteConfig } from "@/config/site"
+import { socialProvidersConfig } from "@/lib/oauth-providers"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixture sign-ins: dev and demo.
@@ -278,16 +279,12 @@ export const auth = betterAuth({
     },
   },
 
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    },
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    },
-  },
+  // Only the providers with both credentials set (src/lib/oauth-providers.ts).
+  // Registering both unconditionally made "Continue with Google" throw
+  // CLIENT_ID_AND_SECRET_REQUIRED on a deployment without them. Was:
+  //   google: { clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET! },
+  //   github: { clientId: process.env.GITHUB_CLIENT_ID!, clientSecret: process.env.GITHUB_CLIENT_SECRET! },
+  socialProviders: socialProvidersConfig(process.env),
 
   account: {
     // What Auth.js needed `allowDangerousEmailAccountLinking` for. Here it is

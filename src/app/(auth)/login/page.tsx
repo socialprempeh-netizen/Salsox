@@ -9,6 +9,7 @@ import { LogoMark } from "@/components/logo"
 import { PendingButton } from "@/components/auth/pending-button"
 import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
+import { configuredOAuthProviders, isOAuthProviderConfigured } from "@/lib/oauth-providers"
 import type { Metadata } from "next"
 
 // Its own title in the tab and in any result that slips through; the
@@ -39,6 +40,14 @@ export default async function LoginPage({
   // Magic link needs Resend configured; without it the kit still offers
   // OAuth and email+password.
   const hasMagicLink = !!process.env.RESEND_API_KEY
+  // Only the providers this deployment has credentials for. Both buttons
+  // were always shown, and pressing one without credentials threw
+  // CLIENT_ID_AND_SECRET_REQUIRED: the error page with reference 686474085
+  // (src/lib/oauth-providers.ts). Demo deployments keep showing both,
+  // disabled, as the stand-in for real OAuth they always were.
+  const oauth = configuredOAuthProviders(process.env)
+  const showGoogle = isDemo || oauth.includes("google")
+  const showGithub = isDemo || oauth.includes("github")
 
   // Marketing deployments delegate sign-in to the demo deployment
   // (same place the navbar and footer already point).
@@ -46,10 +55,10 @@ export default async function LoginPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-3xl border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
+      <div className="border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
-            <LogoMark className="h-12 w-12 rounded-2xl ring-1 ring-primary/15" iconClassName="h-7 w-7" />
+            <LogoMark className="h-12 w-12 ring-1 ring-primary/15" iconClassName="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -58,48 +67,55 @@ export default async function LoginPage({
         </div>
 
         <div className="flex flex-col gap-3">
-          <form
-            action={async () => {
-              "use server"
-              const { url } = await auth.api.signInSocial({
-                body: { provider: "google", callbackURL: "/dashboard" },
-                headers: await headers(),
-              })
-              if (url) redirect(url)
-            }}
-          >
-            <PendingButton
-              disabled={isDemo}
-              className="flex h-12 w-full items-center justify-center gap-3  border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+          {showGoogle && (
+            <form
+              action={async () => {
+                "use server"
+                // A form can be posted without its button: checked here too.
+                if (!isOAuthProviderConfigured("google", process.env)) redirect("/login")
+                const { url } = await auth.api.signInSocial({
+                  body: { provider: "google", callbackURL: "/dashboard" },
+                  headers: await headers(),
+                })
+                if (url) redirect(url)
+              }}
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/>
-                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/>
-                <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/>
-                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"/>
-              </svg>
-              {t("google")}
-            </PendingButton>
-          </form>
+              <PendingButton
+                disabled={isDemo}
+                className="flex h-12 w-full items-center justify-center gap-3  border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/>
+                  <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/>
+                  <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/>
+                  <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"/>
+                </svg>
+                {t("google")}
+              </PendingButton>
+            </form>
+          )}
 
-          <form
-            action={async () => {
-              "use server"
-              const { url } = await auth.api.signInSocial({
-                body: { provider: "github", callbackURL: "/dashboard" },
-                headers: await headers(),
-              })
-              if (url) redirect(url)
-            }}
-          >
-            <PendingButton
-              disabled={isDemo}
-              className="flex h-12 w-full items-center justify-center gap-3  border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+          {showGithub && (
+            <form
+              action={async () => {
+                "use server"
+                if (!isOAuthProviderConfigured("github", process.env)) redirect("/login")
+                const { url } = await auth.api.signInSocial({
+                  body: { provider: "github", callbackURL: "/dashboard" },
+                  headers: await headers(),
+                })
+                if (url) redirect(url)
+              }}
             >
-              <GithubIcon className="h-[18px] w-[18px]" />
-              {t("github")}
-            </PendingButton>
-          </form>
+              <PendingButton
+                disabled={isDemo}
+                className="flex h-12 w-full items-center justify-center gap-3  border border-border bg-background px-4 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-soft disabled:pointer-events-none disabled:opacity-45"
+              >
+                <GithubIcon className="h-[18px] w-[18px]" />
+                {t("github")}
+              </PendingButton>
+            </form>
+          )}
 
           {isDemo && (
             <p className="text-center text-xs text-muted-foreground">
@@ -123,22 +139,25 @@ export default async function LoginPage({
 
         {!isDemo && (
           <>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+            {/* "Or continue with email" only when there is something above it. */}
+            {oauth.length > 0 && (
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-card px-2 text-xs text-muted-foreground">{t("dividerEmail")}</span>
+                </div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="bg-card px-2 text-xs text-muted-foreground">{t("dividerEmail")}</span>
-              </div>
-            </div>
+            )}
 
             {errorMessage && (
-              <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
+              <p className="mb-4 border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
                 {errorMessage}
               </p>
             )}
             {reset === "1" && (
-              <p className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-center text-sm text-primary-hover">
+              <p className="mb-4 border border-primary/30 bg-primary/10 px-4 py-2.5 text-center text-sm text-primary-hover">
                 {t("passwordUpdated")}
               </p>
             )}

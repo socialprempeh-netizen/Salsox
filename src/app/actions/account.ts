@@ -11,6 +11,7 @@ import { passwordSchema } from "@/lib/password"
 import { stripe } from "@/lib/stripe"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { deleteAccountFiles } from "@/lib/esign/documents"
+import { isOAuthProviderConfigured } from "@/lib/oauth-providers"
 
 // Account-management actions behind a session: link/unlink OAuth providers
 // and set or change the password. Outcomes surface as query params on the
@@ -27,6 +28,9 @@ const BILLING_STATUSES = ["ACTIVE", "PAST_DUE", "TRIALING"]
 export async function linkProvider(formData: FormData) {
   const provider = String(formData.get("provider") ?? "")
   if (!LINKABLE_PROVIDERS.includes(provider)) redirect(SETTINGS)
+  // And only one this deployment has credentials for: linking an
+  // unconfigured provider threw instead of redirecting (oauth-providers.ts).
+  if (!isOAuthProviderConfigured(provider, process.env)) redirect(SETTINGS)
   // Linking is its own call now, not a sign-in that happens to attach: the
   // library returns the provider URL and this hands the browser over to it.
   const { url } = await auth.api.linkSocialAccount({

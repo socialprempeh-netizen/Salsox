@@ -15,6 +15,7 @@ import { TwoFactorCard } from "@/components/settings/two-factor-card"
 import { SessionsSummary } from "@/components/settings/sessions-summary"
 import { PendingButton } from "@/components/auth/pending-button"
 import { changeEmail, linkProvider, unlinkProvider, updatePassword } from "@/app/actions/account"
+import { isOAuthProviderConfigured } from "@/lib/oauth-providers"
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: "Google",
@@ -142,7 +143,11 @@ export async function SettingsView({
           <CardDescription>{t("methodsDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          {Object.entries(PROVIDER_LABELS).map(([provider, label]) => {
+          {/* A provider is offered when this deployment can use it, and kept
+              when the account already has it linked, so it can still be
+              disconnected (oauth-providers.ts). Was every entry, which put a
+              Connect button on providers with no credentials. */}
+          {Object.entries(PROVIDER_LABELS).filter(([provider]) => linked.has(provider) || isOAuthProviderConfigured(provider, process.env)).map(([provider, label]) => {
             const accountId = linked.get(provider)
             return (
               <div key={provider} className="flex items-center justify-between border-b border-border pb-3">
