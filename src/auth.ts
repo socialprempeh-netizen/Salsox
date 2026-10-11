@@ -13,6 +13,8 @@ import { generateBackupCodes } from "@/lib/backup-codes"
 import { refusesAutomaticLink } from "@/lib/account-linking"
 import { siteConfig } from "@/config/site"
 import { socialProvidersConfig } from "@/lib/oauth-providers"
+import { emailVerificationRequired } from "@/lib/email-verification-policy"
+import { betterAuthRateLimitStorage } from "@/lib/rate-limit"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixture sign-ins: dev and demo.
@@ -133,6 +135,13 @@ export const auth = betterAuth({
   // to the other. Only the base URL's origin was trusted, so a sign-in posted
   // from the other form was refused as "invalid origin".
   trustedOrigins: trustedOriginsFor(siteConfig.url),
+
+  // Better Auth limits /api/auth/* itself (sign-in, two-factor, sign-up),
+  // but kept its counters in a Map per serverless instance. They now live
+  // with the app's own limits, in Upstash when it is configured
+  // (src/lib/rate-limit.ts), so they hold across instances. Enabled in
+  // production only, the library's default. Was unset: storage "memory".
+  rateLimit: { customStorage: betterAuthRateLimitStorage },
 
 
   user: {
@@ -266,6 +275,13 @@ export const auth = betterAuth({
     // Replaces the sessionVersion column: resetting a password ends every other
     // session, which is what that column existed to fake.
     revokeSessionsOnPasswordReset: true,
+    // An address must be confirmed before its password signs in, whenever a
+    // confirmation email can be sent (src/lib/email-verification-policy.ts).
+    // Already-confirmed accounts sign in as before; an unconfirmed one is
+    // refused with EMAIL_NOT_VERIFIED and sent a fresh link (`sendOnSignIn`
+    // below), and the sign-in page says so. Was unset (false): any password
+    // account signed in whether or not its address had been confirmed.
+    requireEmailVerification: emailVerificationRequired(process.env),
     // Better Auth hashes with scrypt by default. We keep bcrypt so the hashes
     // already in the database still verify: without this, upgrading would lock
     // out every existing password user, and no data migration could fix it.
@@ -321,6 +337,10 @@ export const auth = betterAuth({
     // is the same idea without the trick. Only when email is configured: with
     // no key there is nothing to send and sign-up still completes.
     sendOnSignUp: !!process.env.RESEND_API_KEY,
+    // The other half of requireEmailVerification above: a refused sign-in
+    // mails a new confirmation link, so an account created before the rule
+    // (or whose first link expired) has a way in without asking anyone.
+    sendOnSignIn: emailVerificationRequired(process.env),
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       const { sendMagicLinkEmail } = await import("@/lib/email")

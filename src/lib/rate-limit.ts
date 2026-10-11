@@ -96,7 +96,8 @@ export async function rateLimitKeyFromIp(scope: string): Promise<string> {
 }
 
 /**
- * True while the caller is still under the limit.
+ * How many times `key` has been seen in the current window, counted in the
+ * shared store when there is one.
  *
  * When a shared store is configured but unreachable, this falls back to the
  * in-memory counter rather than failing in either direction. Refusing everybody
@@ -105,15 +106,11 @@ export async function rateLimitKeyFromIp(scope: string): Promise<string> {
  * left is the speed bump, which is what the kit had before you configured
  * anything.
  */
-export async function checkRateLimit(
-  key: string,
-  max = MAX_ATTEMPTS,
-  windowMs = WINDOW_MS
-): Promise<boolean> {
+async function count(key: string, windowMs: number): Promise<number> {
   const shared = sharedStore()
   if (shared) {
     try {
-      return (await shared(key, windowMs)) <= max
+      return await shared(key, windowMs)
     } catch (error) {
       // Once per process: a limiter that floods the logs during an outage
       // makes the outage harder to read.
@@ -123,5 +120,36 @@ export async function checkRateLimit(
       }
     }
   }
-  return (await memoryStore(key, windowMs)) <= max
+  return memoryStore(key, windowMs)
+}
+
+/** True while the caller is still under the limit. */
+export async function checkRateLimit(
+  key: string,
+  max = MAX_ATTEMPTS,
+  windowMs = WINDOW_MS
+): Promise<boolean> {
+  return (await count(key, windowMs)) <= max
+}
+
+/**
+ * Better Auth's own limiter (`rateLimit.customStorage` in src/auth.ts), on the
+ * same counters as everything above.
+ *
+ * Its default store is a Map in each serverless instance, so the limits on
+ * /api/auth/* (sign-in, the two-factor checks, sign-up) were counted per
+ * instance, and a burst spread across instances was barely slowed. Through
+ * here they land in Upstash when it is configured, with the same fallback to
+ * memory when it is not or cannot be reached.
+ *
+ * Better Auth's `window` is in seconds. Keys are prefixed so they can never
+ * collide with the app's own (`signin:...`, `magic:...`). The window is fixed
+ * rather than rolling, as for every other limit here, so `retryAfter` is the
+ * whole window: an upper bound, and what Better Auth's own Redis path reports.
+ */
+export const betterAuthRateLimitStorage = {
+  async consume(key: string, rule: { window: number; max: number }): Promise<{ allowed: boolean; retryAfter: number | null }> {
+    const hits = await count(`better-auth:${key}`, rule.window * 1000)
+    return hits <= rule.max ? { allowed: true, retryAfter: null } : { allowed: false, retryAfter: rule.window }
+  },
 }

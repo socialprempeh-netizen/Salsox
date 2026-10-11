@@ -190,7 +190,7 @@ export function SigningWizard(props: Props) {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-6 px-4 py-10">
         <div className="space-y-2">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary-hover">
+          <span className="inline-flex h-12 w-12 items-center justify-center bg-primary/10 text-primary-hover">
             <PenLine className="h-6 w-6" />
           </span>
           <h1 className="text-2xl font-bold leading-tight">{props.title}</h1>
@@ -203,7 +203,7 @@ export function SigningWizard(props: Props) {
           )}
           <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{t("introStep2")}</li>
         </ol>
-        <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm">
+        <label className="flex min-h-11 cursor-pointer items-start gap-3 border p-3 text-sm">
           <input
             type="checkbox"
             className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]"
@@ -269,7 +269,7 @@ export function SigningWizard(props: Props) {
                   onClick={() => open(f)}
                   aria-label={t(`fieldType.${f.type}`)}
                   className={cn(
-                    "absolute flex items-center justify-center overflow-hidden rounded-sm border-2 text-[10px] font-medium transition-colors sm:text-xs",
+                    "absolute flex items-center justify-center overflow-hidden border-2 text-[10px] font-medium transition-colors sm:text-xs",
                     f.inserted
                       ? "border-primary/40 bg-primary/5 text-foreground"
                       : "animate-pulse border-amber-500 bg-amber-300/30 text-amber-900",
@@ -304,7 +304,7 @@ export function SigningWizard(props: Props) {
       </div>
 
       <Sheet open={active !== null} onOpenChange={(o) => !o && setActive(null)}>
-        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
           {active && (
             <div className="mx-auto w-full max-w-lg space-y-4">
               <SheetHeader>
@@ -326,9 +326,9 @@ export function SigningWizard(props: Props) {
       return (
         <div className="space-y-4">
           {canReuse && (
-            <div className="space-y-2 rounded-xl border p-3">
+            <div className="space-y-2 border p-3">
               <p className="text-sm text-muted-foreground">{t("reuseSignature")}</p>
-              <div className="flex h-20 items-center justify-center rounded-lg bg-white">
+              <div className="flex h-20 items-center justify-center bg-white">
                 <SignaturePreview value={adopted!} />
               </div>
               <Button className="w-full" size="lg" loading={pending} onClick={() => save(field, adopted as { imageDataUrl?: string; typedText?: string })}>

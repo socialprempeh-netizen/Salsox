@@ -72,7 +72,7 @@ export function CodeBlock({
       // Always visible, never revealed on hover: a button that appears only
       // under the pointer is invisible on a touchscreen and unfindable for
       // anyone who does not already know it is there.
-      className="shrink-0 rounded-md border border-border bg-background/90 px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="shrink-0 border border-border bg-background/90 px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {copied ? t("copied") : t("copy")}
     </button>
@@ -90,7 +90,7 @@ export function CodeBlock({
   }
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius)] border border-border">
+    <div className="overflow-hidden border border-border">
       {/* The header carries the file name, so a reader knows where the snippet
           belongs before reading it — the question every code block in a
           tutorial raises and most leave unanswered. */}
@@ -102,7 +102,7 @@ export function CodeBlock({
         {copyButton}
       </div>
       {/* The border and radius now belong to the wrapper, so the block inside
-          loses its own: two nested rounded boxes read as a mistake. */}
+          loses its own: two nested boxes read as a mistake. */}
       <pre ref={ref} {...props} className={`${props.className ?? ""} !m-0 !rounded-none !border-0`}>
         {children}
       </pre>

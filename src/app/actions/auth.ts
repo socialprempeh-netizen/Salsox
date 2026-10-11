@@ -9,6 +9,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { passwordSchema } from "@/lib/password"
 import { checkRateLimit, rateLimitKeyFromIp } from "@/lib/rate-limit"
+import { emailVerificationRequired } from "@/lib/email-verification-policy"
 import { BACKUP_CODE_LENGTH, normalizeBackupCode } from "@/lib/backup-codes"
 
 // Every action here calls auth.api.* and then redirects OUTSIDE the try block.
@@ -39,11 +40,22 @@ export async function signInWithPassword(formData: FormData) {
   // capital letter.
   const email = String(formData.get("email") ?? "").trim().toLowerCase()
   const password = String(formData.get("password") ?? "")
+  // Rate limited by address and by IP, like the magic link, signup, reset and
+  // two-factor steps. This was the one sign-in path with no limit of its own:
+  // the action calls auth.api directly, and Better Auth's limiter only runs on
+  // HTTP requests to /api/auth/*, so it never saw these attempts. The address
+  // limit stops guessing one account's password from many places; the looser
+  // IP limit stops one place trying many accounts, while leaving room for an
+  // office or a mobile carrier sharing one address.
+  if (!(await checkRateLimit(`signin:${email}`, 10))) redirect("/login?error=rate")
+  if (!(await checkRateLimit(await rateLimitKeyFromIp("signin"), 30))) redirect("/login?error=rate")
   // Set inside the try, acted on outside it, because redirect() throws.
   let needsSecondFactor = false
   try {
     const result = await auth.api.signInEmail({
-      body: { email, password },
+      // callbackURL is where the confirmation link lands when the address is
+      // not confirmed yet (emailVerification.sendOnSignIn in src/auth.ts).
+      body: { email, password, callbackURL: "/dashboard" },
       headers: await headers(),
     })
     // With two-factor on, the password alone does NOT open a session: the
@@ -55,6 +67,11 @@ export async function signInWithPassword(formData: FormData) {
   } catch (error) {
     // One generic message for every failure mode: never reveal whether the
     // email exists or has a password.
+    // The password was right but the address is not confirmed
+    // (requireEmailVerification in src/auth.ts). Better Auth checks the
+    // password first, so this reveals nothing to someone without it, and it
+    // has just mailed a new confirmation link: say so instead of "invalid".
+    if (error instanceof APIError && error.body?.code === "EMAIL_NOT_VERIFIED") redirect("/login?error=email_not_verified")
     if (error instanceof APIError) redirect("/login?error=credentials")
     throw error
   }
@@ -187,8 +204,10 @@ export async function registerUser(formData: FormData) {
     // the 2.0 migration uses to backfill users who never had a name, and the
     // two agreeing is deliberate: a name is never blank anywhere.
     //
-    // Signing up also signs in (autoSignIn) and, when email is configured,
-    // sends the verification email (emailVerification.sendOnSignUp). The 1.x
+    // Without email configured, signing up also signs in (autoSignIn). With
+    // it, it sends the verification email (emailVerification.sendOnSignUp)
+    // and, now that confirmation is required, opens no session: the
+    // confirmation link does that (autoSignInAfterVerification). The 1.x
     // flow achieved both by sending a magic link instead; the destination is
     // the same and there is one fewer trick in the middle.
     await auth.api.signUpEmail({
@@ -207,6 +226,11 @@ export async function registerUser(formData: FormData) {
   // specific in the dashboard (`next`, from the signup form); safeNext refuses
   // anything that is not a dashboard path, so this cannot become an open
   // redirect.
+  //
+  // With confirmation required there is no session yet, so that destination
+  // would only bounce to /login. The page that says to check the inbox comes
+  // first; the confirmation link then lands on `next`, signed in.
+  if (emailVerificationRequired(process.env)) redirect("/verify-request?reason=signup")
   redirect(safeNext(formData.get("next")))
 }
 

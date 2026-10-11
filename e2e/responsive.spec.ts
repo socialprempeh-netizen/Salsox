@@ -39,6 +39,10 @@ for (const width of WIDTHS) {
     await check("/terms", "terms")
     await check("/cookies", "cookies")
     await check("/login", "login")
+    // "Check your email": after a sign-in link, and after sign-up now that an
+    // address must be confirmed before the account can be used.
+    await check("/verify-request", "verify-request")
+    await check("/verify-request?reason=signup", "verify-request-signup")
     // SEO pages: every free tool, a page of each other kind, the hubs and a
     // guide with a comparison table, so a wide table or a long tool toolbar
     // cannot push the page sideways.

@@ -33,13 +33,13 @@ export function Figure({ src, alt }: { src: string; alt?: string }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t("figureOpen")}
-        className="group relative block w-full cursor-zoom-in overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/40"
+        className="group relative block w-full cursor-zoom-in overflow-hidden border border-border bg-card transition-colors hover:border-primary/40"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt ?? ""} className="w-full" />
         <span
           aria-hidden="true"
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background/90 text-muted-foreground opacity-0 shadow-soft transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center border border-border bg-background/90 text-muted-foreground opacity-0 shadow-soft transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         >
           <Maximize2 className="h-4 w-4" />
         </span>

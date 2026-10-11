@@ -3,6 +3,7 @@
     "verifyRequest": {
       "title": "Check your email",
       "body": "We sent you a sign-in link. It's valid for 15 minutes and can be used once.",
+      "bodySignup": "We sent a confirmation link to your email. Open it to confirm your address, and it signs you in to your new account.",
       "spam": "Nothing in your inbox? Check the spam folder, or <retry>try again</retry>."
     },
     "forgotPassword": {
@@ -80,6 +81,8 @@
       "errors": {
         "credentials": "Invalid email or password.",
         "google_unavailable": "Google sign-in isn't available right now. Sign in with your email and password instead.",
+        "github_unavailable": "GitHub sign-in isn't available right now. Sign in with your email and password instead.",
+        "email_not_verified": "Confirm your email address to sign in. We sent a new confirmation link to your inbox; open it and you're signed in.",
         "email": "Enter a valid email address.",
         "rate": "Too many attempts. Try again in a few minutes.",
         "Verification": "That sign-in link is invalid or has expired. Request a new one.",

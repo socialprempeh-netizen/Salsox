@@ -37,7 +37,7 @@ export default function AboutPage() {
           {/* Removed with the placeholder copy it apologised for: this page
               now describes Salsox. The note's strings stay under `$kit`.
               {!isKitSite && (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-5 text-sm">
+              <div className="border border-dashed border-border bg-muted/30 p-5 text-sm">
               <p className="font-medium text-foreground">{t("noteTitle")}</p>
               <p className="mt-1">
               {t.rich("noteBody", { path: (c) => <code>{c}</code> })}

@@ -61,7 +61,7 @@ export default function ContactDialogContent({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="mb-1">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary-hover">
+            <span className="flex h-10 w-10 items-center justify-center bg-primary/10 text-primary-hover">
               <Mail className="h-5 w-5" />
             </span>
           </div>
@@ -74,7 +74,7 @@ export default function ContactDialogContent({
         <button
           type="button"
           onClick={copyEmail}
-          className="group flex w-full items-center justify-between gap-3 rounded-2xl border border-border bg-muted/40 px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+          className="group flex w-full items-center justify-between gap-3 border border-border bg-muted/40 px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
         >
           <span className="font-mono text-sm font-medium text-foreground">
             {siteConfig.contactEmail}

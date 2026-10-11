@@ -117,11 +117,26 @@ export default async function LoginPage({
             <form
               action={async () => {
                 "use server"
-                if (!isOAuthProviderConfigured("github", process.env)) redirect("/login")
-                const { url } = await auth.api.signInSocial({
-                  body: { provider: "github", callbackURL: "/dashboard" },
-                  headers: await headers(),
-                })
+                // Handled as Google is above: a failure starting the flow comes
+                // back here with a message, never the error page. Was:
+                //   if (!isOAuthProviderConfigured("github", process.env)) redirect("/login")
+                //   const { url } = await auth.api.signInSocial({ ... })
+                // with nothing catching the call, so GitHub refusing or a
+                // network error showed the error page.
+                if (!isOAuthProviderConfigured("github", process.env)) {
+                  Sentry.captureMessage("GitHub sign-in pressed, but GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET is not set", "warning")
+                  redirect("/login?error=github_unavailable")
+                }
+                let url: string | undefined
+                try {
+                  ;({ url } = await auth.api.signInSocial({
+                    body: { provider: "github", callbackURL: "/dashboard" },
+                    headers: await headers(),
+                  }))
+                } catch (error) {
+                  Sentry.captureException(error, { tags: { area: "auth", provider: "github" } })
+                  redirect("/login?error=github_unavailable")
+                }
                 if (url) redirect(url)
               }}
             >

@@ -43,10 +43,10 @@ export default async function TwoFactorPage({
     : null
 
   return (
-    <div className="rounded-3xl border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
+    <div className="border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
       <div className="mb-8 text-center">
         <div className="mb-4 flex justify-center">
-          <LogoMark className="h-12 w-12 rounded-2xl ring-1 ring-primary/15" iconClassName="h-7 w-7" />
+          <LogoMark className="h-12 w-12 ring-1 ring-primary/15" iconClassName="h-7 w-7" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {backup ? t("backupTitle") : t("title")}
@@ -57,7 +57,7 @@ export default async function TwoFactorPage({
       </div>
 
       {errorMessage && (
-        <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
+        <p className="mb-4 border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
           {errorMessage}
         </p>
       )}
@@ -95,7 +95,7 @@ export default async function TwoFactorPage({
           self-service reset — and a screen that stays silent about it leaves
           someone trying combinations at midnight instead of asking for help. */}
       {backup && (
-        <p className="mt-4 rounded-lg border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
+        <p className="mt-4 border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
           {t("backupLost")}
         </p>
       )}

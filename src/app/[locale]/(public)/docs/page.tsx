@@ -40,7 +40,7 @@ export default async function DocsIndexPage() {
       <p className="mt-2 max-w-2xl text-muted-foreground">
         {t.rich("intro", {
           site: () => siteConfig.name,
-          code: (c) => <code className="rounded bg-muted px-1.5 py-0.5 text-sm">{c}</code>,
+          code: (c) => <code className="bg-muted px-1.5 py-0.5 text-sm">{c}</code>,
           repo: (c) =>
             siteConfig.links.github ? (
               <a
@@ -62,7 +62,7 @@ export default async function DocsIndexPage() {
           <Link
             key={d.slug}
             href={`/docs/${d.slug}`}
-            className="group rounded-2xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-soft"
+            className="group border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-soft"
           >
             <h2 className="font-semibold text-foreground transition-colors group-hover:text-primary">
               {d.title}

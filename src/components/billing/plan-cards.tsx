@@ -196,7 +196,7 @@ export function PlanCards({
       )}
 
       {/* An odd last card spans both columns at md, instead of sitting alone
-          in half a row; squared cards (were rounded) per the site-wide rule. */}
+          in half a row; squared cards (were) per the site-wide rule. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {tiers.map((tier) => {
           // Name, description, features and button label come from the base

@@ -110,7 +110,7 @@ export function QuickSendForm({ confirmationNeeded = false }: { confirmationNeed
             : t("emailsHint", { count: parsed.emails.length })}
         </p>
       </div>
-      <details className="rounded-xl border p-4 [&_summary]:cursor-pointer">
+      <details className="border p-4 [&_summary]:cursor-pointer">
         <summary className="min-h-6 text-sm font-medium">{t("more")}</summary>
         <div className="mt-4 space-y-4">
           <div className="space-y-2">
@@ -123,7 +123,7 @@ export function QuickSendForm({ confirmationNeeded = false }: { confirmationNeed
           </div>
           <div className="space-y-2">
             <Label htmlFor="expiresInDays">{t("expiryLabel")}</Label>
-            <select id="expiresInDays" name="expiresInDays" defaultValue={String(DEFAULT_EXPIRY_DAYS)} className="h-11 w-full rounded-xl border bg-background px-3 text-sm">
+            <select id="expiresInDays" name="expiresInDays" defaultValue={String(DEFAULT_EXPIRY_DAYS)} className="h-11 w-full border bg-background px-3 text-sm">
               <option value="7">{t("expiryDays", { days: 7 })}</option>
               <option value="14">{t("expiryDays", { days: 14 })}</option>
               <option value="30">{t("expiryDays", { days: 30 })}</option>

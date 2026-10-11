@@ -28,8 +28,8 @@ Se `RESEND_API_KEY` non è impostata, il pulsante si nasconde da solo e il provi
 
 ## Email e password
 
-- **Registrazione** (`/signup`): validata con Zod (`src/lib/password.ts`, da 8 a 72 caratteri), con hash bcrypt (costo 12, tramite `bcryptjs` in JavaScript puro: nessuna compilazione nativa). Quando Resend è configurato, la registrazione manda un magic link che verifica l'indirizzo e completa il primo accesso in un colpo solo; senza Resend ti fa entrare direttamente.
-- **Accesso**: ogni modo di fallire (indirizzo sconosciuto, account solo OAuth, password sbagliata) restituisce lo stesso messaggio generico, così il modulo non si può usare per scoprire quali email hanno un account.
+- **Registrazione** (`/signup`): validata con Zod (`src/lib/password.ts`, da 8 a 72 caratteri), con hash bcrypt (costo 12, tramite `bcryptjs` in JavaScript puro: nessuna compilazione nativa). Quando Resend è configurato, la registrazione manda un link di conferma e mostra "Controlla la tua email"; il link conferma l'indirizzo e completa il primo accesso in un colpo solo. Senza Resend ti fa entrare direttamente.
+- **Accesso**: ogni modo di fallire (indirizzo sconosciuto, account solo OAuth, password sbagliata) restituisce lo stesso messaggio generico, così il modulo non si può usare per scoprire quali email hanno un account. Quando Resend è configurato, una password fa entrare solo se l'indirizzo è confermato (`requireEmailVerification`, `src/lib/email-verification-policy.ts`). Con la password giusta e un indirizzo non confermato, la pagina lo dice e parte un nuovo link di conferma (`sendOnSignIn`); dato che la password viene controllata prima, chi non la conosce non scopre nulla. A questi utenti indica il link di conferma, non il link di accesso via email: Better Auth considera non provato un account non confermato raggiunto con quel link, e prima ne rimuove la password e gli accessi collegati.
 - **Reset** (`/forgot-password` → link via email → `/reset-password`): i token sono valori casuali da 32 byte, e il database ne conserva solo l'hash SHA-256. Scadono dopo 30 minuti e valgono una volta sola, consumati nella stessa transazione che sostituisce l'hash della password.
 
 ### Limite di frequenza, detto onestamente
@@ -37,6 +37,8 @@ Se `RESEND_API_KEY` non è impostata, il pulsante si nasconde da solo e il provi
 Accesso, registrazione, magic link e richieste di reset passano da un piccolo limitatore a finestra fissa (`src/lib/rate-limit.ts`). Di default i contatori vivono nella memoria di ogni istanza, il che su serverless significa che una richiesta finita su un'altra istanza riparte da zero: consideralo un dosso e non un muro, con il costo di bcrypt come freno vero contro la forza bruta.
 
 Dalla v2.2 il muro dista due variabili d'ambiente. Imposta `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` e gli stessi contatori si spostano su Upstash Redis, condivisi fra tutte le istanze e tutte le regioni. Sono entrambe facoltative per scelta, perché una variabile obbligatoria avrebbe reso questa release una major per chiunque avesse già clonato il kit, e non cambia nient'altro: nessuna libreria client installata, sono due comandi in una sola `fetch`.
+
+L'accesso con password è limitato per indirizzo (10 ogni 15 minuti) e per IP (30). Better Auth limita anche i propri endpoint `/api/auth/*`, e quei contatori usano lo stesso archivio tramite `rateLimit.customStorage` in `src/auth.ts`, quindi sono condivisi anch'essi una volta impostato Upstash. Quel secondo limitatore non vede le server action, che chiamano `auth.api` direttamente: per questo le action mantengono i propri limiti.
 
 Se l'archivio condiviso è configurato ma irraggiungibile, il limitatore ricade sul contatore in memoria invece di fallire in una delle due direzioni. Rifiutare tutti porterebbe giù il sito insieme al Redis; lasciar passare tutti toglierebbe la protezione proprio quando qualcosa è già rotto.
 

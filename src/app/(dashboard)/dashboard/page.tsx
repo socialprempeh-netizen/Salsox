@@ -86,15 +86,15 @@ export default async function DashboardPage() {
         </CardHeader>
         {documentCount > 0 && (
           <CardContent className="grid grid-cols-3 gap-3 pt-0">
-            <Link href="/dashboard/documents?status=PENDING" className="rounded-xl border p-3 hover:border-primary/40">
+            <Link href="/dashboard/documents?status=PENDING" className="border p-3 hover:border-primary/40">
               <p className="text-2xl font-bold">{awaiting}</p>
               <p className="text-xs text-muted-foreground">{t("awaiting")}</p>
             </Link>
-            <Link href="/dashboard/documents?status=COMPLETED" className="rounded-xl border p-3 hover:border-primary/40">
+            <Link href="/dashboard/documents?status=COMPLETED" className="border p-3 hover:border-primary/40">
               <p className="text-2xl font-bold">{completed}</p>
               <p className="text-xs text-muted-foreground">{t("completed")}</p>
             </Link>
-            <Link href="/dashboard/documents?status=EXPIRED" className="rounded-xl border p-3 hover:border-primary/40">
+            <Link href="/dashboard/documents?status=EXPIRED" className="border p-3 hover:border-primary/40">
               <p className="text-2xl font-bold">{expired}</p>
               <p className="text-xs text-muted-foreground">{t("expired")}</p>
             </Link>

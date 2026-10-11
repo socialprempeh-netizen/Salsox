@@ -55,7 +55,7 @@ export function LogoMark({
   return (
     <span
       className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-lg",
+        "flex h-8 w-8 items-center justify-center",
         // Light: a solid tile with a white bolt, so the logo matches the
         // favicon this kit generates (src/app/icon.tsx), which has always been
         // a solid tile. Dark stays tinted: a solid block reads as a hole on a

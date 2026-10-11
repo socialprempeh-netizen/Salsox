@@ -21,7 +21,7 @@ export async function NewsletterSignup({ source }: { source?: string }) {
   const t = await getTranslations("blog.signup")
 
   return (
-    <aside className="not-prose my-12 rounded-2xl border border-primary/25 bg-primary/[0.04] p-6 text-center sm:p-8">
+    <aside className="not-prose my-12 border border-primary/25 bg-primary/[0.04] p-6 text-center sm:p-8">
       <p className="text-lg font-semibold tracking-tight text-foreground">{t("title")}</p>
       {/* Narrower than the card: centred text only reads well on short lines,
           and at full width these two broke in the wrong places. */}

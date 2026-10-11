@@ -21,8 +21,8 @@ If `RESEND_API_KEY` is not set, the button hides itself and the provider is not 
 
 ## Email + password
 
-- **Sign up** (`/signup`): validated with Zod (`src/lib/password.ts`, 8 to 72 characters), hashed with bcrypt (cost 12, via pure-JS `bcryptjs`: no native build steps). When Resend is configured, signup sends a magic link that verifies the email and completes the first sign-in in one step; without Resend it signs you straight in.
-- **Sign in**: every failure mode (unknown email, OAuth-only account, wrong password) returns the same generic message, so the form cannot be used to probe which emails have accounts.
+- **Sign up** (`/signup`): validated with Zod (`src/lib/password.ts`, 8 to 72 characters), hashed with bcrypt (cost 12, via pure-JS `bcryptjs`: no native build steps). When Resend is configured, signup sends a confirmation link and shows "Check your email"; the link confirms the address and completes the first sign-in in one step. Without Resend it signs you straight in.
+- **Sign in**: every failure mode (unknown email, OAuth-only account, wrong password) returns the same generic message, so the form cannot be used to probe which emails have accounts. When Resend is configured, a password only signs in once its address is confirmed (`requireEmailVerification`, `src/lib/email-verification-policy.ts`). With the right password and an unconfirmed address, the page says so and a fresh confirmation link is mailed (`sendOnSignIn`); since the password is checked first, that reveals nothing to someone without it. Point those users to the confirmation link rather than the email sign-in link: Better Auth treats an unconfirmed account reached through the sign-in link as unproven and removes its password and linked logins first.
 - **Reset** (`/forgot-password` → emailed link → `/reset-password`): tokens are random 32-byte values; the database stores only their SHA-256 hash. They expire after 30 minutes and are single-use (burned in the same transaction that swaps the password hash).
 
 ### Rate limiting, honestly
@@ -30,6 +30,8 @@ If `RESEND_API_KEY` is not set, the button hides itself and the provider is not 
 Sign-in, signup, magic link and reset requests go through a small fixed-window limiter (`src/lib/rate-limit.ts`). By default the counters live in each instance's memory, which on serverless means a request that lands on another instance starts from zero: treat that as a speed bump, not a wall, with bcrypt's cost as the real brute-force brake.
 
 Since v2.2 the wall is two environment variables away. Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` and the same counters move to Upstash Redis, shared by every instance and region. Both are optional by design, because a required variable would have made this release a major one for everybody who already cloned the kit, and nothing else changes: no client library is installed, it is two commands in one pipelined `fetch`.
+
+Password sign-in is limited per address (10 per 15 minutes) and per IP (30). Better Auth also limits its own `/api/auth/*` endpoints, and those counters use the same store through `rateLimit.customStorage` in `src/auth.ts`, so they are shared too once Upstash is set. That second limiter never sees the server actions, which call `auth.api` directly; that is why the actions keep their own limits.
 
 If the shared store is configured but unreachable, the limiter falls back to the in-memory counter rather than failing in either direction. Refusing everybody would take the site down with the Redis; letting everybody through would drop the protection exactly when something is already wrong.
 

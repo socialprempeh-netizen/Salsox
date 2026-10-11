@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { betterAuthRateLimitStorage, checkRateLimit } from "@/lib/rate-limit"
 
 // The limiter keeps its counters in a module-level Map, so every test needs
 // its own key or it would inherit the previous test's count.
@@ -146,5 +146,54 @@ describe("checkRateLimit, shared store", () => {
   it("treats a non-200 the same way as a network failure", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }))
     expect(await checkRateLimit(freshKey(), 1, 60_000)).toBe(true)
+  })
+})
+
+/**
+ * Better Auth's limiter on the same counters. What matters: its window is in
+ * seconds, its keys cannot collide with the app's, and it is shared through
+ * Upstash like the rest.
+ */
+describe("betterAuthRateLimitStorage", () => {
+  it("allows exactly max requests per window, then refuses with a retry delay", async () => {
+    const key = freshKey()
+    const rule = { window: 60, max: 2 }
+    expect(await betterAuthRateLimitStorage.consume(key, rule)).toEqual({ allowed: true, retryAfter: null })
+    expect(await betterAuthRateLimitStorage.consume(key, rule)).toEqual({ allowed: true, retryAfter: null })
+    expect(await betterAuthRateLimitStorage.consume(key, rule)).toEqual({ allowed: false, retryAfter: 60 })
+  })
+
+  it("does not share counters with the app's own limits", async () => {
+    const key = freshKey()
+    expect(await checkRateLimit(key, 1, 60_000)).toBe(true)
+    expect(await checkRateLimit(key, 1, 60_000)).toBe(false)
+    expect((await betterAuthRateLimitStorage.consume(key, { window: 60, max: 1 })).allowed).toBe(true)
+  })
+
+  describe("with Upstash configured", () => {
+    const env = { url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN }
+
+    beforeEach(() => {
+      process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io"
+      process.env.UPSTASH_REDIS_REST_TOKEN = "test-token"
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      if (env.url === undefined) delete process.env.UPSTASH_REDIS_REST_URL
+      else process.env.UPSTASH_REDIS_REST_URL = env.url
+      if (env.token === undefined) delete process.env.UPSTASH_REDIS_REST_TOKEN
+      else process.env.UPSTASH_REDIS_REST_TOKEN = env.token
+    })
+
+    it("counts in the shared store, with the window converted to milliseconds", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [{ result: 4 }, { result: 1 }] })
+      vi.stubGlobal("fetch", fetchMock)
+      expect(await betterAuthRateLimitStorage.consume("1.2.3.4|/sign-in/email", { window: 10, max: 3 })).toEqual({ allowed: false, retryAfter: 10 })
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual([
+        ["INCR", "better-auth:1.2.3.4|/sign-in/email"],
+        ["PEXPIRE", "better-auth:1.2.3.4|/sign-in/email", "10000", "NX"],
+      ])
+    })
   })
 })

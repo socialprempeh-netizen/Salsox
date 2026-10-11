@@ -46,7 +46,7 @@ export async function StarOnGitHub() {
         href={repo}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow [background-image:var(--gradient-brand)]"
+        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow [background-image:var(--gradient-brand)]"
       >
         <GithubIcon className="h-4 w-4 shrink-0" />
         {tCommon("starOnGitHub")}

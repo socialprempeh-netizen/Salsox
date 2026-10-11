@@ -54,7 +54,7 @@ La verifica del dominio su Resend imposta SPF e DKIM, non una politica DMARC. Ag
 
 ## Stripe
 
-1. Apri un account su [stripe.com](https://stripe.com) e copia la **Secret key** in `STRIPE_SECRET_KEY` (e la publishable key in `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`).
+1. Apri un account su [stripe.com](https://stripe.com) e copia la **Secret key** in `STRIPE_SECRET_KEY`. Non serve la publishable key: il checkout e il portale di fatturazione sono pagine ospitate da Stripe.
 2. Crea prodotti e prezzi nel pannello Stripe. Il seed include sei piani di esempio (Starter e Pro nelle varianti mensile e annuale, un piano Lifetime una tantum, e un esempio a consumo disattivo) così il checkout funziona subito; sostituiscili coi tuoi.
 3. Copia gli ID dei prezzi in `STRIPE_STARTER_PRICE_ID`, `STRIPE_STARTER_YEARLY_PRICE_ID`, `STRIPE_PRO_PRICE_ID`, `STRIPE_PRO_YEARLY_PRICE_ID` e `STRIPE_LIFETIME_PRICE_ID` (oppure modifica `prisma/seed.ts`), poi lancia `npx prisma db seed`. `STRIPE_METERED_PRICE_ID` serve solo se attivi l'esempio a consumo (vedi [Pagamenti](./billing.md)).
 4. Webhook in locale, con la [Stripe CLI](https://stripe.com/docs/stripe-cli):

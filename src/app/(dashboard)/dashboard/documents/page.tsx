@@ -96,14 +96,14 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
 
       {documents.length === 0 ? (
         <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary-hover">
+          <span className="flex h-12 w-12 items-center justify-center bg-primary/10 text-primary-hover">
             <FileSignature className="h-6 w-6" />
           </span>
           <p className="mt-4 font-medium">{query || status !== "ALL" ? t("noResults") : t("emptyTitle")}</p>
           <p className="mt-1 max-w-xs text-sm text-muted-foreground">{t("emptyBody")}</p>
         </Card>
       ) : (
-        <ul className="divide-y rounded-2xl border bg-card">
+        <ul className="divide-y border bg-card">
           {documents.map((d) => {
             const signers = d.recipients.filter((r) => r.role === "SIGNER" || r.role === "APPROVER")
             const signed = signers.filter((r) => r.signingStatus === "SIGNED").length

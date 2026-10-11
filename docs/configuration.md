@@ -47,7 +47,7 @@ Verifying the domain in Resend sets up SPF and DKIM, not a DMARC policy. Add a D
 
 ## Stripe
 
-1. Create an account at [stripe.com](https://stripe.com) and copy the **Secret key** into `STRIPE_SECRET_KEY` (and the publishable key into `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`).
+1. Create an account at [stripe.com](https://stripe.com) and copy the **Secret key** into `STRIPE_SECRET_KEY`. No publishable key is needed: checkout and the billing portal are pages Stripe hosts.
 2. Create your products and prices in the Stripe dashboard. The seed ships six example plans (Starter and Pro in monthly and yearly variants, a one-time Lifetime plan, and an inactive usage-based example) so checkout works out of the box; replace them with your own.
 3. Copy the Price IDs into `STRIPE_STARTER_PRICE_ID` / `STRIPE_STARTER_YEARLY_PRICE_ID` / `STRIPE_PRO_PRICE_ID` / `STRIPE_PRO_YEARLY_PRICE_ID` / `STRIPE_LIFETIME_PRICE_ID` (or edit `prisma/seed.ts`), then run `npx prisma db seed`. `STRIPE_METERED_PRICE_ID` is only needed if you enable the usage-based example (see [Billing](./billing.md)).
 4. Webhooks locally, with the [Stripe CLI](https://stripe.com/docs/stripe-cli):

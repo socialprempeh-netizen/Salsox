@@ -36,10 +36,10 @@ export default async function ForgotPasswordPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-3xl border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
+      <div className="border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
-            <LogoMark className="h-12 w-12 rounded-2xl ring-1 ring-primary/15" iconClassName="h-7 w-7" />
+            <LogoMark className="h-12 w-12 ring-1 ring-primary/15" iconClassName="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
@@ -71,7 +71,7 @@ export default async function ForgotPasswordPage({
         )}
 
         {sent === "1" && !formDisabled ? (
-          <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-center text-sm text-primary-hover">
+          <p className="border border-primary/30 bg-primary/10 px-4 py-3 text-center text-sm text-primary-hover">
             {t("sent")}
           </p>
         ) : (

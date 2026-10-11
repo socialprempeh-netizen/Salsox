@@ -66,7 +66,7 @@ export function MobileNav({
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t("openNavigation")}
-          className="flex h-11 w-11 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
+          className="flex h-11 w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
         >
           <Menu size={24} />
         </button>
