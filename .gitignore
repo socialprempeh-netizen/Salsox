@@ -54,3 +54,5 @@ next-env.d.ts
 
 # Local document storage used when BLOB_READ_WRITE_TOKEN is not set
 /.data/
+
+.vercel
