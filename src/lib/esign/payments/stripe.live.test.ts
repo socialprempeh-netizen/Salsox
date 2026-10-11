@@ -15,9 +15,15 @@
  *
  * Opt-in, like the database tests: it needs STRIPE_LIVE_TESTS=1 and a
  * STRIPE_SECRET_KEY that starts with sk_test_ (a live key is refused). The
- * key is read from the environment only. It creates one connected test
- * account per run and deletes it at the end; test-mode charges stay in the
+ * key is read from the environment only. Test-mode charges stay in the
  * Stripe test dashboard, labelled with the run's metadata.
+ *
+ * The sender's account: set STRIPE_E2E_ACCOUNT to a test Express account
+ * whose sign-up a person has finished (Stripe's hosted sign-up shows a
+ * CAPTCHA to a headless browser, so it cannot be automated), and the test
+ * uses it as it is and leaves it in place. Without it, the test creates a
+ * Custom account and deletes it at the end, which Stripe allows only when
+ * the platform profile says the platform collects sender details.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import type Stripe from "stripe"
@@ -32,9 +38,16 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
   const runId = `e2e-${Date.now()}`
   const report: Record<string, unknown>[] = []
 
+  const existing = process.env.STRIPE_E2E_ACCOUNT?.trim()
+
   beforeAll(async () => {
     stripe = (await import("@/lib/stripe")).stripe
     adapter = (await import("./stripe")).stripeSignAndPay
+    if (existing) {
+      accountId = existing
+      expect(await adapter.isPayoutReady(accountId)).toBe(true)
+      return
+    }
     // A UK sender, the platform's own region, onboarded with Stripe's test
     // data so it can take charges at once. Custom rather than Express: Express
     // onboarding is a hosted form; transfers and reversals behave the same.
@@ -63,8 +76,13 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
   }, 60_000)
 
   afterAll(async () => {
+    // Vitest keeps a passing test's console quiet; STRIPE_E2E_REPORT names a
+    // file to receive the balances instead.
     console.log(JSON.stringify(report, null, 2))
-    if (accountId) await stripe.accounts.del(accountId).catch(() => {})
+    if (process.env.STRIPE_E2E_REPORT) (await import("node:fs")).writeFileSync(process.env.STRIPE_E2E_REPORT, JSON.stringify(report, null, 2))
+    // Only an account this run created is removed; one passed in is the
+    // owner's, finished by hand, and is kept for the next run.
+    if (accountId && !existing) await stripe.accounts.del(accountId).catch(() => {})
   })
 
   /** Pays a Stripe Checkout page with the 4242 test card in a headless browser. */
@@ -74,8 +92,14 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
     try {
       const page = await browser.newPage()
       await page.goto(url)
-      const cardTab = page.locator('[data-testid="card-accordion-item-button"]')
-      if (await cardTab.isVisible().catch(() => false)) await cardTab.click()
+      // Where Stripe offers more than one method (in GBP: card, Pay by Bank,
+      // Revolut Pay) the card form is folded behind a "Card" option. Wait for
+      // whichever appears, rather than checking before the page has loaded.
+      // The option's own button is a hidden overlay; the visible row is what
+      // a person clicks.
+      const cardRow = page.locator('[data-testid="card-accordion-item"]')
+      await page.locator('#cardNumber, [data-testid="card-accordion-item"]').first().waitFor({ timeout: 30_000 })
+      if (await cardRow.isVisible()) await cardRow.click()
       await page.locator("#cardNumber").fill("4242424242424242")
       await page.locator("#cardExpiry").fill("12 / 34")
       await page.locator("#cardCvc").fill("123")
