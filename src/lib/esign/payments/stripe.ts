@@ -11,6 +11,17 @@
  *
  * Reuses the kit's lazily-initialised client (src/lib/stripe.ts), so the same
  * STRIPE_SECRET_KEY powers subscriptions and Sign & Pay.
+ *
+ * `on_behalf_of` makes the sender the business of record for the signer's
+ * payment: their statement descriptor on the signer's card statement, their
+ * country for settlement and for the Stripe fee schedule (still billed to
+ * the platform), their payment method settings. What it does NOT change,
+ * per Stripe (docs.stripe.com/connect/charges, "Disputes and chargebacks"):
+ * a dispute on a destination charge debits the platform's balance "with or
+ * without on_behalf_of", and with Express accounts the platform is
+ * responsible for disputes and fraud. Moving that to the sender takes direct
+ * charges on accounts whose losses Stripe assigns to the account, not a
+ * parameter on this charge.
  */
 import type Stripe from "stripe"
 import { stripe } from "@/lib/stripe"
@@ -47,6 +58,10 @@ export const stripeSignAndPay: SignAndPayProvider = {
         },
       ],
       payment_intent_data: {
+        // The sender is the business of record (see the header). Amounts are
+        // untouched: the signer pays `amount`, the sender receives it less
+        // the platform fee, exactly as before.
+        on_behalf_of: req.payoutAccountId,
         transfer_data: { destination: req.payoutAccountId },
         ...(fee > 0 ? { application_fee_amount: fee } : {}),
         metadata: { salsoxPaymentId: req.paymentId, salsoxDocumentId: req.documentId },

@@ -120,6 +120,24 @@ describe("stripe adapter: processor fee pass-through", () => {
     for (const fn of Object.values(stripeApi)) fn.mockReset()
   })
 
+  /**
+   * The sender is the business of record (on_behalf_of), and nothing about
+   * the money moves: same amount charged, same destination, same fee.
+   */
+  it("charges on behalf of the sender's connected account, with amount and fee unchanged", async () => {
+    vi.stubEnv("SIGN_AND_PAY_FEE_BPS", "100")
+    stripeApi.createSession.mockResolvedValue({ id: "cs_1", url: "https://checkout.stripe.com/c/cs_1" })
+    const session = await stripeSignAndPay.createCheckout(checkout)
+    expect(session).toEqual({ url: "https://checkout.stripe.com/c/cs_1", providerRef: "cs_1" })
+    const params = stripeApi.createSession.mock.calls[0][0]
+    expect(params.line_items[0].price_data).toMatchObject({ currency: "usd", unit_amount: 10_000 })
+    expect(params.payment_intent_data).toMatchObject({
+      on_behalf_of: "acct_123",
+      transfer_data: { destination: "acct_123" },
+      application_fee_amount: 100,
+    })
+  })
+
   it("tags new checkouts, and leaves what the signer pays and the sender is sent unchanged", async () => {
     stripeApi.createSession.mockResolvedValue({ id: "cs_1", url: "https://checkout.stripe.com/c/cs_1" })
     await stripeSignAndPay.createCheckout(checkout)
