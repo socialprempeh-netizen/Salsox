@@ -73,7 +73,7 @@ export function FAQ({ withJsonLd = false }: { withJsonLd?: boolean }) {
               <AccordionItem
                 key={i}
                 value={`item-${i}`}
-                className="rounded-2xl border border-border bg-card px-5 shadow-soft transition-shadow data-[state=open]:shadow-[var(--shadow-soft-lg)]"
+                className="border border-border bg-card px-5 shadow-soft transition-shadow data-[state=open]:shadow-[var(--shadow-soft-lg)]"
               >
                 <AccordionTrigger className="text-base">{faq.question}</AccordionTrigger>
                 <AccordionContent>{faq.answer}</AccordionContent>

@@ -87,7 +87,7 @@ export function ThemeToggle() {
       type="button"
       aria-label={t("label")}
       aria-haspopup="menu"
-      className="flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
     >
       {theme === null ? null : isDark ? <Moon size={18} /> : <Sun size={18} />}
     </button>

@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { useTranslations } from "next-intl"
 import { LogoMark } from "@/components/logo"
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
@@ -14,16 +13,26 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // Landing page after a magic link (or signup verification) email is sent.
 // Configured as pages.verifyRequest in src/auth.ts.
-export default function VerifyRequestPage() {
-  const t = useTranslations("auth.verifyRequest")
+//
+// `?reason=signup` is the sign-up flow: now that an address must be confirmed
+// before the account can be used, sign-up ends here instead of the dashboard,
+// and the text describes the confirmation link rather than a sign-in link.
+// Squared (were rounded-3xl and rounded-2xl) per the site-wide rule.
+export default async function VerifyRequestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reason?: string }>
+}) {
+  const { reason } = await searchParams
+  const t = await getTranslations("auth.verifyRequest")
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-3xl border border-border bg-card/80 p-8 text-center shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
+      <div className="border border-border bg-card/80 p-8 text-center shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
         <div className="mb-4 flex justify-center">
-          <LogoMark className="h-12 w-12 rounded-2xl ring-1 ring-primary/15" iconClassName="h-7 w-7" />
+          <LogoMark className="h-12 w-12 ring-1 ring-primary/15" iconClassName="h-7 w-7" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("body")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{reason === "signup" ? t("bodySignup") : t("body")}</p>
         <p className="mt-4 text-xs text-muted-foreground">
           {/* The link is part of the sentence, so it stays inside the message.
               Handing a translator three fragments to reassemble is how word

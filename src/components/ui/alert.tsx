@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
  * mid-sentence, which is right for a problem and rude for an aside.
  */
 const alertVariants = cva(
-  "relative w-full rounded-[var(--radius)] border px-4 py-3 text-sm [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-3.5 [&>svg]:h-4 [&>svg]:w-4 [&>svg~*]:pl-7",
+  "relative w-full border px-4 py-3 text-sm [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-3.5 [&>svg]:h-4 [&>svg]:w-4 [&>svg~*]:pl-7",
   {
     variants: {
       variant: {

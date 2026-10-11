@@ -40,7 +40,7 @@ export function PoweredBy() {
       href={HOMEPAGE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+      className="inline-flex items-center gap-1.5 border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
     >
       {/* Tailwind classes rather than inline styles: an inline style cannot
           vary by theme, and this mark needs a solid tile in light and the
@@ -48,7 +48,7 @@ export function PoweredBy() {
           purpose: the badge credits the kit inside someone else's app, so
           leaving it behind would make it the one place where the old mark
           survives, replicated in every clone. */}
-      <span className="flex h-4 w-4 items-center justify-center rounded bg-[#2563eb] text-white dark:bg-[#2563eb]/10 dark:text-[#2563eb]">
+      <span className="flex h-4 w-4 items-center justify-center bg-[#2563eb] text-white dark:bg-[#2563eb]/10 dark:text-[#2563eb]">
         <Zap className="h-2.5 w-2.5 fill-current" />
       </span>
       <span className="tracking-tight">

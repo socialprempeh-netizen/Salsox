@@ -39,7 +39,7 @@ export function UserMenu({ name, email, image, side = "top", hideDetails = false
           className={
             hideDetails
               ? "flex items-center rounded-full transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              : "flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sidebar-collapsed:justify-center"
+              : "flex w-full items-center gap-3 p-2 text-left transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sidebar-collapsed:justify-center"
           }
         >
           <Avatar>

@@ -112,7 +112,7 @@ export async function SettingsView({
 
       {message && (
         <p
-          className={`rounded-lg border px-4 py-2.5 text-sm ${
+          className={`border px-4 py-2.5 text-sm ${
             message.error
               ? "border-destructive/30 bg-destructive/10 text-destructive"
               : "border-primary/30 bg-primary/10 text-primary-hover"

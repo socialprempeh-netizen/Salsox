@@ -155,7 +155,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
           aria-hidden="true"
           className="mx-auto mt-16 max-w-4xl text-left"
         >
-          <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-[var(--shadow-soft-lg)] ring-1 ring-white/10 md:animate-float">
+          <div className="overflow-hidden border border-border bg-background shadow-[var(--shadow-soft-lg)] ring-1 ring-white/10 md:animate-float">
             {/* Browser chrome */}
             <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3">
               <span className="h-3 w-3 rounded-full bg-red-400" />
@@ -163,7 +163,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
               <span className="h-3 w-3 rounded-full bg-green-400" />
               {/* Was "dashboard.yoursaas.com": this is a picture of this
                   product, so it shows this product's own address. */}
-              <span className="mx-auto rounded-md bg-background px-3 py-0.5 text-xs text-muted-foreground ring-1 ring-border">
+              <span className="mx-auto bg-background px-3 py-0.5 text-xs text-muted-foreground ring-1 ring-border">
                 {mockHost}/dashboard
               </span>
             </div>
@@ -182,7 +182,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
                   {mockNav.map(({ key, icon: Icon, active }) => (
                     <div
                       key={key}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
+                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium ${
                         active ? "bg-primary/10 text-primary-hover" : "text-muted-foreground"
                       }`}
                     >
@@ -224,7 +224,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
                   {/* Stat cards */}
                   <div className="grid grid-cols-3 gap-3">
                     {mockStats.map(({ key, valueKey, badge }: { key: string; valueKey?: string; badge?: boolean; value?: string }) => (
-                      <div key={key} className="rounded-xl border border-border bg-card p-3">
+                      <div key={key} className="border border-border bg-card p-3">
                         <p className="text-[11px] text-muted-foreground">{tm(key)}</p>
                         {badge ? (
                           <span className="mt-1.5 inline-flex items-center gap-1  bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
@@ -239,7 +239,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
                   </div>
 
                   {/* Revenue chart card */}
-                  <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="border border-border bg-card p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-foreground">{tm("chartTitle")}</p>
                       <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">+12.5%</span>
@@ -248,7 +248,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
                       {mockBars.map((h, i) => (
                         <div
                           key={i}
-                          className="flex-1 rounded-t bg-gradient-to-t from-primary/40 to-primary-2"
+                          className="flex-1 bg-gradient-to-t from-primary/40 to-primary-2"
                           style={{ height: `${h}%` }}
                         />
                       ))}
@@ -256,12 +256,12 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
                   </div>
 
                   {/* Documents row */}
-                  <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center justify-between border border-border bg-card p-4">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{tm("docsTitle")}</p>
                       <p className="text-xs text-muted-foreground">{tm("docsBody")}</p>
                     </div>
-                    <span className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground">
+                    <span className="border border-border px-3 py-1.5 text-xs font-medium text-foreground">
                       {tm("viewAll")}
                     </span>
                   </div>

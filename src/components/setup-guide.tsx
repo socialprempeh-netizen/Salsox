@@ -21,8 +21,8 @@ export async function SetupGuide({ step }: { step: SetupStep }) {
   // do: in the same colours as the other steps it reads as "carry on".
   const failed = step === "database-unreachable"
   const currentStepClass = failed
-    ? "rounded-lg border-2 border-destructive bg-destructive/10 p-5"
-    : "rounded-lg border border-primary/40 bg-primary/5 p-5"
+    ? "border-2 border-destructive bg-destructive/10 p-5"
+    : "border border-primary/40 bg-primary/5 p-5"
 
   const steps = [
     {
@@ -63,7 +63,7 @@ export async function SetupGuide({ step }: { step: SetupStep }) {
             <li
               key={s.title}
               className={
-                state === "current" ? currentStepClass : "rounded-lg border border-border p-5 opacity-70"
+                state === "current" ? currentStepClass : "border border-border p-5 opacity-70"
               }
             >
               <div className="flex items-center gap-3">

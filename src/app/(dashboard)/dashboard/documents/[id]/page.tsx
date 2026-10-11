@@ -109,7 +109,7 @@ export default async function DocumentPage({
         </div>
         {/* "Each recipient got an email" is only said when each one did. */}
         {/* {sent && (
-          <p className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">{t("sentBanner")}</p>
+          <p className="border border-primary/30 bg-primary/5 p-3 text-sm">{t("sentBanner")}</p>
         )} */}
         {/* Then only when nothing was refused, which still said it on a
             deployment with no email at all.

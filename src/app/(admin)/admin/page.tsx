@@ -168,11 +168,11 @@ export default async function AdminPage({
                 name="search"
                 defaultValue={search}
                 placeholder={t("searchPlaceholder")}
-                className="h-9 w-full rounded-[var(--radius)] border border-border bg-secondary px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-64"
+                className="h-9 w-full border border-border bg-secondary px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-64"
               />
               <button
                 type="submit"
-                className="h-9 rounded-[var(--radius)] bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
+                className="h-9 bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
               >
                 {t("search")}
               </button>
@@ -183,7 +183,7 @@ export default async function AdminPage({
           {/* Below `md` a 6-column table is unreadable: stack each user as a card. */}
           <div className="space-y-3 md:hidden">
             {users.map((user) => (
-              <div key={user.id} className="rounded-xl border border-border p-4">
+              <div key={user.id} className="border border-border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <UserAvatar image={user.image} name={user.name} email={user.email} />
@@ -295,7 +295,7 @@ export default async function AdminPage({
                 {page > 1 && (
                   <a
                     href={`/admin?page=${page - 1}${search ? `&search=${search}` : ""}`}
-                    className="inline-flex h-9 items-center rounded-[var(--radius)] border border-border px-4 text-sm hover:bg-muted"
+                    className="inline-flex h-9 items-center border border-border px-4 text-sm hover:bg-muted"
                   >
                     {t("previous")}
                   </a>
@@ -303,7 +303,7 @@ export default async function AdminPage({
                 {page < totalPages && (
                   <a
                     href={`/admin?page=${page + 1}${search ? `&search=${search}` : ""}`}
-                    className="inline-flex h-9 items-center rounded-[var(--radius)] border border-border px-4 text-sm hover:bg-muted"
+                    className="inline-flex h-9 items-center border border-border px-4 text-sm hover:bg-muted"
                   >
                     {t("next")}
                   </a>
@@ -330,7 +330,7 @@ export default async function AdminPage({
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a
               href="/api/admin/newsletter-export"
-              className="inline-flex h-9 items-center rounded-[var(--radius)] border border-border px-4 text-sm hover:bg-muted"
+              className="inline-flex h-9 items-center border border-border px-4 text-sm hover:bg-muted"
             >
               {t("exportCsv")}
             </a>
@@ -340,7 +340,7 @@ export default async function AdminPage({
           {/* Same story as the users table above: stack into cards below `md`. */}
           <div className="space-y-3 md:hidden">
             {waitlistRecent.map((sub) => (
-              <div key={sub.id} className="rounded-xl border border-border p-4">
+              <div key={sub.id} className="border border-border p-4">
                 <p className="truncate text-sm font-medium text-foreground">{sub.email}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {sub.unsubscribedAt ? (

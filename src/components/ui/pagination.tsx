@@ -33,7 +33,7 @@ export function Pagination({
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
   const base =
-    "inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-[var(--radius)] border px-3 text-sm transition-colors"
+    "inline-flex h-9 min-w-9 items-center justify-center gap-1 border px-3 text-sm transition-colors"
 
   return (
     <nav aria-label={labels.navigation} className={cn("flex justify-center gap-2", className)}>

@@ -70,7 +70,7 @@ export function PaystackForm({ banks }: { banks: { name: string; code: string }[
       <div className="space-y-1">
         <Label htmlFor="bankCode">{t("bank")}</Label>
         {banks.length > 0 ? (
-          <select id="bankCode" name="bankCode" required className="h-11 w-full rounded-xl border bg-background px-3 text-sm">
+          <select id="bankCode" name="bankCode" required className="h-11 w-full border bg-background px-3 text-sm">
             <option value="">{t("bankPick")}</option>
             {banks.map((b) => (
               <option key={`${b.code}-${b.name}`} value={b.code}>{b.name}</option>

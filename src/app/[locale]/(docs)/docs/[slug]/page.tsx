@@ -105,7 +105,7 @@ export default async function DocPage({
       >
         {untranslated && (
           <div
-            className="not-prose mb-8 flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+            className="not-prose mb-8 flex items-start gap-2.5 border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
             lang={locale}
           >
             <Languages className="mt-0.5 h-4 w-4 shrink-0 text-primary" />

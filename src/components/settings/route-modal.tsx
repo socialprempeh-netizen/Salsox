@@ -32,7 +32,7 @@ export function RouteModal({
       {/* Two jobs, two elements. The shell keeps the rounded corners and clips
           whatever reaches them; the scrolling happens one level in. Scrolling
           the shell itself paints the native scrollbar, which is a rectangle,
-          over its own rounded edge and squares off the right corners.
+          over its own edge and squares off the right corners.
           `scrollbar-gutter: stable` reserves the track from the start, so the
           content does not shift sideways the moment it grows past one screen. */}
       <DialogContent

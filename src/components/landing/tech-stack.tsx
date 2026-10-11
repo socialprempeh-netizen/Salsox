@@ -82,7 +82,7 @@ export function TechStack({ className }: { className?: string }) {
                 tabIndex={0}
                 aria-label={name}
                 style={{ "--brand": brandColor[name] } as CSSProperties}
-                className="rounded-md text-muted-foreground/70 outline-none transition-colors duration-300 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground/70 outline-none transition-colors duration-300 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <svg
                   role="img"

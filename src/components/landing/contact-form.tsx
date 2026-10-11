@@ -26,7 +26,7 @@ export function ContactForm({ disabled = false }: { disabled?: boolean }) {
 
   if (state.status === "sent") {
     return (
-      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center">
+      <div className="border border-primary/30 bg-primary/5 p-6 text-center">
         <p className="font-medium text-foreground">{t("sentTitle")}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t("sentBody")}</p>
       </div>
@@ -76,7 +76,7 @@ export function ContactForm({ disabled = false }: { disabled?: boolean }) {
           rows={5}
           placeholder={t("messagePlaceholder")}
           disabled={disabled || pending}
-          className="flex w-full rounded-[var(--radius)] border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 

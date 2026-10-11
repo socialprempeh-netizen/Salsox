@@ -18,7 +18,7 @@ export function PostCard({ post }: { post: Post }) {
         href={`/blog/${post.slug}/`}
         tabIndex={-1}
         aria-hidden="true"
-        className="block overflow-hidden rounded-xl border border-border transition-colors group-hover:border-primary/40"
+        className="block overflow-hidden border border-border transition-colors group-hover:border-primary/40"
       >
         {post.cover ? (
           // eslint-disable-next-line @next/next/no-img-element

@@ -55,7 +55,7 @@ export async function GetStartedChecklist({
           item.done ? (
             <div
               key={item.label}
-              className="flex items-center gap-3 rounded-md px-2 py-2 text-sm text-muted-foreground"
+              className="flex items-center gap-3 px-2 py-2 text-sm text-muted-foreground"
             >
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Check className="h-3 w-3" strokeWidth={3} />
@@ -66,7 +66,7 @@ export async function GetStartedChecklist({
             <Link
               key={item.label}
               href={item.href}
-              className="group flex items-center gap-3 rounded-md px-2 py-2 text-sm text-foreground transition-colors hover:bg-primary/10"
+              className="group flex items-center gap-3 px-2 py-2 text-sm text-foreground transition-colors hover:bg-primary/10"
             >
               <span className="h-5 w-5 shrink-0 rounded-full border-2 border-border" />
               <span>{item.label}</span>

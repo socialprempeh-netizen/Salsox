@@ -36,7 +36,7 @@ export function SidebarCollapseToggle() {
       aria-label={label}
       title={label}
       onClick={toggle}
-      className="hidden h-9 w-9 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:flex"
+      className="hidden h-9 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:flex"
     >
       {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
     </button>

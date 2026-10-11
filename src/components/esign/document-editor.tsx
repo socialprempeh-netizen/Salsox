@@ -271,7 +271,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
               onClick={() => setStep(i as 0 | 1 | 2)}
               aria-current={step === i ? "step" : undefined}
               className={cn(
-                "flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-2 text-sm font-medium disabled:opacity-50",
+                "flex min-h-11 w-full items-center justify-center gap-2 border px-2 text-sm font-medium disabled:opacity-50",
                 step === i ? "border-primary bg-primary/10 text-primary-hover" : "text-muted-foreground"
               )}
             >
@@ -285,7 +285,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
         <div className="space-y-4">
           <div className="space-y-3">
             {recipients.map((r, i) => (
-              <div key={r.key} className="space-y-3 rounded-xl border p-3" style={{ borderLeft: `4px solid ${colorOf(r.key)}` }}>
+              <div key={r.key} className="space-y-3 border p-3" style={{ borderLeft: `4px solid ${colorOf(r.key)}` }}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label htmlFor={`n-${r.key}`}>{t("name")}</Label>
@@ -360,7 +360,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
       {step === 1 && (
         <div className="space-y-3">
           {/* Toolbar: sticky so it stays reachable while scrolling a long PDF. */}
-          <div className="sticky top-16 z-10 space-y-2 rounded-xl border bg-background/95 p-3 backdrop-blur">
+          <div className="sticky top-16 z-10 space-y-2 border bg-background/95 p-3 backdrop-blur">
             <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
               {actionable.map((r) => (
                 <button
@@ -382,7 +382,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
                   onClick={() => setArmed(armed === type ? null : type)}
                   aria-pressed={armed === type}
                   className={cn(
-                    "min-h-9 shrink-0 rounded-lg border px-3 text-sm",
+                    "min-h-9 shrink-0 border px-3 text-sm",
                     armed === type ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
                   )}
                 >
@@ -433,7 +433,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
                         if (e.key === "Delete" || e.key === "Backspace") setFields((prev) => prev.filter((x) => x.id !== f.id))
                       }}
                       className={cn(
-                        "absolute flex touch-none select-none items-center justify-center overflow-hidden rounded-sm border-2 text-[10px] font-medium sm:text-xs",
+                        "absolute flex touch-none select-none items-center justify-center overflow-hidden border-2 text-[10px] font-medium sm:text-xs",
                         selected === f.id && "ring-2 ring-offset-1"
                       )}
                       style={{
@@ -484,7 +484,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
           </div>
           <div className="space-y-2">
             <Label htmlFor="doc-expiry">{t("expiry")}</Label>
-            <select id="doc-expiry" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="h-11 w-full rounded-xl border bg-background px-3 text-sm">
+            <select id="doc-expiry" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="h-11 w-full border bg-background px-3 text-sm">
               {["7", "14", "30", "90"].map((d) => (
                 <option key={d} value={d}>{t("expiryDays", { days: Number(d) })}</option>
               ))}
@@ -505,7 +505,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
             {!plan.signAndPay && <PlanLock plan="Business" />}
             {payOn && (
               readyProviders.length === 0 ? (
-                <p className="rounded-lg bg-amber-500/10 p-3 text-sm">
+                <p className="bg-amber-500/10 p-3 text-sm">
                   {t("noPayout")}{" "}
                   <Link href="/dashboard/payouts" className="font-medium text-primary underline">{t("connectPayout")}</Link>
                 </p>
@@ -517,13 +517,13 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="pay-currency">{t("currency")}</Label>
-                    <select id="pay-currency" value={payment.currency} onChange={(e) => setPayment({ ...payment, currency: e.target.value })} className="h-11 w-full rounded-xl border bg-background px-3 text-sm">
+                    <select id="pay-currency" value={payment.currency} onChange={(e) => setPayment({ ...payment, currency: e.target.value })} className="h-11 w-full border bg-background px-3 text-sm">
                       {SIGN_AND_PAY_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="pay-who">{t("payer")}</Label>
-                    <select id="pay-who" value={payment.recipientKey || actionable[0]?.key} onChange={(e) => setPayment({ ...payment, recipientKey: e.target.value })} className="h-11 w-full rounded-xl border bg-background px-3 text-sm">
+                    <select id="pay-who" value={payment.recipientKey || actionable[0]?.key} onChange={(e) => setPayment({ ...payment, recipientKey: e.target.value })} className="h-11 w-full border bg-background px-3 text-sm">
                       {actionable.map((r) => <option key={r.key} value={r.key}>{r.name || r.email}</option>)}
                     </select>
                   </div>

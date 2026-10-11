@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest"
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
 import { APIError } from "better-auth/api"
 
 /**
@@ -14,6 +14,7 @@ import { APIError } from "better-auth/api"
 
 const signInEmail = vi.fn()
 const signInMagicLink = vi.fn()
+const signUpEmail = vi.fn()
 const verifyTOTP = vi.fn()
 const verifyBackupCode = vi.fn()
 const findUnique = vi.fn()
@@ -24,6 +25,7 @@ vi.mock("@/auth", () => ({
     api: {
       signInEmail: (...a: unknown[]) => signInEmail(...a),
       signInMagicLink: (...a: unknown[]) => signInMagicLink(...a),
+      signUpEmail: (...a: unknown[]) => signUpEmail(...a),
       verifyTOTP: (...a: unknown[]) => verifyTOTP(...a),
       verifyBackupCode: (...a: unknown[]) => verifyBackupCode(...a),
     },
@@ -34,7 +36,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: { user: { findUnique: (...a: unknown[]) => findUnique(...a) } },
 }))
 vi.mock("@/lib/rate-limit", () => ({
-  checkRateLimit: () => allowRateLimit(),
+  checkRateLimit: (...args: unknown[]) => allowRateLimit(...args),
   rateLimitKeyFromIp: async (scope: string) => `${scope}:test`,
 }))
 
@@ -49,6 +51,7 @@ vi.mock("next/navigation", () => ({
 const {
   signInWithPassword,
   signInWithMagicLink,
+  registerUser,
   verifyTwoFactorCode,
   verifyTwoFactorBackupCode,
 } = await import("./auth")
@@ -102,7 +105,28 @@ describe("signInWithPassword", () => {
   it("lowercases and trims the address before handing it over", async () => {
     await redirectOf(() => signInWithPassword(form({ email: "  A@B.CO  ", password: "pw" })))
     expect(signInEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ body: { email: "a@b.co", password: "pw" } })
+      expect.objectContaining({ body: expect.objectContaining({ email: "a@b.co", password: "pw" }) })
+    )
+  })
+
+  it("limits attempts by address and by IP", async () => {
+    await redirectOf(() => signInWithPassword(form({ email: "A@b.co", password: "pw" })))
+    expect(allowRateLimit).toHaveBeenCalledWith("signin:a@b.co", 10)
+    expect(allowRateLimit).toHaveBeenCalledWith("signin:test", 30)
+  })
+
+  it("refuses over the limit without trying the password", async () => {
+    allowRateLimit.mockReturnValue(false)
+    expect(await redirectOf(() => signInWithPassword(form({ email: "a@b.co", password: "pw" })))).toBe(
+      "/login?error=rate"
+    )
+    expect(signInEmail).not.toHaveBeenCalled()
+  })
+
+  it("says the address needs confirming, not that the password is wrong, when it is unconfirmed", async () => {
+    signInEmail.mockRejectedValue(new APIError("FORBIDDEN", { message: "Email not verified", code: "EMAIL_NOT_VERIFIED" }))
+    expect(await redirectOf(() => signInWithPassword(form({ email: "a@b.co", password: "pw" })))).toBe(
+      "/login?error=email_not_verified"
     )
   })
 })
@@ -201,5 +225,35 @@ describe("verifyTwoFactorBackupCode", () => {
     expect(await redirectOf(() => verifyTwoFactorBackupCode(form({ code: "nope" })))).toBe(
       "/2fa?mode=backup&error=backup"
     )
+  })
+})
+
+/**
+ * Sign-up when an address must be confirmed first (src/lib/email-verification-policy.ts).
+ * The library opens no session then, so the old destination, the dashboard,
+ * would only bounce to /login: sign-up has to end on "Check your email".
+ */
+describe("registerUser", () => {
+  const signup = () => form({ email: "new@b.co", password: "a-long-enough-password-1", next: "/dashboard" })
+  const resend = process.env.RESEND_API_KEY
+
+  beforeEach(() => {
+    findUnique.mockResolvedValue(null)
+    signUpEmail.mockResolvedValue({ token: null, user: { id: "u2" } })
+  })
+
+  afterEach(() => {
+    if (resend === undefined) delete process.env.RESEND_API_KEY
+    else process.env.RESEND_API_KEY = resend
+  })
+
+  it("ends on the check-your-email page when confirmation is required", async () => {
+    process.env.RESEND_API_KEY = "re_test"
+    expect(await redirectOf(() => registerUser(signup()))).toBe("/verify-request?reason=signup")
+  })
+
+  it("goes straight in when no confirmation email can be sent", async () => {
+    delete process.env.RESEND_API_KEY
+    expect(await redirectOf(() => registerUser(signup()))).toBe("/dashboard")
   })
 })

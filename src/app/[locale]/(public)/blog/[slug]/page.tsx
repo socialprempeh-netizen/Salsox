@@ -222,7 +222,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <img
             src={post.cover}
             alt=""
-            className="mt-8 aspect-[1200/630] w-full rounded-2xl border border-border object-cover"
+            className="mt-8 aspect-[1200/630] w-full border border-border object-cover"
           />
         )}
 

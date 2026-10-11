@@ -30,17 +30,17 @@ export default async function ResetPasswordPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-3xl border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
+      <div className="border border-border bg-card/80 p-8 shadow-[var(--shadow-soft-lg)] backdrop-blur-xl">
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
-            <LogoMark className="h-12 w-12 rounded-2xl ring-1 ring-primary/15" iconClassName="h-7 w-7" />
+            <LogoMark className="h-12 w-12 ring-1 ring-primary/15" iconClassName="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
         </div>
 
         {expired ? (
           <>
-            <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive">
+            <p className="border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive">
               {t("expired")}
             </p>
             <p className="mt-4 text-center text-xs text-muted-foreground">
@@ -52,7 +52,7 @@ export default async function ResetPasswordPage({
         ) : (
           <>
             {error === "policy" && (
-              <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
+              <p className="mb-4 border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
                 {t("policy")}
               </p>
             )}

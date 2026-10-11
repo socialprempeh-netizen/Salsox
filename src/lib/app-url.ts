@@ -47,3 +47,32 @@ export function trustedOriginsFor(appUrl: string): string[] {
   if (counterpart) origins.push(`${url.protocol}//${counterpart}${url.port ? `:${url.port}` : ""}`)
   return origins
 }
+
+/**
+ * Where a request on the base URL's apex or www counterpart should go instead,
+ * or null when it is already on the right host (or there is no counterpart).
+ *
+ * Both forms of a custom domain can serve the app with no redirect between
+ * them. Sign-in then broke on the first try from the other form: Better Auth
+ * sets its OAuth state cookie on the host the sign-in started from
+ * (www.salsox.com), but sends the provider a redirect URI built from the base
+ * URL (salsox.com), so the callback arrived where that cookie does not exist
+ * and was refused as state_mismatch. Back on /login, now on the base URL's
+ * host, the second try worked. Serving every page from one host means the
+ * cookie and the callback always share it.
+ *
+ * `/api` is left alone: webhooks and other machine callers do not follow
+ * redirects, and an endpoint already registered on the other form must keep
+ * answering there.
+ *
+ * Pure: takes the base URL and the request URL, so the rule is tested.
+ */
+export function canonicalHostRedirect(appUrl: string, requestUrl: URL): string | null {
+  const [canonical, counterpart] = trustedOriginsFor(appUrl)
+  if (!canonical || !counterpart) return null
+  // Host, not origin: behind a proxy the request URL can report http while the
+  // visitor is on https, and the host alone is what decides.
+  if (requestUrl.host !== new URL(counterpart).host) return null
+  if (requestUrl.pathname === "/api" || requestUrl.pathname.startsWith("/api/")) return null
+  return `${canonical}${requestUrl.pathname}${requestUrl.search}`
+}
