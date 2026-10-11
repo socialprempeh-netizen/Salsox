@@ -1377,6 +1377,7 @@
       "expiryNever": "Never",
       "signAndPay": "Collect a payment (Sign & Pay)",
       "signAndPayHint": "The chosen signer pays at the end of signing, by card or mobile money. The money goes straight to your payout account.",
+      "signAndPayFee": "Stripe's or Paystack's processing fee comes out of what you receive, at cost. Salsox takes no cut.",
       "noPayout": "You need a payout account first.",
       "connectPayout": "Connect one",
       "amount": "Amount",

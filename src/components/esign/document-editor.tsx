@@ -499,6 +499,9 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
               {t("signAndPay")}
             </label>
             <p className="text-sm text-muted-foreground">{t("signAndPayHint")}</p>
+            {/* What the sender pays for Sign & Pay, said before it is switched on:
+                the provider's fee at cost, nothing added (payments/fee-passthrough.ts). */}
+            <p className="text-xs text-muted-foreground">{t("signAndPayFee")}</p>
             {!plan.signAndPay && <PlanLock plan="Business" />}
             {payOn && (
               readyProviders.length === 0 ? (
