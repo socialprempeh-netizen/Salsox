@@ -26,7 +26,7 @@ import { signingUrl } from "./share"
 import { getProvider } from "./payments"
 import { formatMinorUnits, isSignAndPayCurrency } from "./payments/select"
 import { existingCheckout, settlement } from "./payments/reconcile-rules"
-import { closeOpenCheckouts, markFailed, refundPayment } from "./payments/settle"
+import { closeOpenCheckouts, markFailed, passProcessorFee, refundPayment } from "./payments/settle"
 import { checkSignatureImage } from "./pdf/signature-image"
 
 /** Drawn signatures are small PNGs; anything larger is not a signature. */
@@ -562,6 +562,14 @@ export async function confirmPayment(paymentId: string): Promise<"PAID" | "PENDI
       actorEmail: payment.recipient.email,
       data: { provider: payment.provider, amount: payment.amount, currency: payment.currency, ref: payment.providerRef },
     })
+    // The processor's fee comes out of the sender's proceeds, at cost
+    // (payments/fee-passthrough.ts). Never in the way of the signer: a
+    // failure here is retried by the reconciliation sweep.
+    try {
+      await passProcessorFee(payment)
+    } catch (error) {
+      console.error("[esign] processor fee not passed on yet; the sweep retries", payment.id, error)
+    }
     // Complete automatically when nothing else is left to do.
     const result = await completeSigning(payment.recipient.token)
     if (!result.ok && result.error !== "missingFields") {

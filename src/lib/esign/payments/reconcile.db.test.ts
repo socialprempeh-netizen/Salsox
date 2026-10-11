@@ -8,7 +8,9 @@
  * - a payment that lands after its document was cancelled is refunded once
  *   and recorded once, even when two confirmations race;
  * - a checkout nobody finished is closed by the sweep once it is abandoned;
- * - a dispute delivered twice is recorded once.
+ * - a dispute delivered twice is recorded once;
+ * - the processor fee is passed on once per paid payment, never for a
+ *   refunded one, and the sweep retries it within its window.
  *
  * Opt-in, like finalize-concurrency.db.test.ts: run with ESIGN_DB_TESTS=1
  * against the local database. Rows are removed with their user at the end.
@@ -25,6 +27,8 @@ const fake = vi.hoisted(() => ({
   checkouts: 0,
   refunds: 0,
   cancels: 0,
+  feeCalls: [] as string[],
+  feeStatus: "recovered" as "recovered" | "pending",
 }))
 vi.mock("./index", () => {
   const provider = {
@@ -44,6 +48,10 @@ vi.mock("./index", () => {
     refund: async ({ paymentId }: { paymentId: string }) => {
       fake.refunds++
       return { refundId: `re_${paymentId}` }
+    },
+    recoverProcessorFee: async ({ paymentId }: { paymentId: string }) => {
+      fake.feeCalls.push(paymentId)
+      return fake.feeStatus === "recovered" ? { status: "recovered" as const, amount: 66, currency: "usd" } : { status: "pending" as const }
     },
   }
   return { getProvider: () => provider, configuredProviders: () => ["STRIPE"] }
@@ -94,6 +102,8 @@ describe.skipIf(!enabled)("Sign & Pay reconciliation (database)", () => {
     fake.checkouts = 0
     fake.refunds = 0
     fake.cancels = 0
+    fake.feeCalls.length = 0
+    fake.feeStatus = "recovered"
     sent.refunds.length = 0
     sent.disputes.length = 0
   })
@@ -178,5 +188,42 @@ describe.skipIf(!enabled)("Sign & Pay reconciliation (database)", () => {
 
     await m.settle.recordDispute({ ...opened, stage: "closed", outcome: "lost" })
     expect((await m.prisma.payment.findUniqueOrThrow({ where: { id: payment.id } })).status).toBe("REFUNDED")
+  })
+  it("passes the processor fee on once when a payment is confirmed, even when confirmations race", async () => {
+    const { doc, token } = await payable()
+    await m.signing.startPayment(token)
+    const payment = await m.prisma.payment.findFirstOrThrow({ where: { documentId: doc.id } })
+    fake.verifyStatus = "PAID"
+    await Promise.all([m.signing.confirmPayment(payment.id), m.signing.confirmPayment(payment.id)])
+    expect((await m.prisma.payment.findUniqueOrThrow({ where: { id: payment.id } })).status).toBe("PAID")
+    expect(fake.feeCalls).toEqual([payment.id])
+  })
+
+  it("never passes a fee on for a payment that is refunded instead of kept", async () => {
+    const { doc, token } = await payable()
+    await m.signing.startPayment(token)
+    const payment = await m.prisma.payment.findFirstOrThrow({ where: { documentId: doc.id } })
+    await m.prisma.document.update({ where: { id: doc.id }, data: { status: "CANCELLED" } })
+    fake.verifyStatus = "PAID"
+    await m.signing.confirmPayment(payment.id)
+    await m.reconcile.recoverProcessorFees(new Date(), { documentId: doc.id })
+    expect(fake.feeCalls).toEqual([])
+  })
+
+  it("retries a fee that was not final at confirmation, within the sweep's window only", async () => {
+    const { doc, token } = await payable()
+    await m.signing.startPayment(token)
+    const payment = await m.prisma.payment.findFirstOrThrow({ where: { documentId: doc.id } })
+    fake.verifyStatus = "PAID"
+    fake.feeStatus = "pending"
+    await m.signing.confirmPayment(payment.id)
+    fake.feeStatus = "recovered"
+    expect(await m.reconcile.recoverProcessorFees(new Date(), { documentId: doc.id })).toBe(1)
+    expect(fake.feeCalls).toEqual([payment.id, payment.id])
+
+    // Paid more than a week ago: out of the sweep's reach.
+    await m.prisma.payment.update({ where: { id: payment.id }, data: { paidAt: new Date(Date.now() - m.reconcile.FEE_SWEEP_WINDOW_MS - 60_000) } })
+    expect(await m.reconcile.recoverProcessorFees(new Date(), { documentId: doc.id })).toBe(0)
+    expect(fake.feeCalls).toHaveLength(2)
   })
 })

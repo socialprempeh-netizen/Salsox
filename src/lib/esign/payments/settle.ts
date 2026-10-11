@@ -22,6 +22,8 @@ import { sendPaymentDisputed, sendPaymentRefunded } from "../emails"
 import { signingUrl } from "../share"
 import { getProvider } from "./index"
 import { formatMinorUnits } from "./select"
+import type { FeeRecovery } from "./types"
+import * as Sentry from "@sentry/nextjs"
 
 type PaymentWithPeople = Payment & {
   recipient: { email: string; name: string; token: string }
@@ -89,6 +91,28 @@ export async function refundPayment(paymentId: string, reason: "documentClosed" 
     audience: "payer",
     url: signingUrl(base, payment.recipient.token),
   })
+}
+
+/**
+ * Passes a paid payment's processor fee on to the sender, at cost
+ * (fee-passthrough.ts). Null for providers whose fee the sender already
+ * bears at settlement (Paystack). Safe to repeat: the provider reports a fee
+ * already taken instead of taking it again. A fee that cannot be stated in
+ * the transfer's currency stays with the platform and is reported, so it is
+ * looked at rather than guessed.
+ */
+export async function passProcessorFee(payment: Pick<Payment, "id" | "provider" | "providerRef">): Promise<FeeRecovery | null> {
+  const provider = getProvider(payment.provider)
+  if (!provider.recoverProcessorFee) return null
+  const result = await provider.recoverProcessorFee({ providerRef: payment.providerRef, paymentId: payment.id })
+  if (result.status === "unconvertible") {
+    Sentry.captureMessage("Sign & Pay: processor fee could not be passed on in the transfer's currency", {
+      level: "warning",
+      tags: { area: "sign-and-pay", provider: payment.provider },
+      extra: { paymentId: payment.id, fee: result.fee, feeCurrency: result.feeCurrency },
+    })
+  }
+  return result
 }
 
 /**

@@ -32,6 +32,22 @@ export type VerifiedPayment = {
   currency?: string
 }
 
+/**
+ * The outcome of passing a payment's processor fee on to the sender
+ * (src/lib/esign/payments/fee-passthrough.ts).
+ * - recovered: taken from the sender's proceeds (now, or by an earlier run).
+ * - pending: the charge or its fee is not final yet; try again later.
+ * - notApplicable: nothing to take (a checkout from before pass-through,
+ *   a refunded charge).
+ * - unconvertible: the fee could not be stated in the transfer's currency
+ *   without guessing, so the platform kept it; reported, not retried.
+ */
+export type FeeRecovery =
+  | { status: "recovered"; amount: number; currency: string }
+  | { status: "pending" }
+  | { status: "notApplicable" }
+  | { status: "unconvertible"; fee: number; feeCurrency: string }
+
 export type PayoutOnboarding =
   | { kind: "redirect"; url: string; externalAccountId: string }
   | { kind: "ready"; externalAccountId: string }
@@ -55,6 +71,14 @@ export interface SignAndPayProvider {
    * a payment already refunded counts as done, not as an error.
    */
   refund(args: { providerRef: string; paymentId: string }): Promise<{ refundId: string }>
+  /**
+   * Takes the processor's real fee on a paid payment from the sender's
+   * proceeds, when the provider charged it to the platform. Safe to call
+   * again: a fee already taken is reported as recovered, not taken twice.
+   * Absent for providers whose fee the sender already bears at settlement
+   * (Paystack, through `bearer: "subaccount"`).
+   */
+  recoverProcessorFee?(args: { providerRef: string; paymentId: string }): Promise<FeeRecovery>
 }
 
 /** Platform fee on a Sign & Pay amount, in minor units, rounded down. */
