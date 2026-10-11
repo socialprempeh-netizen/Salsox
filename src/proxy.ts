@@ -2,6 +2,8 @@ import { auth } from "@/auth"
 import { NextResponse, type NextRequest } from "next/server"
 import createIntlMiddleware from "next-intl/middleware"
 import { routing } from "@/i18n/routing"
+import { siteConfig } from "@/config/site"
+import { canonicalHostRedirect } from "@/lib/app-url"
 
 /**
  * Locale handling for the public surface only.
@@ -83,6 +85,16 @@ const AUTH_ROUTES = ["/login", "/signup", "/2fa"]
 // lives in requireUser() and requireAdmin(), on the page.
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
+
+  // One host for every page, before anything else: the apex and www forms both
+  // served the app, and a Google sign-in started on the one that is not the
+  // base URL failed its first try with state_mismatch (src/lib/app-url.ts).
+  // Permanent, so browsers and search engines settle on the base URL's host.
+  // The host comes from the Host header: req.nextUrl can carry the server's
+  // own address instead of the one the visitor typed (it does under next dev).
+  const requested = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, `${req.nextUrl.protocol}//${req.headers.get("host") ?? req.nextUrl.host}`)
+  const canonical = canonicalHostRedirect(siteConfig.url, requested)
+  if (canonical) return NextResponse.redirect(canonical, 308)
   // Was read first, for every request:
   // const session = await auth.api.getSession({ headers: req.headers })
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r))

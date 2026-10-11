@@ -3,7 +3,7 @@
  * the result is a real origin, never "undefined".
  */
 import { describe, expect, it } from "vitest"
-import { resolveAppUrl, trustedOriginsFor } from "./app-url"
+import { canonicalHostRedirect, resolveAppUrl, trustedOriginsFor } from "./app-url"
 
 describe("resolveAppUrl", () => {
   it("uses NEXT_PUBLIC_APP_URL first, without a trailing slash", () => {
@@ -43,5 +43,35 @@ describe("trustedOriginsFor", () => {
 
   it("returns nothing for a value that is not a URL", () => {
     expect(trustedOriginsFor("undefined")).toEqual([])
+  })
+})
+
+describe("canonicalHostRedirect", () => {
+  it("sends the www form to the apex base URL, keeping path and query", () => {
+    expect(canonicalHostRedirect("https://salsox.com", new URL("https://www.salsox.com/login?next=%2Fdashboard"))).toBe("https://salsox.com/login?next=%2Fdashboard")
+  })
+
+  it("matches by host, so an http request URL behind a proxy still redirects to the https base URL", () => {
+    expect(canonicalHostRedirect("https://salsox.com", new URL("http://www.salsox.com/login"))).toBe("https://salsox.com/login")
+  })
+
+  it("sends the apex form to a www base URL", () => {
+    expect(canonicalHostRedirect("https://www.salsox.com", new URL("https://salsox.com/pricing"))).toBe("https://www.salsox.com/pricing")
+  })
+
+  it("leaves requests already on the base URL's host alone", () => {
+    expect(canonicalHostRedirect("https://salsox.com", new URL("https://salsox.com/login"))).toBeNull()
+  })
+
+  it("leaves the API alone on either host, so webhooks keep answering", () => {
+    expect(canonicalHostRedirect("https://salsox.com", new URL("https://www.salsox.com/api/auth/callback/google?code=x"))).toBeNull()
+    expect(canonicalHostRedirect("https://salsox.com", new URL("https://www.salsox.com/api"))).toBeNull()
+    expect(canonicalHostRedirect("https://salsox.com", new URL("https://www.salsox.com/apidocs"))).toBe("https://salsox.com/apidocs")
+  })
+
+  it("does nothing for hosts with no counterpart: localhost, previews, other hosts", () => {
+    expect(canonicalHostRedirect("http://localhost:3000", new URL("http://localhost:3000/login"))).toBeNull()
+    expect(canonicalHostRedirect("https://salsox.com", new URL("https://salsox-git-x.vercel.app/login"))).toBeNull()
+    expect(canonicalHostRedirect("undefined", new URL("https://www.salsox.com/login"))).toBeNull()
   })
 })
