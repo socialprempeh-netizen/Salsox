@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 import { subscriptionDates } from "@/lib/billing"
 import type Stripe from "stripe"
+import * as Sentry from "@sentry/nextjs"
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -325,6 +326,22 @@ async function handleSignAndPayDispute(dispute: Stripe.Dispute, stage: "opened" 
     reason: dispute.reason,
     amount: dispute.amount,
   })
+
+  // A lost dispute: Stripe debited the platform (destination charge), so its
+  // cost is taken back from the sender's transfer. Only on a loss; a won
+  // dispute or an inquiry needs nothing. Idempotent per dispute id, so a
+  // retried delivery cannot reverse twice. A refusal is reported and
+  // rethrown: the webhook answers with an error and Stripe delivers it
+  // again, while recordDispute above, already recorded, is skipped.
+  if (stage === "closed" && dispute.status === "lost") {
+    const { recoverLostDispute } = await import("@/lib/esign/payments/settle")
+    try {
+      await recoverLostDispute({ find: { id: paymentId }, disputeId: dispute.id })
+    } catch (error) {
+      Sentry.captureException(error, { tags: { area: "sign-and-pay", step: "dispute-recovery" }, extra: { disputeId: dispute.id, paymentId } })
+      throw error
+    }
+  }
 }
 
 async function handleChargeRefunded(charge: Stripe.Charge) {

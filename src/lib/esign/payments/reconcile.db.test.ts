@@ -10,7 +10,9 @@
  * - a checkout nobody finished is closed by the sweep once it is abandoned;
  * - a dispute delivered twice is recorded once;
  * - the processor fee is passed on once per paid payment, never for a
- *   refunded one, and the sweep retries it within its window.
+ *   refunded one, and the sweep retries it within its window;
+ * - the sender is emailed about a lost dispute's recovery only when it
+ *   actually took the money, not again on a retried delivery.
  *
  * Opt-in, like finalize-concurrency.db.test.ts: run with ESIGN_DB_TESTS=1
  * against the local database. Rows are removed with their user at the end.
@@ -29,6 +31,7 @@ const fake = vi.hoisted(() => ({
   cancels: 0,
   feeCalls: [] as string[],
   feeStatus: "recovered" as "recovered" | "pending",
+  disputeCreated: true,
 }))
 vi.mock("./index", () => {
   const provider = {
@@ -49,6 +52,7 @@ vi.mock("./index", () => {
       fake.refunds++
       return { refundId: `re_${paymentId}` }
     },
+    recoverLostDispute: async () => ({ status: "recovered" as const, amount: 1250, currency: "usd", shortfall: 0, created: fake.disputeCreated }),
     recoverProcessorFee: async ({ paymentId }: { paymentId: string }) => {
       fake.feeCalls.push(paymentId)
       return fake.feeStatus === "recovered" ? { status: "recovered" as const, amount: 66, currency: "usd" } : { status: "pending" as const }
@@ -57,11 +61,12 @@ vi.mock("./index", () => {
   return { getProvider: () => provider, configuredProviders: () => ["STRIPE"] }
 })
 // The emails read translations through next-intl, which only runs inside Next.
-const sent = vi.hoisted(() => ({ refunds: [] as string[], disputes: [] as string[] }))
+const sent = vi.hoisted(() => ({ refunds: [] as string[], disputes: [] as string[], recovered: [] as string[] }))
 vi.mock("../emails", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../emails")>()),
   sendPaymentRefunded: async (a: { to: string }) => (sent.refunds.push(a.to), "sent" as const),
   sendPaymentDisputed: async (a: { to: string }) => (sent.disputes.push(a.to), "sent" as const),
+  sendDisputeRecovered: async (a: { to: string }) => (sent.recovered.push(a.to), "sent" as const),
   sendSigningInvite: async () => "sent" as const,
   sendDocumentCompleted: async () => "sent" as const,
 }))
@@ -106,6 +111,8 @@ describe.skipIf(!enabled)("Sign & Pay reconciliation (database)", () => {
     fake.feeStatus = "recovered"
     sent.refunds.length = 0
     sent.disputes.length = 0
+    sent.recovered.length = 0
+    fake.disputeCreated = true
   })
 
   /** A pending Sign & Pay document with one payer, and the payer's token. */
@@ -225,5 +232,18 @@ describe.skipIf(!enabled)("Sign & Pay reconciliation (database)", () => {
     await m.prisma.payment.update({ where: { id: payment.id }, data: { paidAt: new Date(Date.now() - m.reconcile.FEE_SWEEP_WINDOW_MS - 60_000) } })
     expect(await m.reconcile.recoverProcessorFees(new Date(), { documentId: doc.id })).toBe(0)
     expect(fake.feeCalls).toHaveLength(2)
+  })
+
+  it("emails the sender once when a lost dispute is recovered, not again on a retried delivery", async () => {
+    const { doc, token } = await payable()
+    await m.signing.startPayment(token)
+    const payment = await m.prisma.payment.findFirstOrThrow({ where: { documentId: doc.id } })
+    await m.settle.recoverLostDispute({ find: { id: payment.id }, disputeId: "dp_1" })
+    expect(sent.recovered).toHaveLength(1)
+
+    // The provider reports the recovery as already made: no second email.
+    fake.disputeCreated = false
+    await m.settle.recoverLostDispute({ find: { id: payment.id }, disputeId: "dp_1" })
+    expect(sent.recovered).toHaveLength(1)
   })
 })

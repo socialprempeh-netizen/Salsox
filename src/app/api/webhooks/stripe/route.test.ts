@@ -34,6 +34,17 @@ const emailMock = {
 }
 vi.mock("@/lib/email", () => emailMock)
 
+// Sign & Pay disputes find their payment through the PaymentIntent's
+// metadata, which is a Stripe call; the signature check stays real.
+const paymentIntentsMock = { retrieve: vi.fn() }
+vi.mock("@/lib/stripe", async () => {
+  const { default: RealStripe } = await import("stripe")
+  return { stripe: { webhooks: new RealStripe("sk_test_placeholder").webhooks, paymentIntents: paymentIntentsMock } }
+})
+// The e-sign engine's side of a dispute: recorded, and recovered when lost.
+const settleMock = { recordDispute: vi.fn(), recoverLostDispute: vi.fn() }
+vi.mock("@/lib/esign/payments/settle", () => settleMock)
+
 const { POST } = await import("./route")
 
 const original = { ...process.env }
@@ -167,5 +178,55 @@ describe("POST /api/webhooks/stripe: a refused email never fails the payment", (
     expect(response.status).toBe(200)
     expect(prismaMock.purchase.upsert).toHaveBeenCalledOnce()
     log.mockRestore()
+  })
+})
+
+/**
+ * Chargeback recovery: only a LOST dispute takes its cost back from the
+ * sender, a won or opened one never does, and a refused recovery answers
+ * with an error so Stripe delivers the event again.
+ */
+describe("POST /api/webhooks/stripe: Sign & Pay disputes", () => {
+  const dispute = (type: string, status: string) =>
+    event(type, { id: "dp_1", object: "dispute", payment_intent: "pi_1", status, reason: "fraudulent", amount: 10_000 })
+
+  beforeEach(() => {
+    paymentIntentsMock.retrieve.mockResolvedValue({ id: "pi_1", metadata: { salsoxPaymentId: "pay_1" } })
+    settleMock.recordDispute.mockResolvedValue(undefined)
+    settleMock.recoverLostDispute.mockResolvedValue({ status: "recovered", amount: 9_665, currency: "gbp", shortfall: 2_335, created: true })
+  })
+
+  it("recovers a lost dispute from the sender, once per delivery, keyed by the dispute id", async () => {
+    const response = await POST(signed(dispute("charge.dispute.closed", "lost")) as never)
+    expect(response.status).toBe(200)
+    expect(settleMock.recordDispute).toHaveBeenCalledWith(expect.objectContaining({ disputeId: "dp_1", stage: "closed", outcome: "lost" }))
+    expect(settleMock.recoverLostDispute).toHaveBeenCalledExactlyOnceWith({ find: { id: "pay_1" }, disputeId: "dp_1" })
+  })
+
+  it("recovers nothing when the dispute is won", async () => {
+    await POST(signed(dispute("charge.dispute.closed", "won")) as never)
+    expect(settleMock.recordDispute).toHaveBeenCalledWith(expect.objectContaining({ outcome: "won" }))
+    expect(settleMock.recoverLostDispute).not.toHaveBeenCalled()
+  })
+
+  it("recovers nothing when a dispute opens; it is recorded and the sender alerted as before", async () => {
+    await POST(signed(dispute("charge.dispute.created", "needs_response")) as never)
+    expect(settleMock.recordDispute).toHaveBeenCalledWith(expect.objectContaining({ stage: "opened" }))
+    expect(settleMock.recoverLostDispute).not.toHaveBeenCalled()
+  })
+
+  it("answers with an error when the recovery is refused, so Stripe delivers it again", async () => {
+    settleMock.recoverLostDispute.mockRejectedValue(new Error("insufficient funds"))
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
+    const response = await POST(signed(dispute("charge.dispute.closed", "lost")) as never)
+    expect(response.status).toBe(500)
+    log.mockRestore()
+  })
+
+  it("ignores a dispute on a charge that is not Sign & Pay", async () => {
+    paymentIntentsMock.retrieve.mockResolvedValue({ id: "pi_1", metadata: {} })
+    await POST(signed(dispute("charge.dispute.closed", "lost")) as never)
+    expect(settleMock.recordDispute).not.toHaveBeenCalled()
+    expect(settleMock.recoverLostDispute).not.toHaveBeenCalled()
   })
 })

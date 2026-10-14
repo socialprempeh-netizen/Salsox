@@ -18,11 +18,11 @@ import type { Payment, PaymentStatus } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { AUDIT, recordAudit } from "../audit"
-import { sendPaymentDisputed, sendPaymentRefunded } from "../emails"
+import { sendDisputeRecovered, sendPaymentDisputed, sendPaymentRefunded } from "../emails"
 import { signingUrl } from "../share"
 import { getProvider } from "./index"
 import { formatMinorUnits } from "./select"
-import type { FeeRecovery } from "./types"
+import type { DisputeRecovery, FeeRecovery } from "./types"
 import * as Sentry from "@sentry/nextjs"
 
 type PaymentWithPeople = Payment & {
@@ -91,6 +91,49 @@ export async function refundPayment(paymentId: string, reason: "documentClosed" 
     audience: "payer",
     url: signingUrl(base, payment.recipient.token),
   })
+}
+
+/**
+ * Recovers a LOST dispute's cost from the sender (dispute-recovery.ts), and
+ * tells them when it actually happens. Called for a closed dispute; does
+ * nothing unless the provider reports it lost. Safe to repeat for the same
+ * dispute: the provider reports a recovery already made (`created: false`),
+ * and the email goes out only with the recovery that made the reversal.
+ *
+ * Throws when the provider refuses the reversal (the sender's balance cannot
+ * cover it, say), so the webhook answers with an error and Stripe delivers
+ * it again later. A loss that cannot be stated in the transfer's currency is
+ * reported to Sentry rather than guessed.
+ */
+export async function recoverLostDispute(args: { find: { id: string } | { providerRef: string }; disputeId: string }): Promise<DisputeRecovery | null> {
+  const payment = await loadPayment(args.find)
+  if (!payment) return null
+  const provider = getProvider(payment.provider)
+  if (!provider.recoverLostDispute) return null
+  const result = await provider.recoverLostDispute({ disputeId: args.disputeId, paymentId: payment.id })
+
+  if (result.status === "unconvertible") {
+    Sentry.captureMessage("Sign & Pay: a lost dispute could not be recovered in the transfer's currency", {
+      level: "warning",
+      tags: { area: "sign-and-pay", provider: payment.provider },
+      extra: { paymentId: payment.id, disputeId: args.disputeId, loss: result.loss, lossCurrency: result.lossCurrency },
+    })
+  }
+  if (result.status === "recovered" && result.created) {
+    if (result.shortfall > 0) {
+      // Expected when the loss (amount plus dispute fee) is more than the
+      // transfer still held: the rest stays with the platform.
+      console.warn("[esign] lost dispute recovered in part", payment.id, args.disputeId, { shortfall: result.shortfall, currency: result.currency })
+    }
+    await sendDisputeRecovered({
+      to: payment.document.user.email,
+      name: payment.document.user.name || payment.document.user.email,
+      title: payment.document.title,
+      amountLabel: formatMinorUnits(result.amount, result.currency),
+      url: `${siteConfig.url}/dashboard/documents/${payment.document.id}`,
+    })
+  }
+  return result
 }
 
 /**

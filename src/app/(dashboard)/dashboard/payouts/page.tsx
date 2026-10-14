@@ -3,12 +3,13 @@
  * Stripe for cards worldwide, Paystack for cards and mobile money in Ghana,
  * Nigeria, Kenya and South Africa. A sender can connect either or both.
  */
-import { getTranslations } from "next-intl/server"
+import { getLocale, getTranslations } from "next-intl/server"
 import { CheckCircle2, Clock } from "lucide-react"
 import { requireUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getProvider } from "@/lib/esign/payments"
 import { listPaystackBanks } from "@/lib/esign/payments/paystack"
+import { stripeCountryOptions } from "@/lib/esign/payments/stripe-countries"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ConnectStripeButton, PaystackForm, RefreshPayoutsButton } from "@/components/esign/payout-forms"
@@ -18,6 +19,10 @@ const PAYSTACK_COUNTRY = process.env.PAYSTACK_COUNTRY ?? "ghana"
 export default async function PayoutsPage() {
   const user = await requireUser()
   const t = await getTranslations("esign.payouts")
+  // Named and sorted here, once, and handed to the picker: built in the
+  // browser too, the names and order could differ from the server's (each
+  // runtime has its own locale data) and break hydration.
+  const countries = stripeCountryOptions(await getLocale())
   const accounts = await prisma.payoutAccount.findMany({ where: { userId: user.id } })
   const stripe = accounts.find((a) => a.provider === "STRIPE")
   const paystack = accounts.find((a) => a.provider === "PAYSTACK")
@@ -56,7 +61,7 @@ export default async function PayoutsPage() {
         </CardHeader>
         <CardContent>
           {stripeAvailable ? (
-            stripe?.ready ? <p className="text-sm text-muted-foreground">{t("connectedAs", { id: stripe.externalAccountId })}</p> : <ConnectStripeButton connected={Boolean(stripe)} />
+            stripe?.ready ? <p className="text-sm text-muted-foreground">{t("connectedAs", { id: stripe.externalAccountId })}</p> : <ConnectStripeButton connected={Boolean(stripe)} countries={countries} />
           ) : (
             <p className="text-sm text-muted-foreground">{t("providerOff")}</p>
           )}

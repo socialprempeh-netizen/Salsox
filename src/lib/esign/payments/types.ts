@@ -48,6 +48,23 @@ export type FeeRecovery =
   | { status: "notApplicable" }
   | { status: "unconvertible"; fee: number; feeCurrency: string }
 
+/**
+ * The outcome of taking a lost dispute's cost back from the sender
+ * (src/lib/esign/payments/dispute-recovery.ts).
+ * - recovered: reversed from the sender's transfer; `created` is false when
+ *   an earlier run had already done it (nothing new happened).
+ * - notLost: the dispute is not lost (open, won, or an inquiry): nothing to do.
+ * - nothingToRecover: the transfer is already fully reversed (refunded), or
+ *   there is no transfer.
+ * - unconvertible: the loss could not be stated in the transfer's currency
+ *   without guessing; nothing reversed, reported instead.
+ */
+export type DisputeRecovery =
+  | { status: "recovered"; amount: number; currency: string; shortfall: number; created: boolean }
+  | { status: "notLost" }
+  | { status: "nothingToRecover" }
+  | { status: "unconvertible"; loss: number; lossCurrency: string }
+
 export type PayoutOnboarding =
   | { kind: "redirect"; url: string; externalAccountId: string }
   | { kind: "ready"; externalAccountId: string }
@@ -79,6 +96,13 @@ export interface SignAndPayProvider {
    * (Paystack, through `bearer: "subaccount"`).
    */
   recoverProcessorFee?(args: { providerRef: string; paymentId: string }): Promise<FeeRecovery>
+  /**
+   * Takes a LOST dispute's cost back from the sender, when the provider
+   * charged it to the platform. Safe to call again for the same dispute: a
+   * recovery already made is reported, not repeated. Absent for providers
+   * where the platform is not the one debited.
+   */
+  recoverLostDispute?(args: { disputeId: string; paymentId: string }): Promise<DisputeRecovery>
 }
 
 /** Platform fee on a Sign & Pay amount, in minor units, rounded down. */

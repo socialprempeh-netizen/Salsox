@@ -13,6 +13,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { startStripeOnboarding } from "@/lib/esign/payments/stripe"
+import { isStripeConnectCountry } from "@/lib/esign/payments/stripe-countries"
 import { createPaystackSubaccount } from "@/lib/esign/payments/paystack"
 import { getProvider } from "@/lib/esign/payments"
 
@@ -23,17 +24,27 @@ async function fail(code: string): Promise<PayoutState> {
   return { error: t.has(code) ? t(code) : t("generic") }
 }
 
-export async function connectStripeAction(): Promise<PayoutState> {
+/**
+ * Starts (or resumes) Stripe setup. `country` is the country of the sender's
+ * business or bank account: required, and checked here against the same
+ * list the picker offers, when a new Stripe account is about to be created,
+ * since it cannot be changed afterwards. Ignored when resuming an account
+ * that already exists. Was `connectStripeAction()`, which let the account
+ * take the platform's country.
+ */
+export async function connectStripeAction(country?: string): Promise<PayoutState> {
   const user = await getCurrentUser()
   if (!user) return fail("unauthorized")
   if (!getProvider("STRIPE").isConfigured()) return fail("payoutUnavailable")
 
   const existing = await prisma.payoutAccount.findUnique({ where: { userId_provider: { userId: user.id, provider: "STRIPE" } } })
+  if (!existing && !isStripeConnectCountry(country)) return fail("payoutCountry")
   let url: string
   try {
     const onboarding = await startStripeOnboarding({
       email: user.email ?? "",
       existingAccountId: existing?.externalAccountId,
+      country: existing ? null : country,
       returnUrl: `${siteConfig.url}/dashboard/payouts?stripe=return`,
       refreshUrl: `${siteConfig.url}/dashboard/payouts?stripe=refresh`,
     })

@@ -31,7 +31,33 @@ import type Stripe from "stripe"
 const key = process.env.STRIPE_SECRET_KEY ?? ""
 const enabled = process.env.STRIPE_LIVE_TESTS === "1" && key.startsWith("sk_test_")
 
-describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
+/**
+ * Step one of a run against a fresh sender: STRIPE_E2E_ONBOARD=1 creates the
+ * sender's account through the real `startStripeOnboarding`, reads back from
+ * Stripe that it is a full-dashboard account whose fees and losses Stripe collects,
+ * and writes its id and sign-up link to STRIPE_E2E_REPORT. A person finishes
+ * the sign-up; the payments below then run with STRIPE_E2E_ACCOUNT set to it.
+ */
+describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD !== "1")("Sign & Pay sender onboarding on Stripe test mode", () => {
+  it("creates the sender as Salsox does: v2, full dashboard, Stripe collects fees and losses", async () => {
+    const { stripe } = await import("@/lib/stripe")
+    const { startStripeOnboarding } = await import("./stripe")
+    const { url, externalAccountId } = await startStripeOnboarding({
+      email: "sender-e2e@example.com",
+      country: "GB",
+      returnUrl: "https://salsox.com/dashboard/payouts",
+      refreshUrl: "https://salsox.com/dashboard/payouts",
+    })
+    const account = await stripe.v2.core.accounts.retrieve(externalAccountId, { include: ["defaults", "configuration.merchant", "configuration.recipient"] })
+    const facts = { id: account.id, dashboard: account.dashboard, responsibilities: account.defaults?.responsibilities, url }
+    if (process.env.STRIPE_E2E_REPORT) (await import("node:fs")).writeFileSync(process.env.STRIPE_E2E_REPORT, JSON.stringify(facts, null, 2))
+    expect(account.dashboard).toBe("full")
+    expect(account.defaults?.responsibilities).toMatchObject({ fees_collector: "stripe", losses_collector: "stripe" })
+  }, 60_000)
+})
+
+// Skipped in onboarding mode: there is no finished sender to pay yet.
+describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD === "1")("Sign & Pay on Stripe test mode (end to end)", () => {
   let stripe: Stripe
   let adapter: typeof import("./stripe").stripeSignAndPay
   let accountId: string
@@ -86,7 +112,7 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
   })
 
   /** Pays a Stripe Checkout page with the 4242 test card in a headless browser. */
-  async function payInBrowser(url: string) {
+  async function payInBrowser(url: string, card = "4242424242424242") {
     const { chromium } = await import("@playwright/test")
     const browser = await chromium.launch()
     try {
@@ -100,7 +126,7 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
       const cardRow = page.locator('[data-testid="card-accordion-item"]')
       await page.locator('#cardNumber, [data-testid="card-accordion-item"]').first().waitFor({ timeout: 30_000 })
       if (await cardRow.isVisible()) await cardRow.click()
-      await page.locator("#cardNumber").fill("4242424242424242")
+      await page.locator("#cardNumber").fill(card)
       await page.locator("#cardExpiry").fill("12 / 34")
       await page.locator("#cardCvc").fill("123")
       await page.locator("#billingName").fill("Test Signer")
@@ -143,6 +169,10 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
       reversedOnSender += (refund.balance_transaction as Stripe.BalanceTransaction).amount
     }
     const sender = paymentBt.net + reversedOnSender
+    // Stripe's own processing fee charged to the sender's account, if any.
+    // Pass-through takes Stripe's fee once, from the transfer; a Stripe fee
+    // here as well would mean the sender paid it twice.
+    const senderStripeFee = paymentBt.fee_details.filter((f) => f.type === "stripe_fee").reduce((sum, f) => sum + f.amount, 0)
 
     return {
       onBehalfOf: intent.on_behalf_of,
@@ -151,12 +181,14 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
       signerPaid: { amount: charge.amount, currency: charge.currency },
       stripeFee: { amount: chargeBt.fee, currency: chargeBt.currency },
       feeReversals: reversals.map((r) => ({ amount: r.amount, currency: r.currency, kind: r.metadata?.kind })),
+      // Every reversal, whatever its kind (processor fee, lost dispute).
       platformNet: { amount: platform, currency: chargeBt.currency },
       senderNet: { amount: sender, currency: paymentBt.currency },
+      senderStripeFee,
     }
   }
 
-  async function run(label: string, amount: number, currency: string, feeBps: string | undefined) {
+  async function run(label: string, amount: number, currency: string, feeBps: string | undefined, card?: string) {
     if (feeBps === undefined) delete process.env.SIGN_AND_PAY_FEE_BPS
     else process.env.SIGN_AND_PAY_FEE_BPS = feeBps
     const paymentId = `${runId}-${label}`
@@ -172,7 +204,7 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
       successUrl: "https://example.com/paid",
       cancelUrl: "https://example.com/cancelled",
     })
-    await payInBrowser(session.url)
+    await payInBrowser(session.url, card)
     let verified = await adapter.verify(session.providerRef)
     for (let i = 0; i < 20 && verified.status !== "PAID"; i++) {
       await new Promise((r) => setTimeout(r, 1500))
@@ -183,7 +215,7 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
     const first = await adapter.recoverProcessorFee!({ providerRef: session.providerRef, paymentId })
     const second = await adapter.recoverProcessorFee!({ providerRef: session.providerRef, paymentId })
     const result = await balances(session.providerRef)
-    report.push({ label, first, second, ...result })
+    report.push({ label, sessionId: session.providerRef, first, second, ...result })
     return { first, second, result }
   }
 
@@ -198,6 +230,7 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
     expect(result.feeReversals).toEqual([{ amount: result.stripeFee.amount, currency: "gbp", kind: "processor_fee" }])
     expect(result.platformNet.amount).toBe(0)
     expect(result.senderNet.amount).toBe(10_000 - result.stripeFee.amount)
+    expect(result.senderStripeFee).toBe(0)
   }, 180_000)
 
   it("with a platform fee: taken as the application fee, and the platform nets exactly that", async () => {
@@ -206,6 +239,7 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
     expect(result.applicationFeeAmount).toBe(150)
     expect(result.platformNet.amount).toBe(150)
     expect(result.senderNet.amount).toBe(10_000 - 150 - result.stripeFee.amount)
+    expect(result.senderStripeFee).toBe(0)
   }, 180_000)
 
   it("a USD payment to a UK sender: the fee is converted at the charge's rate, the platform nets about zero", async () => {
@@ -214,5 +248,42 @@ describe.skipIf(!enabled)("Sign & Pay on Stripe test mode (end to end)", () => {
     expect(result.feeReversals).toHaveLength(1)
     // Within a minor unit or two of rounding across the conversion.
     expect(Math.abs(result.platformNet.amount)).toBeLessThanOrEqual(2)
+    expect(result.senderStripeFee).toBe(0)
   }, 180_000)
+
+  /**
+   * Chargeback recovery against real Stripe: Stripe's dispute test card
+   * (4000 0000 0000 0259) opens a fraud dispute as soon as it is paid;
+   * closing it accepts the loss. Recovery then reverses what is left of the
+   * sender's transfer, once however often it is asked.
+   */
+  it("a lost dispute: recovered from the sender's transfer once, the rest reported as shortfall", async () => {
+    const { result } = await run("GBP, lost dispute", 10_000, "GBP", undefined, "4000000000000259")
+    const session = await stripe.checkout.sessions.retrieve(report.at(-1)!.sessionId as string, { expand: ["payment_intent"] })
+    const chargeId = (session.payment_intent as Stripe.PaymentIntent).latest_charge as string
+    let disputeId: string | undefined
+    for (let i = 0; i < 20 && !disputeId; i++) {
+      disputeId = (await stripe.disputes.list({ charge: chargeId, limit: 1 })).data[0]?.id
+      if (!disputeId) await new Promise((r) => setTimeout(r, 1500))
+    }
+    expect(disputeId).toBeDefined()
+    // Not lost yet: nothing is taken.
+    expect(await adapter.recoverLostDispute!({ disputeId: disputeId!, paymentId: "e2e" })).toEqual({ status: "notLost" })
+    await stripe.disputes.close(disputeId!)
+
+    const first = await adapter.recoverLostDispute!({ disputeId: disputeId!, paymentId: "e2e" })
+    const second = await adapter.recoverLostDispute!({ disputeId: disputeId!, paymentId: "e2e" })
+    const after = await balances(session.id)
+    const dispute = await stripe.disputes.retrieve(disputeId!)
+    const disputeNet = dispute.balance_transactions.reduce((sum, b) => sum + b.net, 0)
+    report.push({ label: "GBP, lost dispute: after recovery", disputeStatus: dispute.status, disputeNet, first, second, ...after })
+
+    expect(first).toMatchObject({ status: "recovered", created: true })
+    expect(second).toMatchObject({ status: "recovered", created: false, amount: (first as { amount: number }).amount })
+    // Everything left of the transfer came back: the processor fee earlier, the rest now.
+    expect(after.feeReversals.reduce((sum, r) => sum + r.amount, 0)).toBe(10_000)
+    expect(after.senderNet.amount).toBe(0)
+    // What the platform still carries is the dispute fee, the shortfall.
+    expect((first as { shortfall: number }).shortfall).toBe(-disputeNet - (10_000 - result.stripeFee.amount))
+  }, 240_000)
 })
