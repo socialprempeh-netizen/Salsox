@@ -1,6 +1,6 @@
 ---
 title: "Are electronic signatures legal? A plain-language guide"
-description: "Where electronic signatures are legally recognised, the main laws (ESIGN, UETA, eIDAS, UK and African frameworks), the documents usually excluded, and what evidence helps."
+description: "Where electronic signatures are legally recognised, the main laws (ESIGN, UETA, eIDAS, UK and African frameworks), common exclusions and what evidence helps."
 date: 2026-10-06
 category: Legal
 related: ["/online-esignature", "/pdf-signature", "/blog/how-electronic-signatures-work", "/esignature-for/real-estate"]

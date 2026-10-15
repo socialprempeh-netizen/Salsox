@@ -46,6 +46,7 @@ export const ADMIN_NAV: AdminSection[] = [
     tabs: [
       { href: "/admin/analytics", key: "growth" },
       { href: "/admin/seo", key: "seo" },
+      { href: "/admin/seo/inventory", key: "seoInventory" },
       { href: "/admin/outreach", key: "outreach" },
     ],
   },

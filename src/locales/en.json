@@ -397,6 +397,7 @@
       "templates": "Templates",
       "payouts": "Payouts",
       "seo": "SEO health",
+      "seoInventory": "SEO inventory",
       "users": "Users",
       "analytics": "Analytics",
       "revenue": "Revenue & Payments",
@@ -972,6 +973,61 @@
     "makeAdmin": "Make Admin",
     "rolePromoted": "User promoted to admin. Their session picks it up within a minute.",
     "roleFailed": "Failed to update role",
+    "seoInventory": {
+      "title": "SEO inventory",
+      "subtitle": "Every page submitted to search engines, with the keyword it targets, the intent behind it, its type and its status. Built from the sitemap and the page data on every load, so it is never out of date.",
+      "stats": {
+        "live": "Live, in the sitemap",
+        "draft": "Drafts held back",
+        "unlisted": "Published but not in the sitemap",
+        "conflicts": "Keyword conflicts"
+      },
+      "unlistedNote": "Published but missing from the sitemap, so search engines are not told about them: {paths}",
+      "conflictNote": "\"{keyword}\" is targeted by more than one page: {paths}. Keep one and list the phrase as an alias there.",
+      "filtersLabel": "Filter by page type",
+      "searchLabel": "Search pages",
+      "searchPlaceholder": "Search URLs, titles and keywords",
+      "download": "Download CSV",
+      "showing": "Showing {count} of {total} pages",
+      "noMatches": "No pages match this filter.",
+      "noKeyword": "No target keyword",
+      "aliases": "+{count, plural, one {# alias} other {# aliases}}",
+      "col": {
+        "url": "Page",
+        "keyword": "Target keyword",
+        "intent": "Intent",
+        "type": "Type",
+        "status": "Status"
+      },
+      "status": {
+        "live": "Live",
+        "draft": "Draft",
+        "unlisted": "Not in sitemap"
+      },
+      "intent": {
+        "transactional": "Transactional",
+        "commercial": "Commercial",
+        "informational": "Informational",
+        "navigational": "Navigational"
+      },
+      "type": {
+        "all": "All",
+        "feature": "Feature",
+        "tool": "Free tool",
+        "comparison": "Comparison",
+        "alternative": "Alternatives",
+        "industry": "Industry",
+        "team": "Team",
+        "use-case": "Use case",
+        "template": "Template",
+        "category": "Template category",
+        "hub": "Hub",
+        "blog": "Blog post",
+        "blog-category": "Blog category",
+        "docs": "Docs",
+        "core": "Core page"
+      }
+    },
     "outreach": {
       "title": "Outreach",
       "subtitle": "Every conversation with a prospect, in one list. Change a status from the list; open a row to edit it.",
@@ -1568,7 +1624,7 @@
     },
     "readingTime": "{minutes} min read",
     "inCategory": "{count, plural, =0 {No posts} one {# post} other {# posts}} in this category.",
-    "categoryMeta": "All {site} blog posts in the {category} category.",
+    "categoryMeta": "{category} articles from the {site} blog: plain-language reading on sending, signing and keeping signed documents.",
     "breadcrumbHome": "Home",
     "breadcrumbBlog": "Blog",
     "previous": "Previous",
@@ -2331,15 +2387,15 @@
         "lede": "Sign, fill and add signatures to PDFs without an account. Every tool runs in your browser, so your files never leave your device."
       },
       "compare": {
-        "metaTitle": "Compare e-signature tools: DocuSign, Dropbox Sign, PandaDoc",
-        "metaDescription": "Side-by-side comparisons of {site} with DocuSign, Dropbox Sign and PandaDoc, using each company's published prices and features, with sources.",
+        "metaTitle": "Compare e-signature tools: DocuSign, Adobe Sign and more",
+        "metaDescription": "{site} vs DocuSign, Adobe Sign, PandaDoc, Dropbox Sign, SignNow, SignWell, DocuSeal, Jotform Sign and GetAccept: published prices and features, with sources.",
         "breadcrumb": "Compare",
         "h1": "Compare e-signature tools",
         "lede": "Factual comparisons using each company's published prices and features, with the date they were checked and links to the sources. Including where the others are stronger."
       },
       "useCases": {
         "metaTitle": "E-signature use cases: real estate, HR, freelancers",
-        "metaDescription": "Every way to use e-signatures: sending documents for signature, signing PDFs online, free and business e-signing, and the documents real estate, HR and freelance work sends.",
+        "metaDescription": "E-signatures by industry and team: real estate, HR, clinics, law firms, sales and more, with the documents each one sends and templates to start from.",
         "breadcrumb": "Use cases",
         "h1": "E-signatures for your kind of work",
         "lede": "What you can sign and send, and the documents each line of work handles: what tends to go wrong, and how to set up signing so it doesn't."

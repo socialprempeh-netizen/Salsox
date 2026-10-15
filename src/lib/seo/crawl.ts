@@ -9,6 +9,13 @@
  * what each page's canonical must match. Redirects are not followed: a URL in
  * the sitemap that redirects is itself a problem to report.
  *
+ * Internal links are checked too (`checkLinks`): every same-site link on the
+ * crawled pages that is not itself a sitemap URL is requested once, and a
+ * target that answers 404 (or any error) is reported once, with the pages
+ * that link to it. A link to a permanent redirect is a warning: it works, but
+ * it spends a hop and points at an address the site has moved away from.
+ *
+
  * `fetchImpl` is injectable so the rules can be tested without a network.
  */
 import { auditPages, extractPageFacts, isIndexable, type Issue, type PageFacts } from "./audit"
@@ -20,7 +27,64 @@ export type CrawlResult = {
   pages: PageFacts[]
   issues: Issue[]
   privatePages: { path: string; status: number; protected: boolean }[]
+  /** Internal link targets requested beyond the sitemap, and how many failed. */
+  links: { checked: number; broken: number }
   durationMs: number
+}
+
+/** How many linking pages an issue names before summarising the rest. */
+const MAX_SOURCES = 3
+
+/**
+ * Requests every internal link target on `pages` that the crawl has not
+ * already fetched (`known`, pathnames) and reports the broken ones, one issue
+ * per target. HEAD first; a route that does not answer HEAD is asked again
+ * with GET, so a 405 is never mistaken for a broken link.
+ */
+export async function checkLinks(options: {
+  pages: PageFacts[]
+  known: Set<string>
+  origin: string
+  fetchImpl: typeof fetch
+  concurrency: number
+  timeoutMs: number
+}): Promise<{ issues: Issue[]; checked: number; broken: number }> {
+  const sources = new Map<string, string[]>()
+  for (const page of options.pages) {
+    if (page.status !== 200) continue
+    for (const link of page.internalLinks) {
+      if (options.known.has(link)) continue
+      sources.set(link, [...(sources.get(link) ?? []), page.url])
+    }
+  }
+  const request = async (path: string, method: "HEAD" | "GET") => {
+    try {
+      return await options.fetchImpl(new URL(path, options.origin).toString(), { method, redirect: "manual", signal: AbortSignal.timeout(options.timeoutMs), headers: { "user-agent": "SalsoxSEOAudit/1.0" } })
+    } catch {
+      return null
+    }
+  }
+  const targets = [...sources.keys()]
+  const results = await pool(targets, options.concurrency, async (path) => {
+    let res = await request(path, "HEAD")
+    if (res && (res.status === 405 || res.status === 501)) res = await request(path, "GET")
+    return { path, status: res?.status ?? 0, location: res?.headers.get("location") ?? null }
+  })
+
+  const issues: Issue[] = []
+  const from = (path: string) => {
+    const list = sources.get(path) ?? []
+    const named = list.slice(0, MAX_SOURCES).map((u) => new URL(u).pathname).join(", ")
+    return list.length > MAX_SOURCES ? `${named} and ${list.length - MAX_SOURCES} more` : named
+  }
+  for (const r of results) {
+    if (r.status === 0 || r.status >= 400) {
+      issues.push({ url: r.path, severity: "error", message: `broken link: answers ${r.status || "nothing"}; linked from ${from(r.path)}` })
+    } else if (r.status === 301 || r.status === 308) {
+      issues.push({ url: r.path, severity: "warning", message: `link to a permanent redirect${r.location ? ` (to ${r.location})` : ""}; linked from ${from(r.path)}` })
+    }
+  }
+  return { issues, checked: targets.length, broken: issues.filter((i) => i.severity === "error").length }
 }
 
 async function fetchFacts(fetchImpl: typeof fetch, fetchUrl: string, reportUrl: string, timeoutMs: number): Promise<PageFacts> {
@@ -74,5 +138,10 @@ export async function crawlSite(options: {
     return { path, status: facts.status, protected: isProtected }
   })
 
-  return { pages, issues, privatePages, durationMs: Date.now() - started }
+  // Sitemap URLs were fetched above and already reported if they fail.
+  const known = new Set(options.sitemapUrls.map((u) => new URL(u).pathname))
+  const links = await checkLinks({ pages, known, origin: options.origin, fetchImpl, concurrency: options.concurrency ?? 6, timeoutMs: timeout })
+  issues.push(...links.issues)
+
+  return { pages, issues, privatePages, links: { checked: links.checked, broken: links.broken }, durationMs: Date.now() - started }
 }
