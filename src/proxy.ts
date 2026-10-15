@@ -1,10 +1,12 @@
 import { auth } from "@/auth"
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server"
 import createIntlMiddleware from "next-intl/middleware"
 import { routing } from "@/i18n/routing"
 import { siteConfig } from "@/config/site"
 import { canonicalHostRedirect } from "@/lib/app-url"
 import { safeNext } from "@/lib/safe-next"
+import { deployPingId, INDEXNOW_KEY_PATH, isKeyFilePath, resolveIndexNowKey } from "@/lib/indexnow"
+import { isLocalizedMetadataImagePath } from "@/lib/metadata-image-path"
 
 /**
  * Locale handling for the public surface only.
@@ -56,6 +58,35 @@ const UNLOCALIZED = [
 ]
 
 /**
+ * IndexNow (src/lib/indexnow.ts). The key is read once per server instance;
+ * it only changes with the environment, which a redeploy replaces.
+ *
+ * - The key file is served at `/{key}.txt`, where the protocol expects it,
+ *   by rewriting to the fixed route that renders it. The name is the key, so
+ *   it cannot be a static file or a route of its own.
+ * - The first request a production deployment serves starts its deploy-time
+ *   sync (`/api/indexnow?trigger=deploy`) in the background: `waitUntil`
+ *   keeps it running after the response is sent, so no visitor waits on it,
+ *   and a failure is only logged. Each instance asks once; the route claims
+ *   the deployment, so only one of them submits.
+ */
+const indexNowKey = resolveIndexNowKey(process.env)
+let deploySyncRequested = false
+
+function requestDeploySync(event: NextFetchEvent) {
+  deploySyncRequested = true
+  const secret = process.env.CRON_SECRET
+  if (!secret || !deployPingId(process.env)) return
+  event.waitUntil(
+    fetch(new URL("/api/indexnow?trigger=deploy", siteConfig.url), { headers: { authorization: `Bearer ${secret}` } })
+      .then((res) => {
+        if (!res.ok) console.error(`[indexnow] deploy sync answered ${res.status}`)
+      })
+      .catch((error) => console.error("[indexnow] deploy sync request failed", error))
+  )
+}
+
+/**
  * Private surfaces, matched by prefix. Anything not listed here falls through
  * to the router, so a URL that does not exist renders your 404 page.
  *
@@ -84,7 +115,7 @@ const AUTH_ROUTES = ["/login", "/signup", "/2fa"]
 //
 // Either way this is a redirect layer, not the authorization: the real check
 // lives in requireUser() and requireAdmin(), on the page.
-export default async function proxy(req: NextRequest) {
+export default async function proxy(req: NextRequest, event: NextFetchEvent) {
   const { pathname } = req.nextUrl
 
   // One host for every page, before anything else: the apex and www forms both
@@ -96,6 +127,10 @@ export default async function proxy(req: NextRequest) {
   const requested = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, `${req.nextUrl.protocol}//${req.headers.get("host") ?? req.nextUrl.host}`)
   const canonical = canonicalHostRedirect(siteConfig.url, requested)
   if (canonical) return NextResponse.redirect(canonical, 308)
+
+  if (isKeyFilePath(pathname, indexNowKey)) return NextResponse.rewrite(new URL(INDEXNOW_KEY_PATH, req.url))
+  // Not from an API call: the sync's own request must not start another.
+  if (!deploySyncRequested && !pathname.startsWith("/api/")) requestDeploySync(event)
   // Was read first, for every request:
   // const session = await auth.api.getSession({ headers: req.headers })
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r))
@@ -136,6 +171,14 @@ export default async function proxy(req: NextRequest) {
   // it goes through locale resolution; the private areas keep the plain
   // response they have always had.
   if (UNLOCALIZED.some((r) => pathname.startsWith(r))) {
+    return NextResponse.next()
+  }
+
+  // The social cards Next links from every page carry the default locale's
+  // prefix (/en/.../opengraph-image-…); served as they are rather than sent
+  // through the locale redirect, so a share preview gets a direct 200
+  // (src/lib/metadata-image-path.ts).
+  if (isLocalizedMetadataImagePath(pathname, routing.defaultLocale)) {
     return NextResponse.next()
   }
 

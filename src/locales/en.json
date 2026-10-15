@@ -973,6 +973,34 @@
     "makeAdmin": "Make Admin",
     "rolePromoted": "User promoted to admin. Their session picks it up within a minute.",
     "roleFailed": "Failed to update role",
+    "indexNow": {
+      "title": "IndexNow submissions",
+      "description": "Each time this site told search engines (Bing, Yandex and the others sharing IndexNow) that pages were added or changed: on the first request after a production deploy, by the daily check, or by hand. A page is sent again only when it changes.",
+      "keyFile": "Key file",
+      "off": "IndexNow is off for this deployment.",
+      "acceptedUrls": "URLs accepted so far",
+      "disabled": "Nothing is being sent: {reason}.",
+      "unavailable": "The submission log is not available yet. Apply the latest database migration.",
+      "empty": "Nothing has been submitted yet. The first production request after a deploy sends every page in the sitemap.",
+      "urls": "{count, plural, one {# URL} other {# URLs}}",
+      "more": "and {count} more",
+      "status": "HTTP {status}",
+      "noAnswer": "no answer",
+      "accepted": "Accepted",
+      "refused": "Not accepted",
+      "trigger": {
+        "deploy": "Deploy",
+        "cron": "Daily check",
+        "manual": "By hand"
+      },
+      "col": {
+        "when": "When",
+        "trigger": "Trigger",
+        "urls": "URLs",
+        "status": "Response",
+        "result": "Result"
+      }
+    },
     "seoInventory": {
       "title": "SEO inventory",
       "subtitle": "Every page submitted to search engines, with the keyword it targets, the intent behind it, its type and its status. Built from the sitemap and the page data on every load, so it is never out of date.",

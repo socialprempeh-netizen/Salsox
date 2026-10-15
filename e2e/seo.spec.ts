@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test"
 import { crawlSite, PRIVATE_PATHS } from "../src/lib/seo/crawl"
 import { parseSitemap } from "../src/lib/seo/audit"
+import { resolveIndexNowKey } from "../src/lib/indexnow"
 
 /**
  * A crawler's-eye audit of the running site, the check to run before calling
@@ -16,7 +17,9 @@ import { parseSitemap } from "../src/lib/seo/audit"
  * - overlapping URLs 301 to the page that owns the intent, and an unknown URL
  *   is a real 404;
  * - every sitemap URL can be reached by following links from the homepage
- *   (no orphans), and no internal link leads to a 404.
+ *   (no orphans), and no internal link leads to a 404;
+ * - the IndexNow key file answers at /{key}.txt (and its fixed alias) with
+ *   the key alone, and any other /{name}.txt is a 404.
  *
  * Sitemap URLs carry the configured public origin; they are fetched from the
  * test server and judged against their own URL, as a crawler would judge the
@@ -106,4 +109,33 @@ test("every sitemap URL is reachable from the homepage, and no internal link is 
     if (status === 404 || status >= 500) broken.push(`${target} -> ${status}`)
   }
   expect(broken, broken.join("\n")).toEqual([])
+})
+
+test("the IndexNow key file is served at /{key}.txt, and only there", async ({ request }) => {
+  const key = resolveIndexNowKey(process.env)
+  test.skip(!key, "IndexNow is off: no INDEXNOW_KEY or CRON_SECRET in the test environment")
+  for (const path of [`/${key}.txt`, "/indexnow-key.txt"]) {
+    const res = await request.get(path, { maxRedirects: 0 })
+    expect(res.status(), path).toBe(200)
+    expect(res.headers()["content-type"], path).toContain("text/plain")
+    expect((await res.text()).trim(), path).toBe(key)
+  }
+  expect((await request.get("/not-the-key-0000.txt", { maxRedirects: 0 })).status()).toBe(404)
+})
+
+// Next links each page's social card under the default locale's prefix
+// (/en/.../opengraph-image-…). Those must answer 200 directly, not through
+// the locale redirect; an ordinary /en/ page still redirects to its one URL.
+test("social card images answer 200 directly, with no redirect", async ({ request }) => {
+  for (const path of ["/vs/docuseal", "/sign-and-pay", "/esignature-for/hr", "/blog/are-electronic-signatures-legal", "/"]) {
+    const html = await (await request.get(path)).text()
+    const image = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1]
+    expect(image, `${path}: og:image`).toBeTruthy()
+    const url = new URL(image!)
+    const res = await request.get(`${url.pathname}${url.search}`, { maxRedirects: 0 })
+    expect(res.status(), `${path}: ${url.pathname}`).toBe(200)
+    expect(res.headers()["content-type"], path).toContain("image/")
+  }
+  const page = await request.get("/en/vs/docuseal", { maxRedirects: 0 })
+  expect([301, 302, 307, 308]).toContain(page.status())
 })

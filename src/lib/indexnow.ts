@@ -6,17 +6,21 @@ import { createHmac } from "node:crypto"
  *
  * One POST to api.indexnow.org reaches every participating engine (Bing,
  * Yandex, Seznam, Naver and others share submissions). The engine proves the
- * site sent it by fetching a key file from the site itself, served here at
- * `/indexnow-key.txt` (see `src/app/indexnow-key.txt/route.ts`) and named in
- * each submission as `keyLocation`.
+ * site sent it by fetching a key file from the site itself: `/{key}.txt`, the
+ * protocol's default location, which the proxy (src/proxy.ts) serves from
+ * `src/app/indexnow-key.txt/route.ts`. `/indexnow-key.txt` still answers too.
  *
  * Everything that decides something is a pure function in this file: which key,
- * which URLs, what payload. The route in `src/app/api/indexnow/route.ts` only
- * wires them to the sitemap and to `fetch`.
+ * which URLs, what payload, whether a deployment may ping. The database side
+ * (what was already submitted, the log) is src/lib/indexnow-store.ts, and the
+ * route in `src/app/api/indexnow/route.ts` wires it to the cron and the proxy.
  */
 
 export const INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
+/** A fixed alias of the key file, kept so links to it keep working. */
 export const INDEXNOW_KEY_PATH = "/indexnow-key.txt"
+/** The key file where the protocol looks by default: `/{key}.txt` at the root. */
+export const indexNowKeyFilePath = (key: string) => `/${key}.txt`
 /** The protocol's ceiling per request. */
 export const INDEXNOW_MAX_URLS = 10_000
 
@@ -90,7 +94,11 @@ export function indexNowPayloads(siteUrl: string, key: string, urls: string[]): 
     payloads.push({
       host: site.host,
       key,
-      keyLocation: `${site.origin}${INDEXNOW_KEY_PATH}`,
+      // Was `${site.origin}${INDEXNOW_KEY_PATH}`. Now the protocol's default
+      // location, which engines also check on their own, so the key and the
+      // file it is named after cannot be read as two different claims.
+      // keyLocation: `${site.origin}${INDEXNOW_KEY_PATH}`,
+      keyLocation: `${site.origin}${indexNowKeyFilePath(key)}`,
       urlList: list.slice(i, i + INDEXNOW_MAX_URLS),
     })
   }
@@ -119,4 +127,46 @@ export async function submitToIndexNow(
     statuses.push(response.status)
   }
   return { submitted: payloads.reduce((n, p) => n + p.urlList.length, 0), statuses }
+}
+
+/** True when `pathname` is this deployment's key file, `/{key}.txt`. */
+export function isKeyFilePath(pathname: string, key: string | null): boolean {
+  return key !== null && pathname === indexNowKeyFilePath(key)
+}
+
+/**
+ * The sitemap URLs search engines have not been told about yet: never
+ * submitted, or changed (a later `lastModified`) since the last accepted
+ * submission. `submitted` maps each URL to the `lastModified` it was accepted
+ * at (null when the entry had none). An entry without `lastModified` is sent
+ * once and then only again if it gains a date.
+ */
+export function pendingUrls(
+  entries: { url: string; lastModified?: string | Date }[],
+  submitted: Map<string, Date | null>,
+): { url: string; lastModified: Date | null }[] {
+  const out: { url: string; lastModified: Date | null }[] = []
+  for (const e of entries) {
+    const modified = e.lastModified === undefined ? null : new Date(e.lastModified)
+    if (!submitted.has(e.url)) {
+      out.push({ url: e.url, lastModified: modified })
+      continue
+    }
+    const before = submitted.get(e.url) ?? null
+    if (modified && (!before || modified.getTime() > before.getTime())) out.push({ url: e.url, lastModified: modified })
+  }
+  return out
+}
+
+/** 200 and 202 mean accepted (202: the key is still being checked). */
+export const isAcceptedStatus = (status: number) => status === 200 || status === 202
+
+/**
+ * The deployment a deploy-time ping belongs to, or null when this server must
+ * not send one: only a Vercel production deployment pings, since a preview
+ * shares the production site URL and would announce pages that are not live.
+ */
+export function deployPingId(env: Record<string, string | undefined>): string | null {
+  if (env.VERCEL_ENV !== "production") return null
+  return env.VERCEL_DEPLOYMENT_ID?.trim() || env.VERCEL_GIT_COMMIT_SHA?.trim() || null
 }

@@ -2,11 +2,15 @@ import { describe, it, expect, vi } from "vitest"
 
 import {
   changedSince,
+  deployPingId,
   INDEXNOW_ENDPOINT,
   INDEXNOW_MAX_URLS,
   indexNowPayloads,
+  isAcceptedStatus,
+  isKeyFilePath,
   isValidIndexNowKey,
   normalizeUrls,
+  pendingUrls,
   resolveIndexNowKey,
   submitToIndexNow,
 } from "./indexnow"
@@ -75,7 +79,7 @@ describe("indexNowPayloads", () => {
     expect(payload).toEqual({
       host: "salsox.com",
       key: "abc12345",
-      keyLocation: `${SITE}/indexnow-key.txt`,
+      keyLocation: `${SITE}/abc12345.txt`,
       urlList: [`${SITE}/pricing`],
     })
   })
@@ -100,5 +104,52 @@ describe("submitToIndexNow", () => {
     expect(url).toBe(INDEXNOW_ENDPOINT)
     expect(init.method).toBe("POST")
     expect(JSON.parse(String(init.body)).urlList).toEqual([`${SITE}/a`, `${SITE}/b`])
+  })
+})
+
+describe("isKeyFilePath", () => {
+  it("matches only /{key}.txt for the active key", () => {
+    expect(isKeyFilePath("/abc12345.txt", "abc12345")).toBe(true)
+    expect(isKeyFilePath("/abc12345.txt", "other123")).toBe(false)
+    expect(isKeyFilePath("/abc12345.txt", null)).toBe(false)
+    expect(isKeyFilePath("/x/abc12345.txt", "abc12345")).toBe(false)
+  })
+})
+
+describe("pendingUrls", () => {
+  const day = (d: string) => new Date(`${d}T00:00:00Z`)
+  it("sends new URLs and URLs changed since their last accepted submission, nothing else", () => {
+    const entries = [
+      { url: "a", lastModified: day("2026-10-15") },
+      { url: "b", lastModified: day("2026-10-15") },
+      { url: "c", lastModified: day("2026-10-10") },
+      { url: "d" },
+      { url: "e" },
+    ]
+    const submitted = new Map<string, Date | null>([
+      ["b", day("2026-10-14")],
+      ["c", day("2026-10-10")],
+      ["e", null],
+    ])
+    expect(pendingUrls(entries, submitted).map((p) => p.url)).toEqual(["a", "b", "d"])
+  })
+
+  it("sends an undated URL again once it gains a date", () => {
+    expect(pendingUrls([{ url: "e", lastModified: day("2026-10-15") }], new Map([["e", null]]))).toEqual([{ url: "e", lastModified: day("2026-10-15") }])
+  })
+})
+
+describe("isAcceptedStatus", () => {
+  it("accepts 200 and 202 only", () => {
+    expect([200, 202, 400, 403, 422, 429, 0].map(isAcceptedStatus)).toEqual([true, true, false, false, false, false, false])
+  })
+})
+
+describe("deployPingId", () => {
+  it("is set only on a Vercel production deployment", () => {
+    expect(deployPingId({ VERCEL_ENV: "production", VERCEL_DEPLOYMENT_ID: "dpl_1", VERCEL_GIT_COMMIT_SHA: "abc" })).toBe("dpl_1")
+    expect(deployPingId({ VERCEL_ENV: "production", VERCEL_GIT_COMMIT_SHA: "abc" })).toBe("abc")
+    expect(deployPingId({ VERCEL_ENV: "preview", VERCEL_DEPLOYMENT_ID: "dpl_1" })).toBeNull()
+    expect(deployPingId({})).toBeNull()
   })
 })

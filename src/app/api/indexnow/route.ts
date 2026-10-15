@@ -1,32 +1,41 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import sitemap from "@/app/sitemap"
-import { siteConfig } from "@/config/site"
-import { changedSince, resolveIndexNowKey, submitToIndexNow } from "@/lib/indexnow"
+import { deployPingId } from "@/lib/indexnow"
+import { claimDeployment, skipReason, submitAndRecord, syncIndexNow, type SyncResult } from "@/lib/indexnow-store"
 
 export const dynamic = "force-dynamic"
 
 /**
  * Pings IndexNow with what was published or updated, so search engines fetch
- * it now instead of on their next visit. The rules live in src/lib/indexnow.ts.
+ * it now instead of on their next visit. The rules live in src/lib/indexnow.ts,
+ * the memory of what was sent in src/lib/indexnow-store.ts.
  *
- * Content here ships with a deploy (posts, docs and the changelog are files),
- * so "on publish" means "once the deploy is live". Two ways in:
+ * Content here ships with a deploy (templates, registry pages, posts and docs
+ * are files), so "on publish" means "once the deploy is live". Three ways in:
  *
- *  - GET, the Vercel cron in vercel.json, daily. Submits every sitemap URL
- *    whose `lastModified` falls in the last two days: a new or revised post,
- *    the blog index and category it lands in, the changelog after a release.
- *    Two days, not one, so a post dated the evening before the run is never
- *    missed; submitting a URL twice costs nothing.
- *  - POST, by hand or from a deploy hook, for anything else: `{ "urls": [...] }`
- *    with site paths or absolute URLs, or `{ "all": true }` for the whole
- *    sitemap (after a redesign, or the first time).
+ *  - GET ?trigger=deploy, fired by the proxy (src/proxy.ts) in the background
+ *    on the first request a production deployment serves. The deployment is
+ *    claimed first, so of several instances starting together one submits.
+ *  - GET, the Vercel cron in vercel.json, daily: the safety net for a deploy
+ *    ping that never ran or was refused.
+ *  - POST, by hand: `{ "urls": [...] }` with site paths or absolute URLs, or
+ *    `{ "all": true }` for the whole sitemap.
  *
- * Both require CRON_SECRET as a bearer token, as the e-sign cron does. The
- * source of URLs is the sitemap itself, so nothing that is kept out of it
- * (drafts, the dashboard, a demo deployment) can be submitted by the cron.
+ * Deploy and cron submit what is new or changed since it was last accepted
+ * (each sitemap URL against its stored lastModified), so a page is announced
+ * once per change however often they run. Was: the cron submitted everything
+ * whose lastModified fell in the last two days, which missed any change whose
+ * run failed and resent unchanged pages on the next day.
+ *
+ * All three require CRON_SECRET as a bearer token, as the e-sign cron does.
+ * The URLs come from the sitemap itself (POST excepted, which still passes
+ * through the same host filter), so drafts, the dashboard and a demo
+ * deployment can never be submitted. Every submission is logged and shown on
+ * /admin/seo/inventory.
  */
-const RECENT_MS = 2 * 24 * 60 * 60 * 1000
+// Was the two-day window of the scheduled run:
+// const RECENT_MS = 2 * 24 * 60 * 60 * 1000
 
 const PostBody = z.union([
   z.object({ all: z.literal(true) }),
@@ -44,34 +53,30 @@ function authorize(request: Request): NextResponse | null {
   return null
 }
 
-/** Why nothing should be sent from this deployment, or null when it may. */
-function skipReason(): string | null {
-  if (process.env.DEMO_MODE === "true") return "demo deployment: noindex, nothing to submit"
-  if (!/^https:\/\//.test(siteConfig.url)) return `site URL ${siteConfig.url} is not a public https origin`
-  if (!resolveIndexNowKey(process.env)) return "IndexNow is off: set INDEXNOW_KEY or CRON_SECRET"
-  return null
-}
-
-async function submit(urls: string[]) {
-  const skipped = skipReason()
-  if (skipped) return NextResponse.json({ status: "skipped", reason: skipped, submitted: 0 })
-  if (urls.length === 0) return NextResponse.json({ status: "ok", submitted: 0 })
-
-  try {
-    const result = await submitToIndexNow(siteConfig.url, resolveIndexNowKey(process.env)!, urls)
-    const ok = result.statuses.every((s) => s === 200 || s === 202)
-    if (!ok) console.error("[indexnow] submission refused", result.statuses)
-    return NextResponse.json({ status: ok ? "ok" : "refused", ...result }, { status: ok ? 200 : 502 })
-  } catch (error) {
-    console.error("[indexnow] submission failed", error)
-    return NextResponse.json({ status: "failed", submitted: 0 }, { status: 502 })
-  }
+/** A sync result as a response: 502 when the engine refused the submission. */
+function respond(result: SyncResult) {
+  if (result.status === "sent") return NextResponse.json(result, { status: result.ok ? 200 : 502 })
+  return NextResponse.json(result)
 }
 
 export async function GET(request: Request) {
   const denied = authorize(request)
   if (denied) return denied
-  return submit(changedSince(sitemap(), new Date(Date.now() - RECENT_MS)))
+
+  try {
+    if (new URL(request.url).searchParams.get("trigger") === "deploy") {
+      const id = deployPingId(process.env)
+      if (!id) return NextResponse.json({ status: "skipped", reason: "not a production deployment" })
+      const skipped = skipReason()
+      if (skipped) return NextResponse.json({ status: "skipped", reason: skipped })
+      if (!(await claimDeployment(id))) return NextResponse.json({ status: "skipped", reason: "this deployment has already synced" })
+      return respond(await syncIndexNow("deploy"))
+    }
+    return respond(await syncIndexNow("cron"))
+  } catch (error) {
+    console.error("[indexnow] sync failed", error)
+    return NextResponse.json({ status: "failed" }, { status: 500 })
+  }
 }
 
 export async function POST(request: Request) {
@@ -82,5 +87,6 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Send { "urls": [...] } or { "all": true }.' }, { status: 400 })
   }
-  return submit("all" in parsed.data ? sitemap().map((e) => e.url) : parsed.data.urls)
+  const entries = "all" in parsed.data ? sitemap() : parsed.data.urls.map((url) => ({ url, lastModified: undefined }))
+  return respond(await submitAndRecord("manual", entries.map((e) => ({ url: e.url, lastModified: e.lastModified ? new Date(e.lastModified) : null }))))
 }

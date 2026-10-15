@@ -94,6 +94,19 @@ test("every admin section and tab opens and fits a phone", async ({ browser }) =
   expect(csv).toMatch(/\/templates\/[a-z-]+,template,/)
   await expectNoHorizontalScroll(page, "seo inventory after filtering")
 
+  // The IndexNow log under it: a submission shows its trigger, status and
+  // result, and opens to list its URLs. Seeded here because a test server is
+  // not a public https origin, so it never sends a real one.
+  const ping = await db().indexNowPing.create({ data: { trigger: "deploy", urlCount: 2, urls: ["https://salsox.com/vs/docuseal", "https://salsox.com/sign-and-pay"], status: 403, ok: false, error: null } })
+  await page.reload()
+  const log = page.locator("section", { has: page.getByRole("heading", { name: "IndexNow submissions" }) })
+  await expect(log).toBeVisible()
+  await expect(log.getByText("Not accepted").first()).toBeVisible()
+  await log.getByRole("button", { name: "2 URLs" }).first().click()
+  await expect(log.getByText("/vs/docuseal").first()).toBeVisible()
+  await expectNoHorizontalScroll(page, "indexnow log opened")
+  await db().indexNowPing.delete({ where: { id: ping.id } })
+
   // The phone menu lists exactly the eight sections.
   await page.getByRole("button", { name: "Open navigation" }).click()
   const menu = page.getByRole("menu")
