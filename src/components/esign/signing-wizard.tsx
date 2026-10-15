@@ -28,7 +28,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
-import { PdfPages } from "./pdf-pages"
+import { PdfPages, warmPdfViewer } from "./pdf-pages"
 import { SignaturePad, type SignatureValue } from "./signature-pad"
 // Each step leaves a Sentry breadcrumb, so a failure here says how far the
 // signer got (signing-telemetry.tsx).
@@ -86,6 +86,13 @@ export function SigningWizard(props: Props) {
   const [reason, setReason] = useState("")
   const [pending, startTransition] = useTransition()
   const pageEls = useRef(new Map<number, HTMLDivElement>())
+
+  // While the intro is read, the PDF viewer's code downloads in the
+  // background, so "Review and sign" does not start with that wait. Only
+  // the viewer: the document itself is still requested after the intro.
+  useEffect(() => {
+    if (!started) warmPdfViewer()
+  }, [started])
 
   // The document view mounts once the intro is past: the PDF is requested now.
   useEffect(() => {

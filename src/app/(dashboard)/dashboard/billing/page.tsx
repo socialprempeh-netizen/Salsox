@@ -56,14 +56,19 @@ export default async function BillingPage() {
   const format = await getFormatter()
   const currentUser = await requireUser()
 
-  const user = await prisma.user.findUnique({
-    where: { id: currentUser.id },
-    select: { stripeCustomerId: true, subscription: { select: { id: true } } },
-  })
-
-  const entitlement = await getEntitlement(currentUser.id)
+  // Independent reads, fetched together: each one waited for the last, and
+  // against the production database every wait is a network round trip.
+  // Was: user, then entitlement, then the document count, one after another.
+  const [user, entitlement, documentCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: currentUser.id },
+      select: { stripeCustomerId: true, subscription: { select: { id: true } } },
+    }),
+    getEntitlement(currentUser.id),
+    prisma.document.count({ where: { userId: currentUser.id } }),
+  ])
   // Large accounts export in parts (src/app/api/export/route.ts).
-  const exportParts = exportPartCount(await prisma.document.count({ where: { userId: currentUser.id } }))
+  const exportParts = exportPartCount(documentCount)
   const purchase = entitlement.kind === "lifetime" ? entitlement.purchase : null
   const subscription =
     entitlement.kind === "subscription"
@@ -71,20 +76,19 @@ export default async function BillingPage() {
       : entitlement.kind === "lifetime"
         ? entitlement.subscription
         : null
-  const [invoices, discounts, receipts] = await Promise.all([
-    getInvoices(user?.stripeCustomerId ?? null),
-    getDiscounts(!purchase && subscription ? subscription.stripeSubscriptionId : null),
-    listReceipts(currentUser.id),
-  ])
-
   // Metered plans are excluded from the grid: they exist for the usage-based
   // example (docs/billing.md) and would be confusing as a self-serve card.
   // In demo mode the one-time plan is excluded too: the grid mirrors the
   // Starter / Pro / Enterprise triad of the demo landing.
   const isDemo = process.env.DEMO_MODE === "true"
-  const planRows =
+  // The plans join the second batch: they depend only on the entitlement.
+  // Were fetched after invoices, discounts and receipts had all returned.
+  const [invoices, discounts, receipts, planRows] = await Promise.all([
+    getInvoices(user?.stripeCustomerId ?? null),
+    getDiscounts(!purchase && subscription ? subscription.stripeSubscriptionId : null),
+    listReceipts(currentUser.id),
     entitlement.kind === "free"
-      ? await prisma.plan.findMany({
+      ? prisma.plan.findMany({
         where: {
           isActive: true,
           meterEventName: null,
@@ -92,7 +96,8 @@ export default async function BillingPage() {
         },
         orderBy: { price: "asc" },
       })
-      : []
+      : Promise.resolve([]),
+  ])
   // Same rule as the checkout route, so a card only shows the trial a checkout
   // from it would really carry: a free user whose subscription was cancelled
   // still has the row, and gets no second trial.

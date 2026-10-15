@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import type { Role } from "@prisma/client"
@@ -31,14 +32,23 @@ export type CurrentUser = {
   image?: string | null
 }
 
-/** The signed-in user, or null. Never throws and never redirects. */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+/**
+ * The signed-in user, or null. Never throws and never redirects.
+ *
+ * Read once per request: a dashboard render asks in its layout and again in
+ * its page (and sometimes in a component), and once the session cookie cache
+ * (60 seconds, src/auth.ts) has expired each ask was its own database round
+ * trip. React's `cache` keeps the answer for the rest of that one server
+ * render, and only for it; outside a render (route handlers, tests) it simply
+ * calls through. Was the same function without the wrapper.
+ */
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user?.id) return null
 
   const { id, role, email, name, image } = session.user
   return { id, role: (role ?? "USER") as Role, email, name, image }
-}
+})
 
 /**
  * The signed-in user, or a redirect to the sign-in page.

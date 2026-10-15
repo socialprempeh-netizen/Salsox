@@ -13,7 +13,7 @@
  * Pointer and click events stop here, so filling a field never places a mark
  * on the page underneath.
  */
-import type { FieldWidget, FormFieldInfo } from "@/lib/pdf-tools"
+import type { FieldWidget, FormFieldInfo } from "@/lib/pdf-tools-shared"
 
 export function FormFieldInput({
   field,
