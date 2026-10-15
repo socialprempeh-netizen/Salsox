@@ -796,7 +796,14 @@
         "Mistakes are fixable: correct a wrong email or renew an expired link without starting over.",
         "Your records are yours: export every document and audit trail, on any plan, even after you cancel.",
         "No silent renewals: a reminder goes out before every charge, and cancelling takes one click."
-      ]
+      ],
+      "storyTitle": "Why I built {site}",
+      "storyStart": "I'm a banker, not a developer. {site} got built at night, after closing out my day job — one feature at a time, for months.",
+      "storyProblem": "It started with a frustration I kept running into: tools like DocuSign cap how many documents you can send on their cheaper plans, then charge you per user on top of that. For a small business or a solo operator just trying to get contracts signed, that adds up fast — and it punishes you for growing.",
+      "storyAnswer": "So I decided to build something simpler and fairer: unlimited signing, one flat price, no per-envelope tax. No legal team, no funding round — just me, figuring it out, fixing the things that frustrated me most about the tools everyone's forced to use: slow mobile signing, clunky re-sends when someone's email was wrong, and pricing that punishes you the moment your business actually grows.",
+      "storyNow": "{site} is still young, and I'm still the one answering every support ticket personally. If something's broken or missing, tell me — I'm building this in the open, and the first users shape where it goes next.",
+      "storySignature": "— Richard, Founder of {site}",
+      "storyContact": "Tell me what's missing"
     }
   },
   "nav": {
