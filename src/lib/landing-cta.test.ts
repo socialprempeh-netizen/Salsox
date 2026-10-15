@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest"
 import { getStartedHref, heroCtaHref, footerTryLink, heroSecondaryCta } from "./landing-cta"
 
 describe("heroCtaHref", () => {
-  it("sends a visitor without an account to sign up", () => {
-    expect(heroCtaHref({ isKitSite: false, signedIn: false })).toBe("/signup")
+  it("sends a visitor without an account to sign up, then straight to Quick Send", () => {
+    expect(heroCtaHref({ isKitSite: false, signedIn: false })).toBe("/signup?next=/dashboard/documents/quick-send")
   })
 
   it("sends a signed-in user straight to uploading a document", () => {
@@ -21,7 +21,7 @@ describe("heroCtaHref", () => {
 
 describe("getStartedHref", () => {
   it("leads to sign up, not to billing", () => {
-    expect(getStartedHref()).toBe("/signup")
+    expect(getStartedHref()).toBe("/signup?next=/dashboard/documents/quick-send")
     expect(getStartedHref()).not.toContain("pricing")
   })
 })
@@ -36,6 +36,14 @@ describe("demo links", () => {
   it("lead to a configured demo deployment, and otherwise to the guide and the free plan", () => {
     expect(heroSecondaryCta("https://demo.example")).toEqual({ href: "https://demo.example", label: "liveDemo" })
     expect(heroSecondaryCta(null)).toEqual({ href: "/docs/getting-started", label: "howItWorks" })
-    expect(footerTryLink(null)).toEqual({ href: "/signup", label: "tryFree" })
+    expect(footerTryLink(null)).toEqual({ href: "/signup?next=/dashboard/documents/quick-send", label: "tryFree" })
+  })
+})
+
+describe("the signup links' destination after signing up", () => {
+  it("is one the signup form accepts, so it is not dropped for /dashboard", async () => {
+    const { safeNext } = await import("./safe-next")
+    const next = new URLSearchParams(getStartedHref().split("?")[1]).get("next")
+    expect(safeNext(next)).toBe("/dashboard/documents/quick-send")
   })
 })

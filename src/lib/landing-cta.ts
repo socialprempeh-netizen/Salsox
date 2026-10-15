@@ -15,16 +15,29 @@
 
 export const SIGNUP_PATH = "/signup"
 export const NEW_DOCUMENT_PATH = "/dashboard/documents/new"
+export const QUICK_SEND_PATH = "/dashboard/documents/quick-send"
+
+/**
+ * Sign up, then straight to Quick Send (`next`, checked by safeNext): a new
+ * account's first screen is the one that sends a document, not the dashboard
+ * with a choice of two ways to start. Saves a screen and a decision on the
+ * way to a first document, which the 60-second goal is measured by
+ * (e2e/first-document.spec.ts). The confirmation email, when one is needed,
+ * lands on the same page.
+ */
+export const SIGNUP_TO_FIRST_DOCUMENT_PATH = `${SIGNUP_PATH}?next=${QUICK_SEND_PATH}`
 
 /** The hero's primary button. */
 export function heroCtaHref({ isKitSite, signedIn }: { isKitSite: boolean; signedIn: boolean }): string {
   if (isKitSite) return "#pricing"
-  return signedIn ? NEW_DOCUMENT_PATH : SIGNUP_PATH
+  // Was: return signedIn ? NEW_DOCUMENT_PATH : SIGNUP_PATH
+  return signedIn ? NEW_DOCUMENT_PATH : SIGNUP_TO_FIRST_DOCUMENT_PATH
 }
 
 /** "Get started" in the navigation, which is only shown to signed-out visitors. */
 export function getStartedHref(): string {
-  return SIGNUP_PATH
+  // Was: return SIGNUP_PATH
+  return SIGNUP_TO_FIRST_DOCUMENT_PATH
 }
 
 export const GUIDE_PATH = "/docs/getting-started"
@@ -42,5 +55,6 @@ export function heroSecondaryCta(demoUrl: string | null): { href: string; label:
 }
 
 export function footerTryLink(demoUrl: string | null): { href: string; label: "demo" | "tryFree" } {
-  return demoUrl ? { href: demoUrl, label: "demo" } : { href: SIGNUP_PATH, label: "tryFree" }
+  // Was { href: SIGNUP_PATH, ... }: see SIGNUP_TO_FIRST_DOCUMENT_PATH.
+  return demoUrl ? { href: demoUrl, label: "demo" } : { href: SIGNUP_TO_FIRST_DOCUMENT_PATH, label: "tryFree" }
 }

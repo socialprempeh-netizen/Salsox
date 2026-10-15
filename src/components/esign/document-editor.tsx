@@ -32,6 +32,7 @@ import { toast } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { PdfPages } from "./pdf-pages"
 import { PlanLock, useActionErrorToast } from "./plan-upsell"
+import { track } from "@/lib/analytics"
 
 type FieldType = DocumentSetup["fields"][number]["type"]
 type Role = DocumentSetup["recipients"][number]["role"]
@@ -238,6 +239,8 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
     startTransition(async () => {
       const result = send ? await saveAndSendAction(documentId, payload()) : await saveSetupAction(documentId, payload())
       if (result.error) return void showError(result.error, result.upgrade)
+      // The end of the signup-to-first-document funnel (analytics.ts).
+      if (send) track("document_sent", { via: "editor" })
       if (send && result.undelivered) {
         // The provider refused some invitations: say so, and let the document
         // page show who was not reached instead of its "Sent!" banner.

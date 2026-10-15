@@ -11,6 +11,8 @@ import { passwordSchema } from "@/lib/password"
 import { checkRateLimit, rateLimitKeyFromIp } from "@/lib/rate-limit"
 import { emailVerificationRequired } from "@/lib/email-verification-policy"
 import { BACKUP_CODE_LENGTH, normalizeBackupCode } from "@/lib/backup-codes"
+import { isOAuthProviderConfigured } from "@/lib/oauth-providers"
+import * as Sentry from "@sentry/nextjs"
 
 // Every action here calls auth.api.* and then redirects OUTSIDE the try block.
 // redirect() works by throwing, so a redirect inside a try is caught by the
@@ -232,6 +234,34 @@ export async function registerUser(formData: FormData) {
   // first; the confirmation link then lands on `next`, signed in.
   if (emailVerificationRequired(process.env)) redirect("/verify-request?reason=signup")
   redirect(safeNext(formData.get("next")))
+}
+
+/**
+ * "Continue with Google" on the signup page. Google has already confirmed the
+ * address, so this account needs no confirmation email: the fastest way from
+ * signing up to sending a first document. Lands on the same validated `next`
+ * as the password form (Quick Send, from the landing page's buttons).
+ *
+ * The signup page shows the button only when Google is configured; the check
+ * here covers a form posted anyway. Failures come back to the signup page
+ * with a message, as on the sign-in page.
+ */
+export async function signUpWithGoogle(formData: FormData) {
+  if (process.env.DEMO_MODE === "true") redirect("/login")
+  if (!isOAuthProviderConfigured("google", process.env)) redirect("/signup?error=google_unavailable")
+  const next = safeNext(formData.get("next"))
+  let url: string | undefined
+  try {
+    ;({ url } = await auth.api.signInSocial({
+      body: { provider: "google", callbackURL: next, newUserCallbackURL: next },
+      headers: await headers(),
+    }))
+  } catch (error) {
+    Sentry.captureException(error, { tags: { area: "auth", provider: "google" } })
+    redirect("/signup?error=google_unavailable")
+  }
+  if (url) redirect(url)
+  redirect("/signup?error=google_unavailable")
 }
 
 // ─── Password reset ───────────────────────────────────────────────────────────

@@ -77,6 +77,21 @@ A translation is a file beside the English one: `content/pages/tools/sign-pdf.it
 - **Signups by channel** are recorded first-party. The first time someone lands on a public page, a cookie (`sx_src`, 30 days) records the landing path, the referrer's host and any `utm_*` tags. Nothing is recorded when the browser sends Global Privacy Control or Do Not Track. When an account is created, the server stores that and its channel on the user. `/admin/seo` shows signups per channel and the landing pages of organic signups.
 - **Google Analytics 4** loads only when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, after the page is idle, and the Content-Security-Policy allows Google's hosts only then. It receives page views and these events: `tool_opened`, `tool_downloaded`, `cta_clicked` and `sign_up` (with the channel). Never send file names, emails or document content to analytics. GA sets cookies: depending on where your visitors are, you may need a consent banner before enabling it.
 - **Vercel Analytics** receives the same events when it is mounted (custom events need a Vercel plan that includes them).
+- **PostHog** loads only when `NEXT_PUBLIC_POSTHOG_KEY` is set (`NEXT_PUBLIC_POSTHOG_HOST` picks the US or EU cloud), after the page is idle, and the Content-Security-Policy allows its ingest host only then. It receives page views with their `utm_*` tags, the events above, and `document_sent` (with `via`: `quick_send` or `editor`), which ends the signup-to-first-document funnel. It runs cookieless: no cookie, no browser storage, nobody identified, no autocapture or session recording, and never on signing pages. Turn on cookieless mode in the PostHog project's settings too, or it drops the events. Page addresses are scrubbed before they leave: every query parameter except `utm_*` is removed, and a signing token in the path is replaced.
+
+### Measuring outreach
+
+Every link you post yourself carries `utm_*` tags, so each channel shows up separately in PostHog and on `/admin/seo`. A DM has no referrer at all, so without tags it counts as a direct visit. Use the same lowercase values every time:
+
+| Channel | `utm_source` | `utm_medium` |
+|---|---|---|
+| Direct messages | `dm` (or the platform: `linkedin`, `whatsapp`) | `dm` |
+| Reddit | `reddit` | `social` |
+| Product Hunt | `producthunt` | `referral` |
+| X, LinkedIn posts | `x`, `linkedin` | `social` |
+| Newsletter or email | the list's name | `email` |
+
+Add `utm_campaign` for the push it belongs to (`launch`, `pricing-post`). Example: `https://salsox.com/?utm_source=reddit&utm_medium=social&utm_campaign=launch`. The first tagged visit is the one a signup is attributed to.
 
 ## Testing
 

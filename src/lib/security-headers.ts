@@ -21,6 +21,9 @@
  * - Sentry (src/lib/sentry.ts) reports browser errors to its ingest host, so
  *   that one origin, read from the DSN, joins connect-src when Sentry is on.
  *   Without NEXT_PUBLIC_SENTRY_DSN the policy names no Sentry host.
+ * - PostHog (src/lib/posthog-config.ts) is bundled, not loaded from PostHog,
+ *   and loads no further scripts, so only its ingest host joins connect-src,
+ *   and only when NEXT_PUBLIC_POSTHOG_KEY is set.
  * - Email (Resend), SMS (Twilio) and the payment APIs are called from the
  *   server only, so none of their hosts appear here: a CSP governs what the
  *   browser loads, and the browser never talks to them.
@@ -68,7 +71,7 @@ export const GA_HOSTS = {
 } as const
 
 /** Builds the Content-Security-Policy header value. */
-export function contentSecurityPolicy({ dev, ga = false, sentry = null }: { dev: boolean; ga?: boolean; sentry?: string | null }): string {
+export function contentSecurityPolicy({ dev, ga = false, sentry = null, posthog = null }: { dev: boolean; ga?: boolean; sentry?: string | null; posthog?: string | null }): string {
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
     // `'unsafe-eval'` in development only: React uses eval there to rebuild
@@ -91,7 +94,8 @@ export function contentSecurityPolicy({ dev, ga = false, sentry = null }: { dev:
     "font-src": ["'self'", "data:"],
     // Development adds the hot-reload websocket.
     // And Sentry's ingest origin, when error tracking is on.
-    "connect-src": ["'self'", ...(ga ? GA_HOSTS.connect : []), ...(sentry ? [sentry] : []), ...(dev ? ["ws:", "wss:"] : [])],
+    // And PostHog's ingest host, when product analytics is on.
+    "connect-src": ["'self'", ...(ga ? GA_HOSTS.connect : []), ...(sentry ? [sentry] : []), ...(posthog ? [posthog] : []), ...(dev ? ["ws:", "wss:"] : [])],
     "worker-src": ["'self'", "blob:"],
     "media-src": ["'self'", "blob:", "data:"],
     "frame-src": ["'self'"],
@@ -111,7 +115,7 @@ export function contentSecurityPolicy({ dev, ga = false, sentry = null }: { dev:
 }
 
 /** The headers applied to every route by next.config.ts. */
-export function securityHeaders({ dev, ga = false, sentry = null }: { dev: boolean; ga?: boolean; sentry?: string | null }): { key: string; value: string }[] {
+export function securityHeaders({ dev, ga = false, sentry = null, posthog = null }: { dev: boolean; ga?: boolean; sentry?: string | null; posthog?: string | null }): { key: string; value: string }[] {
   return [
     // Force HTTPS for 2 years, including subdomains. Browsers ignore this over
     // plain HTTP, so it's harmless in local dev. No `preload`: getting onto the
@@ -123,7 +127,7 @@ export function securityHeaders({ dev, ga = false, sentry = null }: { dev: boole
     // `frame-ancestors` in the policy says the same to current browsers; this
     // header covers the ones that predate it.
     { key: "X-Frame-Options", value: "DENY" },
-    { key: "Content-Security-Policy", value: contentSecurityPolicy({ dev, ga, sentry }) },
+    { key: "Content-Security-Policy", value: contentSecurityPolicy({ dev, ga, sentry, posthog }) },
     // Send only the origin on cross-origin navigations (no full path/query
     // leak). This matters here: signing links carry their token in the path.
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

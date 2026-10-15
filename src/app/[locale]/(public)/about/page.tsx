@@ -2,12 +2,14 @@ import type { Metadata } from "next"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 import { useTranslations } from "next-intl"
-// Unused since the placeholder note below was removed.
-// import { isKitSite } from "@/config/kit"
+// Unused once the placeholder note below was removed; back in use to show
+// the founder's note on the product deployment only.
+import { isKitSite } from "@/config/kit"
 import { jsonLdScript } from "@/lib/json-ld"
 import { aboutPageJsonLd } from "@/lib/structured-data"
 import { RelatedLinks } from "@/components/landing/related-links"
 import { hasPosts } from "@/lib/blog"
+import { FounderStory } from "@/components/landing/founder-story"
 
 export const metadata: Metadata = pageMetadata({
   title: `About | ${siteConfig.name}`,
@@ -19,6 +21,10 @@ export const metadata: Metadata = pageMetadata({
  * What Salsox is, who it is for, and the principles it is run by. The copy
  * lives under `about.$product` in the message files; it used to be the kit's
  * placeholder ("projects", "small teams") with a note saying so.
+ *
+ * On the product deployment the founder's note opens the page, before the
+ * what/who/principles sections: it answers why the product exists, which the
+ * sections below then make concrete. The kit has no founder, so no note.
  */
 export default function AboutPage() {
   const t = useTranslations("about")
@@ -32,6 +38,20 @@ export default function AboutPage() {
           {t("title", { site: siteConfig.name })}
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">{siteConfig.description}</p>
+
+        {!isKitSite && (
+          <FounderStory
+            title={t("storyTitle", { site: siteConfig.name })}
+            paragraphs={[
+              t("storyStart", { site: siteConfig.name }),
+              t("storyProblem"),
+              t("storyAnswer"),
+              t("storyNow", { site: siteConfig.name }),
+            ]}
+            signature={t("storySignature", { site: siteConfig.name })}
+            contactLabel={t("storyContact")}
+          />
+        )}
 
         <div className="mt-12 space-y-8 leading-7 text-muted-foreground">
           {/* Removed with the placeholder copy it apologised for: this page

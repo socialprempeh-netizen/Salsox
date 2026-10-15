@@ -123,6 +123,12 @@ export const envSchema = z
     GOOGLE_SITE_VERIFICATION: optional,
     BING_SITE_VERIFICATION: optional,
     NEXT_PUBLIC_GA_MEASUREMENT_ID: blankAsUnset(z.string().regex(/^G-[A-Z0-9]{4,20}$/, "a GA4 measurement id starts with G-").optional()),
+    // PostHog product analytics (src/lib/posthog-config.ts). Optional: the
+    // project API key turns it on, cookieless; the host picks the US (default)
+    // or EU cloud. A value that does not fit leaves PostHog off, so it is
+    // refused here rather than silently ignored.
+    NEXT_PUBLIC_POSTHOG_KEY: blankAsUnset(z.string().regex(/^phc_[A-Za-z0-9]{20,80}$/, "a PostHog project API key starts with phc_").optional()),
+    NEXT_PUBLIC_POSTHOG_HOST: blankAsUnset(z.string().regex(/^https:\/\/[A-Za-z0-9.-]+\/?$/, "an https origin, such as https://eu.i.posthog.com").optional()),
     NEXT_PUBLIC_DEMO_URL: optional,
     NEXT_PUBLIC_CONTACT_EMAIL: optional,
     // Error tracking (src/lib/sentry.ts). All optional: without the DSN

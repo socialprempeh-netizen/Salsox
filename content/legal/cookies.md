@@ -1,7 +1,7 @@
 ---
 title: "Cookie Policy"
 description: "The cookies and browser storage Salsox uses, and why. No advertising or tracking cookies."
-updated: "2026-10-02"
+updated: "2026-10-15"
 reviewed: false
 ---
 
@@ -37,7 +37,9 @@ This stays in your browser and is never sent to us.
 
 ## Analytics
 
-We count page views with Vercel Analytics, which works without cookies and without identifying you.
+We count page views with Vercel Analytics and PostHog, both set up to work without cookies and without identifying you. PostHog also receives a few events, such as a document being sent, and the campaign tags in a link (`utm_source` and similar). Neither receives the content of your documents, and neither runs on signing pages.
+
+When you first arrive on our website, one first-party cookie, `sx_src`, records which page you landed on, the site that linked you and any campaign tags, for 30 days. If you then create an account, we store that with it, so we know which channels bring people to Salsox. It is not sent to anyone else, and it is not set when your browser sends Global Privacy Control or Do Not Track.
 
 ## Payment pages
 

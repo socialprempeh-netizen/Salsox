@@ -7,6 +7,9 @@ import { PlanCards, type PlanCardData } from "@/components/billing/plan-cards"
 // import { exampleEnterpriseCard } from "@/components/billing/enterprise-card"
 import { Reveal } from "@/components/landing/reveal"
 import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
+import { PriceAnchor, type AnchorGroup } from "@/components/landing/price-anchor"
+import { DOCUSIGN, anchorRows, formatUsd } from "@/lib/competitor-pricing"
+import { siteConfig } from "@/config/site"
 
 /**
  * The pricing section, rendered from your `Plan` rows: this is what the kit
@@ -53,6 +56,7 @@ export async function PlanPricing({
   withJsonLd?: boolean
 }) {
   const t = await getTranslations("planPricing")
+  const ta = await getTranslations("priceAnchor")
   const isDemo = process.env.DEMO_MODE === "true"
   // See `Pricing`: h2 under the hero on the landing, h1 when it is the
   // heading of /pricing. The styling does not change.
@@ -79,6 +83,32 @@ export async function PlanPricing({
     // here as on the billing page (it was left out, hiding Business's trial).
     trialDays: p.trialDays,
   }))
+
+  // The anchor above the cards: our plans against DocuSign's, priced from the
+  // same rows as the cards (competitor-pricing.ts). Not on a demo, whose
+  // plans are examples.
+  const company = DOCUSIGN.company
+  const anchorGroups: AnchorGroup[] = isDemo
+    ? []
+    : anchorRows(plans).map((row) => ({
+        label: row.tier === "entry" ? ta("entry") : ta("payments"),
+        own: {
+          name: row.tier === "entry" ? ta("ownEntry", { site: siteConfig.name }) : ta("ownPayments", { site: siteConfig.name }),
+          price: formatUsd(row.ownMonthlyCents),
+          unit: ta("perMonth"),
+          limit: ta("noCap"),
+        },
+        competitor: {
+          name: ta("competitorPlan", { company, plan: row.competitor.name }),
+          price: formatUsd(row.competitor.monthlyCents),
+          unit: row.competitor.perUser ? ta("perUserMonth") : ta("perMonth"),
+          limit:
+            row.competitor.envelopes.per === "month"
+              ? ta("capMonth", { count: row.competitor.envelopes.count })
+              : ta("capUserYear", { count: row.competitor.envelopes.count }),
+        },
+      }))
+  const checkedOn = new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(DOCUSIGN.checked))
 
   return (
     <section id="pricing" className="bg-muted/30 py-24">
@@ -110,6 +140,23 @@ export async function PlanPricing({
             {isDemo ? t("subtitleDemo") : t("subtitle", { free: FREE_DOCUMENTS_PER_MONTH })}
           </p>
         </Reveal>
+
+        <PriceAnchor
+          title={ta("title")}
+          subtitle={ta("subtitle", { company })}
+          groups={anchorGroups}
+          note={ta.rich("note", {
+            company,
+            date: checkedOn,
+            billing: DOCUSIGN.billing,
+            source: (chunks) => (
+              <a href={DOCUSIGN.source} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
+                {chunks}
+              </a>
+            ),
+          })}
+          compare={{ href: "/compare/docusign", label: ta("compare", { company }) }}
+        />
 
         <Reveal delay={100}>
           {/* `plans`: where the menu's Pricing link lands (PRICING_HREF in

@@ -5,6 +5,7 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/esign/limits";
 import { securityHeaders as buildSecurityHeaders } from "./src/lib/security-headers";
 import { sentryIngestOrigin } from "./src/lib/sentry";
+import { posthogConfig } from "./src/lib/posthog-config";
 import { seoRedirectsForNext } from "./src/lib/seo/redirects";
 
 // Points next-intl at the request config that loads the message files.
@@ -41,6 +42,8 @@ const securityHeaders = buildSecurityHeaders({
   ga: /^G-[A-Z0-9]{4,20}$/.test(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? ""),
   // Sentry's ingest origin, read from the DSN, or null when it is off.
   sentry: sentryIngestOrigin(process.env.NEXT_PUBLIC_SENTRY_DSN),
+  // PostHog's ingest host, or null when product analytics is off.
+  posthog: posthogConfig(process.env)?.host ?? null,
 });
 
 const nextConfig: NextConfig = {
