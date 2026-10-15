@@ -18,6 +18,7 @@ import {
   Users,
   Settings,
   Shield,
+  LayoutTemplate,
   BarChart3,
   Banknote,
   Repeat,
@@ -36,6 +37,8 @@ const menus = {
     { href: "/dashboard", key: "dashboard", icon: LayoutGrid, exact: true },
     { href: "/dashboard/documents", key: "documents", icon: FileSignature },
     { href: "/dashboard/documents/quick-send", key: "quickSend", icon: Send, exact: true },
+    // The template library (src/lib/templates.ts): start a document from one.
+    { href: "/dashboard/templates", key: "templates", icon: LayoutTemplate },
     { href: "/dashboard/payouts", key: "payouts", icon: Wallet },
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },

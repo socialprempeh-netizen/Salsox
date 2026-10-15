@@ -6,7 +6,7 @@ lede: "Most e-signature tools can put a signature on a PDF. The differences show
 primaryKeyword: "electronic signature software"
 aliases: ["e-signature software", "esignature software", "digital signature software for documents", "best electronic signature software"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-15
 breadcrumb: "E-signature software"
 benefits:
   - title: "No envelope counting"
@@ -21,7 +21,7 @@ faq:
   - q: "Is per-user pricing or per-account pricing better?"
     a: "It depends on how many people send. Per-user plans cost more as a team grows; {site} prices per account and has no team seats today, so it suits individuals and small teams sharing one sender account."
   - q: "What does {site} not do yet?"
-    a: "It has no reusable templates, no bulk send, no public API and no CRM integrations. If you need those today, a larger platform may suit you better; the comparison pages say where."
+    a: "It cannot yet turn your own documents into reusable templates (it has a library of ready-made ones), and it has no bulk send, no public API and no CRM integrations. If you need those today, a larger platform may suit you better; the comparison pages say where."
   - q: "Can I try it without paying?"
     a: "Yes. A free account sends 3 documents a month, and the free PDF tools work without an account."
 related: ["/online-esignature", "/document-signing-software", "/vs/docusign", "/business-esignature", "/pricing"]
@@ -59,7 +59,7 @@ Check whether you can export everything, not just a document at a time, and whet
 
 ### 7. What is missing?
 
-Every tool has gaps, and an honest vendor tells you. {site} does not offer reusable templates, bulk sending, a public API, team seats or CRM integrations today, and it handles PDFs only. If your workflow depends on those, the [DocuSign comparison](/vs/docusign) and the [PandaDoc comparison](/vs/pandadoc) explain where those platforms are stronger.
+Every tool has gaps, and an honest vendor tells you. {site} does not yet turn your own documents into reusable templates (its templates are a ready-made library), and it does not offer bulk sending, a public API, team seats or CRM integrations today, and it handles PDFs only. If your workflow depends on those, the [DocuSign comparison](/vs/docusign) and the [PandaDoc comparison](/vs/pandadoc) explain where those platforms are stronger.
 
 ## A short way to decide
 

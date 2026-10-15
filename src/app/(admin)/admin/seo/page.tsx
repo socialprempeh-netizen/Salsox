@@ -17,6 +17,7 @@
  * Search queries are not something a site can see; the page links to Search
  * Console and Bing Webmaster Tools for those. Admin only (the layout checks).
  */
+import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -96,7 +97,8 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
   const undated = entries.filter((e) => !e.lastModified).length
 
   // ── Content quality ───────────────────────────────────────────────────────
-  const known = new Set(["/", "/pricing", "/verify", "/docs", "/blog", "/about", "/contact", "/changelog", "/tools", "/compare", ...getAllPosts().map((p) => `/blog/${p.slug}`)])
+  // Template pages are link targets for the industry and team pages.
+  const known = new Set(["/", "/pricing", "/verify", "/docs", "/blog", "/about", "/contact", "/changelog", "/tools", "/compare", TEMPLATES_PATH, ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`)])
   const contentProblems = validatePages(loadAllPages(), known)
 
   // ── Signups ───────────────────────────────────────────────────────────────

@@ -37,7 +37,9 @@ const examplePlans: {
     price: 900,
     interval: "MONTH",
     stripePriceId: process.env.STRIPE_STARTER_PRICE_ID ?? "price_starter_placeholder",
-    features: ["Unlimited documents and signers", "Quick Send", "WhatsApp and SMS signing links", "Export everything, any time"],
+    // Saved templates added with the template library (prisma/plans.ts has the same line). Was:
+    // features: ["Unlimited documents and signers", "Quick Send", "WhatsApp and SMS signing links", "Export everything, any time"],
+    features: ["Unlimited documents and signers", "Quick Send", "Save your own templates", "WhatsApp and SMS signing links", "Export everything, any time"],
   },
   {
     slug: "starter-yearly",

@@ -10,6 +10,9 @@ import { pageGraph, pageTrail } from "@/lib/seo/page-graph"
 import { resolveLinks } from "@/lib/seo/links"
 import { fixedLinkLabels } from "@/components/seo/fixed-links"
 import type { SitePage } from "@/lib/seo/pages"
+import { templateCards, templatesFor, TEMPLATES_PATH } from "@/lib/templates"
+import { TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
+import { TemplateCardGrid } from "@/components/templates/template-card"
 
 /**
  * One template for every page in the SEO registry (src/lib/seo/pages.ts):
@@ -35,6 +38,16 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
   const trail = pageTrail(page, { home: t("breadcrumbHome"), tools: t("breadcrumbTools"), compare: t("breadcrumbCompare"), useCases: t("breadcrumbUseCases") })
   const related = resolveLinks(page.related, await fixedLinkLabels())
   const isTool = page.kind === "tool"
+  // Industry and team pages show their templates from the library.
+  const pageTemplates = page.templates ? templatesFor(page.templates) : []
+  const tx = await getTranslations("templates.taxonomy")
+  const templateQuery = page.templates?.industry
+    ? `?industry=${page.templates.industry}`
+    : page.templates?.team
+      ? `?team=${page.templates.team}`
+      : page.templates?.category
+        ? `?category=${page.templates.category}`
+        : ""
 
   return (
     <article className="pb-20">
@@ -122,6 +135,19 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
         )}
 
         <MarkdownBody source={page.body} />
+
+        {pageTemplates.length > 0 && (
+          <Reveal as="section">
+            <h2 id="templates" className="text-2xl font-bold tracking-tight">{t("templatesTitle")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t("templatesHint", { count: pageTemplates.length })}</p>
+            <div className="mt-5">
+              <TemplateCardGrid cards={templateCards(pageTemplates.slice(0, 6))} categoryLabels={Object.fromEntries(TEMPLATE_CATEGORIES.map((c) => [c, tx(`category.${c}.label`)]))} />
+            </div>
+            <Link href={`${TEMPLATES_PATH}${templateQuery}`} className="mt-4 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline">
+              {t("templatesAll", { count: pageTemplates.length })}
+            </Link>
+          </Reveal>
+        )}
 
         {page.faq.length > 0 && (
           <Reveal as="section">

@@ -94,7 +94,11 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
   const tPlans = useTranslations("esign.plans")
   const showError = useActionErrorToast()
   const router = useRouter()
-  const [step, setStep] = useState<0 | 1 | 2>(initial.recipients.length > 0 ? 1 : 0)
+  // Was `initial.recipients.length > 0 ? 1 : 0`. A draft made from a template
+  // (src/lib/esign/templates.ts) arrives with a recipient per role and no
+  // email for the ones still to be named: it opens on Recipients so that is
+  // the first thing the sender sees, not a Fields step they cannot leave.
+  const [step, setStep] = useState<0 | 1 | 2>(initial.recipients.length > 0 && initial.recipients.every((r) => r.email.trim()) ? 1 : 0)
   const [title, setTitle] = useState(initial.title)
   const [signingOrder, setSigningOrder] = useState(initial.signingOrder)
   const [subject, setSubject] = useState(initial.subject)

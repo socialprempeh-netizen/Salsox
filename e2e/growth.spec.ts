@@ -23,7 +23,8 @@ for (const width of WIDTHS) {
     for (const [url, name, heading] of [
       ["/vs/signnow", "vs-signnow", /vs signNow/],
       ["/vs/getaccept", "vs-getaccept", /vs GetAccept/],
-      ["/templates", "templates", "Free document templates"],
+      // Was "Free document templates": the library's heading since it became the full template library.
+      ["/templates", "templates", "Document templates, ready to sign"],
       ["/templates/residential-lease", "template-lease", "Residential lease agreement template"],
       ["/templates/invoice-template", "template-invoice", "Invoice template"],
     ] as const) {
@@ -46,8 +47,12 @@ test("the old /compare/ URLs move permanently to /vs/", async ({ request }) => {
 
 test("a template page offers its PDF, its text and a way to get it signed", async ({ page, request }) => {
   await page.goto("/templates/mutual-nda")
+  // The preview opens on the sample details; the blank view shows the blanks.
+  await expect(page.getByText("Kente Analytics Ltd").first()).toBeVisible()
+  await page.getByRole("tab", { name: "Blank template" }).click()
   await expect(page.getByText("[Party A legal name]").first()).toBeVisible()
-  await expect(page.getByRole("link", { name: "Get it signed free" }).first()).toHaveAttribute("href", /\/signup\?next=/)
+  // Was "Get it signed free" to /signup; now "Use this template", to the template in the dashboard.
+  await expect(page.getByRole("link", { name: "Use this template" }).first()).toHaveAttribute("href", "/signup?next=/dashboard/templates/mutual-nda")
 
   const href = await page.getByRole("link", { name: "Download PDF" }).getAttribute("href")
   const pdf = await request.get(href!)

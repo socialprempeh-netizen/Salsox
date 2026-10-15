@@ -21,7 +21,7 @@ faq:
   - q: "How much does signNow cost compared to {site}?"
     a: "{site} Personal is $9 a month and Business is $19 a month, per account, with no envelope count on paid plans. signNow's plan prices could not be confirmed from its pricing page on 15 October 2026, so they are not quoted here; check signNow's pricing page for current figures."
   - q: "Does signNow have templates?"
-    a: "Yes. signNow says you can create unlimited templates of your most-used documents, with fillable fields. {site} has no reusable templates in the product; it offers free document templates to download, and Quick Send places signature fields automatically."
+    a: "Yes. signNow says you can create unlimited templates of your most-used documents, with fillable fields. {site} has a library of ready-made templates that open in the editor with their fields placed, and paid plans can save customised copies, but it cannot yet turn your own uploaded documents into templates."
   - q: "Can both collect a payment when the document is signed?"
     a: "Yes. signNow describes an embedded payment system that lets recipients sign and pay from the same document. {site} Business does the same through Stripe, or through Paystack, which adds mobile money where Paystack supports it."
   - q: "Do signers need an app or an account?"
@@ -38,7 +38,7 @@ signNow's details below come from its own website, read on **15 October 2026**. 
 | Paid plans | Personal $9/month, Business $19/month (or yearly) | Not confirmed on the day of the check; see signNow's pricing page |
 | Sending | No envelope count on paid plans (fair use) | Says "no overages" for extra sends |
 | Users | One account per plan, no team seats today | "Unlimited users on all plans" |
-| Templates | Not in the product; free downloadable templates | Unlimited templates with fillable fields |
+| Templates | Ready-made library, customisable; not from your own PDFs | Unlimited templates with fillable fields |
 | Bulk send | Not offered | Offered |
 | Payment with signature | Business plan (Stripe or Paystack) | Embedded payments |
 | Signing order | Business plan, with an approver role | Role-based signing order |
@@ -63,7 +63,7 @@ signNow covers more of the e-signature job than {site} does. Its site lists **un
 
 ## Switching from signNow
 
-Download your completed documents and their audit trails from signNow before your plan ends: they remain your record of what was signed, and nothing needs to be signed again. Templates do not carry over, because {site} has none in the product. For each new agreement you upload the PDF and place fields in the editor, or let Quick Send add a signature and date for each signer. If most of your sends come from three or four templates, time one send in {site} before you switch, so you know the cost of the change in practice.
+Download your completed documents and their audit trails from signNow before your plan ends: they remain your record of what was signed, and nothing needs to be signed again. Your signNow templates do not carry over, and {site} cannot yet store your own documents as templates. For each new agreement you start from one of its ready-made templates, or upload the PDF and place fields in the editor, or let Quick Send add a signature and date for each signer. If most of your sends come from three or four templates, time one send in {site} before you switch, so you know the cost of the change in practice.
 
 ## Which should you choose?
 

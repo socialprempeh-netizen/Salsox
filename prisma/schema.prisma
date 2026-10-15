@@ -73,6 +73,7 @@ model User {
   purchases             Purchase[]
   documents             Document[]
   payoutAccounts        PayoutAccount[]
+  savedTemplates        SavedTemplate[]
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
@@ -518,4 +519,23 @@ model OutreachContact {
   updatedAt   DateTime        @updatedAt
 
   @@index([contactedAt])
+}
+
+// ─── Saved templates ──────────────────────────────────────────────────────────
+// A customised copy of a library template (content/templates, src/lib/
+// templates.ts), saved to reuse: which template, a name, and the values typed
+// into its blanks. The document text itself stays in the library, so a fix to
+// a template reaches every saved copy. A Personal-plan feature
+// (savedTemplates in src/lib/esign/plans.ts).
+model SavedTemplate {
+  id           String   @id @default(cuid())
+  userId       String
+  templateSlug String
+  name         String
+  values       Json
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
 }

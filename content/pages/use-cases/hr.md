@@ -6,8 +6,9 @@ lede: "HR paperwork is signed by people who are not yet in your systems, or who 
 primaryKeyword: "esignature for hr"
 aliases: ["hr esignature", "esign offer letters", "employment contract esignature", "onboarding documents esignature"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-15
 breadcrumb: "HR"
+templates: { team: "hr" }
 faq:
   - q: "Can an employment contract be signed electronically?"
     a: "In most countries, yes. Employment contracts and offer letters are routinely signed electronically under laws such as the US ESIGN Act, the EU's eIDAS Regulation and the UK's Electronic Communications Act. Some documents, such as certain settlement agreements, may have extra requirements; check local employment law."
@@ -50,7 +51,7 @@ HR documents carry personal data, so it matters where they go:
 - **The record is complete.** Every view and signature is logged with time and IP address.
 - **Retention is in your hands.** Signed documents stay in your account and can be exported in one ZIP for your HR system or archive.
 
-{site} does not integrate with HR information systems and has no bulk send or reusable templates, so it suits small employers and HR teams handling individual documents rather than onboarding hundreds of people at once.
+{site} does not integrate with HR information systems and has no bulk send, and its templates are a ready-made library rather than your own documents, so it suits small employers and HR teams handling individual documents rather than onboarding hundreds of people at once.
 
 ## What it costs
 

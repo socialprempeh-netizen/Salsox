@@ -8,12 +8,15 @@
  */
 import { describe, expect, it } from "vitest"
 import { getAllPosts } from "@/lib/blog"
+import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 import { SEO_REDIRECTS } from "./redirects"
 import { getPages, loadAllPages, pagePath, parseFileName, similarity, validatePages, wordCount, type SitePage } from "./pages"
 
 /** Routes outside the registry that pages may link to. */
 const STATIC_PATHS = ["/", "/pricing", "/verify", "/docs", "/blog", "/about", "/contact", "/changelog", "/tools", "/compare"]
-const knownPaths = () => new Set([...STATIC_PATHS, ...getAllPosts().map((p) => `/blog/${p.slug}`)])
+// The template library's pages are linkable too (industry and team pages
+// point at their templates).
+const knownPaths = () => new Set([...STATIC_PATHS, TEMPLATES_PATH, ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`)])
 
 describe("registry basics", () => {
   it("puts each kind at its URL", () => {

@@ -51,7 +51,10 @@ export const examplePlans: {
     interval: "MONTH",
     stripePriceId: priceId(process.env.STRIPE_STARTER_PRICE_ID, "price_starter_placeholder"),
     // "and signers" removed: each document takes at most 10 recipients.
-    features: ["Unlimited documents", "Quick Send", "WhatsApp and SMS signing links", "Export everything, any time"],
+    // "Save your own templates": customised copies of library templates
+    // (savedTemplates in src/lib/esign/plans.ts), a Personal-plan feature.
+    // Was: ["Unlimited documents", "Quick Send", "WhatsApp and SMS signing links", "Export everything, any time"]
+    features: ["Unlimited documents", "Quick Send", "Save your own templates", "WhatsApp and SMS signing links", "Export everything, any time"],
   },
   {
     slug: "starter-yearly",

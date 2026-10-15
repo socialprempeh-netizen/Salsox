@@ -6,7 +6,7 @@ lede: "DocuSign is the best-known e-signature platform, with a deep feature set 
 primaryKeyword: "docusign"
 aliases: ["salsox vs docusign", "docusign vs salsox", "docusign comparison", "compare docusign"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-15
 breadcrumb: "vs DocuSign"
 competitor:
   name: "DocuSign"
@@ -45,7 +45,7 @@ List prices are a starting point, not the whole bill. DocuSign sells add-ons and
 
 ## Where DocuSign is stronger
 
-DocuSign has been building e-signature software for two decades, and its breadth shows. It offers reusable templates, bulk sending, conditional routing (listed under its Enhanced plans), a public API for starting signing from other systems, a large catalogue of integrations, and administration features for organisations with many senders. If your signing happens inside a CRM, at volume, or under an IT department's controls, those features matter, and {site} does not have them.
+DocuSign has been building e-signature software for two decades, and its breadth shows. It offers reusable templates built from your own documents, bulk sending, conditional routing (listed under its Enhanced plans), a public API for starting signing from other systems, a large catalogue of integrations, and administration features for organisations with many senders. If your signing happens inside a CRM, at volume, or under an IT department's controls, those features matter, and {site} does not have them.
 
 ## Where {site} is different
 
