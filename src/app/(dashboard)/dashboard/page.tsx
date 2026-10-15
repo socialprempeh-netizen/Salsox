@@ -17,18 +17,19 @@ export default async function DashboardPage() {
   const format = await getFormatter()
   const user = await requireUser()
 
-  const entitlement = await getEntitlement(user.id)
-  const subscription = entitlement.kind === "subscription" ? entitlement.subscription : null
-  const lifetime = entitlement.kind === "lifetime" ? entitlement.purchase : null
-
-  // One grouped count instead of one query per status.
-  const [statusCounts, userRow] = await Promise.all([
+  // One grouped count instead of one query per status. The entitlement joins
+  // the same batch, as nothing here depends on it: it was awaited first, one
+  // more database round trip before the rest could start.
+  const [entitlement, statusCounts, userRow] = await Promise.all([
+    getEntitlement(user.id),
     prisma.document.groupBy({ by: ["status"], where: { userId: user.id }, _count: { _all: true } }),
     prisma.user.findUnique({
       where: { id: user.id },
       select: { name: true, onboardingDismissedAt: true, stripeCustomerId: true },
     }),
   ])
+  const subscription = entitlement.kind === "subscription" ? entitlement.subscription : null
+  const lifetime = entitlement.kind === "lifetime" ? entitlement.purchase : null
 
   const countOf = (status: string) => statusCounts.find((c) => c.status === status)?._count._all ?? 0
   const documentCount = statusCounts.reduce((sum, c) => sum + c._count._all, 0)

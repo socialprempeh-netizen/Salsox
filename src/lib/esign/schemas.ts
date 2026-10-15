@@ -80,40 +80,7 @@ export type RecipientInput = z.infer<typeof recipientInputSchema>
 export type FieldInput = z.infer<typeof fieldInputSchema>
 export type DocumentSetup = z.infer<typeof documentSetupSchema>
 
-/**
- * Splits what a person pastes into the Quick Send box ("a@x.com, b@y.com",
- * one per line, or "Ama <ama@x.com>") into unique, lower-cased addresses.
- * Returns the invalid fragments separately so the form can point at them.
- */
-export function parseEmailList(input: string): { emails: { email: string; name?: string }[]; invalid: string[] } {
-  const seen = new Set<string>()
-  const emails: { email: string; name?: string }[] = []
-  const invalid: string[] = []
-  for (const raw of input.split(/[,;\n]+/)) {
-    const part = raw.trim()
-    if (!part) continue
-    const angle = /^(.*)<([^>]+)>$/.exec(part)
-    const email = (angle ? angle[2] : part).trim().toLowerCase()
-    const name = angle?.[1].trim().replace(/^"|"$/g, "") || undefined
-    if (!z.email().safeParse(email).success) {
-      invalid.push(part)
-      continue
-    }
-    if (seen.has(email)) continue
-    seen.add(email)
-    emails.push(name ? { email, name } : { email })
-  }
-  return { emails, invalid }
-}
-
-/** A readable fallback name from an address: "ama.mensah@x.com" → "Ama Mensah". */
-export function nameFromEmail(email: string): string {
-  const local = email.split("@")[0] ?? email
-  return (
-    local
-      .split(/[._-]+/)
-      .filter(Boolean)
-      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-      .join(" ") || email
-  )
-}
+// parseEmailList and nameFromEmail moved, unchanged, to email-list.ts, which
+// does not import zod, so the browser can use them without shipping it.
+// Re-exported here so server code keeps importing from schemas.
+export { parseEmailList, nameFromEmail } from "./email-list"

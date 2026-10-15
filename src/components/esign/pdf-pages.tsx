@@ -67,6 +67,42 @@ async function loadPdf(source: { url?: string; data?: Uint8Array }) {
   return source.data ? pdfjs.getDocument({ data: source.data.slice() }) : pdfjs.getDocument({ url: source.url! })
 }
 
+let warmed = false
+
+/**
+ * Starts downloading the PDF viewer (pdf.js and its worker, about 530 KB
+ * compressed) while the browser is idle, before any PDF is shown, so that
+ * opening the document does not begin with that download.
+ *
+ * Why this exists: on a phone the viewer's first use waited on that download
+ * after the click, about 2.5 seconds of the 4.5 between a signer tapping
+ * "Review and sign" and the first page appearing. Call it from a step that
+ * comes just before a PDF: the signing intro, the upload form.
+ *
+ * Only the viewer's code is fetched, never a document: fetching the signing
+ * file would count as the signer opening it. Both fetches land in the HTTP
+ * cache (the files are immutable, hashed static assets) and pdf.js picks them
+ * up from there; failures are ignored, as loadPdf fetches them anyway.
+ *
+ * `code: false` fetches only the worker (382 KB of the 530) and does not run
+ * pdf.js itself: running it costs a phone a few hundred milliseconds of main
+ * thread, worth it before the signing view but not on the upload form, where
+ * measuring showed it as blocking time on a page people interact with.
+ */
+export function warmPdfViewer({ code = true }: { code?: boolean } = {}) {
+  if (warmed || typeof window === "undefined") return
+  warmed = true
+  const whenIdle =
+    window.requestIdleCallback ?? ((callback: () => void) => window.setTimeout(callback, 1500))
+  whenIdle(
+    () => {
+      void fetch(new URL("pdfjs-dist/legacy/build/pdf.worker.min.mjs", import.meta.url).toString(), { priority: "low" } as RequestInit).catch(() => {})
+      if (code) void import("pdfjs-dist/legacy/build/pdf.mjs").catch(() => {})
+    },
+    { timeout: 4000 }
+  )
+}
+
 export function PdfPages({ url, data, extraPages = 0, renderOverlay, onPageRef, onLoaded, onLoadError, onRenderError, className }: Props) {
   const t = useTranslations("esign.viewer")
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null)

@@ -26,7 +26,7 @@ import { PdfPages } from "@/components/esign/pdf-pages"
 // SignaturePad is rendered by SignaturePadDialog now.
 // import { SignaturePad, type SignatureValue } from "@/components/esign/signature-pad"
 import type { SignatureValue } from "@/components/esign/signature-pad"
-import { DEFAULT_PLACEMENT_SIZE, MAX_TOOL_PDF_BYTES, signedFileName, toolFileProblem, type FormFieldInfo, type FormValues, type Placement, type PlacementKind } from "@/lib/pdf-tools"
+import { DEFAULT_PLACEMENT_SIZE, MAX_TOOL_PDF_BYTES, signedFileName, toolFileProblem, type FormFieldInfo, type FormValues, type Placement, type PlacementKind } from "@/lib/pdf-tools-shared"
 import { clampPercent } from "@/lib/esign/pdf/coords"
 import { trimDataUrl } from "@/lib/image-trim"
 import { track } from "@/lib/analytics"

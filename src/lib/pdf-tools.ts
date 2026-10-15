@@ -14,51 +14,13 @@
  */
 import { PDFCheckBox, PDFDocument, PDFDropdown, PDFRadioGroup, PDFTextField } from "pdf-lib"
 import { stampFields, toWinAnsi, type StampField } from "@/lib/esign/pdf/stamp"
+import type { FieldWidget, FormFieldInfo, FormValues, Placement } from "./pdf-tools-shared"
 
-/** Local files can be larger than uploads: nothing crosses the network. */
-export const MAX_TOOL_PDF_BYTES = 25 * 1024 * 1024
-
-export type PlacementKind = "signature" | "initials" | "name" | "date" | "text" | "check"
-
-/** A mark placed on a page, in percent of the page from its top-left corner. */
-export type Placement = {
-  id: string
-  kind: PlacementKind
-  page: number
-  x: number
-  y: number
-  width: number
-  height: number
-  /** Text for name, date and text marks. */
-  value?: string
-  /** A drawn or uploaded signature, as a PNG or JPEG data URL. */
-  imageDataUrl?: string
-  /** A typed signature. */
-  typedText?: string
-}
-
-/** Default size of a new mark, in percent of the page. */
-export const DEFAULT_PLACEMENT_SIZE: Record<PlacementKind, { width: number; height: number }> = {
-  signature: { width: 28, height: 7 },
-  initials: { width: 11, height: 5 },
-  name: { width: 26, height: 3.5 },
-  date: { width: 18, height: 3.5 },
-  text: { width: 30, height: 3.5 },
-  check: { width: 3.5, height: 2.5 },
-}
-
-/** Why a chosen file cannot be used, or null. Checked before anything is read. */
-export function toolFileProblem(file: { name: string; type: string; size: number }): "notPdf" | "tooLarge" | null {
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) return "notPdf"
-  if (file.size > MAX_TOOL_PDF_BYTES) return "tooLarge"
-  return null
-}
-
-/** "Lease agreement.pdf" becomes "Lease agreement (signed).pdf". */
-export function signedFileName(name: string): string {
-  const base = name.replace(/\.pdf$/i, "").trim() || "document"
-  return `${base} (signed).pdf`
-}
+// Limits, placement types and sizes, file checks and names live in
+// pdf-tools-shared.ts (no pdf-lib), so the tool page can use them without
+// loading pdf-lib; re-exported here unchanged.
+export { MAX_TOOL_PDF_BYTES, DEFAULT_PLACEMENT_SIZE, toolFileProblem, signedFileName } from "./pdf-tools-shared"
+export type { PlacementKind, Placement, FieldWidget, FormFieldInfo, FormValues } from "./pdf-tools-shared"
 
 /**
  * Turns placements into the stamper's fields. With `everyPage`, every mark is
@@ -98,14 +60,6 @@ export function placementsToStampFields(placements: Placement[], options: { page
     })
     .filter((f) => f.type === "CHECKBOX" || f.value || f.signature?.imageDataUrl || f.signature?.typedText)
 }
-
-/** Where a form field sits: its page (1-based) and box, in percent from the top-left, like placements. */
-export type FieldWidget = { page: number; x: number; y: number; width: number; height: number }
-
-export type FormFieldInfo =
-  | { name: string; type: "text"; value: string; maxLength?: number; widgets: FieldWidget[] }
-  | { name: string; type: "checkbox"; value: boolean; widgets: FieldWidget[] }
-  | { name: string; type: "choice"; value: string; options: string[]; widgets: FieldWidget[] }
 
 /**
  * The fillable fields a PDF already has (an AcroForm), in document order,
@@ -152,7 +106,6 @@ export function formTextValue(value: string, maxLength?: number): string {
   return maxLength !== undefined && maxLength > 0 ? safe.slice(0, maxLength) : safe
 }
 
-export type FormValues = Record<string, string | boolean>
 
 /**
  * Fills the PDF's own fields, stamps the placed marks, flattens the form so
