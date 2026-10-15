@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
 import { getPages, type SitePage } from "@/lib/seo/pages"
 import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
+import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
 
 /**
  * Sitemap built from the real public routes plus the blog content on disk,
@@ -143,6 +144,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const templateRoutes: MetadataRoute.Sitemap = templates.length
     ? [
         { url: `${siteConfig.url}${TEMPLATES_PATH}`, changeFrequency: "monthly" as const, priority: 0.7, ...newest(templates.map((t) => t.updated)) },
+        // Category pages, only those with enough templates to be generated.
+        ...TEMPLATE_CATEGORIES.map((c) => ({ c, inCategory: templates.filter((t) => t.category === c) }))
+          .filter(({ inCategory }) => inCategory.length >= MIN_TEMPLATES_PER_CATEGORY_PAGE)
+          .map(({ c, inCategory }) => ({ url: `${siteConfig.url}${categoryPath(c)}`, changeFrequency: "monthly" as const, priority: 0.6, ...newest(inCategory.map((t) => t.updated)) })),
         ...templates.map((t) => ({
           url: `${siteConfig.url}${t.path}`,
           lastModified: new Date(`${t.updated}T00:00:00Z`),

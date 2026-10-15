@@ -8,7 +8,7 @@
  * to rank, not a second copy of its text.
  */
 import { siteConfig } from "@/config/site"
-import { getTemplate, getTemplates, templatePath } from "@/lib/templates"
+import { fillVariables, getTemplate, getTemplates, templatePath } from "@/lib/templates"
 import { renderTemplatePdf } from "@/lib/templates-pdf"
 import { getTranslations } from "next-intl/server"
 import { routing } from "@/i18n/routing"
@@ -24,9 +24,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   if (!template) return new Response("Not found", { status: 404 })
   const t = await getTranslations({ locale: routing.defaultLocale, namespace: "templates" })
   const host = siteConfig.url.replace(/^https?:\/\//, "")
-  const pdf = await renderTemplatePdf({
+  // Blanks print as written ([Client name]) so the downloaded copy shows what
+  // to fill in; "Use this template" fills them instead.
+  const { bytes: pdf } = await renderTemplatePdf({
     title: template.h1,
-    markdown: template.body,
+    markdown: fillVariables(template.body, {}),
     footer: t("pdfFooter", { site: siteConfig.name, url: `${host}${templatePath(template.slug)}` }),
   })
   return new Response(Buffer.from(pdf), {

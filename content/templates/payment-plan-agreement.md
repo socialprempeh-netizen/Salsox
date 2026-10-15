@@ -1,72 +1,97 @@
 ---
-title: "Free Payment Plan Agreement Template (PDF)"
-description: "A free payment plan agreement template for paying an amount in instalments: schedule, missed payment terms and early payoff. Copy it, or download a PDF to sign."
+title: "Free Payment Plan Agreement Template"
+description: "A free payment plan agreement template for paying an amount in instalments: schedule, missed payments and early payoff. Fill it in and send it to sign."
 h1: "Payment plan agreement template"
 lede: "When a customer cannot pay all at once: agree the total, the instalments and their dates, what happens if one is missed, and that they can pay early, in one short document both sides sign."
-category: invoice
 keyword: "payment plan agreement template"
-signers: ["Creditor", "Debtor"]
-published: 2026-10-15
-updated: 2026-10-15
+category: invoices
+type: agreement
+industries: ["finance", "healthcare", "education", "retail", "professional-services"]
+teams: ["customer-success", "sales"]
+roles:
+  - { id: "creditor", label: "Creditor", you: true }
+  - { id: "debtor", label: "Debtor" }
+variables:
+  "Agreement date": "21 October 2026"
+  "Creditor legal name": "Wisdom Academy Ltd"
+  "Creditor address": "Box 233, Adenta, Accra"
+  "Debtor name": "Mr. Samuel Tetteh"
+  "Debtor address": "5 Frafraha Street, Adenta"
+  "Total amount": "GHS 9,600"
+  "Reason": "first-term school fees for two pupils, invoice 2026-T1-118"
+  "Instalment count": "four"
+  "Instalment 1 date": "on signing"
+  "Instalment 1 amount": "GHS 2,400"
+  "Instalment 2 date": "21 November 2026"
+  "Instalment 2 amount": "GHS 2,400"
+  "Instalment 3 date": "21 December 2026"
+  "Instalment 3 amount": "GHS 2,400"
+  "Instalment 4 date": "21 January 2027"
+  "Instalment 4 amount": "GHS 2,400"
+  "Payment method": "mobile money or card through the payment link provided, or bank transfer"
+  "Grace days": "seven"
+  "Notice days": "14"
+  "Governing law": "the laws of Ghana"
+about: |
+  A payment plan keeps a customer you value while protecting what you are owed. Schools use it for fees, clinics for treatment bills, and suppliers for a large invoice a regular client cannot settle in one go.
+
+  The agreement is short because the terms are simple: the total and what it is for, a dated instalment table, how payments are made, and what happens if one is missed. A grace period, then written notice, then the remaining balance becoming due: that sequence is firm without being harsh, and it is what makes the plan enforceable if you ever need it to be. The debtor also acknowledges the debt, and can always pay early without penalty.
+
+  Consumer credit rules in many countries regulate interest charged to individuals, so this template charges none by default. Send it through {site} with Sign & Pay and the first instalment is collected as they sign.
 faq:
   - q: "When should I offer a payment plan?"
     a: "When a reliable customer asks for time, or when splitting a large bill makes the sale possible. A written plan keeps the goodwill while protecting what you are owed."
   - q: "Can I charge interest on a payment plan?"
-    a: "Sometimes, but consumer credit rules in many countries regulate interest and fees charged to individuals. If you charge interest, check the rules first; this template assumes no interest by default."
+    a: "Sometimes, but consumer credit rules in many countries regulate interest and fees charged to individuals. This template charges none; check the rules before adding any."
   - q: "How can the first instalment be collected at signing?"
     a: "Send the agreement through {site} with Sign & Pay and set the first instalment as the payment: the customer signs and pays it in the same step."
+published: 2026-10-15
+updated: 2026-10-15
 ---
 
 # Payment Plan Agreement
 
-This Payment Plan Agreement (the "Agreement") is made on [Date] between **[Creditor legal name]**, of [Creditor address] (the "Creditor"), and **[Debtor full name or company]**, of [Debtor address] (the "Debtor").
+This Payment Plan Agreement is made on [Agreement date] between **[Creditor legal name]**, of [Creditor address] (the "Creditor"), and **[Debtor name]**, of [Debtor address] (the "Debtor").
 
 ## 1. Amount owed
 
-The Debtor owes the Creditor a total of **[Currency and total amount]** for [Describe what the amount is for, e.g. invoice number 1042 for services delivered in March] (the "Amount").
+The Debtor owes the Creditor **[Total amount]** for [Reason] (the "Amount").
 
 ## 2. Instalments
 
-The Debtor will pay the Amount in [Number] instalments, as follows:
+The Debtor will pay the Amount in [Instalment count] instalments:
 
-| Instalment | Due date | Amount |
+| Instalment | Due | Amount |
 |---|---|---|
-| 1 | [Date, e.g. on signing] | [Amount] |
-| 2 | [Date] | [Amount] |
-| 3 | [Date] | [Amount] |
-| 4 | [Date] | [Amount] |
+| 1 | [Instalment 1 date] | [Instalment 1 amount] |
+| 2 | [Instalment 2 date] | [Instalment 2 amount] |
+| 3 | [Instalment 3 date] | [Instalment 3 amount] |
+| 4 | [Instalment 4 date] | [Instalment 4 amount] |
 
-Payments will be made by [Payment method, e.g. card or mobile money using the payment link provided, or bank transfer to Account details].
+Payments will be made by [Payment method].
 
-## 3. Interest and fees
+## 3. Interest and early payment
 
-[No interest or fees will be charged on the Amount while instalments are paid on time.] [Or: describe any interest or fees, where permitted by law.]
+No interest or fees are charged while instalments are paid on time. The Debtor may pay the remaining balance at any time without penalty.
 
-## 4. Early payment
+## 4. Missed payments
 
-The Debtor may pay the remaining balance at any time without penalty.
+If an instalment is more than [Grace days] days late, the Creditor will notify the Debtor in writing. If it is still unpaid [Notice days] days after that notice, the full remaining balance becomes due immediately and the Creditor may take steps to recover it.
 
-## 5. Missed payments
+## 5. Acknowledgement of debt
 
-If an instalment is more than [Number] days late, the Creditor will notify the Debtor in writing. If it is not paid within [Number] days of that notice, the full remaining balance becomes due immediately, and the Creditor may pursue recovery of it.
+The Debtor acknowledges that the Amount is owed, and the Creditor will take no further collection action while this Agreement is kept.
 
-## 6. Acknowledgement of debt
+Debtor initials: [[initials:debtor]]
 
-The Debtor acknowledges that the Amount is owed and agrees not to dispute it while this Agreement is in force.
+## 6. General
 
-## 7. Account status
-
-While the Debtor keeps to this Agreement, the Creditor will not take further collection action for the Amount. [Optional: describe any services that continue or are paused during the plan.]
-
-## 8. General
-
-This Agreement is the entire agreement about the Amount and may be changed only in writing signed by both parties. It is governed by the laws of [Country or state] and may be signed electronically.
+This Agreement is the entire agreement about the Amount, may be changed only in writing, is governed by [Governing law], and may be signed electronically. If the Debtor expects to miss an instalment, they will tell the Creditor before its due date so the parties can discuss a revised schedule in writing.
 
 ## Signatures
 
 **Creditor:** [Creditor legal name]
-Name: [Signatory name]
-Signature: ______________________ Date: __________
+Signature: [[signature:creditor]]   Date: [[date:creditor]]
 
-**Debtor:** [Debtor full name or company]
-Signature: ______________________ Date: __________
+**Debtor:** [Debtor name]
+Signature: [[signature:debtor]]   Date: [[date:debtor]]

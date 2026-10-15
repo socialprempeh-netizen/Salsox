@@ -6,7 +6,7 @@ lede: "For a business, a signature is rarely the end of the job. Someone has to 
 primaryKeyword: "business esignature"
 aliases: ["esignature for business", "business electronic signature", "esignature for small business", "small business esignature"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-15
 breadcrumb: "Business eSignatures"
 benefits:
   - title: "Sign & Pay"
@@ -52,4 +52,4 @@ If a client later disputes what they agreed to, you need more than a picture of 
 
 ## What to know before choosing it
 
-{site} is built for owners and small teams who send their own contracts. It does not offer team seats, shared templates, bulk sending, CRM integrations or an API. If those are central to how you work, the [PandaDoc comparison](/vs/pandadoc) explains when a document-automation suite is the better fit. If they are not, the Business plan costs $19 a month, or $190 a year, with a 14-day trial; the [pricing page](/pricing) has the details, and the guide to [document approval workflows](/blog/document-approval-workflows) shows how to set up a sign-off that matches how your business already works.
+{site} is built for owners and small teams who send their own contracts. It does not offer team seats, templates made from your own documents, bulk sending, CRM integrations or an API. If those are central to how you work, the [PandaDoc comparison](/vs/pandadoc) explains when a document-automation suite is the better fit. If they are not, the Business plan costs $19 a month, or $190 a year, with a 14-day trial; the [pricing page](/pricing) has the details, and the guide to [document approval workflows](/blog/document-approval-workflows) shows how to set up a sign-off that matches how your business already works.

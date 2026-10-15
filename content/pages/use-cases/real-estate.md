@@ -7,6 +7,7 @@ primaryKeyword: "esignature for real estate"
 aliases: ["real estate esignature", "esign for landlords", "lease esignature", "e-signature for property managers"]
 published: 2026-10-06
 updated: 2026-10-06
+templates: { industry: "real-estate" }
 breadcrumb: "Real estate"
 faq:
   - q: "Can a lease be signed electronically?"

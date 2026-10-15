@@ -23,7 +23,10 @@
 
 export type PlanTier = "free" | "personal" | "business"
 
-export type PlanFeature = "unlimitedDocuments" | "signAndPay" | "sequentialSigning" | "approvers" | "auditCertificate"
+// `savedTemplates`: saving a customised copy of a library template to reuse
+// (src/lib/esign/templates.ts). Using any template is free on every plan;
+// what it sends counts towards the free monthly allowance like anything else.
+export type PlanFeature = "unlimitedDocuments" | "signAndPay" | "sequentialSigning" | "approvers" | "auditCertificate" | "savedTemplates"
 
 /** The lowest tier that includes each feature. */
 export const FEATURE_TIER: Record<PlanFeature, PlanTier> = {
@@ -32,6 +35,7 @@ export const FEATURE_TIER: Record<PlanFeature, PlanTier> = {
   sequentialSigning: "business",
   approvers: "business",
   auditCertificate: "business",
+  savedTemplates: "personal",
 }
 
 const RANK: Record<PlanTier, number> = { free: 0, personal: 1, business: 2 }

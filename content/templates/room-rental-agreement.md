@@ -1,13 +1,44 @@
 ---
-title: "Free Room Rental Agreement Template (Copy or PDF)"
-description: "A free room rental agreement template for renting one room in a shared home: rent, bills, shared spaces, house rules and notice. Copy it, or download a PDF."
+title: "Free Room Rental Agreement Template"
+description: "A free room rental agreement template for renting one room in a shared home: rent, bills, shared spaces, house rules and notice. Fill it in and sign online."
 h1: "Room rental agreement template"
 lede: "For renting a single room in a home you live in or manage: the room, the shared spaces, how bills are split, the house rules and how either side can end the arrangement."
-category: lease
 keyword: "room rental agreement template"
-signers: ["Landlord", "Lodger"]
-published: 2026-10-15
-updated: 2026-10-15
+category: rentals
+type: agreement
+industries: ["real-estate", "education"]
+teams: []
+roles:
+  - { id: "landlord", label: "Landlord", you: true }
+  - { id: "lodger", label: "Lodger" }
+variables:
+  "Agreement date": "30 October 2026"
+  "Landlord name": "Mrs. Grace Nyarko"
+  "Property address": "24 Baatsona Close, Spintex, Accra"
+  "Lodger name": "Mr. David Kiplagat"
+  "Room description": "the en-suite bedroom on the first floor, at the back of the house"
+  "Furniture": "a double bed, wardrobe, desk and chair"
+  "Shared areas": "the kitchen, living room, laundry area and garden"
+  "Private areas": "the landlord's bedroom and study"
+  "Term": "month to month"
+  "Start date": "1 November 2026"
+  "Rent": "GHS 1,800 per month"
+  "Rent day": "1st of each month"
+  "Payment method": "mobile money"
+  "Bills arrangement": "Rent includes water and internet. The lodger pays one third of each electricity bill within seven days of being shown it."
+  "Deposit": "GHS 1,800"
+  "Deposit return days": "14"
+  "Cleaning arrangement": "the weekly cleaning rota on the kitchen wall"
+  "Quiet hours": "22:00 and 07:00"
+  "Guest nights": "four nights a month"
+  "Notice period": "one month"
+  "Governing law": "the laws of Ghana"
+about: |
+  Renting out a spare room is a different arrangement from letting a whole home. You share a kitchen, a front door and often bills with the person, so the agreement has to cover how the household works as well as the money.
+
+  This template sets out the room and its furniture, which areas are shared and which stay private, the rent and how bills are split, a modest deposit, and the house rules that usually cause friction: cleaning, quiet hours and overnight guests. It ends with simple notice on both sides and makes clear that the lodger rents a room, not the whole property.
+
+  In many countries a lodger who shares the home with a resident landlord has fewer statutory rights than a tenant, including shorter notice. Check how local law treats room rentals. The lodger initials the house rules before signing.
 faq:
   - q: "Is renting a room different from a normal lease?"
     a: "Often, yes. In many countries a lodger who shares the home with a resident landlord has fewer statutory rights than a tenant, including shorter notice periods. Check how local law treats room rentals."
@@ -15,62 +46,62 @@ faq:
     a: "Either include them in the rent, which is simplest, or split them by a fixed share. Write down which, so there is no argument when the first bill arrives."
   - q: "What house rules should I include?"
     a: "The ones that cause friction: guests and overnight visitors, quiet hours, cleaning of shared spaces, smoking and pets."
+published: 2026-10-15
+updated: 2026-10-15
 ---
 
 # Room Rental Agreement
 
-This Agreement is made on [Date] between **[Landlord full name]**, of [Property address] (the "Landlord"), and **[Lodger full name]** (the "Lodger").
+This Agreement is made on [Agreement date] between **[Landlord name]**, of [Property address] (the "Landlord"), and **[Lodger name]** (the "Lodger").
 
 ## 1. The room
 
-The Landlord agrees to rent the Lodger the room described as [Room description, e.g. the double bedroom at the front of the first floor] (the "Room") at [Property address] (the "Property"), furnished with [List furniture].
+The Landlord rents the Lodger [Room description] (the "Room") at [Property address], furnished with [Furniture].
 
-## 2. Shared areas
+## 2. Shared and private areas
 
-The Lodger may use the following shared areas with the other occupants: [List shared areas, e.g. kitchen, living room, bathroom, garden]. The Lodger may not use [List private areas].
+The Lodger may use [Shared areas] with the other occupants. The Lodger may not use [Private areas].
 
-## 3. Term
+## 3. Term and rent
 
-This Agreement starts on [Start date] and continues [For a fixed term ending on End date, or month to month] until ended under clause 9.
+This Agreement runs [Term] from [Start date]. Rent is [Rent], payable in advance on the [Rent day] by [Payment method].
 
-## 4. Rent
+## 4. Bills
 
-Rent is [Currency and amount] per [Week or month], payable in advance on [Day] by [Payment method].
+[Bills arrangement]
 
-## 5. Bills
+## 5. Deposit
 
-The rent [Includes or excludes] the following bills: [List utilities, internet, council or local taxes]. [If excluded, describe how they are shared, e.g. "The Lodger pays one third of each bill within 7 days of being shown it."]
+The Lodger will pay a deposit of [Deposit] on signing, returned within [Deposit return days] days of leaving, less unpaid rent or bills, or the cost of damage beyond normal wear and tear.
 
-## 6. Deposit
-
-The Lodger will pay a deposit of [Currency and amount] on signing, returned within [Number] days of leaving, less any unpaid rent, bills, or cost of damage beyond normal wear and tear.
-
-## 7. House rules
+## 6. House rules
 
 The Lodger agrees to:
 
-- keep the Room and shared areas clean and tidy, and take part in [Cleaning arrangement];
+- keep the Room and shared areas clean and take part in [Cleaning arrangement];
 - keep noise down between [Quiet hours];
-- have overnight guests no more than [Number] nights per [Week or month] without the Landlord's agreement;
-- not smoke [Anywhere in the Property, or indoors]; and
+- have overnight guests for no more than [Guest nights] without the Landlord's agreement;
+- not smoke indoors; and
 - not keep pets without written permission.
 
-## 8. Access
+Lodger initials: [[initials:lodger]]
+
+## 7. Access
 
 The Landlord may enter the Room with reasonable notice for repairs or inspections, or without notice in an emergency.
 
-## 9. Ending the Agreement
+## 8. Ending the Agreement
 
-Either party may end this Agreement by giving [Notice period] written notice. The Landlord may end it with shorter notice where the law allows if the Lodger seriously breaks this Agreement. The Lodger will remove their belongings and return all keys on leaving.
+Either party may end this Agreement by giving [Notice period] written notice, or less where the law allows for a serious breach. The Lodger will remove their belongings and return all keys on leaving.
 
-## 10. General
+## 9. General
 
-This Agreement is governed by the laws of [Country, state or city]. It does not create a tenancy of the whole Property.
+This Agreement is governed by [Governing law]. It gives the Lodger the use of the Room and shared areas only, not a tenancy of the whole property.
 
 ## Signatures
 
-**Landlord:** [Landlord full name]
-Signature: ______________________ Date: __________
+**Landlord:** [Landlord name]
+Signature: [[signature:landlord]]   Date: [[date:landlord]]
 
-**Lodger:** [Lodger full name]
-Signature: ______________________ Date: __________
+**Lodger:** [Lodger name]
+Signature: [[signature:lodger]]   Date: [[date:lodger]]

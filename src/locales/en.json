@@ -394,6 +394,7 @@
       "openNavigation": "Open navigation",
       "documents": "Documents",
       "quickSend": "Quick Send",
+      "templates": "Templates",
       "payouts": "Payouts",
       "seo": "SEO health",
       "users": "Users",
@@ -409,6 +410,37 @@
       "reconciliation": "Reconciliation",
       "systemHealth": "System health",
       "sectionPages": "Pages in this section"
+    },
+    "templates": {
+      "title": "Templates",
+      "subtitle": "Start from one of {count} templates. Each opens in the editor with its signature fields already placed.",
+      "mine": "Your saved templates",
+      "savedFrom": "From {template}, saved {date}",
+      "back": "All templates",
+      "you": "you",
+      "fieldsPlaced": "{count} signing fields placed for {signers}",
+      "preview": "Preview the full template",
+      "blanksTitle": "Fill in the details",
+      "blanksHint": "{count} blanks. Leave any empty to fill it in by hand later; it prints as a line.",
+      "useSamples": "Use sample details",
+      "documentTitle": "Document title",
+      "emptyBlanks": "{count, plural, one {# blank is} other {# blanks are}} still empty and will print as a line to fill in by hand.",
+      "create": "Create document and open the editor",
+      "createHint": "Next, add each signer's email in the editor and send. Nothing is sent until you do.",
+      "created": "Document created",
+      "failed": "The document could not be created. Try again.",
+      "saveTitle": "Save as your own template",
+      "savedTitle": "Saved as “{name}”",
+      "saveHint": "Keep these details to reuse: next time, open the saved template and only change what is different.",
+      "saveName": "Template name",
+      "saveNamePlaceholder": "For example: Standard client NDA",
+      "save": "Save template",
+      "update": "Update template",
+      "saved": "Template saved",
+      "delete": "Delete saved template",
+      "deleted": "Saved template deleted",
+      "saveLocked": "Saving your own templates is part of the Personal plan.",
+      "upgrade": "See plans"
     }
   },
   "adminCustomers": {
@@ -1752,6 +1784,10 @@
       "plan_approvers": "Approvers are part of the Business plan. Upgrade to add one, or make them a signer.",
       "plan_unlimitedDocuments": "You've sent your {free} free documents this month. Upgrade to Personal for unlimited documents.",
       "plan_requestTool": "You've used your free request from the Request a signature tool. Upgrade to Personal to keep using it.",
+      "plan_savedTemplates": "Saving your own templates is part of the Personal plan. Upgrade to keep customised copies.",
+      "recipientEmailMissing": "Every signer needs an email address. Add the missing ones in the editor, then send.",
+      "templateNotFound": "That template no longer exists.",
+      "tooManySavedTemplates": "You have reached the limit of saved templates. Delete one you no longer use.",
       "ENCRYPTED": "This PDF is password-protected. Remove the password and upload it again.",
       "UNREADABLE": "This PDF could not be read. Try exporting it again.",
       "EMPTY": "This PDF has no pages.",
@@ -2235,6 +2271,9 @@
       "alternative": "Alternative",
       "use-case": "Use case"
     },
+    "templatesTitle": "Templates to start from",
+    "templatesHint": "Each opens in the editor with its signature fields already in place.",
+    "templatesAll": "See all {count} templates",
     "breadcrumbHome": "Home",
     "breadcrumbTools": "Free tools",
     "breadcrumbCompare": "Compare",
@@ -2502,49 +2541,192 @@
     "compare": "Full comparison with {company}"
   },
   "templates": {
-    "metaTitle": "Free Document Templates: NDA, Contracts, Leases",
-    "metaDescription": "Free NDA, employment, freelance, lease and invoice templates. Read, copy or download each as a PDF, then get it signed online with {site}.",
+    "metaTitle": "Free Document Templates: Contracts, Proposals, Forms",
+    "metaDescription": "Free templates for proposals, quotes, contracts, NDAs, HR forms, leases and more. Preview each one, then send it for e-signature with {site}.",
     "breadcrumbHome": "Home",
     "breadcrumb": "Templates",
-    "h1": "Free document templates",
-    "lede": "NDAs, employment documents, freelance contracts, leases and invoices, written in plain English. Copy the text or download a PDF, fill in the blanks, then get it signed with {site}. No signup needed to use them.",
-    "category": {
-      "nda": "NDAs and confidentiality",
-      "employment": "Employment",
-      "freelance": "Freelance and services",
-      "lease": "Leases and rentals",
-      "invoice": "Invoices, quotes and payments"
+    "h1": "Document templates, ready to sign",
+    "lede": "{count} templates for the documents small businesses send most: proposals, quotes, contracts, NDAs, employment and HR forms, leases and construction contracts. Preview any of them, then open it in {site} with every signature field already in place.",
+    "browseCategories": "Browse by category",
+    "otherCategories": "More template categories",
+    "library": {
+      "search": "Search templates",
+      "searchPlaceholder": "Search: NDA, lease, proposal, invoice…",
+      "category": "Category",
+      "industry": "Industry",
+      "team": "Team",
+      "type": "Type",
+      "any": "any",
+      "clear": "Clear filters",
+      "resultsOne": "{count} template",
+      "resultsOther": "{count} templates",
+      "empty": "No template matches. Try fewer words or clear the filters."
     },
-    "eyebrow": "Free template: {category}",
-    "sign": "Get it signed free",
+    "use": "Use this template",
     "download": "Download PDF",
     "copy": "Copy text",
     "copied": "Copied",
     "copyFailed": "Copy failed",
-    "signHint": "Fill in the blanks, then send it to {signers} for signature with {site}. The free plan sends 3 documents a month.",
-    "documentLabel": "Template text",
+    "useHint": "Opens in the {site} editor with {fields} signing fields already placed for {signers}. Add their emails and send. The free plan sends 3 documents a month.",
+    "whoSigns": "Who signs",
+    "you": "you",
+    "previewTitle": "Preview",
+    "previewGroup": "Preview view",
+    "previewSample": "With sample details",
+    "previewBlank": "Blank template",
     "disclaimer": "These templates are general starting points, not legal advice. Laws differ between countries and states: check that a template suits your situation, or ask a lawyer, before you rely on it.",
+    "aboutTitle": "About the {name}",
+    "factSigners": "Signers",
+    "factFields": "Signing fields placed",
+    "factBlanks": "Details to fill in",
     "howTitle": "How to use this template",
     "steps": {
-      "fill": {
-        "title": "Fill in the blanks",
-        "body": "Copy the text into your editor, or download the PDF, and replace every highlighted [blank] with your details. Delete any clause that does not apply."
+      "use": {
+        "title": "Open it in {site}",
+        "body": "Choose Use this template. Sign up free if you have no account; the template opens straight after."
       },
-      "download": {
-        "title": "Save it as a PDF",
-        "body": "Export your finished version as a PDF from Word, Google Docs or Pages, so it looks the same for everyone who opens it."
+      "fill": {
+        "title": "Fill in the details",
+        "body": "Type your details into each blank, or start from the sample to see how it reads. Save it as your own template to reuse it."
       },
       "send": {
-        "title": "Send it for signature",
-        "body": "Upload the PDF to {site}, add who signs, and send. Signers sign on their phone without an account, and everyone gets the signed copy with its audit trail."
+        "title": "Add signers and send",
+        "body": "The editor already has every signature, date and initials field in place. Add each signer's email and send; they sign on their phone, and everyone gets the sealed copy with its audit trail."
       }
     },
+    "usedByTitle": "Used in",
     "faq": "Questions",
-    "related": "More templates",
+    "related": "Related templates",
     "allTemplates": "See all templates",
-    "ctaTitle": "Ready to get it signed?",
-    "ctaBody": "Upload the finished document to {site} and send it by email, WhatsApp or SMS. Signers sign one field at a time on their phone, and you can collect a payment in the same step.",
+    "ctaTitle": "Send it for signature in minutes",
+    "ctaBody": "Start from this template in {site}: fill in the blanks, add your signers and send by email, WhatsApp or SMS. Signers sign one field at a time on their phone, and you can collect a payment in the same step.",
     "ctaPricing": "See pricing",
-    "pdfFooter": "Template from {site}: {url}. A starting point, not legal advice."
+    "startFree": "Start free",
+    "pdfFooter": "Template from {site}: {url}. A starting point, not legal advice.",
+    "fieldKinds": {
+      "signature": "Signature",
+      "initials": "Initials",
+      "date": "Date",
+      "name": "Name",
+      "text": "Answer"
+    },
+    "taxonomy": {
+      "category": {
+        "proposals": {
+          "label": "Proposals",
+          "h1": "Proposal templates",
+          "title": "Free Proposal Templates: Business, Sales, Consulting",
+          "description": "Free proposal templates for business, sales, consulting, marketing and software projects, with pricing tables and a signature to accept.",
+          "intro": "A proposal is where a conversation becomes a decision. These templates start with the client's problem, set out what you will do, when and for how much in a pricing table, and end with an acceptance block, so a yes is a signature rather than another round of email. Each one opens in {site} with the client's signature already placed, and with Sign & Pay the first payment can be made as they accept."
+        },
+        "quotes": {
+          "label": "Quotes and estimates",
+          "h1": "Quote and estimate templates",
+          "title": "Free Quote and Estimate Templates",
+          "description": "Free quote and estimate templates with itemised prices, validity dates and terms, accepted with the client's signature.",
+          "intro": "A signed quote is an order. These templates itemise the price, say what is and is not included and how long the price holds, and give the client a place to accept, so the job starts on agreed terms."
+        },
+        "invoices": {
+          "label": "Invoices and payments",
+          "h1": "Invoice and payment templates",
+          "title": "Free Invoice, Receipt and Payment Plan Templates",
+          "description": "Free invoice, deposit invoice, receipt and payment plan templates that clients can acknowledge, sign and pay in one step.",
+          "intro": "Getting paid is easier when the paperwork answers every question first. These templates cover the invoice itself, a deposit invoice for upfront payments, a signed receipt for cash and part-payments, and a payment plan for customers who need time. Sent through {site}, each can be signed and paid in the same flow, by card or by mobile money where Paystack supports it."
+        },
+        "contracts": {
+          "label": "Business contracts",
+          "h1": "Business contract templates",
+          "title": "Free Business Contract Templates",
+          "description": "Free business contract templates: service, partnership, supplier, consulting, referral and sponsorship agreements and an MOU, ready to e-sign.",
+          "intro": "The agreements that hold a business together: a service agreement with measurable service levels, a partnership agreement written before anyone needs it, a supplier agreement for regular orders, a consulting agreement, a referral agreement that settles who gets credit, an event sponsorship agreement, and an MOU for collaborations that are not ready for a full contract. Each is short, plain and written for small businesses, with signature fields in place for every party."
+        },
+        "nda": {
+          "label": "NDAs",
+          "h1": "NDA templates",
+          "title": "Free NDA Templates: Mutual, One-Way and Employee",
+          "description": "Free non-disclosure agreement templates: mutual NDA, one-way NDA and employee confidentiality agreement, ready to send for e-signature.",
+          "intro": "Sign the NDA before you share anything. These three cover the usual cases: a mutual NDA when both sides will share confidential information, a one-way NDA when only you are, and an employee confidentiality agreement for new hires. Each defines what is confidential, limits its use to a stated purpose, and keeps trade secrets protected for as long as they stay secret. Sent through {site}, the other party can sign before the meeting starts."
+        },
+        "freelance": {
+          "label": "Freelance and contractors",
+          "h1": "Freelance and contractor templates",
+          "title": "Free Freelance Contract and Contractor Templates",
+          "description": "Free freelance contract, retainer, photography and independent contractor agreement templates, with deposits and ownership terms that protect you.",
+          "intro": "Freelance work goes wrong at the edges: what was included, how many revisions, when the money is due and who owns the work. These templates settle those before the project starts. There is a freelance contract with a deposit clause, a monthly retainer, a photography booking contract, and an independent contractor agreement for businesses hiring contractors. With {site}'s Sign & Pay, the client signs and pays the deposit in one step."
+        },
+        "employment": {
+          "label": "Employment and HR",
+          "h1": "Employment and HR templates",
+          "title": "Free Employment and HR Templates",
+          "description": "Free offer letter, employment contract, internship, remote work and handbook acknowledgment templates for small employers, ready to e-sign.",
+          "intro": "From the offer to the first day and beyond: an offer letter the candidate can sign on their phone, an employment contract with the terms most labour laws expect in writing, an internship agreement, a remote work agreement, and a handbook acknowledgment so you have a record that each employee received your policies. Check local employment law before you send; the templates are written to be adapted."
+        },
+        "forms": {
+          "label": "Forms, consent and waivers",
+          "h1": "Consent, waiver and onboarding form templates",
+          "title": "Free Consent, Waiver and Onboarding Form Templates",
+          "description": "Free client onboarding, photo release, liability waiver, patient consent and parental consent form templates, signed online with answers typed in.",
+          "intro": "Forms are signed by people who are rarely at a desk: parents, patients, guests at the gate, new clients. These templates are built for signing on a phone, with typed answers where a form asks a question. They cover client onboarding, photo and video release, liability waivers, patient consent to treatment and parental consent for school trips. Each records consent in specific terms, which is what makes it worth having."
+        },
+        "orders": {
+          "label": "Purchase and work orders",
+          "h1": "Purchase order and work order templates",
+          "title": "Free Purchase Order and Work Order Templates",
+          "description": "Free purchase order and work order templates, approved and signed online.",
+          "intro": "Orders in writing: a purchase order the supplier signs to accept, and a work order the customer signs when the job is done."
+        },
+        "sow": {
+          "label": "SOWs and RFPs",
+          "h1": "Statement of work and RFP templates",
+          "title": "Free Statement of Work and RFP Templates",
+          "description": "Free statement of work and request for proposal templates, signed online.",
+          "intro": "Scope a project precisely with a statement of work, or ask suppliers to propose on the same brief with an RFP."
+        },
+        "rentals": {
+          "label": "Leases and rentals",
+          "h1": "Lease and rental agreement templates",
+          "title": "Free Lease and Rental Agreement Templates",
+          "description": "Free residential, commercial, room rental, sublease, renewal and equipment rental templates, signed on a phone with the deposit paid at signing.",
+          "intro": "Tenants and renters are rarely at a desk when the lease arrives. These templates are written to be signed on a phone, with initials on the clauses most often argued about. There is a residential lease, a room rental agreement, a lease renewal, a sublease with the landlord's consent, a commercial lease with a break clause, and an equipment rental agreement. Tenancy law varies by country and city, so check local rules on deposits and notice first."
+        },
+        "construction": {
+          "label": "Construction",
+          "h1": "Construction contract templates",
+          "title": "Free Construction Contract Templates",
+          "description": "Free construction contract, subcontractor agreement and change order templates for builders and contractors, with stage payments, signed online.",
+          "intro": "Building work is where informal agreements cost the most. These templates fix the essentials in writing: a construction contract with stage payments tied to milestones and a retention, a subcontractor agreement that flows the main contract's duties down to each trade, and a change order for every variation, with its price and its effect on the completion date. Owners can approve a change order on their phone the same day, so work does not stall."
+        }
+      },
+      "type": {
+        "agreement": "Agreement",
+        "proposal": "Proposal",
+        "quote": "Quote",
+        "invoice": "Invoice",
+        "form": "Form",
+        "letter": "Letter",
+        "order": "Order"
+      },
+      "industry": {
+        "software": "Software and tech",
+        "professional-services": "Professional services",
+        "education": "Education",
+        "healthcare": "Healthcare",
+        "construction": "Construction",
+        "real-estate": "Real estate",
+        "finance": "Finance and accounting",
+        "marketing": "Marketing and consulting",
+        "legal": "Legal",
+        "recruitment": "HR and recruitment",
+        "manufacturing": "Manufacturing",
+        "retail": "Retail"
+      },
+      "team": {
+        "sales": "Sales teams",
+        "hr": "HR teams",
+        "marketing": "Marketing teams",
+        "customer-success": "Customer success teams",
+        "legal": "Legal teams"
+      }
+    }
   }
 }

@@ -8,6 +8,7 @@ aliases: ["freelancer esignature", "esignature for consultants", "freelance cont
 published: 2026-10-06
 updated: 2026-10-06
 breadcrumb: "Freelancers"
+templates: { category: "freelance" }
 faq:
   - q: "What should a freelance contract include before I send it for signature?"
     a: "At minimum: the scope of work, deliverables and deadlines, the fee and payment schedule, revision limits, who owns the work, and how either side can end the agreement. This is general information, not legal advice."

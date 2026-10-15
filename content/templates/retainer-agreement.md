@@ -1,71 +1,92 @@
 ---
-title: "Free Retainer Agreement Template (Copy or PDF)"
+title: "Free Retainer Agreement Template (Monthly Retainer)"
 description: "A free monthly retainer agreement template for freelancers and agencies: included hours, rollover, rate for extra work, billing in advance and notice."
 h1: "Retainer agreement template"
 lede: "For ongoing work billed monthly: the client pays upfront for a set amount of your time each month, and both sides know what happens with unused hours or extra requests."
-category: freelance
 keyword: "retainer agreement template"
-signers: ["Service provider", "Client"]
-published: 2026-10-15
-updated: 2026-10-15
+category: freelance
+type: agreement
+industries: ["marketing", "professional-services", "legal", "finance", "software"]
+teams: ["marketing", "customer-success"]
+roles:
+  - { id: "provider", label: "Provider", you: true }
+  - { id: "client", label: "Client" }
+variables:
+  "Agreement date": "1 November 2026"
+  "Provider name": "Stackwise Studio"
+  "Provider address": "9 Herbert Macaulay Way, Yaba, Lagos"
+  "Client legal name": "Orbit Fitness Ltd"
+  "Client address": "17 Awolowo Road, Ikoyi, Lagos"
+  "Services": "ongoing maintenance, small features and hosting support for the client's booking website"
+  "Monthly hours": "20"
+  "Response time": "one working day"
+  "Rollover rule": "Up to 5 unused hours roll over to the next month only."
+  "Extra hourly rate": "NGN 35,000"
+  "Monthly fee": "NGN 600,000"
+  "Invoice day": "1st"
+  "Payment days": "seven"
+  "Start date": "1 November 2026"
+  "Notice days": "30"
+  "Liability months": "three"
+  "Governing law": "the laws of the Federal Republic of Nigeria"
+about: |
+  A retainer turns repeated small jobs into a predictable monthly arrangement. The client pays at the start of each month for a block of your time; you commit to being available and responding quickly. Both sides plan around it instead of negotiating every request.
+
+  The clauses that prevent arguments are the ones about edges: how many hours the fee buys, whether unused hours roll over (a small, capped rollover feels fair without building a backlog), what extra work costs and that it needs approval first, and what happens if an invoice is late. A monthly hours report with each invoice keeps trust high.
+
+  Either side can end it with notice, and fees for the notice period remain due, which gives you time to fill the gap and the client time to hand over.
 faq:
   - q: "Should unused retainer hours roll over?"
-    a: "It is your choice. Many freelancers allow a limited rollover, such as one month, so clients feel treated fairly without building up a large backlog of owed time."
+    a: "It is your choice. Many freelancers allow a limited rollover, such as one month or a few hours, so clients feel treated fairly without building up a large backlog of owed time."
   - q: "Is a retainer paid in advance?"
     a: "Usually, yes: the fee for each month is paid at the start of that month. That is what secures your availability for the client."
   - q: "How much notice should either side give?"
     a: "Thirty days is common. It gives the client time to find a replacement and you time to fill the gap in your schedule."
+published: 2026-10-15
+updated: 2026-10-15
 ---
 
 # Monthly Retainer Agreement
 
-This Retainer Agreement (the "Agreement") is made on [Date] between **[Service provider name]**, of [Provider address] (the "Provider"), and **[Client legal name]**, of [Client address] (the "Client").
+This Retainer Agreement is made on [Agreement date] between **[Provider name]**, of [Provider address] (the "Provider"), and **[Client legal name]**, of [Client address] (the "Client").
 
-## 1. Services
+## 1. Services and allowance
 
-The Provider will make itself available to the Client for [Describe the services, e.g. ongoing design, development and maintenance of the Client's website] (the "Services").
+The Provider will make itself available for [Services] (the "Services"). The retainer includes up to [Monthly hours] hours of Services each calendar month, and the Provider will respond to requests within [Response time] on working days.
 
-## 2. Monthly allowance
+## 2. Unused and extra hours
 
-The retainer includes up to [Number] hours of Services each calendar month (the "Monthly Hours"). The Provider will respond to requests within [Response time] during [Working days and hours].
+[Rollover rule] Work beyond the monthly hours needs the Client's approval first and is billed at [Extra hourly rate] per hour at the end of the month.
 
-## 3. Unused and extra hours
+## 3. Fees and payment
 
-Unused Monthly Hours [Do not roll over / roll over to the following month only, up to a maximum of Number hours]. Work beyond the Monthly Hours requires the Client's prior approval and is billed at [Currency and hourly rate] at the end of the month.
+The monthly fee is [Monthly fee], invoiced on the [Invoice day] of each month in advance and payable within [Payment days] days. The first month's fee is due on signing. If payment is late, the Provider may pause the Services until it is received.
 
-## 4. Fees and payment
+## 4. Term
 
-The monthly retainer fee is [Currency and amount], invoiced on the [Day] of each month in advance and payable within [Number] days. The first month's fee is due on signing. If payment is late, the Provider may pause the Services until it is received.
+This Agreement starts on [Start date] and continues month to month until ended under clause 7.
 
-## 5. Term
+## 5. Requests and reporting
 
-This Agreement starts on [Start date] and continues month to month until ended under clause 9. [Optional minimum term, e.g. "The first three months are a minimum term."]
+The Client will send requests through the shared project board or by email. The Provider will record hours used and share a summary with each invoice.
 
-## 6. Requests and reporting
+## 6. Ownership and confidentiality
 
-The Client will send requests through [Email address, project tool or channel]. The Provider will keep a record of hours used and share a summary with each invoice.
+The Client owns the work produced once the relevant month's fees are paid; the Provider keeps its pre-existing tools and know-how. Each party keeps the other's confidential information private.
 
-## 7. Ownership
+## 7. Ending the Agreement
 
-The Client owns the work produced under this Agreement once the relevant month's fees are paid. The Provider keeps its pre-existing tools and know-how.
+Either party may end this Agreement with [Notice days] days' written notice. Fees for the notice period remain payable, and the Provider will complete or hand over work in progress.
 
-## 8. Confidentiality
+## 8. General
 
-Each party will keep the other's confidential information private, during and after this Agreement.
-
-## 9. Ending the Agreement
-
-Either party may end this Agreement with [Number] days' written notice. Fees for the notice period remain payable, and the Provider will complete or hand over work in progress during it.
-
-## 10. General
-
-The Provider is an independent contractor. The Provider's total liability is limited to the fees paid in the [Number] months before the claim. This Agreement is governed by the laws of [Country or state] and may be signed electronically.
+The Provider is an independent contractor. Its total liability is limited to the fees paid in the [Liability months] months before a claim. This Agreement is governed by [Governing law] and may be signed electronically.
 
 ## Signatures
 
-**Provider:** [Service provider name]
-Signature: ______________________ Date: __________
+**Provider:** [Provider name]
+Signature: [[signature:provider]]   Date: [[date:provider]]
 
 **Client:** [Client legal name]
-Name: [Signatory name], [Title]
-Signature: ______________________ Date: __________
+Signature: [[signature:client]]   Date: [[date:client]]
+Name: [[name:client]]

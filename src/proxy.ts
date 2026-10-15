@@ -4,6 +4,7 @@ import createIntlMiddleware from "next-intl/middleware"
 import { routing } from "@/i18n/routing"
 import { siteConfig } from "@/config/site"
 import { canonicalHostRedirect } from "@/lib/app-url"
+import { safeNext } from "@/lib/safe-next"
 
 /**
  * Locale handling for the public surface only.
@@ -111,8 +112,14 @@ export default async function proxy(req: NextRequest) {
 
   // `/api/auth` and the inbound webhooks (e.g. Stripe) carry no session and
   // need no special case here: they are not in the lists above, so they pass.
+  // Signed in already: go where the link was going (`?next=`, checked by
+  // safeNext), not always to /dashboard. Public calls to action point at
+  // /signup?next=… (a template's "Use this template", Quick Send), and a
+  // visitor who is already signed in would otherwise land on the dashboard
+  // home and lose the page they asked for. Was:
+  //   return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
   if (isAuthRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
+    return NextResponse.redirect(new URL(safeNext(req.nextUrl.searchParams.get("next")), req.nextUrl))
   }
 
   if (isAdminRoute) {

@@ -57,6 +57,9 @@ export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string
 
 export const appUrl = () => siteConfig.url
 
+/** Enough of an address to send to; the editor's schema checks it properly first. */
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 // Replaced by DEFAULT_EXPIRY_DAYS in ./limits: this 30 was declared in both
 // documents.ts and recipients.ts, and is also the default a new document gets.
 // /** Fallback when a document was created without an explicit expiry setting. */
@@ -312,6 +315,11 @@ export async function sendDocument(userId: string, documentId: string): Promise<
   // Every signer needs something to sign; approvers may simply approve.
   const unplaced = actionable.filter((r) => r.role === "SIGNER" && !document.fields.some((f) => f.recipientId === r.id))
   if (unplaced.length > 0) return { ok: false, error: "signerWithoutFields" }
+  // A draft made from a template starts with a recipient per role and no
+  // email for the ones the sender has not named yet (esign/templates.ts).
+  // The editor asks for them; this is the authority, so a draft sent from
+  // anywhere else cannot go out to "".
+  if (document.recipients.some((r) => !EMAIL_SHAPE.test(r.email))) return { ok: false, error: "recipientEmailMissing" }
 
   const now = new Date()
   // Confirmed sender, and under the daily abuse ceiling (sending-limits.ts).

@@ -18,4 +18,5 @@ export const MIGRATIONS = [
   "20261006180000_signup_attribution",
   "20261009120000_request_tool_flag",
   "20261015120000_outreach_tracker",
+  "20261015180000_saved_templates",
 ] as const

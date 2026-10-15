@@ -1,13 +1,47 @@
 ---
 title: "Free Statement of Work Template (SOW)"
-description: "A free statement of work template for one project under an existing agreement: objectives, deliverables, milestones, acceptance and fees. Copy it or get a PDF."
+description: "A free statement of work template for one project under an existing agreement: objectives, deliverables, milestones, acceptance and fees. Fill it in and e-sign."
 h1: "Statement of work template"
-lede: "A statement of work (SOW) defines one project under a master or freelance agreement you have already signed: what will be delivered, when, how it will be accepted and what it costs."
-category: freelance
+lede: "A statement of work (SOW) defines one project under a master or services agreement you have already signed: what will be delivered, when, how it will be accepted and what it costs."
 keyword: "statement of work template"
-signers: ["Service provider", "Client"]
-published: 2026-10-15
-updated: 2026-10-15
+category: sow
+type: agreement
+industries: ["software", "professional-services", "marketing", "construction"]
+teams: ["sales", "customer-success"]
+roles:
+  - { id: "provider", label: "Provider", you: true }
+  - { id: "client", label: "Client" }
+variables:
+  "SOW number": "SOW-2026-014"
+  "SOW date": "18 October 2026"
+  "Master agreement": "Master Services Agreement"
+  "Master agreement date": "2 March 2026"
+  "Provider name": "Codebridge Ltd"
+  "Client legal name": "Unity Microfinance PLC"
+  "Project overview": "Build a loan-application flow inside the client's existing mobile app, so customers can apply for a loan and upload documents without visiting a branch."
+  "First objective": "launch the application flow to all Android users"
+  "Second objective": "cut average application time below ten minutes"
+  "Out of scope": "changes to the credit-scoring engine, iOS release, and hosting"
+  "Milestone 1 deliverable": "Clickable prototype approved"
+  "Milestone 1 date": "15 November 2026"
+  "Milestone 1 fee": "GHS 20,000"
+  "Milestone 2 deliverable": "Beta release to 500 users"
+  "Milestone 2 date": "20 December 2026"
+  "Milestone 2 fee": "GHS 45,000"
+  "Milestone 3 deliverable": "Full release and handover"
+  "Milestone 3 date": "31 January 2027"
+  "Milestone 3 fee": "GHS 35,000"
+  "Acceptance days": "five"
+  "Total fees": "GHS 100,000"
+  "Payment days": "30"
+  "Provider contact": "Kofi Adu, kofi@codebridge.example"
+  "Client contact": "Adjoa Bentil, adjoa@unity.example"
+about: |
+  A statement of work is how a services relationship stays manageable over several projects. The legal terms (liability, ownership, payment terms) are agreed once in a master agreement; each project then gets its own short SOW that says exactly what will be delivered, by when, and for how much.
+
+  The parts of this template that prevent scope disputes are the out-of-scope list, the milestone table that ties each payment to a deliverable, and the acceptance clause: the client has a fixed number of days to accept or list specific changes, and silence or live use counts as acceptance. A change-request clause means new work is priced and approved before it happens.
+
+  Each SOW is signed separately. With {site} you send it, the client signs on their phone, and the signed copy sits next to the master agreement in your records.
 faq:
   - q: "What is the difference between a contract and a statement of work?"
     a: "The contract sets the legal terms of the relationship once: payment terms, ownership, liability. Each SOW then describes a single project under it. You sign the contract once and a new SOW for each project."
@@ -15,70 +49,59 @@ faq:
     a: "Detailed enough that someone outside the project could tell whether each one was delivered. Vague deliverables are the most common cause of scope disputes."
   - q: "Does a statement of work need to be signed?"
     a: "Yes. A signed SOW is the client's approval of scope and price, and it is what you point to when a change request arrives."
+published: 2026-10-15
+updated: 2026-10-15
 ---
 
 # Statement of Work
 
 **SOW number:** [SOW number]
-**Date:** [Date]
+**Date:** [SOW date]
 
-This Statement of Work is issued under the [Name of master agreement] dated [Agreement date] (the "Agreement") between **[Service provider name]** (the "Provider") and **[Client legal name]** (the "Client"). The terms of the Agreement apply to this SOW. If they conflict, the Agreement takes precedence unless this SOW expressly says otherwise.
+This Statement of Work is issued under the [Master agreement] dated [Master agreement date] (the "Agreement") between **[Provider name]** (the "Provider") and **[Client legal name]** (the "Client"). The Agreement's terms apply; if they conflict, the Agreement prevails unless this SOW expressly says otherwise.
 
 ## 1. Project overview
 
-[Describe the project in two or three sentences: what problem it solves and for whom.]
+[Project overview]
 
 ## 2. Objectives
 
-- [Objective 1, e.g. launch a booking page that takes deposits];
-- [Objective 2]; and
-- [Objective 3].
+- [First objective]; and
+- [Second objective].
 
-## 3. Scope of work
+**Out of scope:** [Out of scope].
 
-The Provider will:
-
-- [Task or activity 1];
-- [Task or activity 2]; and
-- [Task or activity 3].
-
-**Out of scope:** [List what is explicitly not included, e.g. copywriting, hosting, ongoing maintenance].
-
-## 4. Deliverables and milestones
+## 3. Deliverables and milestones
 
 | Milestone | Deliverable | Due date | Fee |
 |---|---|---|---|
-| 1 | [Deliverable] | [Date] | [Amount] |
-| 2 | [Deliverable] | [Date] | [Amount] |
-| 3 | [Deliverable] | [Date] | [Amount] |
+| 1 | [Milestone 1 deliverable] | [Milestone 1 date] | [Milestone 1 fee] |
+| 2 | [Milestone 2 deliverable] | [Milestone 2 date] | [Milestone 2 fee] |
+| 3 | [Milestone 3 deliverable] | [Milestone 3 date] | [Milestone 3 fee] |
 
-## 5. Acceptance
+## 4. Acceptance
 
-The Client will review each deliverable within [Number] working days and either accept it in writing or list specific changes needed to meet this SOW. A deliverable is accepted if the Client does not respond within that time or uses it in production.
+The Client will review each deliverable within [Acceptance days] working days and either accept it in writing or list the specific changes needed to meet this SOW. A deliverable is accepted if the Client does not respond in that time or puts it into live use.
 
-## 6. Assumptions and dependencies
+## 5. Change requests
 
-This SOW assumes that [List assumptions, e.g. the Client provides access to its hosting account by the start date]. If an assumption proves wrong, the parties will agree any change to the timeline or fees in writing.
+Changes to scope must be requested in writing. The Provider will reply with the effect on timeline and fees, and a change takes effect only when both parties approve it in writing. Until a change is approved, the Provider continues to work to this SOW as signed.
 
-## 7. Change requests
+The Client will give the Provider timely access to the people, systems and test accounts each milestone needs; delays in access move the affected due dates by the same amount.
 
-Changes to scope must be requested in writing. The Provider will reply with the impact on timeline and fees, and the change takes effect only when both parties approve it in writing.
+## 6. Fees
 
-## 8. Fees and invoicing
+Total fees are [Total fees], invoiced per milestone on acceptance and payable within [Payment days] days under the Agreement's payment terms.
 
-Total fees for this SOW are [Currency and amount], invoiced [Per milestone, monthly, or on completion] and payable within [Number] days, under the payment terms of the Agreement.
+## 7. Contacts
 
-## 9. Contacts
-
-Provider contact: [Name, email, phone]
-Client contact: [Name, email, phone]
+Provider: [Provider contact]. Client: [Client contact].
 
 ## Signatures
 
-**Provider:** [Service provider name]
-Name: [Signatory name]
-Signature: ______________________ Date: __________
+**Provider:** [Provider name]
+Signature: [[signature:provider]]   Date: [[date:provider]]
 
 **Client:** [Client legal name]
-Name: [Signatory name], [Title]
-Signature: ______________________ Date: __________
+Signature: [[signature:client]]   Date: [[date:client]]
+Name: [[name:client]]

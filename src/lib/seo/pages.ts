@@ -97,6 +97,10 @@ export const frontmatterSchema = z
     benefits: z.array(titled).default([]),
     faq: z.array(z.object({ q: z.string().min(10), a: z.string().min(30) })).default([]),
     related: z.array(z.string().startsWith("/")).default([]),
+    // An industry or team page lists that industry's or team's templates
+    // from the library (src/lib/templates-taxonomy.ts names which page
+    // serves each industry and team).
+    templates: z.object({ industry: z.string().optional(), team: z.string().optional(), category: z.string().optional() }).optional(),
     draft: z.boolean().default(false),
   })
   .superRefine((data, ctx) => {

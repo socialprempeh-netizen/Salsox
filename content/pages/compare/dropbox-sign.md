@@ -2,11 +2,11 @@
 title: "{site} vs Dropbox Sign (HelloSign): an honest comparison"
 description: "{site} vs Dropbox Sign (formerly HelloSign): published prices, sending limits, templates, payments and mobile signing, checked against its pricing page."
 h1: "{site} vs Dropbox Sign"
-lede: "Dropbox Sign, known as HelloSign until 2022, offers unlimited signature requests on its paid plans and a polished, template-friendly sender experience. {site} is cheaper for one sender and adds payment collection, but has no templates. The details follow."
+lede: "Dropbox Sign, known as HelloSign until 2022, offers unlimited signature requests on its paid plans and a polished, template-friendly sender experience. {site} is cheaper for one sender and adds payment collection, but its templates are a ready-made library rather than your own documents. The details follow."
 primaryKeyword: "dropbox sign"
 aliases: ["hellosign", "salsox vs dropbox sign", "dropbox sign vs salsox", "hellosign comparison"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-15
 breadcrumb: "vs Dropbox Sign"
 competitor:
   name: "Dropbox Sign"
@@ -23,7 +23,7 @@ faq:
   - q: "Does Dropbox Sign collect payments with a signature?"
     a: "Payment collection is not listed on Dropbox Sign's pricing page. {site} includes Sign & Pay on its Business plan."
   - q: "Does {site} have templates like Dropbox Sign?"
-    a: "No. Dropbox Sign lists templates on every plan. {site} does not offer reusable templates today; Quick Send places fields automatically for simple documents instead."
+    a: "Partly. {site} has a library of ready-made templates that open with their signature fields in place, and paid plans can save customised copies. It cannot yet turn your own uploaded documents into reusable templates, which Dropbox Sign lists on every plan."
 related: ["/vs/docusign", "/vs/pandadoc", "/vs/signnow", "/online-esignature", "/business-esignature", "/pricing"]
 ---
 
@@ -36,14 +36,14 @@ Dropbox Sign's figures were taken from its pricing page on **6 October 2026**, i
 | One-sender plan | Personal: $9/month or $90/year | Essentials: $15/month, or $120.60/year billed yearly |
 | Sending | No count on paid plans (fair use) | Unlimited signature requests on paid plans |
 | Small team plan | No team seats today | Standard: $25 per user per month, or $17.50 billed yearly, 2 or more users |
-| Templates | Not offered | Listed on every plan |
+| Templates | Ready-made library; your own PDFs are set up each time | Your own documents, on every plan |
 | Bulk send | Not offered | Standard and above |
 | Payment collection | Business plan (Stripe or Paystack) | Not listed on the pricing page |
 | Signing without an account | Yes | Yes |
 
 ## Where Dropbox Sign is stronger
 
-Dropbox Sign's pricing page lists **templates** and **signer attachments** on every plan and **bulk send** from Standard. If you send the same agreement over and over, templates save setup time on each send, and {site} does not have them. Dropbox Sign also has team plans with per-user administration, and it fits naturally if your files already live in Dropbox.
+Dropbox Sign's pricing page lists **templates** and **signer attachments** on every plan and **bulk send** from Standard. If you send the same agreement of your own over and over, templates save setup time on each send; {site} offers ready-made templates but cannot yet save your own documents as templates. Dropbox Sign also has team plans with per-user administration, and it fits naturally if your files already live in Dropbox.
 
 ## Where {site} is different
 
@@ -61,7 +61,7 @@ Dropbox Sign's pricing page lists **templates** and **signer attachments** on ev
 
 ## Switching from Dropbox Sign
 
-Moving is mostly a matter of keeping your archive. Before your subscription ends, download your completed documents and their audit trails from Dropbox Sign; they remain valid records of what was signed, and nothing needs to be signed again. Templates do not carry over, because {site} has none: for each new agreement you upload the PDF and either place fields in the editor or let Quick Send add a signature and date for each signer. If you sent the same few documents through templates, try one of them in {site} first and time it, so you know what the change costs you in practice. Signers notice little difference: they still receive a link and sign without an account.
+Moving is mostly a matter of keeping your archive. Before your subscription ends, download your completed documents and their audit trails from Dropbox Sign; they remain valid records of what was signed, and nothing needs to be signed again. Your Dropbox Sign templates do not carry over, and {site} cannot yet store your own documents as templates: for each new agreement you start from one of its ready-made templates, or upload the PDF and either place fields in the editor or let Quick Send add a signature and date for each signer. If you sent the same few documents through templates, try one of them in {site} first and time it, so you know what the change costs you in practice. Signers notice little difference: they still receive a link and sign without an account.
 
 ## Which should you choose?
 
