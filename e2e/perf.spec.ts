@@ -1,6 +1,9 @@
-import { test, type Page, type CDPSession } from "@playwright/test"
+import { test, type Page } from "@playwright/test"
 import fs from "node:fs"
 import { freshEmail, quickSend, samplePdf, signUp, tokenFor } from "./helpers/esign"
+// Throttling, observers and the load measurement moved to helpers/perf.ts,
+// shared with perf-competitors.spec.ts so both measure the same way.
+import { OBSERVE, measureLoad as measure, throttle, type Profile, type Result } from "./helpers/perf"
 
 /**
  * Performance measurement: page loads and in-app navigation, as a phone and
@@ -26,92 +29,13 @@ const report = process.env.PERF_REPORT
 test.skip(!report, "set PERF_REPORT (and E2E_BASE_URL to a production build) to measure")
 test.describe.configure({ mode: "serial" })
 
-type Profile = "mobile" | "desktop"
-type Result = Record<string, number | string>
 const results: Result[] = []
 /** Writes what has been measured so far, so a run cut short still reports it. */
 const save = () => fs.writeFileSync(report!, JSON.stringify(results, null, 2))
 
-/**
- * Network and CPU conditions for `profile`. `cold` turns the browser cache
- * off, for first-visit page loads; the in-app interactions keep it on, as a
- * real visit does (the scripts it already loaded stay loaded).
- */
-async function throttle(cdp: CDPSession, profile: Profile, cold = true) {
-  await cdp.send("Network.enable")
-  await cdp.send("Network.setCacheDisabled", { cacheDisabled: cold })
-  if (profile === "mobile") {
-    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 })
-    await cdp.send("Network.emulateNetworkConditions", {
-      offline: false,
-      latency: 150,
-      downloadThroughput: (1.6 * 1024 * 1024) / 8,
-      uploadThroughput: (750 * 1024) / 8,
-    })
-  }
-}
-
-/** Starts observers before the page's own scripts, so nothing is missed. */
-const OBSERVE = () => {
-  const w = window as unknown as { __perf: { lcp: number; cls: number; tbt: number; longTasks: number } }
-  w.__perf = { lcp: 0, cls: 0, tbt: 0, longTasks: 0 }
-  new PerformanceObserver((l) => l.getEntries().forEach((e) => (w.__perf.lcp = e.startTime))).observe({ type: "largest-contentful-paint", buffered: true })
-  new PerformanceObserver((l) =>
-    l.getEntries().forEach((e) => {
-      const shift = e as PerformanceEntry & { value: number; hadRecentInput: boolean }
-      if (!shift.hadRecentInput) w.__perf.cls += shift.value
-    })
-  ).observe({ type: "layout-shift", buffered: true })
-  new PerformanceObserver((l) =>
-    l.getEntries().forEach((e) => {
-      w.__perf.longTasks++
-      w.__perf.tbt += Math.max(0, e.duration - 50)
-    })
-  ).observe({ type: "longtask", buffered: true })
-}
-
-/** Loads `path` cold and records its metrics. */
-async function measureLoad(page: Page, cdp: CDPSession, label: string, path: string, profile: Profile) {
-  let js = 0
-  let total = 0
-  let requests = 0
-  const sizes = new Map<string, { type: string }>()
-  const types = (e: { requestId: string; type?: string }) => sizes.set(e.requestId, { type: e.type ?? "" })
-  const finished = (e: { requestId: string; encodedDataLength: number }) => {
-    requests++
-    total += e.encodedDataLength
-    if (sizes.get(e.requestId)?.type === "Script") js += e.encodedDataLength
-  }
-  cdp.on("Network.responseReceived", types)
-  cdp.on("Network.loadingFinished", finished)
-
-  const started = Date.now()
-  await page.goto(path, { waitUntil: "load", timeout: 120_000 })
-  const loadMs = Date.now() - started
-  await page.waitForLoadState("networkidle", { timeout: 60_000 }).catch(() => {})
-  await page.waitForTimeout(1500)
-  const metrics = await page.evaluate(() => {
-    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming
-    const fcp = performance.getEntriesByName("first-contentful-paint")[0]?.startTime ?? 0
-    const w = window as unknown as { __perf: { lcp: number; cls: number; tbt: number; longTasks: number } }
-    return { ttfb: nav.responseStart, fcp, lcp: w.__perf.lcp, cls: w.__perf.cls, tbt: w.__perf.tbt, longTasks: w.__perf.longTasks, domContentLoaded: nav.domContentLoadedEventEnd }
-  })
-  cdp.off("Network.responseReceived", types)
-  cdp.off("Network.loadingFinished", finished)
-
-  results.push({
-    profile,
-    page: label,
-    ttfbMs: Math.round(metrics.ttfb),
-    fcpMs: Math.round(metrics.fcp),
-    lcpMs: Math.round(metrics.lcp),
-    cls: Number(metrics.cls.toFixed(3)),
-    tbtMs: Math.round(metrics.tbt),
-    loadMs,
-    jsKB: Math.round(js / 1024),
-    totalKB: Math.round(total / 1024),
-    requests,
-  })
+/** Loads `path` cold, records its metrics, and saves what has been measured. */
+const measureLoad = async (page: Page, cdp: Parameters<typeof measure>[1], label: string, path: string, profile: Profile) => {
+  await measure(page, cdp, label, path, profile, (r) => results.push(r))
   save()
 }
 
