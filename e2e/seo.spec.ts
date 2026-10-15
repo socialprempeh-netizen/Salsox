@@ -52,7 +52,7 @@ test("every sitemap URL passes the crawler audit, and private pages stay private
   // Structured data a page promises is there.
   const byPath = (suffix: string) => result.pages.find((p) => p.url.endsWith(suffix))!
   expect(byPath("/sign-pdf").jsonLdTypes).toEqual(expect.arrayContaining(["WebApplication", "BreadcrumbList", "FAQPage", "WebPage"]))
-  expect(byPath("/compare/docusign").jsonLdTypes).toEqual(expect.arrayContaining(["BreadcrumbList", "FAQPage"]))
+  expect(byPath("/vs/docusign").jsonLdTypes).toEqual(expect.arrayContaining(["BreadcrumbList", "FAQPage"]))
   expect(byPath("/blog/how-to-sign-a-pdf").jsonLdTypes).toEqual(expect.arrayContaining(["Article", "BreadcrumbList", "FAQPage"]))
 })
 
@@ -60,7 +60,9 @@ test("overlapping URLs redirect permanently, and unknown URLs are real 404s", as
   for (const [from, to] of [
     ["/sign-pdf-online", "/sign-pdf"],
     ["/docusign-alternative", "/alternatives/docusign"],
-    ["/vs/hellosign", "/compare/dropbox-sign"],
+    ["/vs/hellosign", "/vs/dropbox-sign"],
+    // The comparisons moved from /compare/{slug} to /vs/{slug}.
+    ["/compare/docusign", "/vs/docusign"],
     ["/resources", "/blog"],
   ]) {
     const res = await request.get(from, { maxRedirects: 0 })

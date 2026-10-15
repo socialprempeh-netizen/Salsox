@@ -35,6 +35,8 @@ export async function getSiteNav(): Promise<SiteNav> {
       compare: t("menu.compare"),
       allComparisons: t("menu.allComparisons"),
       resources: t("menu.resources"),
+      templates: t("menu.templates"),
+      templatesBlurb: t("menu.templatesBlurb"),
       blog: t("blog"),
       blogBlurb: t("menu.blogBlurb"),
       docs: t("menu.docs"),

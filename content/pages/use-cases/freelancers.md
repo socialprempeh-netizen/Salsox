@@ -17,7 +17,7 @@ faq:
     a: "If you sign up three clients or fewer a month, it may be. It sends 3 documents a month with the full signing experience. The free PDF tools also let you sign documents clients send you."
   - q: "What if my client is not technical?"
     a: "They need nothing but the link. No account, no app; it works on a phone, and you can send the link by WhatsApp or SMS if they do not check email."
-related: ["/business-esignature", "/compare/pandadoc", "/free-esignature", "/sign-pdf", "/pricing"]
+related: ["/business-esignature", "/vs/pandadoc", "/free-esignature", "/sign-pdf", "/pricing"]
 ---
 
 ## Why the contract step loses freelancers work
@@ -50,4 +50,4 @@ Sometimes the client sends the paperwork: an NDA, a supplier form, a framework a
 
 ## Which plan
 
-Start free: three documents a month, every month. When you are signing up more clients than that, Personal removes the count; Business adds the deposit at signing and costs less per year than chasing one late invoice. Compare the plans on the [pricing page](/pricing), or read how {site} compares with [PandaDoc](/compare/pandadoc) if you also need proposal templates.
+Start free: three documents a month, every month. When you are signing up more clients than that, Personal removes the count; Business adds the deposit at signing and costs less per year than chasing one late invoice. Compare the plans on the [pricing page](/pricing), or read how {site} compares with [PandaDoc](/vs/pandadoc) if you also need proposal templates.

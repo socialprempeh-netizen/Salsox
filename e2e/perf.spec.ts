@@ -66,7 +66,7 @@ for (const profile of ["desktop", "mobile"] as const) {
       ["login", "/login"],
       ["tool: sign PDF", "/sign-pdf"],
       ["blog post", "/blog/how-to-sign-a-pdf"],
-      ["compare: DocuSign", "/compare/docusign"],
+      ["compare: DocuSign", "/vs/docusign"],
     ] as const) {
       await throttle(cdp, "desktop")
       await page.goto("about:blank")

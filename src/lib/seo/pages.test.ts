@@ -19,7 +19,7 @@ describe("registry basics", () => {
   it("puts each kind at its URL", () => {
     expect(pagePath("tool", "sign-pdf")).toBe("/sign-pdf")
     expect(pagePath("solution", "online-esignature")).toBe("/online-esignature")
-    expect(pagePath("comparison", "docusign")).toBe("/compare/docusign")
+    expect(pagePath("comparison", "docusign")).toBe("/vs/docusign")
     expect(pagePath("alternative", "docusign")).toBe("/alternatives/docusign")
     expect(pagePath("use-case", "hr")).toBe("/esignature-for/hr")
   })

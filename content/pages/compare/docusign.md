@@ -24,7 +24,7 @@ faq:
     a: "A great deal: templates, bulk send, conditional routing, a public API, hundreds of integrations, team administration and enterprise controls. If you rely on those, DocuSign is the stronger choice."
   - q: "Can I move my signed documents from DocuSign to {site}?"
     a: "Download your completed PDFs from DocuSign and keep them as your archive. {site} does not import another provider's envelopes or audit trails; new documents start fresh."
-related: ["/alternatives/docusign", "/compare/dropbox-sign", "/electronic-signature-software", "/free-esignature", "/pricing"]
+related: ["/alternatives/docusign", "/vs/dropbox-sign", "/electronic-signature-software", "/free-esignature", "/pricing"]
 ---
 
 ## At a glance

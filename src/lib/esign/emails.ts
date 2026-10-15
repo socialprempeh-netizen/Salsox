@@ -15,6 +15,7 @@ import { routing } from "@/i18n/routing"
 import { siteConfig } from "@/config/site"
 import { baseTemplate, escapeHtml } from "@/lib/email"
 import { deliver } from "@/lib/email-delivery"
+import { signedViaHref } from "./viral"
 
 function esignEmailStrings() {
   return getTranslations({ locale: routing.defaultLocale, namespace: "esignEmail" })
@@ -133,13 +134,27 @@ export async function sendDocumentCompleted(args: {
   downloadUrl: string
   /** Whether the sealed copy has the certificate page (a Business feature). */
   withCertificate?: boolean
+  /**
+   * A signer rather than the sender: their copy's footer also offers to send
+   * their own documents. The sender already has an account.
+   */
+  toSigner?: boolean
 }): Promise<EmailOutcome> {
   const t = await esignEmailStrings()
-  const html = baseTemplate(`
+  // The branded footer: this email carries the signed copy and its audit
+  // trail, so it is the one most often kept and forwarded.
+  const brand = t("brandFooter", { site: bold(escapeHtml(siteConfig.name)) })
+  const offer = args.toSigner
+    ? ` <a href="${signedViaHref("completed_email", siteConfig.url)}">${t("brandFooterCta", { site: escapeHtml(siteConfig.name) })}</a>`
+    : ""
+  const html = baseTemplate(
+    `
     <p>${t("hello", { name: escapeHtml(args.name) })}</p>
     <p>${t(args.withCertificate === false ? "completedIntroPlain" : "completedIntro", { title: bold(escapeHtml(args.title)) })}</p>
     <a href="${args.downloadUrl}" class="btn">${t("completedCta")}</a>
-  `)
+  `,
+    { footerNote: `${brand}${offer}` }
+  )
   return send("esign-completed", args.to, t("completedSubject", { title: args.title }), html, args.downloadUrl)
 }
 

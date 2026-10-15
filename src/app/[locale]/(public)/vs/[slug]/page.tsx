@@ -6,7 +6,8 @@ import { sitePageMetadata } from "@/lib/seo/page-metadata"
 import { SeoPageView } from "@/components/seo/seo-page-view"
 
 /**
- * /compare/{slug}: the "comparison" pages from content/pages (src/lib/seo/pages.ts).
+ * /vs/{slug}: the "comparison" pages from content/pages (src/lib/seo/pages.ts).
+ * Was /compare/{slug}; those URLs now 301 here (src/lib/seo/redirects.ts).
  * Static, generated at build; an unknown slug is a 404.
  */
 export const dynamicParams = false

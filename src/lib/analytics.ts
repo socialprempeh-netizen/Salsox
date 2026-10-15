@@ -11,6 +11,8 @@
  *   tool_opened      a free tool loaded a file (which tool)
  *   tool_downloaded  a free tool produced a file (which tool)
  *   cta_clicked      a signup or pricing call to action was used (where)
+ *   template_used    a free document template was copied or downloaded
+ *                    (which template, which action)
  *   sign_up          an account was created (channel, from attribution.ts)
  *   document_sent    a document went out for signature (via: quick_send or
  *                    editor), the end of the signup-to-first-document funnel
@@ -22,7 +24,7 @@
  */
 import { track as vercelTrack } from "@vercel/analytics"
 
-export type AnalyticsEvent = "tool_opened" | "tool_downloaded" | "cta_clicked" | "sign_up" | "document_sent"
+export type AnalyticsEvent = "tool_opened" | "tool_downloaded" | "cta_clicked" | "template_used" | "sign_up" | "document_sent"
 export type AnalyticsProps = Record<string, string | number | boolean>
 
 declare global {

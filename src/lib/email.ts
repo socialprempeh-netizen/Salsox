@@ -148,8 +148,12 @@ export async function sendSubscriptionCancelledEmail(to: string, name: string, e
  * beside the name; without one it is the name alone. Was a full-width accent
  * banner with a lightning-bolt emoji, rounded corners and slate greys (kept,
  * commented, below).
+ *
+ * `footerNote` is HTML set above the copyright line, for an email that says
+ * more about where it came from (the completed-document email's "Signed with"
+ * note). The caller escapes anything user-supplied in it.
  */
-export function baseTemplate(content: string) {
+export function baseTemplate(content: string, options: { footerNote?: string } = {}) {
   // Absolute, since an email has no site to resolve a path against.
   const mark = brand.mark ? (/^https?:\/\//.test(brand.mark) ? brand.mark : `${siteConfig.url}${brand.mark.startsWith("/") ? "" : "/"}${brand.mark}`) : null
   return `<!DOCTYPE html>
@@ -173,6 +177,8 @@ export function baseTemplate(content: string) {
   .btn { display: inline-block; background: ${emailAccent}; color: #ffffff !important; text-decoration: none; padding: 14px 24px; font-weight: 600; font-size: 16px; margin: 8px 0; }
   .footer { padding: 24px 40px; border-top: 1px solid #e4ddd6; text-align: center; }
   .footer p { margin: 0; font-size: 12px; color: #5e5c59; }
+  .footer .note { margin: 0 0 16px; padding-bottom: 16px; border-bottom: 1px solid #e4ddd6; font-size: 13px; line-height: 1.5; color: #3d3c3a; }
+  .footer .note a { color: ${emailAccent}; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -188,6 +194,7 @@ export function baseTemplate(content: string) {
     ${content}
   </div>
   <div class="footer">
+    ${options.footerNote ? `<p class="note">${options.footerNote}</p>` : ""}
     <p>© ${new Date().getFullYear()} ${siteConfig.name} · <a href="${siteConfig.url}" style="color:#5e5c59">${siteConfig.url.replace(/^https?:\/\//, "")}</a></p>
   </div>
 </div>

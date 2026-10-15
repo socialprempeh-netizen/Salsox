@@ -7,6 +7,7 @@ import { localizedPath } from "@/i18n/alternates"
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
 import { getPages, type SitePage } from "@/lib/seo/pages"
+import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 
 /**
  * Sitemap built from the real public routes plus the blog content on disk,
@@ -136,5 +137,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter((hub) => hub.pages.length > 0)
     .map((hub) => ({ url: `${siteConfig.url}${hub.path}`, changeFrequency: "monthly" as const, priority: 0.6, ...updatedOf(hub.pages) }))
 
-  return [...staticRoutes, ...registry, ...hubs, ...docs, ...posts, ...categories]
+  // The free templates (src/lib/templates.ts) and their hub, English only
+  // like the registry pages, dated by their newest change.
+  const templates = getTemplates()
+  const templateRoutes: MetadataRoute.Sitemap = templates.length
+    ? [
+        { url: `${siteConfig.url}${TEMPLATES_PATH}`, changeFrequency: "monthly" as const, priority: 0.7, ...newest(templates.map((t) => t.updated)) },
+        ...templates.map((t) => ({
+          url: `${siteConfig.url}${t.path}`,
+          lastModified: new Date(`${t.updated}T00:00:00Z`),
+          changeFrequency: "monthly" as const,
+          priority: 0.6,
+        })),
+      ]
+    : []
+
+  return [...staticRoutes, ...registry, ...hubs, ...templateRoutes, ...docs, ...posts, ...categories]
 }

@@ -33,11 +33,19 @@ export const SEO_REDIRECTS: SeoRedirect[] = [
   { source: "/e-signature", destination: "/online-esignature" },
   { source: "/electronic-signature", destination: "/online-esignature" },
   // Comparison wording people type, to the one comparison page each.
-  { source: "/vs/docusign", destination: "/compare/docusign" },
-  { source: "/vs/dropbox-sign", destination: "/compare/dropbox-sign" },
-  { source: "/vs/hellosign", destination: "/compare/dropbox-sign" },
-  { source: "/compare/hellosign", destination: "/compare/dropbox-sign" },
-  { source: "/vs/pandadoc", destination: "/compare/pandadoc" },
+  // Reversed when the comparisons moved from /compare/{slug} to /vs/{slug}:
+  // the /vs/ URLs are now the pages, and the old /compare/ URLs point at them.
+  // { source: "/vs/docusign", destination: "/compare/docusign" },
+  // { source: "/vs/dropbox-sign", destination: "/compare/dropbox-sign" },
+  // { source: "/vs/hellosign", destination: "/compare/dropbox-sign" },
+  // { source: "/compare/hellosign", destination: "/compare/dropbox-sign" },
+  // { source: "/vs/pandadoc", destination: "/compare/pandadoc" },
+  { source: "/compare/docusign", destination: "/vs/docusign" },
+  { source: "/compare/dropbox-sign", destination: "/vs/dropbox-sign" },
+  { source: "/compare/pandadoc", destination: "/vs/pandadoc" },
+  { source: "/vs/hellosign", destination: "/vs/dropbox-sign" },
+  { source: "/compare/hellosign", destination: "/vs/dropbox-sign" },
+  { source: "/vs/airslate-signnow", destination: "/vs/signnow" },
   // Blog and resources are one hub: /resources is the name some people expect.
   { source: "/resources", destination: "/blog" },
 ]

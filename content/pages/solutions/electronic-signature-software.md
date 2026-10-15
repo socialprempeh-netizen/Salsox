@@ -24,7 +24,7 @@ faq:
     a: "It has no reusable templates, no bulk send, no public API and no CRM integrations. If you need those today, a larger platform may suit you better; the comparison pages say where."
   - q: "Can I try it without paying?"
     a: "Yes. A free account sends 3 documents a month, and the free PDF tools work without an account."
-related: ["/online-esignature", "/document-signing-software", "/compare/docusign", "/business-esignature", "/pricing"]
+related: ["/online-esignature", "/document-signing-software", "/vs/docusign", "/business-esignature", "/pricing"]
 ---
 
 ## The checklist
@@ -59,7 +59,7 @@ Check whether you can export everything, not just a document at a time, and whet
 
 ### 7. What is missing?
 
-Every tool has gaps, and an honest vendor tells you. {site} does not offer reusable templates, bulk sending, a public API, team seats or CRM integrations today, and it handles PDFs only. If your workflow depends on those, the [DocuSign comparison](/compare/docusign) and the [PandaDoc comparison](/compare/pandadoc) explain where those platforms are stronger.
+Every tool has gaps, and an honest vendor tells you. {site} does not offer reusable templates, bulk sending, a public API, team seats or CRM integrations today, and it handles PDFs only. If your workflow depends on those, the [DocuSign comparison](/vs/docusign) and the [PandaDoc comparison](/vs/pandadoc) explain where those platforms are stronger.
 
 ## A short way to decide
 

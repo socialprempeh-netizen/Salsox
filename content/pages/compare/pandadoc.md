@@ -24,7 +24,7 @@ faq:
     a: "No. {site} signs PDFs you have already written. It has no document editor, content library, pricing tables or CRM integration."
   - q: "Can both collect payment?"
     a: "{site} Business collects a fee or deposit during signing through Stripe or Paystack. PandaDoc also offers payment collection; see its pricing page for which plans include it."
-related: ["/compare/docusign", "/compare/dropbox-sign", "/business-esignature", "/esignature-for/freelancers", "/pricing"]
+related: ["/vs/docusign", "/vs/dropbox-sign", "/vs/getaccept", "/business-esignature", "/esignature-for/freelancers", "/pricing"]
 ---
 
 ## Two different kinds of product

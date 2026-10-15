@@ -24,6 +24,8 @@ const text: NavText = {
   compare: "Compare",
   allComparisons: "All comparisons",
   resources: "Resources",
+  templates: "Templates",
+  templatesBlurb: "x",
   blog: "Blog",
   blogBlurb: "x",
   docs: "Docs",
@@ -43,7 +45,7 @@ const pages: NavPage[] = [
   // Alphabetical, as the registry loads them: the menu reorders.
   { kind: "tool", path: "/fill-and-sign-pdf", breadcrumb: "Fill and sign PDF", tool: "fill-and-sign-pdf" },
   { kind: "tool", path: "/sign-pdf", breadcrumb: "Sign PDF", tool: "sign-pdf" },
-  { kind: "comparison", path: "/compare/docusign", breadcrumb: "vs DocuSign" },
+  { kind: "comparison", path: "/vs/docusign", breadcrumb: "vs DocuSign" },
   { kind: "alternative", path: "/alternatives/docusign", breadcrumb: "DocuSign alternative" },
 ]
 
@@ -56,7 +58,7 @@ describe("buildSiteNav", () => {
     expect(nav.groups.map((g) => g.id)).toEqual(["why", "tools", "compare", "resources"])
     expect(hrefs(nav, "why")).toEqual(["/pdf-signature", "/esignature-for/hr", "/#features"])
     expect(hrefs(nav, "tools")).toEqual(["/sign-pdf", "/fill-and-sign-pdf"])
-    expect(hrefs(nav, "compare")).toEqual(["/compare/docusign", "/alternatives/docusign"])
+    expect(hrefs(nav, "compare")).toEqual(["/vs/docusign", "/alternatives/docusign"])
     // Straight to the plan cards, not the page's heading.
     expect(nav.pricing.href).toBe("/pricing#plans")
   })
@@ -81,6 +83,8 @@ describe("buildSiteNav", () => {
     const nav = buildSiteNav({ pages: pages.filter((p) => p.kind !== "comparison" && p.kind !== "alternative"), showBlog: false, text })
     expect(nav.groups.map((g) => g.id)).toEqual(["why", "tools", "resources"])
     expect(hrefs(nav, "resources")).not.toContain("/blog")
+    // The free templates lead the resources, with or without a blog.
+    expect(hrefs(nav, "resources")[0]).toBe("/templates")
   })
 })
 

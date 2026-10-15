@@ -17,7 +17,7 @@ faq:
     a: "Yes. Documents you completed in DocuSign remain signed. Download them, with their certificates of completion, before your subscription ends."
   - q: "How long does switching take?"
     a: "For most individuals, the time it takes to send one document: there is nothing to configure beyond your account, and signers need nothing."
-related: ["/compare/docusign", "/free-esignature", "/business-esignature", "/electronic-signature-software", "/pricing"]
+related: ["/vs/docusign", "/free-esignature", "/business-esignature", "/electronic-signature-software", "/pricing"]
 ---
 
 ## Why people look for an alternative
@@ -64,4 +64,4 @@ Small businesses usually feel the per-seat and per-envelope model most, because 
 2. **Send your next document from {site}.** Upload the PDF, add signers, send. There is nothing else to set up.
 3. **Cancel when you are ready.** Check DocuSign's renewal date so you do not pay for a period you will not use.
 
-For a side-by-side table of published prices and features, see [{site} vs DocuSign](/compare/docusign).
+For a side-by-side table of published prices and features, see [{site} vs DocuSign](/vs/docusign).

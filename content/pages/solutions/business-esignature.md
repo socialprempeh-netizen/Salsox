@@ -24,7 +24,7 @@ faq:
     a: "Yes, Business includes a 14-day free trial for an account that has not had a subscription before. You are emailed before any renewal."
   - q: "What is the audit certificate?"
     a: "A page appended to the signed PDF listing the document's fingerprints, every recipient and status, and the timestamped audit trail, plus a verification code and QR code anyone can check."
-related: ["/compare/pandadoc", "/esignature-for/freelancers", "/send-documents-for-signature", "/blog/document-approval-workflows", "/pricing"]
+related: ["/vs/pandadoc", "/esignature-for/freelancers", "/send-documents-for-signature", "/blog/document-approval-workflows", "/pricing"]
 ---
 
 ## The three things a business needs from a signature
@@ -52,4 +52,4 @@ If a client later disputes what they agreed to, you need more than a picture of 
 
 ## What to know before choosing it
 
-{site} is built for owners and small teams who send their own contracts. It does not offer team seats, shared templates, bulk sending, CRM integrations or an API. If those are central to how you work, the [PandaDoc comparison](/compare/pandadoc) explains when a document-automation suite is the better fit. If they are not, the Business plan costs $19 a month, or $190 a year, with a 14-day trial; the [pricing page](/pricing) has the details, and the guide to [document approval workflows](/blog/document-approval-workflows) shows how to set up a sign-off that matches how your business already works.
+{site} is built for owners and small teams who send their own contracts. It does not offer team seats, shared templates, bulk sending, CRM integrations or an API. If those are central to how you work, the [PandaDoc comparison](/vs/pandadoc) explains when a document-automation suite is the better fit. If they are not, the Business plan costs $19 a month, or $190 a year, with a 14-day trial; the [pricing page](/pricing) has the details, and the guide to [document approval workflows](/blog/document-approval-workflows) shows how to set up a sign-off that matches how your business already works.

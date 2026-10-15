@@ -24,7 +24,7 @@ faq:
     a: "Payment collection is not listed on Dropbox Sign's pricing page. {site} includes Sign & Pay on its Business plan."
   - q: "Does {site} have templates like Dropbox Sign?"
     a: "No. Dropbox Sign lists templates on every plan. {site} does not offer reusable templates today; Quick Send places fields automatically for simple documents instead."
-related: ["/compare/docusign", "/compare/pandadoc", "/online-esignature", "/business-esignature", "/pricing"]
+related: ["/vs/docusign", "/vs/pandadoc", "/vs/signnow", "/online-esignature", "/business-esignature", "/pricing"]
 ---
 
 ## At a glance

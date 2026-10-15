@@ -54,8 +54,13 @@ export type ToolId = (typeof TOOL_IDS)[number]
 /** Where each kind lives. Solutions and tools sit at the root: short, clean URLs for the queries they answer. */
 export function pagePath(kind: PageKind, slug: string): string {
   switch (kind) {
+    // Was `/compare/${slug}`. Moved to /vs/, the wording people type ("salsox
+    // vs docusign"); the old URLs 301 here (src/lib/seo/redirects.ts). The
+    // /compare hub keeps its URL: it lists comparisons and alternatives both.
+    // case "comparison":
+    //   return `/compare/${slug}`
     case "comparison":
-      return `/compare/${slug}`
+      return `/vs/${slug}`
     case "alternative":
       return `/alternatives/${slug}`
     case "use-case":

@@ -43,6 +43,8 @@ export type NavText = {
   compare: string
   allComparisons: string
   resources: string
+  templates: string
+  templatesBlurb: string
   blog: string
   blogBlurb: string
   docs: string
@@ -123,6 +125,9 @@ export function buildSiteNav({
     columns: [
       {
         links: [
+          // The free document templates (src/lib/templates.ts) lead: they are
+          // the resource most visitors come for.
+          { href: "/templates", label: text.templates, description: text.templatesBlurb },
           // An empty blog gets no link (hasPosts()).
           ...(showBlog ? [{ href: "/blog", label: text.blog, description: text.blogBlurb }] : []),
           { href: "/docs", label: text.docs, description: text.docsBlurb },

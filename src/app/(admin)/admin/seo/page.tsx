@@ -60,7 +60,7 @@ function Panel({ title, description, children }: { title: string; description?: 
 const SECTIONS: { key: string; test: (path: string) => boolean }[] = [
   { key: "tools", test: (p) => getPages({ kind: "tool" }).some((x) => x.path === p) || p === "/tools" },
   { key: "solutions", test: (p) => getPages({ kind: "solution" }).some((x) => x.path === p) },
-  { key: "compare", test: (p) => p.startsWith("/compare") || p.startsWith("/alternatives") },
+  { key: "compare", test: (p) => p.startsWith("/compare") || p.startsWith("/vs/") || p.startsWith("/alternatives") },
   { key: "useCases", test: (p) => p.startsWith("/esignature-for") },
   { key: "blog", test: (p) => p.startsWith("/blog") },
   { key: "docs", test: (p) => p.startsWith("/docs") },

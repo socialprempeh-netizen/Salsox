@@ -902,6 +902,8 @@
       "allComparisons": "All comparisons",
       "resources": "Resources",
       "blogBlurb": "Guides and news about signing online",
+      "templates": "Free templates",
+      "templatesBlurb": "NDAs, contracts, leases and invoices to copy",
       "docs": "Help and docs",
       "docsBlurb": "How to set up and use each feature",
       "verify": "Verify a document",
@@ -1225,6 +1227,8 @@
     "inviteIntro": "{sender} has asked you to review and sign {title}.",
     "invitePayment": "This document also asks for a payment of {amount}, which you can make securely at the end of signing.",
     "inviteCta": "Review and sign →",
+    "brandFooter": "Signed with {site}: e-signatures and payments, built for phones.",
+    "brandFooterCta": "Send your own documents with {site}, free.",
     "inviteMobile": "It works on any phone: no account and no app needed. It takes about a minute.",
     "inviteExpires": "This link is valid until {date}.",
     "completedSubject": "“{title}” is signed by everyone",
@@ -1656,7 +1660,10 @@
       "ccBody": "{sender} shared this document with you. There's nothing for you to sign.",
       "downloadSigned": "Download signed PDF",
       "viewDocument": "View the document",
-      "poweredBy": "Secured by {site}"
+      "poweredBy": "Secured by {site}",
+      "signedViaTitle": "Signed via {site}",
+      "signedViaBody": "Need something signed yourself? Send any PDF from your phone and get it signed, and paid if you like, the way you just did. The free plan sends 3 documents a month.",
+      "signedViaCta": "Try {site} free"
     },
     "payouts": {
       "title": "Payouts",
@@ -2049,5 +2056,51 @@
     "capUserYear": "{count} envelopes per user a year",
     "note": "{company} prices as listed on <source>its pricing page</source> on {date}, {billing}. Prices change, so check before you decide.",
     "compare": "Full comparison with {company}"
+  },
+  "templates": {
+    "metaTitle": "Free Document Templates: NDA, Contracts, Leases",
+    "metaDescription": "Free NDA, employment, freelance, lease and invoice templates. Read, copy or download each as a PDF, then get it signed online with {site}.",
+    "breadcrumbHome": "Home",
+    "breadcrumb": "Templates",
+    "h1": "Free document templates",
+    "lede": "NDAs, employment documents, freelance contracts, leases and invoices, written in plain English. Copy the text or download a PDF, fill in the blanks, then get it signed with {site}. No signup needed to use them.",
+    "category": {
+      "nda": "NDAs and confidentiality",
+      "employment": "Employment",
+      "freelance": "Freelance and services",
+      "lease": "Leases and rentals",
+      "invoice": "Invoices, quotes and payments"
+    },
+    "eyebrow": "Free template: {category}",
+    "sign": "Get it signed free",
+    "download": "Download PDF",
+    "copy": "Copy text",
+    "copied": "Copied",
+    "copyFailed": "Copy failed",
+    "signHint": "Fill in the blanks, then send it to {signers} for signature with {site}. The free plan sends 3 documents a month.",
+    "documentLabel": "Template text",
+    "disclaimer": "These templates are general starting points, not legal advice. Laws differ between countries and states: check that a template suits your situation, or ask a lawyer, before you rely on it.",
+    "howTitle": "How to use this template",
+    "steps": {
+      "fill": {
+        "title": "Fill in the blanks",
+        "body": "Copy the text into your editor, or download the PDF, and replace every highlighted [blank] with your details. Delete any clause that does not apply."
+      },
+      "download": {
+        "title": "Save it as a PDF",
+        "body": "Export your finished version as a PDF from Word, Google Docs or Pages, so it looks the same for everyone who opens it."
+      },
+      "send": {
+        "title": "Send it for signature",
+        "body": "Upload the PDF to {site}, add who signs, and send. Signers sign on their phone without an account, and everyone gets the signed copy with its audit trail."
+      }
+    },
+    "faq": "Questions",
+    "related": "More templates",
+    "allTemplates": "See all templates",
+    "ctaTitle": "Ready to get it signed?",
+    "ctaBody": "Upload the finished document to {site} and send it by email, WhatsApp or SMS. Signers sign one field at a time on their phone, and you can collect a payment in the same step.",
+    "ctaPricing": "See pricing",
+    "pdfFooter": "Template from {site}: {url}. A starting point, not legal advice."
   }
 }

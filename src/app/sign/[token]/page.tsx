@@ -18,6 +18,8 @@ import { siteConfig } from "@/config/site"
 import { confirmPayment, getSigningContext, markViewed } from "@/lib/esign/signing"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
 import { SigningWizard, type WizardField } from "@/components/esign/signing-wizard"
+import { SignedViaCard } from "@/components/esign/signed-via-card"
+import { signedViaHref } from "@/lib/esign/viral"
 import * as Sentry from "@sentry/nextjs"
 
 export const metadata: Metadata = {
@@ -77,6 +79,10 @@ export default async function SignPage({
     }[blocker]
     const Icon = status.icon
     const canDownload = document.status === "COMPLETED" && Boolean(document.sealedKey)
+    // The signer is done (or the whole document is): the moment to show what
+    // they just used. Other screens (expired, declined, waiting) keep the
+    // plain line, since the signer still has something to sort out.
+    const signedHere = blocker === "ALREADY_SIGNED" || (blocker === "DOCUMENT_NOT_PENDING" && document.status === "COMPLETED")
     return (
       <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center gap-4 px-4 py-10 text-center">
         <Icon className={`h-12 w-12 ${status.tone}`} />
@@ -98,7 +104,18 @@ export default async function SignPage({
             <a href={`/sign/${token}/file`} target="_blank" rel="noopener">{t("viewDocument")}</a>
           </Button>
         )}
-        <p className="pt-6 text-xs text-muted-foreground">{t("poweredBy", { site: siteConfig.name })}</p>
+        {/* Replaced by the "Signed via" card once the signer is done; kept below for the other screens.
+        <p className="pt-6 text-xs text-muted-foreground">{t("poweredBy", { site: siteConfig.name })}</p> */}
+        {signedHere ? (
+          <SignedViaCard
+            href={signedViaHref("signing_page")}
+            title={t("signedViaTitle", { site: siteConfig.name })}
+            body={t("signedViaBody")}
+            cta={t("signedViaCta", { site: siteConfig.name })}
+          />
+        ) : (
+          <p className="pt-6 text-xs text-muted-foreground">{t("poweredBy", { site: siteConfig.name })}</p>
+        )}
       </main>
     )
   }

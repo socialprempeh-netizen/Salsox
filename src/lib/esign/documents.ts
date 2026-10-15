@@ -675,6 +675,7 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
       title: document.title,
       downloadUrl: `${signingUrl(base, r.token)}/download`,
       withCertificate,
+      toSigner: true,
     })
   }
   return "done"

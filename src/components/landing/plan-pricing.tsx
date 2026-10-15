@@ -155,7 +155,7 @@ export async function PlanPricing({
               </a>
             ),
           })}
-          compare={{ href: "/compare/docusign", label: ta("compare", { company }) }}
+          compare={{ href: "/vs/docusign", label: ta("compare", { company }) }}
         />
 
         <Reveal delay={100}>

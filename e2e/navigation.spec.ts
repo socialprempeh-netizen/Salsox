@@ -78,7 +78,7 @@ for (const width of [360, 390]) {
     await menu.getByRole("button", { name: "Compare" }).click()
     await expect(menu.getByRole("link", { name: "All free tools" })).toHaveCount(0)
     await menu.getByRole("link", { name: "vs DocuSign" }).click()
-    await page.waitForURL("**/compare/docusign")
+    await page.waitForURL("**/vs/docusign")
     await expect(page.getByRole("dialog", { name: "Main" })).toHaveCount(0)
     await expectNoHorizontalScroll(page, `after phone menu @${width}`)
     await ctx.close()
