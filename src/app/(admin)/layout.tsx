@@ -9,6 +9,7 @@ import { Logo } from "@/components/logo"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { SidebarNav } from "@/components/dashboard/sidebar-nav"
 import { SidebarCollapseToggle } from "@/components/dashboard/sidebar-collapse-toggle"
+import { SectionTabs } from "@/components/admin/section-tabs"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
@@ -67,7 +68,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             pagination, which gains from the room, while the dashboard shows
             cards, which gain from the air. Same sidebar, different content,
             different measure. */}
-        <main className="mx-auto w-full max-w-6xl flex-1 p-6">{children}</main>
+        {/* min-w-0 here too: the section tab row scrolls inside its own strip. */}
+        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 p-6">
+          <SectionTabs />
+          {children}
+        </main>
       </div>
     </div>
     </ClientMessagesProvider>

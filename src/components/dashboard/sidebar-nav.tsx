@@ -11,14 +11,21 @@ import {
   Send,
   Wallet,
   LayoutGrid,
-  ShieldAlert,
-  MessagesSquare,
-  SearchCheck,
+  // Used only by the admin list replaced below (now commented out).
+  // ShieldAlert,
+  // MessagesSquare,
+  // SearchCheck,
   Users,
   Settings,
   Shield,
+  BarChart3,
+  Banknote,
+  Repeat,
+  LifeBuoy,
+  KeyRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { sectionFor, type AdminSectionId } from "@/lib/admin/sections"
 
 // Keep in sync with mobile-nav.tsx — same sections, rendered as the `md`+
 // sidebar. Client component so the current route can stay highlighted.
@@ -33,14 +40,30 @@ const menus = {
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],
+  // Replaced by the eight sections of src/lib/admin/sections.ts. These pages
+  // all still exist, as tabs inside their section (Customers under Users,
+  // Moderation under Support & System Health, Outreach and SEO health under
+  // Analytics).
+  // admin: [
+  //   { href: "/admin", key: "overview", icon: LayoutGrid, exact: true },
+  //   { href: "/admin/customers", key: "customers", icon: Users },
+  //   { href: "/admin/moderation", key: "moderation", icon: ShieldAlert },
+  //   { href: "/admin/outreach", key: "outreach", icon: MessagesSquare },
+  //   { href: "/admin/seo", key: "seo", icon: SearchCheck },
+  // ],
+  // `section`: lit by sectionFor(), so a tab inside the section (say
+  // /admin/customers under Users) highlights its section.
   admin: [
-    { href: "/admin", key: "overview", icon: LayoutGrid, exact: true },
-    { href: "/admin/customers", key: "customers", icon: Users },
-    { href: "/admin/moderation", key: "moderation", icon: ShieldAlert },
-    { href: "/admin/outreach", key: "outreach", icon: MessagesSquare },
-    { href: "/admin/seo", key: "seo", icon: SearchCheck },
+    { href: "/admin", key: "overview", icon: LayoutGrid, section: "overview" },
+    { href: "/admin/users", key: "users", icon: Users, section: "users" },
+    { href: "/admin/documents", key: "documents", icon: FileSignature, section: "documents" },
+    { href: "/admin/analytics", key: "analytics", icon: BarChart3, section: "analytics" },
+    { href: "/admin/revenue", key: "revenue", icon: Banknote, section: "revenue" },
+    { href: "/admin/subscriptions", key: "subscriptions", icon: Repeat, section: "subscriptions" },
+    { href: "/admin/health", key: "health", icon: LifeBuoy, section: "health" },
+    { href: "/admin/settings", key: "adminSettings", icon: KeyRound, section: "settings" },
   ],
-}
+} satisfies Record<string, { href: string; key: string; icon: unknown; exact?: boolean; section?: AdminSectionId }[]>
 
 function linkClass(active: boolean) {
   return cn(
@@ -72,8 +95,10 @@ export function SidebarNav({
   // would light Settings during the modal, and would reintroduce the stale
   // path after server-action redirects that this hook exists to avoid.
   const pathname = useRenderedPathname()
-  const isActive = (item: { href: string; exact?: boolean }) =>
-    item.exact
+  const isActive = (item: { href: string; exact?: boolean; section?: AdminSectionId }) =>
+    item.section
+      ? sectionFor(pathname)?.id === item.section
+      : item.exact
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(`${item.href}/`)
 

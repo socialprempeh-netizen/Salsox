@@ -94,7 +94,13 @@ export const siteConfig = {
       process.env.NEXT_PUBLIC_GITHUB_ORG_URL ||
       (isKitSite ? "https://github.com/openstarterkit" : null),
     /** X / Twitter profile — the footer icon hides when unset. */
-    x: process.env.NEXT_PUBLIC_X_URL || (isKitSite ? "https://x.com/openstarterkit" : null),
+    // Was `: null` off the kit site. The product's fallbacks below are
+    // PLACEHOLDERS until the accounts exist: set NEXT_PUBLIC_X_URL and
+    // NEXT_PUBLIC_LINKEDIN_URL to the real pages, or change these.
+    // x: process.env.NEXT_PUBLIC_X_URL || (isKitSite ? "https://x.com/openstarterkit" : null),
+    x: process.env.NEXT_PUBLIC_X_URL || (isKitSite ? "https://x.com/openstarterkit" : "https://x.com/salsox"),
+    /** LinkedIn company page — the footer icon hides when unset. Placeholder on the product site, as above. */
+    linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || (isKitSite ? null : "https://www.linkedin.com/company/salsox"),
     /**
      * Live demo URL. When set, "Sign in" and "Demo" on the public pages
      * point here instead of the local /login — useful when this deployment

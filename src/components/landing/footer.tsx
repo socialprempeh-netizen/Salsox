@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { GithubIcon } from "@/components/icons/github"
+import { LinkedinIcon } from "@/components/icons/linkedin"
 import { PoweredBy } from "@/components/powered-by"
 import { ContactDialog } from "@/components/landing/contact-dialog"
 import { Logo } from "@/components/logo"
@@ -88,6 +89,17 @@ export async function Footer() {
                 className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <XIcon />
+              </a>
+            )}
+            {siteConfig.links.linkedin && (
+              <a
+                href={siteConfig.links.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("linkedin")}
+                className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <LinkedinIcon />
               </a>
             )}
           </div>

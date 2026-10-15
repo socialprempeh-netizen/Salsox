@@ -1,416 +1,126 @@
-import { getCurrentUser } from "@/lib/auth"
-import { getFormatter, getTranslations } from "next-intl/server"
+/**
+ * /admin: the Overview section of the admin console.
+ *
+ * The state of the product at a glance: users, revenue, documents and the
+ * alerts that need a look, each linking to the section that answers it. The
+ * page that used to live here (a users table, MRR tiles and the waitlist) was
+ * split up when the console was organised into sections
+ * (src/lib/admin/sections.ts): the table and waitlist are under Users, and the
+ * MRR tiles and chart are below.
+ *
+ * Only database queries: the live Stripe and Paystack figures load on the
+ * Revenue & Payments page, so this one stays quick to open.
+ */
+import Link from "next/link"
 import { redirect } from "next/navigation"
+import { getTranslations } from "next-intl/server"
+import { AlertTriangle, ArrowRight, Info, OctagonAlert } from "lucide-react"
+import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { PromoteUserButton } from "@/components/admin/promote-user-button"
-import { RevenueChart } from "@/components/admin/revenue-chart"
 import { mrrHistory, monthlyEquivalent } from "@/lib/metrics"
+import { PLAN_CURRENCY } from "@/lib/stripe-plan-prices"
+import { buildAlerts, type AlertSeverity } from "@/lib/admin/alerts"
+import { loadHealthCounts } from "@/lib/admin/health-data"
+import { daysAgo, rate } from "@/lib/admin/analytics"
+import { signAndPayVolume } from "@/lib/admin/revenue"
+import { RevenueChart } from "@/components/admin/revenue-chart"
+import { AdminPageHeader, CurrencyAmounts, money, Panel, StatGrid, StatTile } from "@/components/admin/admin-ui"
+import { cn } from "@/lib/utils"
 
-const ITEMS_PER_PAGE = 20
-
-// Takes the formatter instead of hardcoding "en-US": this runs at module
-// scope, so it cannot reach the request locale on its own.
-type Formatter = Awaited<ReturnType<typeof getFormatter>>
-
-function formatJoined(format: Formatter, date: Date) {
-  return format.dateTime(new Date(date), {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
+const SEVERITY: Record<AlertSeverity, { icon: typeof Info; className: string }> = {
+  critical: { icon: OctagonAlert, className: "border-destructive/40 bg-destructive/5 text-destructive" },
+  warning: { icon: AlertTriangle, className: "border-amber-500/40 bg-amber-500/5 text-amber-800 dark:text-amber-300" },
+  info: { icon: Info, className: "border-border bg-muted/30 text-foreground" },
 }
 
-function UserAvatar({
-  image,
-  name,
-  email,
-}: {
-  image: string | null
-  name: string | null
-  email: string
-}) {
-  return image ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={image} alt="" className="h-8 w-8 shrink-0 rounded-full" />
-  ) : (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-      {name?.[0] ?? email[0].toUpperCase()}
-    </div>
-  )
-}
-
-async function getAdminData(page: number, search: string) {
-  const where = search
-    ? { email: { contains: search, mode: "insensitive" as const } }
-    : {}
-
-  const [totalUsers, allSubscriptions, users, waitlistConfirmed, waitlistPending, waitlistRecent] =
-    await Promise.all([
-      prisma.user.count(),
-      // Every subscription, not just the active ones: the chart needs the rows
-      // that have since churned to show the revenue they produced while they
-      // were running. The active-only figures below are derived from the same
-      // result, so the page still makes a single query for all of them.
-      prisma.subscription.findMany({
-        include: { plan: true },
-      }),
-      prisma.user.findMany({
-        where,
-        include: { subscription: { include: { plan: true } } },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * ITEMS_PER_PAGE,
-        take: ITEMS_PER_PAGE,
-      }),
-      prisma.newsletterSubscriber.count({ where: { confirmedAt: { not: null }, unsubscribedAt: null } }),
-      prisma.newsletterSubscriber.count({ where: { confirmedAt: null, unsubscribedAt: null } }),
-      prisma.newsletterSubscriber.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
-    ])
-
-  const totalFiltered = search ? users.length : totalUsers
-
-  const activeSubscriptions = allSubscriptions.filter((sub) => sub.status === "ACTIVE")
-  const mrr = activeSubscriptions.reduce((sum, sub) => sum + monthlyEquivalent(sub.plan), 0)
-  const revenue = mrrHistory(allSubscriptions)
-
-  return {
-    totalUsers,
-    activeUsers: activeSubscriptions.length,
-    mrr,
-    revenue,
-    users,
-    totalPages: Math.ceil(totalFiltered / ITEMS_PER_PAGE),
-    waitlistConfirmed,
-    waitlistPending,
-    waitlistRecent,
-  }
-}
-
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string; search?: string }>
-}) {
-  const t = await getTranslations("admin")
-  const format = await getFormatter()
+export default async function AdminOverviewPage() {
   const user = await getCurrentUser()
   if (!user || user.role !== "ADMIN") redirect("/dashboard")
+  const t = await getTranslations("admin")
+  const to = await getTranslations("adminConsole.overview")
+  const tc = await getTranslations("adminConsole.common")
 
-  const params = await searchParams
-  // Guard against non-numeric ?page (e.g. ?page=abc → NaN), which would flow into
-  // Prisma's `skip` and throw a 500. Fall back to page 1 for anything invalid.
-  const parsedPage = Number.parseInt(params.page ?? "1", 10)
-  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1
-  const search = params.search ?? ""
+  const since30 = daysAgo(30)
+  const [totalUsers, newUsers, subscriptions, sent30, completed30, payments30, counts] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { createdAt: { gte: daysAgo(7) } } }),
+    // Every subscription, not just the active ones: the chart needs the rows
+    // that have since churned to show the revenue they produced while running.
+    prisma.subscription.findMany({ include: { plan: true } }),
+    prisma.document.count({ where: { sentAt: { gte: since30 } } }),
+    prisma.document.count({ where: { sentAt: { gte: since30 }, status: "COMPLETED" } }),
+    prisma.payment.findMany({ where: { createdAt: { gte: since30 } }, select: { id: true, provider: true, amount: true, currency: true, status: true } }),
+    loadHealthCounts(),
+  ])
 
-  const { totalUsers, activeUsers, mrr, revenue, users, totalPages, waitlistConfirmed, waitlistPending, waitlistRecent } =
-    await getAdminData(page, search)
+  const active = subscriptions.filter((s) => s.status === "ACTIVE")
+  const mrr = active.reduce((sum, s) => sum + monthlyEquivalent(s.plan), 0)
+  const completion = rate(completed30, sent30)
+  const alerts = buildAlerts(counts)
+  const volume = signAndPayVolume(payments30)
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      {/* Metrics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>{t("totalUsers")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{totalUsers}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>{t("activeSubscriptions")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{activeUsers}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>{t("mrr")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-primary">${(mrr / 100).toFixed(0)}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatTile label={t("totalUsers")} value={totalUsers} hint={to("newUsers", { count: newUsers })} href="/admin/users" />
+        <StatTile label={t("mrr")} value={money(mrr, PLAN_CURRENCY)} hint={to("activeSubscriptions", { count: active.length })} href="/admin/revenue" />
+        <StatTile label={to("documentsSent")} value={sent30} hint={to("completed", { count: completed30 })} href="/admin/documents" />
+        <StatTile label={to("completionRate")} value={completion === null ? "—" : `${Math.round(completion * 100)}%`} hint={to("last30")} href="/admin/analytics" />
+      </StatGrid>
 
-      {/* Recurring revenue over time */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("revenueTitle")}</CardTitle>
-          <CardDescription>{t("revenueSubtitle")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RevenueChart data={revenue} label={t("revenueTooltip")} />
-        </CardContent>
-      </Card>
-
-      {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>{t("usersTitle")}</CardTitle>
-              <CardDescription>{t("usersCount", { count: totalUsers })}</CardDescription>
-            </div>
-            <form className="flex gap-2">
-              <input
-                type="text"
-                name="search"
-                defaultValue={search}
-                placeholder={t("searchPlaceholder")}
-                className="h-9 w-full border border-border bg-secondary px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-64"
-              />
-              <button
-                type="submit"
-                className="h-9 bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                {t("search")}
-              </button>
-            </form>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Below `md` a 6-column table is unreadable: stack each user as a card. */}
-          <div className="space-y-3 md:hidden">
-            {users.map((user) => (
-              <div key={user.id} className="border border-border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <UserAvatar image={user.image} name={user.name} email={user.email} />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{user.name ?? "-"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-                    </div>
-                  </div>
-                  <Badge variant={user.role === "ADMIN" ? "default" : "outline"}>{user.role}</Badge>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {user.subscription ? (
-                    <Badge variant={user.subscription.status === "ACTIVE" ? "success" : "secondary"}>
-                      {user.subscription.status}
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">{t("free")}</Badge>
-                  )}
-                  <span className="text-sm text-muted-foreground">
-                    {user.subscription?.plan.name ?? t("free")}
-                  </span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {t("joined", { date: formatJoined(format, user.createdAt) })}
-                  </span>
-                </div>
-                {user.role !== "ADMIN" && (
-                  <div className="mt-3">
-                    <PromoteUserButton userId={user.id} currentRole={user.role} />
-                  </div>
-                )}
-              </div>
-            ))}
-            {users.length === 0 && (
-              <p className="py-8 text-center text-muted-foreground">{t("noUsers")}</p>
-            )}
-          </div>
-
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[180px]">{t("colUser")}</TableHead>
-                  <TableHead>{t("colPlan")}</TableHead>
-                  <TableHead>{t("colStatus")}</TableHead>
-                  <TableHead>{t("colRole")}</TableHead>
-                  <TableHead className="hidden lg:table-cell">{t("colJoined")}</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <UserAvatar image={user.image} name={user.name} email={user.email} />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{user.name ?? "-"}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{user.subscription?.plan.name ?? t("free")}</span>
-                    </TableCell>
-                    <TableCell>
-                      {user.subscription ? (
-                        <Badge
-                          variant={user.subscription.status === "ACTIVE" ? "success" : "secondary"}
-                        >
-                          {user.subscription.status}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("free")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === "ADMIN" ? "default" : "outline"}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">
-                        {formatJoined(format, user.createdAt)}
+      <div className="grid gap-6 lg:grid-cols-5">
+        <Panel title={to("alertsTitle")} hint={to("alertsHint")} className="lg:col-span-3" flush>
+          {alerts.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">{to("allClear")}</p>
+          ) : (
+            <ul className="space-y-2 p-4">
+              {alerts.map((alert) => {
+                const { icon: Icon, className } = SEVERITY[alert.severity]
+                return (
+                  <li key={alert.key}>
+                    <Link href={alert.href} className={cn("group flex items-start gap-3 border p-3 text-sm transition-colors hover:border-foreground/40", className)}>
+                      <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-medium">{to(`alert.${alert.key}.title`, { count: alert.count })}</span>
+                        <span className="block text-muted-foreground">{to(`alert.${alert.key}.body`, { count: alert.count })}</span>
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <PromoteUserButton userId={user.id} currentRole={user.role} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {users.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                      {t("noUsers")}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("page", { page, total: totalPages })}
-              </p>
-              <div className="flex gap-2">
-                {page > 1 && (
-                  <a
-                    href={`/admin?page=${page - 1}${search ? `&search=${search}` : ""}`}
-                    className="inline-flex h-9 items-center border border-border px-4 text-sm hover:bg-muted"
-                  >
-                    {t("previous")}
-                  </a>
-                )}
-                {page < totalPages && (
-                  <a
-                    href={`/admin?page=${page + 1}${search ? `&search=${search}` : ""}`}
-                    className="inline-flex h-9 items-center border border-border px-4 text-sm hover:bg-muted"
-                  >
-                    {t("next")}
-                  </a>
-                )}
-              </div>
-            </div>
+                      <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
           )}
-        </CardContent>
-      </Card>
+        </Panel>
 
-      {/* Newsletter / waitlist */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>{t("waitlistTitle")}</CardTitle>
-              <CardDescription>
-                {waitlistConfirmed} confirmed · {waitlistPending} pending confirmation
-              </CardDescription>
+        <Panel title={to("paymentsTitle")} hint={to("paymentsHint")} className="lg:col-span-2" index={3}>
+          <dl className="space-y-3 text-sm">
+            <div className="flex items-start justify-between gap-4">
+              <dt className="text-muted-foreground">{to("signAndPayVolume")}</dt>
+              <dd className="text-right font-medium">
+                <CurrencyAmounts totals={volume.paid} empty={tc("none")} className="items-end" />
+              </dd>
             </div>
-            {/* A file download from a route handler, not a page. `next/link`
-                would prefetch it, turning a CSV export into a background
-                request; the rule cannot tell a route handler from a page. */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-            <a
-              href="/api/admin/newsletter-export"
-              className="inline-flex h-9 items-center border border-border px-4 text-sm hover:bg-muted"
-            >
-              {t("exportCsv")}
-            </a>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Same story as the users table above: stack into cards below `md`. */}
-          <div className="space-y-3 md:hidden">
-            {waitlistRecent.map((sub) => (
-              <div key={sub.id} className="border border-border p-4">
-                <p className="truncate text-sm font-medium text-foreground">{sub.email}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {sub.unsubscribedAt ? (
-                    <Badge variant="outline">{t("unsubscribed")}</Badge>
-                  ) : sub.confirmedAt ? (
-                    <Badge variant="success">{t("confirmed")}</Badge>
-                  ) : (
-                    <Badge variant="secondary">{t("pending")}</Badge>
-                  )}
-                  <span className="text-sm text-muted-foreground">{sub.source}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {formatJoined(format, sub.createdAt)}
-                  </span>
-                </div>
-              </div>
-            ))}
-            {waitlistRecent.length === 0 && (
-              <p className="py-8 text-center text-muted-foreground">
-                {t("noSubscribers")}
-              </p>
-            )}
-          </div>
+            <div className="flex items-start justify-between gap-4">
+              <dt className="text-muted-foreground">{to("paidPayments")}</dt>
+              <dd className="font-medium tabular-nums">{volume.byProvider.STRIPE.counts.PAID + volume.byProvider.PAYSTACK.counts.PAID}</dd>
+            </div>
+            <div className="flex items-start justify-between gap-4">
+              <dt className="text-muted-foreground">{to("failedPayments")}</dt>
+              <dd className="font-medium tabular-nums">{volume.byProvider.STRIPE.counts.FAILED + volume.byProvider.PAYSTACK.counts.FAILED}</dd>
+            </div>
+          </dl>
+          <Link href="/admin/revenue" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline">
+            {to("openRevenue")} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </Panel>
+      </div>
 
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[220px]">{t("colEmail")}</TableHead>
-                  <TableHead>{t("colSource")}</TableHead>
-                  <TableHead>{t("colStatus")}</TableHead>
-                  <TableHead className="hidden lg:table-cell">{t("colRequested")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {waitlistRecent.map((sub) => (
-                  <TableRow key={sub.id}>
-                    <TableCell>
-                      <span className="text-sm font-medium text-foreground">{sub.email}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">{sub.source}</span>
-                    </TableCell>
-                    <TableCell>
-                      {sub.unsubscribedAt ? (
-                        <Badge variant="outline">{t("unsubscribed")}</Badge>
-                      ) : sub.confirmedAt ? (
-                        <Badge variant="success">{t("confirmed")}</Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("pending")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">
-                        {formatJoined(format, sub.createdAt)}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {waitlistRecent.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                      {t("noSubscribers")}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <Panel title={t("revenueTitle")} hint={t("revenueSubtitle")} index={4}>
+        <RevenueChart data={mrrHistory(subscriptions)} label={t("revenueTooltip")} />
+      </Panel>
     </div>
   )
 }

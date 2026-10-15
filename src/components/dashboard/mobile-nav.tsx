@@ -11,14 +11,21 @@ import {
   Send,
   Wallet,
   LayoutGrid,
-  ShieldAlert,
-  MessagesSquare,
-  SearchCheck,
+  // Used only by the admin list replaced below (now commented out).
+  // ShieldAlert,
+  // MessagesSquare,
+  // SearchCheck,
   Users,
   Menu,
   Settings,
   Shield,
+  BarChart3,
+  Banknote,
+  Repeat,
+  LifeBuoy,
+  KeyRound,
 } from "lucide-react"
+import { sectionFor } from "@/lib/admin/sections"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -39,12 +46,24 @@ const menus = {
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],
+  // Replaced by the eight sections of src/lib/admin/sections.ts, as in
+  // sidebar-nav.tsx; the pages below are tabs inside their sections now.
+  // admin: [
+  //   { href: "/admin", key: "overview", icon: LayoutGrid },
+  //   { href: "/admin/customers", key: "customers", icon: Users },
+  //   { href: "/admin/moderation", key: "moderation", icon: ShieldAlert },
+  //   { href: "/admin/outreach", key: "outreach", icon: MessagesSquare },
+  //   { href: "/admin/seo", key: "seo", icon: SearchCheck },
+  // ],
   admin: [
     { href: "/admin", key: "overview", icon: LayoutGrid },
-    { href: "/admin/customers", key: "customers", icon: Users },
-    { href: "/admin/moderation", key: "moderation", icon: ShieldAlert },
-    { href: "/admin/outreach", key: "outreach", icon: MessagesSquare },
-    { href: "/admin/seo", key: "seo", icon: SearchCheck },
+    { href: "/admin/users", key: "users", icon: Users },
+    { href: "/admin/documents", key: "documents", icon: FileSignature },
+    { href: "/admin/analytics", key: "analytics", icon: BarChart3 },
+    { href: "/admin/revenue", key: "revenue", icon: Banknote },
+    { href: "/admin/subscriptions", key: "subscriptions", icon: Repeat },
+    { href: "/admin/health", key: "health", icon: LifeBuoy },
+    { href: "/admin/settings", key: "adminSettings", icon: KeyRound },
   ],
 }
 
@@ -59,7 +78,11 @@ export function MobileNav({
   const t = useTranslations("dashboard.nav")
   const pathname = useRenderedPathname()
   const isActive = (href: string) =>
-    href === "/dashboard" || href === "/admin"
+    // Admin entries light by section, so a tab page (/admin/customers)
+    // highlights the section it sits in (Users).
+    variant === "admin"
+      ? sectionFor(pathname)?.href === href
+      : href === "/dashboard" || href === "/admin"
       ? pathname === href
       : pathname === href || pathname.startsWith(`${href}/`)
 
