@@ -138,7 +138,11 @@ function Panel({ group, pathname }: { group: NavGroup; pathname: string }) {
           wide ? "w-[36rem]" : "w-80"
         )}
       >
-        <div className={cn("grid gap-6 p-5", wide && "grid-cols-2")}>
+        {/* The links scroll inside the panel when the group outgrows the
+            screen (the "Why" group lists every solution and industry page),
+            so the footer link below always stays in view. Was:
+            <div className={cn("grid gap-6 p-5", wide && "grid-cols-2")}> */}
+        <div className={cn("grid max-h-[calc(100dvh-9rem)] gap-6 overflow-y-auto overscroll-contain p-5", wide && "grid-cols-2")}>
           {group.columns.map((column, i) => (
             <div key={i} className="min-w-0">
               {column.heading && (

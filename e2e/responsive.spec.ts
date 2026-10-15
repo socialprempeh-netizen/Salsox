@@ -59,6 +59,12 @@ for (const width of WIDTHS) {
       "/esignature-for/real-estate",
       "/vs/signnow",
       "/vs/getaccept",
+      // Competitor and feature pages: a comparison table, a roundup table,
+      // a feature page with benefits, and an audience page.
+      "/vs/adobe-acrobat-sign",
+      "/alternatives/pandadoc",
+      "/sign-and-pay",
+      "/esignature-for/enterprises",
       "/templates",
       "/templates/statement-of-work",
       "/tools",

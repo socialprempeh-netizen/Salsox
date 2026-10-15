@@ -46,6 +46,12 @@ export const SEO_REDIRECTS: SeoRedirect[] = [
   { source: "/vs/hellosign", destination: "/vs/dropbox-sign" },
   { source: "/compare/hellosign", destination: "/vs/dropbox-sign" },
   { source: "/vs/airslate-signnow", destination: "/vs/signnow" },
+  // Wording people type for the newer pages, to the one page each.
+  { source: "/vs/adobe-sign", destination: "/vs/adobe-acrobat-sign" },
+  { source: "/vs/jotform", destination: "/vs/jotform-sign" },
+  { source: "/audit-trail", destination: "/esignature-audit-trail" },
+  { source: "/collect-payments", destination: "/sign-and-pay" },
+  { source: "/contract-management", destination: "/online-contract-management" },
   // Blog and resources are one hub: /resources is the name some people expect.
   { source: "/resources", destination: "/blog" },
 ]

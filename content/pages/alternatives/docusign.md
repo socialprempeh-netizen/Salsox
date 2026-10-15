@@ -17,7 +17,7 @@ faq:
     a: "Yes. Documents you completed in DocuSign remain signed. Download them, with their certificates of completion, before your subscription ends."
   - q: "How long does switching take?"
     a: "For most individuals, the time it takes to send one document: there is nothing to configure beyond your account, and signers need nothing."
-related: ["/vs/docusign", "/free-esignature", "/business-esignature", "/electronic-signature-software", "/pricing"]
+related: ["/vs/docusign", "/vs/adobe-acrobat-sign", "/vs/signwell", "/vs/docuseal", "/free-esignature", "/business-esignature", "/pricing"]
 ---
 
 ## Why people look for an alternative
@@ -57,6 +57,23 @@ If you send only a few documents a month, the free plan may be all you need: thr
 ## For small businesses
 
 Small businesses usually feel the per-seat and per-envelope model most, because their volume is uneven and their team is small. The Business plan is built for this: one flat price, no envelope count, sequential signing and approvers for documents that need a sign-off, the audit certificate inside every signed PDF, and payment collection at the moment of signing. It has a 14-day free trial. The [business e-signature page](/business-esignature) covers it in detail.
+
+## Other DocuSign alternatives, compared fairly
+
+{site} is not the only option, and it is not the right one for everyone. Here are the other alternatives we have compared, with what each publishes about itself. Every figure was read from the company's own pricing page on the date shown on its comparison page; prices change, so check before you decide.
+
+| | Best for | Entry price, as published | Free option |
+|---|---|---|---|
+| [Adobe Acrobat Sign](/vs/adobe-acrobat-sign) | Teams that also need PDF editing | Acrobat Standard US$14.99/month on an annual plan | Free trial |
+| [Dropbox Sign](/vs/dropbox-sign) | Templates and teams on Dropbox | Essentials $15/month | See its pricing page |
+| [SignWell](/vs/signwell) | Simple signing with templates and an API allowance | Light $10/month billed yearly | 3 documents a month |
+| [DocuSeal](/vs/docuseal) | Self-hosting, API and embedding | Cloud Pro $20 per user/month | Open source edition; cloud Basic |
+| [Jotform Sign](/vs/jotform-sign) | Teams already using Jotform forms | Bronze $34/month billed yearly | 10 signed documents a month |
+| [signNow](/vs/signnow) | Templates, bulk send and many users | Not confirmed on its pricing page | 7-day trial |
+| [PandaDoc](/vs/pandadoc) | Proposals and quotes built in the tool | Starter $19 per seat/month billed annually | Free eSign plan |
+| {site} | Phone-first signing with payments | Personal $9/month | 3 documents a month |
+
+If you rely on DocuSign's API, integrations or enterprise controls, look first at the alternatives that publish those: DocuSeal and SignWell list APIs, Adobe lists Microsoft, Salesforce and Workday integrations. If you mainly need documents signed, and especially if clients pay deposits, compare the simpler tools on price per sender and on how signing feels on a phone. The [PandaDoc alternatives](/alternatives/pandadoc) page covers the sales-document side of the market.
 
 ## How to switch
 

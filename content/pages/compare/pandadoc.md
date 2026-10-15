@@ -4,7 +4,8 @@ description: "{site} vs PandaDoc: a focused e-signature tool against a document 
 h1: "{site} vs PandaDoc"
 lede: "PandaDoc and {site} overlap on e-signatures but are built for different jobs. PandaDoc is a document automation suite for building proposals, quotes and contracts; {site} is a focused tool for getting a PDF signed and paid. That difference decides most of the comparison."
 primaryKeyword: "pandadoc"
-aliases: ["salsox vs pandadoc", "pandadoc vs salsox", "pandadoc comparison", "pandadoc alternative"]
+# "pandadoc alternative" moved to the alternatives roundup (/alternatives/pandadoc), which now owns that intent.
+aliases: ["salsox vs pandadoc", "pandadoc vs salsox", "pandadoc comparison"]
 published: 2026-10-06
 updated: 2026-10-06
 breadcrumb: "vs PandaDoc"
