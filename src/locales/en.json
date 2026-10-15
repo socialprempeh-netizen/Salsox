@@ -48,12 +48,15 @@
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Password (min 8 characters)",
       "submit": "Create account",
+      "google": "Continue with Google",
+      "dividerEmail": "or sign up with email",
       "haveAccount": "Already have an account? <signin>Sign in</signin>",
       "legal": "By signing up, you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
       "errors": {
         "invalid": "Check your details: valid email and a password of at least 8 characters.",
         "exists": "An account with this email already exists. Sign in instead.",
         "rate": "Too many attempts. Try again in a few minutes.",
+        "google_unavailable": "Google sign-up isn't available right now. Create your account with your email and a password instead.",
         "generic": "Something went wrong. Try again."
       }
     },
@@ -632,9 +635,9 @@
     "$product": {
       "headlineHead": "",
       "headlineAccent": "",
-      "subtitle": "Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone. Unlimited sending on paid plans — fair-use limits apply to prevent spam.",
+      "subtitle": "Unlimited signing with no envelope caps. Send any PDF for signature in under a minute, collect payment in the same flow, and let people sign on their phone.",
       "cta": "Send your first document",
-      "trust": "Free to start · Cancel in one click · Export everything, any time",
+      "trust": "Free to start · No credit card required · Export everything, any time",
       "pill": "Sign & Pay with Stripe or Paystack"
     },
     "mock": {
@@ -1950,5 +1953,31 @@
       "canonical": "Canonical",
       "structured": "Structured data"
     }
+  },
+  "complianceBadges": {
+    "label": "Legal standing",
+    "esignTitle": "ESIGN Act and UETA",
+    "esignBody": "Legally binding electronic signatures in the United States.",
+    "eidasTitle": "eIDAS",
+    "eidasBody": "Valid across the EU as simple electronic signatures.",
+    "auditTitle": "Audit trail on every document",
+    "auditBody": "Signer consent, then each step logged with time, IP address and device.",
+    "note": "Most contracts can be signed this way. Some documents, such as wills or deeds in many places, still need ink or a qualified signature."
+  },
+  "priceAnchor": {
+    "title": "Unlimited signing. No envelope caps.",
+    "subtitle": "Every paid plan sends as many documents as you need. {company} counts envelopes on every plan it lists.",
+    "entry": "Entry plan",
+    "payments": "With payment collection",
+    "ownEntry": "{site} Personal",
+    "ownPayments": "{site} Business",
+    "competitorPlan": "{company} {plan}",
+    "perMonth": "/mo",
+    "perUserMonth": "/user/mo",
+    "noCap": "No envelope cap",
+    "capMonth": "{count} envelopes a month",
+    "capUserYear": "{count} envelopes per user a year",
+    "note": "{company} prices as listed on <source>its pricing page</source> on {date}, {billing}. Prices change, so check before you decide.",
+    "compare": "Full comparison with {company}"
   }
 }

@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { setRequestLocale } from "next-intl/server"
 import { Hero } from "@/components/landing/hero"
 import { Features } from "@/components/landing/features"
+import { ComplianceBadges } from "@/components/landing/compliance-badges"
+import { getTranslations } from "next-intl/server"
 import { ExploreLinks } from "@/components/landing/explore-links"
 import { Pricing } from "@/components/landing/pricing"
 import { PlanPricing } from "@/components/landing/plan-pricing"
@@ -72,6 +74,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       />
       {/* <Hero ctaHref={heroCtaHref({ isKitSite, signedIn: Boolean(await getCurrentUser()) })} /> */}
       <Hero ctaHrefs={{ signedOut: heroCtaHref({ isKitSite, signedIn: false }), signedIn: heroCtaHref({ isKitSite, signedIn: true }) }} />
+      {/* Legal standing, right under the promise: the first thing people
+          switching from another e-signature tool ask. A product's claim, so
+          not on the kit's own site. */}
+      {!isKitSite && <ComplianceStrip />}
       <Features />
       {/* Links into the solutions, free tools and comparisons: the start of
           the internal linking plan (explore-links.tsx). */}
@@ -79,5 +85,21 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       {isKitSite ? <Pricing /> : <PlanPricing />}
       <FAQ withJsonLd />
     </>
+  )
+}
+
+/** The compliance strip's words, from `complianceBadges` in en.json. */
+async function ComplianceStrip() {
+  const t = await getTranslations("complianceBadges")
+  return (
+    <ComplianceBadges
+      label={t("label")}
+      note={t("note")}
+      badges={[
+        { icon: "esign", title: t("esignTitle"), body: t("esignBody") },
+        { icon: "eidas", title: t("eidasTitle"), body: t("eidasBody") },
+        { icon: "audit", title: t("auditTitle"), body: t("auditBody") },
+      ]}
+    />
   )
 }

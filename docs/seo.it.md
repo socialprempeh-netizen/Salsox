@@ -79,6 +79,21 @@ Una traduzione è un file accanto a quello inglese: `content/pages/tools/sign-pd
 - **Iscrizioni per canale** sono registrate in prima parte. La prima volta che qualcuno arriva su una pagina pubblica, un cookie (`sx_src`, 30 giorni) registra il percorso di arrivo, l'host del referrer e gli eventuali tag `utm_*`. Non viene registrato nulla se il browser invia Global Privacy Control o Do Not Track. Quando viene creato un account, il server salva questi dati e il canale sull'utente. `/admin/seo` mostra le iscrizioni per canale e le pagine di arrivo delle iscrizioni da ricerca organica.
 - **Google Analytics 4** si carica solo quando `NEXT_PUBLIC_GA_MEASUREMENT_ID` è impostato, dopo che la pagina è inattiva, e solo allora la Content-Security-Policy consente gli host di Google. Riceve le visualizzazioni di pagina e questi eventi: `tool_opened`, `tool_downloaded`, `cta_clicked` e `sign_up` (con il canale). Non inviare mai agli analytics nomi di file, email o contenuti dei documenti. GA imposta cookie: a seconda di dove si trovano i tuoi visitatori, potrebbe servire un banner di consenso prima di attivarlo.
 - **Vercel Analytics** riceve gli stessi eventi quando è montato (gli eventi personalizzati richiedono un piano Vercel che li includa).
+- **PostHog** si carica solo quando `NEXT_PUBLIC_POSTHOG_KEY` è impostato (`NEXT_PUBLIC_POSTHOG_HOST` sceglie il cloud USA o UE), dopo che la pagina è inattiva, e solo allora la Content-Security-Policy consente il suo host di ingestione. Riceve le visualizzazioni di pagina con i loro tag `utm_*`, gli eventi sopra e `document_sent` (con `via`: `quick_send` o `editor`), che chiude il funnel dall'iscrizione al primo documento. Funziona senza cookie: nessun cookie, nessuno storage nel browser, nessuno identificato, niente autocapture né registrazione delle sessioni, e mai sulle pagine di firma. Attiva anche la modalità senza cookie nelle impostazioni del progetto PostHog, altrimenti gli eventi vengono scartati. Gli indirizzi delle pagine vengono ripuliti prima di partire: ogni parametro di query tranne `utm_*` viene rimosso, e un token di firma nel percorso viene sostituito.
+
+### Misurare l'outreach
+
+Ogni link che pubblichi tu porta i tag `utm_*`, così ogni canale compare separato in PostHog e su `/admin/seo`. Un messaggio diretto non ha referrer, quindi senza tag conta come visita diretta. Usa sempre gli stessi valori in minuscolo:
+
+| Canale | `utm_source` | `utm_medium` |
+|---|---|---|
+| Messaggi diretti | `dm` (o la piattaforma: `linkedin`, `whatsapp`) | `dm` |
+| Reddit | `reddit` | `social` |
+| Product Hunt | `producthunt` | `referral` |
+| Post su X, LinkedIn | `x`, `linkedin` | `social` |
+| Newsletter o email | il nome della lista | `email` |
+
+Aggiungi `utm_campaign` per l'iniziativa a cui appartiene (`launch`, `pricing-post`). Esempio: `https://salsox.com/?utm_source=reddit&utm_medium=social&utm_campaign=launch`. La prima visita con tag è quella a cui viene attribuita un'iscrizione.
 
 ## Test
 

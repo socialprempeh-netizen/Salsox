@@ -16,6 +16,8 @@ import { singleLocale } from "@/i18n/static-locale"
 import { ClientMessagesProvider } from "@/i18n/client-provider"
 import "./globals.css"
 import { GoogleAnalytics } from "@/components/analytics/google-analytics"
+import { PostHogAnalytics } from "@/components/analytics/posthog"
+import { posthogConfig } from "@/lib/posthog-config"
 
 // const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 // One family for everything, as on pandadoc.com: 400 body, 600 buttons and
@@ -99,7 +101,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {process.env.NEXT_PUBLIC_DISABLE_ANALYTICS !== "true" && <Analytics />}
         {/* GA4, only when NEXT_PUBLIC_GA_MEASUREMENT_ID is set; loads when idle. */}
         <GoogleAnalytics />
+        {/* PostHog, only when NEXT_PUBLIC_POSTHOG_KEY is set: cookieless, loads when idle. */}
+        <PostHogSlot />
       </body>
     </html>
   )
+}
+
+/** Mounts PostHog when this deployment configures it (src/lib/posthog-config.ts). */
+function PostHogSlot() {
+  const config = posthogConfig(process.env)
+  return config ? <PostHogAnalytics config={config} /> : null
 }

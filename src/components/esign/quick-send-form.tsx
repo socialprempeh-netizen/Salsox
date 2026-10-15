@@ -25,6 +25,7 @@ import { toast } from "@/components/ui/sonner"
 import { PdfDropzone } from "./pdf-dropzone"
 import { useActionErrorToast } from "./plan-upsell"
 import { DEFAULT_EXPIRY_DAYS } from "@/lib/esign/limits"
+import { track } from "@/lib/analytics"
 import { clearRequestDraft, peekRequestDraft } from "@/lib/request-draft"
 
 /**
@@ -66,6 +67,8 @@ export function QuickSendForm({ confirmationNeeded = false }: { confirmationNeed
     if (state.ok && state.documentId) {
       // Sent: a prepared request has done its job.
       void clearRequestDraft()
+      // The end of the signup-to-first-document funnel (analytics.ts).
+      track("document_sent", { via: "quick_send" })
       // "Sent" only when the provider took every invitation. Otherwise the
       // document page opens without the success banner and shows who was not
       // reached, with a Resend button beside each of them.

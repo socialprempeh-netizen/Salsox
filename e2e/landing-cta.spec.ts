@@ -13,9 +13,9 @@ test("on a phone, 'Send your first document' opens sign up", async ({ browser })
   const page = await ctx.newPage()
   await page.goto("/")
   const cta = page.getByRole("link", { name: "Send your first document" })
-  await expect(cta).toHaveAttribute("href", "/signup")
+  await expect(cta).toHaveAttribute("href", "/signup?next=/dashboard/documents/quick-send")
   await cta.click()
-  await page.waitForURL("**/signup")
+  await page.waitForURL(/\/signup\?next=/)
   await ctx.close()
 })
 
@@ -23,9 +23,9 @@ test("on a desktop, 'Get started' in the navigation opens sign up", async ({ pag
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto("/")
   const getStarted = page.getByRole("link", { name: "Get started" })
-  await expect(getStarted).toHaveAttribute("href", "/signup")
+  await expect(getStarted).toHaveAttribute("href", "/signup?next=/dashboard/documents/quick-send")
   await getStarted.click()
-  await page.waitForURL("**/signup")
+  await page.waitForURL(/\/signup\?next=/)
 })
 
 // The landing page is static and rendered for a signed-out visitor; a signed-in

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@vercel/analytics", () => ({ track: vi.fn() }))
 
-import { safeProps, track } from "./analytics"
+import { expectPostHog, safeProps, setPostHogClient, track } from "./analytics"
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -27,5 +27,26 @@ describe("track", () => {
 
     vi.stubGlobal("window", { gtag: () => { throw new Error("blocked") } })
     expect(() => track("cta_clicked")).not.toThrow()
+  })
+})
+
+describe("PostHog", () => {
+  it("holds events sent before the SDK loads, then forwards them and everything after", () => {
+    vi.stubGlobal("window", {})
+    expectPostHog()
+    track("sign_up", { channel: "social", "Email Address": "a@b.co" })
+    const capture = vi.fn()
+    setPostHogClient({ capture })
+    expect(capture).toHaveBeenCalledWith("sign_up", { channel: "social" })
+    track("document_sent", { via: "quick_send" })
+    expect(capture).toHaveBeenLastCalledWith("document_sent", { via: "quick_send" })
+    setPostHogClient(null)
+  })
+
+  it("survives the client throwing", () => {
+    vi.stubGlobal("window", {})
+    setPostHogClient({ capture: () => { throw new Error("blocked") } })
+    expect(() => track("cta_clicked")).not.toThrow()
+    setPostHogClient(null)
   })
 })

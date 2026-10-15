@@ -87,6 +87,14 @@ describe("analytics hosts", () => {
     // Nothing else opens up for it.
     expect(on["script-src"]).toEqual(prod["script-src"])
   })
+
+  it("lets the browser reach PostHog's ingest host only when it is on, and loads no PostHog script", () => {
+    expect(contentSecurityPolicy({ dev: false })).not.toMatch(/posthog/)
+    const on = parse(contentSecurityPolicy({ dev: false, posthog: "https://eu.i.posthog.com" }))
+    expect(on["connect-src"]).toEqual(["'self'", "https://eu.i.posthog.com"])
+    expect(on["script-src"]).toEqual(prod["script-src"])
+    expect(on["img-src"]).toEqual(prod["img-src"])
+  })
 })
 
 describe("securityHeaders", () => {
