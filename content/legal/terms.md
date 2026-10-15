@@ -1,7 +1,7 @@
 ---
 title: "Terms of Service"
 description: "The agreement between you and Salsox: accounts, plans, Sign & Pay, acceptable use, and liability."
-updated: "2026-10-02"
+updated: "2026-10-11"
 reviewed: false
 ---
 
@@ -47,7 +47,11 @@ When a document asks a signer for a payment, the signer pays through Stripe or P
 - **You are the seller.** You are responsible for what you charge for, for delivering it, for honouring refunds you owe your customers, and for any taxes on what you collect.
 - **Automatic refunds.** If a payment arrives for a document that you cancelled, that expired or that was declined, or if a signer pays twice, Salsox refunds it to the payer automatically.
 - **Disputes and chargebacks.** If a payer disputes a payment with their bank, you are responsible for responding to it and for its cost, including the amount reversed and any provider fees. You authorise us and the payment provider to recover those amounts from your payout account or from future payouts.
+- **Processing fees.** The payment provider's processing fee on each Sign & Pay payment comes out of what you receive, at the provider's actual cost. Paystack deducts its fee when it settles the payment to you. Stripe charges its fee to Salsox, and we deduct exactly that amount from the payment transferred to you once it succeeds. Salsox adds no markup and keeps no part of these fees. If Salsox refunds a payment automatically, Stripe's fee on it is not passed on to you.
+- **Platform fee.** Salsox charges no platform fee on Sign & Pay. If that changes, the fee is shown to you before it applies.
+<!-- Replaced on 2026-10-11, when processing fees started being passed through to senders at cost. Was:
 - **Fees.** Salsox may charge a platform fee on Sign & Pay payments. Any fee is shown to you before it applies.
+-->
 
 ## Acceptable use
 

@@ -192,6 +192,28 @@ export async function sendPaymentDisputed(args: {
   return send("esign-dispute", args.to, t("disputeSubject", { title: args.title }), html, args.url)
 }
 
+/**
+ * Tells the sender that a dispute they lost has been recovered from their
+ * Stripe balance: the follow-up to sendPaymentDisputed, sent only when the
+ * recovery actually took the money (payments/settle.ts, recoverLostDispute).
+ */
+export async function sendDisputeRecovered(args: {
+  to: string
+  name: string
+  title: string
+  amountLabel: string
+  url: string
+}): Promise<EmailOutcome> {
+  const t = await esignEmailStrings()
+  const html = baseTemplate(`
+    <p>${t("hello", { name: escapeHtml(args.name) })}</p>
+    <p>${t("disputeRecoveredIntro", { title: bold(escapeHtml(args.title)), amount: bold(escapeHtml(args.amountLabel)) })}</p>
+    <p>${t("disputeRecoveredWhy")}</p>
+    <a href="${args.url}" class="btn">${t("disputeCta")}</a>
+  `)
+  return send("esign-dispute-recovered", args.to, t("disputeRecoveredSubject", { title: args.title }), html, args.url)
+}
+
 export async function sendDocumentRejected(args: {
   to: string
   ownerName: string

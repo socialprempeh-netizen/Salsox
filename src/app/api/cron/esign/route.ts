@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { expireSweep, recoverStuckFinalizations, reminderSweep } from "@/lib/esign/documents"
 import { renewalNoticeSweep } from "@/lib/esign/renewal"
-import { reconcilePayments } from "@/lib/esign/payments/reconcile"
+import { reconcilePayments, recoverProcessorFees } from "@/lib/esign/payments/reconcile"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -38,7 +38,10 @@ export async function GET(request: Request) {
   }
 
   // const steps = { expire: expireSweep, remind: reminderSweep, reseal: resealSweep, renewals: renewalNoticeSweep }
-  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), renewals: renewalNoticeSweep }
+  // Was without `fees`. It retries passing a paid payment's processor fee on to
+  // the sender when that did not happen at confirmation (payments/reconcile.ts).
+  // const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), renewals: renewalNoticeSweep }
+  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), fees: () => recoverProcessorFees(), renewals: renewalNoticeSweep }
   const results: Record<string, number | string> = {}
   for (const [name, run] of Object.entries(steps)) {
     try {

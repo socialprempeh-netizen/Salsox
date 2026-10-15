@@ -4,31 +4,77 @@
  * Payout connection controls: Stripe Connect (redirects to Stripe's hosted
  * onboarding) and Paystack (subaccount from bank details).
  */
-import { useActionState, useEffect, useTransition } from "react"
+import { useActionState, useEffect, useState, useTransition } from "react"
 import { useTranslations } from "next-intl"
+import { motion, useReducedMotion } from "framer-motion"
 import { connectPaystackAction, connectStripeAction, refreshPayoutStatusAction, type PayoutState } from "@/app/actions/payouts"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/sonner"
 
-export function ConnectStripeButton({ connected }: { connected: boolean }) {
+/**
+ * Connect (or continue) Stripe. A first connection asks for the country of
+ * the sender's business or bank account, since Stripe creates the account
+ * for that country and it cannot be changed; continuing an account already
+ * created does not ask again. The server re-checks the country
+ * (connectStripeAction), so the picker only saves a round trip.
+ */
+export function ConnectStripeButton({
+  connected,
+  countries,
+}: {
+  connected: boolean
+  /** Named and sorted on the server (stripeCountryOptions), so hydration matches. */
+  countries: { code: string; name: string }[]
+}) {
   const t = useTranslations("esign.payouts")
+  const reduceMotion = useReducedMotion()
   const [pending, startTransition] = useTransition()
+  const [country, setCountry] = useState("")
+
+  const connect = () =>
+    startTransition(async () => {
+      // On success the action redirects to Stripe and never returns.
+      const result = await connectStripeAction(connected ? undefined : country)
+      if (result?.error) toast.error(result.error)
+    })
+
+  if (connected) {
+    return (
+      <Button loading={pending} variant="outline" onClick={connect}>
+        {t("stripeContinue")}
+      </Button>
+    )
+  }
+
   return (
-    <Button
-      loading={pending}
-      variant={connected ? "outline" : "primary"}
-      onClick={() =>
-        startTransition(async () => {
-          // On success the action redirects to Stripe and never returns.
-          const result = await connectStripeAction()
-          if (result?.error) toast.error(result.error)
-        })
-      }
+    <motion.div
+      className="space-y-3"
+      initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
     >
-      {connected ? t("stripeContinue") : t("stripeConnect")}
-    </Button>
+      <div className="space-y-1">
+        <Label htmlFor="stripeCountry">{t("stripeCountry")}</Label>
+        <select
+          id="stripeCountry"
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          aria-describedby="stripeCountryHint"
+          className="h-11 w-full border bg-background px-3 text-sm"
+        >
+          <option value="">{t("stripeCountryPick")}</option>
+          {countries.map((o) => (
+            <option key={o.code} value={o.code}>{o.name}</option>
+          ))}
+        </select>
+        <p id="stripeCountryHint" className="text-xs text-muted-foreground">{t("stripeCountryHint")}</p>
+      </div>
+      <Button loading={pending} disabled={!country} onClick={connect} className="w-full sm:w-auto">
+        {t("stripeConnect")}
+      </Button>
+    </motion.div>
   )
 }
 

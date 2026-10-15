@@ -32,6 +32,39 @@ export type VerifiedPayment = {
   currency?: string
 }
 
+/**
+ * The outcome of passing a payment's processor fee on to the sender
+ * (src/lib/esign/payments/fee-passthrough.ts).
+ * - recovered: taken from the sender's proceeds (now, or by an earlier run).
+ * - pending: the charge or its fee is not final yet; try again later.
+ * - notApplicable: nothing to take (a checkout from before pass-through,
+ *   a refunded charge).
+ * - unconvertible: the fee could not be stated in the transfer's currency
+ *   without guessing, so the platform kept it; reported, not retried.
+ */
+export type FeeRecovery =
+  | { status: "recovered"; amount: number; currency: string }
+  | { status: "pending" }
+  | { status: "notApplicable" }
+  | { status: "unconvertible"; fee: number; feeCurrency: string }
+
+/**
+ * The outcome of taking a lost dispute's cost back from the sender
+ * (src/lib/esign/payments/dispute-recovery.ts).
+ * - recovered: reversed from the sender's transfer; `created` is false when
+ *   an earlier run had already done it (nothing new happened).
+ * - notLost: the dispute is not lost (open, won, or an inquiry): nothing to do.
+ * - nothingToRecover: the transfer is already fully reversed (refunded), or
+ *   there is no transfer.
+ * - unconvertible: the loss could not be stated in the transfer's currency
+ *   without guessing; nothing reversed, reported instead.
+ */
+export type DisputeRecovery =
+  | { status: "recovered"; amount: number; currency: string; shortfall: number; created: boolean }
+  | { status: "notLost" }
+  | { status: "nothingToRecover" }
+  | { status: "unconvertible"; loss: number; lossCurrency: string }
+
 export type PayoutOnboarding =
   | { kind: "redirect"; url: string; externalAccountId: string }
   | { kind: "ready"; externalAccountId: string }
@@ -55,6 +88,21 @@ export interface SignAndPayProvider {
    * a payment already refunded counts as done, not as an error.
    */
   refund(args: { providerRef: string; paymentId: string }): Promise<{ refundId: string }>
+  /**
+   * Takes the processor's real fee on a paid payment from the sender's
+   * proceeds, when the provider charged it to the platform. Safe to call
+   * again: a fee already taken is reported as recovered, not taken twice.
+   * Absent for providers whose fee the sender already bears at settlement
+   * (Paystack, through `bearer: "subaccount"`).
+   */
+  recoverProcessorFee?(args: { providerRef: string; paymentId: string }): Promise<FeeRecovery>
+  /**
+   * Takes a LOST dispute's cost back from the sender, when the provider
+   * charged it to the platform. Safe to call again for the same dispute: a
+   * recovery already made is reported, not repeated. Absent for providers
+   * where the platform is not the one debited.
+   */
+  recoverLostDispute?(args: { disputeId: string; paymentId: string }): Promise<DisputeRecovery>
 }
 
 /** Platform fee on a Sign & Pay amount, in minor units, rounded down. */

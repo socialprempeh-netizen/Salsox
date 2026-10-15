@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test"
 import path from "node:path"
-import { expectNoHorizontalScroll, freshEmail, quickSend, signUp, tokenFor } from "./helpers/esign"
+import { expectNoHorizontalScroll, freshEmail, quickSend, samplePdf, signUp, tokenFor } from "./helpers/esign"
 
 /**
  * Mobile responsiveness: every main surface at two common phone widths must
@@ -83,6 +83,19 @@ for (const width of WIDTHS) {
     await check("/dashboard/payouts", "payouts")
     await check("/dashboard/settings", "settings")
     await check("/dashboard/settings/sessions", "devices")
+
+    // The editor's Sign & Pay step, where the processing-fee note sits.
+    await page.goto("/dashboard/documents/new")
+    await page.locator('input[type="file"]').setInputFiles({ name: "Lease.pdf", mimeType: "application/pdf", buffer: await samplePdf(1) })
+    await page.getByRole("button", { name: "Continue to recipients" }).click()
+    await page.waitForURL(/\/dashboard\/documents\/[^/]+\/edit/, { timeout: 30_000 })
+    await page.getByLabel("Name").fill("Kofi Boateng")
+    await page.getByLabel("Email").fill(freshEmail("editor"))
+    await page.getByRole("button", { name: "Next", exact: true }).click()
+    await page.getByRole("button", { name: "Next", exact: true }).click()
+    await expect(page.getByText(/processing fee comes out of what you receive, at cost/)).toBeVisible()
+    await expectNoHorizontalScroll(page, `editor-sign-and-pay @${width}`)
+    if (shotDir) await page.screenshot({ path: path.join(shotDir, `${width}-editor-sign-and-pay.png`), fullPage: true })
 
     const token = await tokenFor(documentId, signerEmail)
     await check(`/sign/${token}`, "sign-intro")
