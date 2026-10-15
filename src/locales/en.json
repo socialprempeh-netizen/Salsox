@@ -388,6 +388,7 @@
       "overview": "Overview",
       "customers": "Customers",
       "moderation": "Moderation",
+      "outreach": "Outreach",
       "adminPanel": "Admin Panel",
       "backToDashboard": "Back to Dashboard",
       "openNavigation": "Open navigation",
@@ -495,7 +496,68 @@
     "noSubscribers": "No subscribers yet. The signup form lives on the pricing page.",
     "makeAdmin": "Make Admin",
     "rolePromoted": "User promoted to admin. Their session picks it up within a minute.",
-    "roleFailed": "Failed to update role"
+    "roleFailed": "Failed to update role",
+    "outreach": {
+      "title": "Outreach",
+      "subtitle": "Every conversation with a prospect, in one list. Change a status from the list; open a row to edit it.",
+      "filtersLabel": "Filter conversations",
+      "filter": {
+        "all": "All",
+        "followUp": "Follow up",
+        "NO_REPLY": "No reply",
+        "REPLIED": "Replied",
+        "CONVERTED": "Converted"
+      },
+      "searchLabel": "Search conversations",
+      "searchPlaceholder": "Search name, company or notes",
+      "add": "Add conversation",
+      "addTitle": "New conversation",
+      "editTitle": "Edit {name}",
+      "edit": "Edit",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save changes",
+      "delete": "Delete",
+      "confirmDelete": "Tap again to delete",
+      "added": "Conversation added",
+      "saved": "Changes saved",
+      "deleted": "Conversation deleted",
+      "notesPlaceholder": "What you sent, what they said, what to do next",
+      "empty": "No conversations yet. Add the first one to start tracking.",
+      "noMatches": "No conversations match this filter.",
+      "followUpTag": "Follow up",
+      "contactedOn": "Contacted {date}",
+      "statusFor": "Status for {name}",
+      "col": {
+        "name": "Name",
+        "company": "Company",
+        "channel": "Channel",
+        "contacted": "Date contacted",
+        "status": "Status",
+        "notes": "Notes",
+        "actions": "Actions"
+      },
+      "channel": {
+        "LINKEDIN": "LinkedIn",
+        "EMAIL": "Email",
+        "REDDIT": "Reddit"
+      },
+      "status": {
+        "NO_REPLY": "No reply",
+        "REPLIED": "Replied",
+        "CONVERTED": "Converted"
+      },
+      "errors": {
+        "nameRequired": "Enter a name.",
+        "tooLong": "One of the fields is too long. Shorten it and save again.",
+        "invalidChannel": "Pick a channel.",
+        "invalidStatus": "Pick a status.",
+        "invalidDate": "Enter the date you made contact.",
+        "futureDate": "The contact date cannot be in the future.",
+        "notFound": "This conversation was deleted. Reload the page.",
+        "saveFailed": "Could not save. Check your connection and try again."
+      }
+    }
   },
   "billing": {
     "manage": {

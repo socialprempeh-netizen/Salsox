@@ -486,3 +486,36 @@ model PayoutAccount {
 
   @@unique([userId, provider])
 }
+
+// ─── Founder outreach (admin only) ────────────────────────────────────────────
+// The manual conversations the founder is having with prospects (LinkedIn,
+// email, Reddit), tracked at /admin/outreach so none of them gets lost. Not
+// tied to a User: these people do not have accounts, and most never will.
+// One shared list for every admin, deliberately: it is a working sheet, not
+// a CRM.
+enum OutreachChannel {
+  LINKEDIN
+  EMAIL
+  REDDIT
+}
+
+enum OutreachStatus {
+  NO_REPLY
+  REPLIED
+  CONVERTED
+}
+
+model OutreachContact {
+  id          String          @id @default(cuid())
+  name        String
+  company     String?
+  channel     OutreachChannel
+  // A day, not a moment: stored at midnight UTC and shown without a time.
+  contactedAt DateTime        @db.Date
+  status      OutreachStatus  @default(NO_REPLY)
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([contactedAt])
+}

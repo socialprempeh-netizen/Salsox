@@ -12,6 +12,7 @@ import {
   Wallet,
   LayoutGrid,
   ShieldAlert,
+  MessagesSquare,
   SearchCheck,
   Users,
   Settings,
@@ -36,6 +37,7 @@ const menus = {
     { href: "/admin", key: "overview", icon: LayoutGrid, exact: true },
     { href: "/admin/customers", key: "customers", icon: Users },
     { href: "/admin/moderation", key: "moderation", icon: ShieldAlert },
+    { href: "/admin/outreach", key: "outreach", icon: MessagesSquare },
     { href: "/admin/seo", key: "seo", icon: SearchCheck },
   ],
 }
