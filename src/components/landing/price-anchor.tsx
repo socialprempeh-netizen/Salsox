@@ -62,17 +62,21 @@ export function PriceAnchor({
         {groups.map((group, g) => (
           <div key={group.label} className="p-5 sm:p-8">
             <p className="text-sm font-medium text-muted-foreground">{group.label}</p>
-            <dl className="mt-4 space-y-6">
+            {/* Was a <dl> with each name/price pair wrapped in a <div> beside the
+                bar and the limit: a definition list may hold only name/value
+                groups, so axe flagged it (definition-list, dlitem). Plain
+                blocks now; each row reads in order as name, price, limit. */}
+            <div className="mt-4 space-y-6">
               {[group.own, group.competitor].map((side, s) => {
                 const own = s === 0
                 return (
                   <div key={side.name}>
                     <div className="flex items-baseline justify-between gap-3">
-                      <dt className={own ? "font-semibold text-foreground" : "font-medium text-muted-foreground"}>{side.name}</dt>
-                      <dd className="shrink-0 tabular-nums">
+                      <p className={own ? "font-semibold text-foreground" : "font-medium text-muted-foreground"}>{side.name}</p>
+                      <p className="shrink-0 tabular-nums">
                         <span className={own ? "text-3xl font-extrabold text-foreground" : "text-2xl font-bold text-muted-foreground"}>{side.price}</span>
                         <span className="text-sm text-muted-foreground">{side.unit}</span>
-                      </dd>
+                      </p>
                     </div>
                     {/* The bar: ours fades out past the edge, theirs stops at a cap. */}
                     <div aria-hidden className="relative mt-2 h-2 overflow-hidden bg-muted">
@@ -92,7 +96,7 @@ export function PriceAnchor({
                   </div>
                 )
               })}
-            </dl>
+            </div>
           </div>
         ))}
       </div>

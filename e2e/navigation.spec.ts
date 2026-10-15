@@ -39,7 +39,9 @@ test("desktop: each group opens a panel that reaches its pages and its hub", asy
   await expect(nav.getByRole("link", { name: "All comparisons" })).toHaveAttribute("href", "/compare")
 
   await nav.getByRole("button", { name: /^Why / }).click()
-  await expect(nav.getByText("What you can do")).toBeVisible()
+  // Was "What you can do": that heading became "Use cases", and the industry
+  // pages took "By industry" (site-nav.ts, since baa260f).
+  await expect(nav.getByText("By industry", { exact: true })).toBeVisible()
   await expect(nav.getByText("Use cases", { exact: true })).toBeVisible()
   if (shotDir) await page.screenshot({ path: path.join(shotDir, "nav-desktop-why.png") })
 
@@ -48,7 +50,8 @@ test("desktop: each group opens a panel that reaches its pages and its hub", asy
   await page.waitForURL("**/docs")
   // A followed link closes the panel.
   await expect(nav.getByRole("link", { name: /^Help and docs/ })).toHaveCount(0)
-  await expect(nav.getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing")
+  // Was "/pricing": the link opens on the plan cards (PRICING_HREF in site-nav.ts).
+  await expect(nav.getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing#plans")
   await ctx.close()
 })
 
