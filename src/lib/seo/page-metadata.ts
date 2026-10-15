@@ -29,9 +29,25 @@ export function sitePageMetadata(page: SitePage): Metadata {
   return {
     ...base,
     alternates: { canonical: `${siteConfig.url}${localizedPath(page.path, page.locale)}`, ...(languages ? { languages } : {}) },
-    // The per-page card from the route's opengraph-image file replaces the
-    // site-wide one; without an images entry here, Next uses the file.
-    openGraph: { ...base.openGraph, images: undefined },
-    twitter: { ...base.twitter, images: undefined },
+    // Was `{ ...base.openGraph, images: undefined }` (and the same for
+    // twitter). An `images` key that is present, even as undefined, counts as
+    // "this page sets its own images", so Next dropped the route's
+    // opengraph-image file and every registry page shipped with no og:image
+    // (found by the live crawl, src/lib/seo/crawl.ts). The key is now left out.
+    // openGraph: { ...base.openGraph, images: undefined },
+    // twitter: { ...base.twitter, images: undefined },
+    openGraph: withoutImages(base.openGraph),
+    twitter: withoutImages(base.twitter),
   }
+}
+
+/**
+ * A copy of `value` without its `images` key, so the per-page card from the
+ * route's opengraph-image file replaces the site-wide one.
+ */
+export function withoutImages<T extends object>(value: T | null | undefined): T | undefined {
+  if (!value) return undefined
+  const copy = { ...value } as Record<string, unknown>
+  delete copy.images
+  return copy as T
 }

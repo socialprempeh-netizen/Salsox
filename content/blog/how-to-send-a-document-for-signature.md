@@ -1,5 +1,5 @@
 ---
-title: "How to send a document for signature (and get it back fast)"
+title: "How to send a document for signature, step by step"
 description: "A practical guide to sending a PDF for e-signature: preparing the file, choosing roles and order, writing the message, following up, and fixing mistakes."
 date: 2026-10-06
 category: Guides

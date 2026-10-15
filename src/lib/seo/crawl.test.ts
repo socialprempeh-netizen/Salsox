@@ -45,4 +45,32 @@ describe("crawlSite", () => {
     const result = await crawlSite({ origin: "https://preview.test", sitemapUrls: [], fetchImpl: impl })
     expect(result.privatePages.find((p) => p.path === "/signup")).toMatchObject({ protected: true, status: 200 })
   })
+
+  it("reports a broken internal link once, with the pages that link to it", async () => {
+    const linking = (canonical: string) => good(canonical).replace("<h1>H</h1>", `<h1>H</h1><a href="/gone">x</a><a href="/moved">y</a><a href="/ok">z</a><a href="/b">sitemap</a>`)
+    const { impl } = fakeFetch({
+      ...privateOk,
+      "/a": { status: 200, html: linking("https://site.test/a") },
+      "/b": { status: 200, html: linking("https://site.test/b") },
+      "/moved": { status: 308, headers: { location: "/ok" } },
+      "/ok": { status: 200 },
+    })
+    const result = await crawlSite({ origin: "https://site.test", sitemapUrls: ["https://site.test/a", "https://site.test/b"], fetchImpl: impl })
+    const messages = result.issues.map((i) => `${i.severity} ${i.url} ${i.message}`)
+    expect(messages).toContain("error /gone broken link: answers 404; linked from /a, /b")
+    expect(messages).toContain("warning /moved link to a permanent redirect (to /ok); linked from /a, /b")
+    // A sitemap URL is not requested twice, and a working link is not an issue.
+    expect(result.links).toEqual({ checked: 3, broken: 1 })
+  })
+
+  it("retries with GET when a route does not answer HEAD", async () => {
+    const impl = (async (input: string, init?: RequestInit) => {
+      const path = new URL(input).pathname
+      if (path === "/a") return new Response(good("https://site.test/a").replace("<h1>H</h1>", `<h1>H</h1><a href="/pdf">p</a>`), { status: 200 })
+      if (path === "/pdf") return new Response("", { status: init?.method === "HEAD" ? 405 : 200 })
+      return new Response("", { status: 307 })
+    }) as unknown as typeof fetch
+    const result = await crawlSite({ origin: "https://site.test", sitemapUrls: ["https://site.test/a"], fetchImpl: impl })
+    expect(result.links).toEqual({ checked: 1, broken: 0 })
+  })
 })

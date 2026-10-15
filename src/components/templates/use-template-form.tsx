@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { createFromTemplateAction, deleteSavedTemplateAction, saveTemplateAction } from "@/app/actions/templates"
+import { track } from "@/lib/analytics"
 
 export function UseTemplateForm({
   slug,
@@ -60,6 +61,9 @@ export function UseTemplateForm({
     startCreate(async () => {
       const result = await createFromTemplateAction({ slug, title, values })
       if (result.error || !result.documentId) return setError(result.error ?? t("failed"))
+      // The end of the template funnel: a real document made from it. Copy
+      // and download are recorded on the public page; this one was not.
+      track("template_used", { template: slug, action: "create" })
       toast.success(t("created"))
       router.push(`/dashboard/documents/${result.documentId}/edit`)
     })

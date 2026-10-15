@@ -11,8 +11,10 @@
  *   tool_opened      a free tool loaded a file (which tool)
  *   tool_downloaded  a free tool produced a file (which tool)
  *   cta_clicked      a signup or pricing call to action was used (where)
- *   template_used    a free document template was copied or downloaded
- *                    (which template, which action)
+ *   template_used    a free document template was copied or downloaded on
+ *                    its public page, or turned into a real document in the
+ *                    dashboard (which template; action: copy, download or
+ *                    create)
  *   sign_up          an account was created (channel, from attribution.ts)
  *   document_sent    a document went out for signature (via: quick_send or
  *                    editor), the end of the signup-to-first-document funnel

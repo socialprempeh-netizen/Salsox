@@ -21,6 +21,7 @@ How the public site is built to be found: the pages, the rules that keep them wo
 | Structured data validation | `src/lib/seo/validate-jsonld.ts`, run in tests and in the crawl |
 | IndexNow (Bing and others) | `src/lib/indexnow.ts`, daily cron |
 | SEO health page | `/admin/seo` |
+| SEO inventory (every indexable page, its keyword, intent, type and status; CSV export) | `/admin/seo/inventory` |
 | First-party signup attribution | `src/lib/seo/attribution.ts` |
 | Google Analytics 4 (optional) | `src/components/analytics/google-analytics.tsx` |
 
@@ -69,7 +70,8 @@ A translation is a file beside the English one: `content/pages/tools/sign-pdf.it
 2. **Google Search Console.** Add the site as a property. Verify by DNS, or paste the meta tag's content into `GOOGLE_SITE_VERIFICATION`. Submit `https://yourdomain.com/sitemap.xml` under Sitemaps.
 3. **Bing Webmaster Tools.** Import the site from Search Console, or verify with `BING_SITE_VERIFICATION`. Submit the same sitemap.
 4. **IndexNow** is already on when `CRON_SECRET` is set: new and updated sitemap URLs are submitted daily. Submission asks engines to crawl; it does not guarantee indexing.
-5. **Open `/admin/seo`** and run a crawl. Fix anything marked as an error.
+5. **Open `/admin/seo`** and run a crawl. Fix anything marked as an error. The crawl also requests every internal link once and reports any that is broken.
+6. **Open `/admin/seo/inventory`.** It is built from the sitemap and the page data on every load. "Published but not in the sitemap" and "Keyword conflicts" should both be 0.
 
 ## Analytics
 

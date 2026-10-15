@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import fs from "node:fs"
 import path from "node:path"
 import { db, expectNoHorizontalScroll, password, signUp } from "./helpers/esign"
 
@@ -24,6 +25,7 @@ const PAGES: [string, RegExp][] = [
   ["/admin/documents", /^Documents$/],
   ["/admin/analytics", /^Analytics$/],
   ["/admin/seo", /./],
+  ["/admin/seo/inventory", /^SEO inventory$/],
   ["/admin/outreach", /^Outreach$/],
   ["/admin/revenue", /^Revenue & Payments$/],
   ["/admin/revenue/reconciliation", /^Reconciliation$/],
@@ -72,6 +74,25 @@ test("every admin section and tab opens and fits a phone", async ({ browser }) =
   const analyticsTabs = page.getByRole("navigation", { name: "Pages in this section" })
   await expect(analyticsTabs.getByRole("link", { name: "SEO health" })).toBeVisible()
   await expect(analyticsTabs.getByRole("link", { name: "Outreach" })).toBeVisible()
+  await analyticsTabs.getByRole("link", { name: "SEO inventory" }).click()
+  await page.waitForURL("**/admin/seo/inventory")
+
+  // The SEO inventory is built from the sitemap and the page data: a
+  // comparison carries its keyword, the type filter narrows the list, and the
+  // CSV holds every page whatever is filtered.
+  const inventory = page.locator("main")
+  await inventory.getByRole("tab", { name: /^Comparison/ }).click()
+  await expect(inventory.getByRole("link", { name: "/vs/docuseal" })).toBeVisible()
+  await expect(inventory.getByRole("link", { name: "/sign-and-pay" })).toHaveCount(0)
+  await inventory.getByRole("tab", { name: /^All/ }).click()
+  await inventory.getByRole("searchbox", { name: "Search pages" }).fill("sign-and-pay")
+  await expect(inventory.getByRole("link", { name: "/sign-and-pay" })).toBeVisible()
+  const [download] = await Promise.all([page.waitForEvent("download"), inventory.getByRole("button", { name: "Download CSV" }).click()])
+  const csv = fs.readFileSync(await download.path(), "utf8")
+  expect(csv.split("\n")[0]).toBe("url,type,keyword,intent,status,title,aliases,locale,updated")
+  expect(csv).toMatch(/\/vs\/docuseal,comparison,/)
+  expect(csv).toMatch(/\/templates\/[a-z-]+,template,/)
+  await expectNoHorizontalScroll(page, "seo inventory after filtering")
 
   // The phone menu lists exactly the eight sections.
   await page.getByRole("button", { name: "Open navigation" }).click()
