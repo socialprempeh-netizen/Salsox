@@ -1,12 +1,19 @@
+import { cn } from "@/lib/utils"
+
 /**
  * The official "Download on the App Store" and "Get it on Google Play"
  * badges in the footer.
  *
  * The artwork is Apple's and Google's own, unmodified, served from
  * public/badges: Apple's SVG from developer.apple.com's badge resources, and
- * Google's PNG from the Google Play badge generator (which ships with clear
- * space around the badge; the negative margin below trims it to the same
- * visual height as Apple's).
+ * Google's PNG from the Google Play badge generator.
+ *
+ * Size and layout follow the reference footer (signeasy.com, measured with
+ * Playwright): a short label, then the two badges on one line at 36px tall,
+ * the App Store badge 108x36 and Google Play 121x36. Google's PNG is 646x250
+ * with 41px of clear space on every side around 564x168 of artwork, so it is
+ * drawn at 53.6px tall inside a 121x36 window that crops exactly that space,
+ * and both badges share one box height and baseline.
  *
  * There is no app yet. Until a store URL is configured (src/config/site.ts,
  * NEXT_PUBLIC_APP_STORE_URL / NEXT_PUBLIC_PLAY_STORE_URL) a badge is an inert
@@ -28,24 +35,29 @@ export function StoreBadges({
   playStore: string | null
   labels: { appStore: string; playStore: string; comingSoon: string }
 }) {
+  // Were 40px (Apple) and an estimated 58px PNG with -9px margins (Google),
+  // listed above their "coming soon" note.
   const badges = [
-    // Apple's badge is 120x40 at its native size.
-    { key: "app-store", href: appStore, alt: labels.appStore, src: "/badges/app-store-badge.svg", width: 120, height: 40, className: "h-10 w-auto" },
-    // Google's 646x250 artwork includes clear space; at 58px tall the badge
-    // itself is about 40px, and the negative margin removes the space.
-    { key: "google-play", href: playStore, alt: labels.playStore, src: "/badges/google-play-badge.png", width: 150, height: 58, className: "-my-[9px] -mx-[9px] h-[58px] w-auto" },
+    // Apple's 119.66x40 SVG at 36px tall: 108x36.
+    { key: "app-store", href: appStore, alt: labels.appStore, src: "/badges/app-store-badge.svg", width: 108, height: 36, box: "h-9 w-[108px]", className: "h-9 w-[108px]" },
+    // Google's 646x250 PNG at 53.6px tall is 138.4 wide; minus 8.8px of
+    // clear space each side it shows 121x36.
+    { key: "google-play", href: playStore, alt: labels.playStore, src: "/badges/google-play-badge.png", width: 138, height: 54, box: "h-9 w-[121px]", className: "-m-[8.8px] h-[53.6px] w-[138.4px] max-w-none" },
   ]
   const anyInert = badges.some((b) => !b.href)
 
   return (
-    <div>
-      <ul className="flex flex-wrap items-center gap-3">
+    // One unit: the label, then the badges, vertically centred on one line
+    // (the label wraps above them on a narrow phone).
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {anyInert && <p className="text-sm font-medium text-[var(--footer-muted)]">{labels.comingSoon}</p>}
+      <ul className="flex items-center gap-2">
         {badges.map((b) => {
           // An inert badge says so in its alt text, not only in the note below.
           // eslint-disable-next-line @next/next/no-img-element -- static brand artwork, served as is
           const img = <img src={b.src} alt={b.href ? b.alt : `${b.alt} (${labels.comingSoon})`} width={b.width} height={b.height} className={b.className} />
           return (
-            <li key={b.key} className="flex">
+            <li key={b.key} className={cn("flex overflow-hidden", b.box)}>
               {b.href ? (
                 <a
                   href={b.href}
@@ -57,7 +69,7 @@ export function StoreBadges({
                 </a>
               ) : (
                 // Inert: no link, and the alt text says it is not available yet.
-                <span className="flex opacity-60">
+                <span className="flex opacity-70">
                   {img}
                 </span>
               )}
@@ -65,7 +77,6 @@ export function StoreBadges({
           )
         })}
       </ul>
-      {anyInert && <p className="mt-2 text-sm text-[var(--footer-muted)]">{labels.comingSoon}</p>}
     </div>
   )
 }

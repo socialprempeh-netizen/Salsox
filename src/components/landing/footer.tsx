@@ -55,8 +55,10 @@ const FOOTER_COLORS = {
 function FooterColumn({ heading, children, className }: { heading: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("min-w-0", className)}>
-      {/* Was mb-4, space-y-2.5, foreground and muted-foreground colours. */}
-      <h4 className="mb-3 text-base font-semibold text-[var(--footer-heading)]">{heading}</h4>
+      {/* Was mb-4, space-y-2.5, foreground and muted-foreground colours.
+          Uppercase like the reference's headings, with its letter-spacing,
+          which measured "normal" (no added tracking). */}
+      <h4 className="mb-3 text-base font-semibold uppercase text-[var(--footer-heading)]">{heading}</h4>
       <ul className="space-y-2 text-[15px] text-[var(--footer-link)] sm:text-base">{children}</ul>
     </div>
   )
@@ -66,18 +68,26 @@ function FooterColumn({ heading, children, className }: { heading: string; child
  * The "Why" group in two side-by-side lists under one heading, each with its
  * own subheading: what the product does (the solution pages) and who it is
  * for (the industry, team and audience pages). As one column it ran to more
- * than thirty links. It spans two grid columns at every width, so on a phone
- * it takes the full row with its two lists beside each other.
+ * than thirty links.
+ *
+ * "Who it's for" has twenty pages, so from sm up it is itself two balanced
+ * columns (CSS columns, alphabetical order kept, 11 and 10 with the hub
+ * link) under its one subheading; as one list it towered over every other
+ * column. The group spans three grid tracks from sm (what you can do, then
+ * who it's for over two). On a phone it spans the full two-track row and
+ * "Who it's for" is a single list beside "What you can do": three lists in
+ * 312px would leave each too narrow to read.
  */
 function SplitFooterColumn({ heading, parts, footer }: { heading: string; parts: { heading: string; links: { href: string; label: string }[] }[]; footer: { href: string; label: string } }) {
   return (
-    <div className="col-span-2 min-w-0">
-      <h4 className="mb-3 text-base font-semibold text-[var(--footer-heading)]">{heading}</h4>
-      <div className="grid grid-cols-2 gap-x-5 gap-y-7">
+    // Was col-span-2 at every width, its two lists in grid-cols-2.
+    <div className="col-span-2 min-w-0 sm:col-span-3">
+      <h4 className="mb-3 text-base font-semibold uppercase text-[var(--footer-heading)]">{heading}</h4>
+      <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3">
         {parts.map((part, i) => (
-          <div key={part.heading} className="min-w-0">
-            <h5 className="mb-2 text-sm font-semibold text-[var(--footer-heading)]">{part.heading}</h5>
-            <ul className="space-y-2 text-[15px] text-[var(--footer-link)] sm:text-base">
+          <div key={part.heading} className={cn("min-w-0", i === parts.length - 1 && "sm:col-span-2")}>
+            <h5 className="mb-2 text-sm font-semibold uppercase text-[var(--footer-heading)]">{part.heading}</h5>
+            <ul className={cn("space-y-2 text-[15px] text-[var(--footer-link)] sm:text-base", i === parts.length - 1 && "sm:columns-2 sm:gap-x-5")}>
               {part.links.map((link) => (
                 <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
               ))}
@@ -95,7 +105,7 @@ function FooterLink({ href, external, children }: { href: string; external?: boo
   // Was hover:text-foreground; white links turn the bar's cyan on hover.
   const className = "transition-colors hover:text-[var(--footer-accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-accent)]"
   return (
-    <li>
+    <li className="break-inside-avoid">
       {external ? (
         <a href={href} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>
       ) : (
@@ -124,7 +134,8 @@ export async function Footer() {
     <footer style={FOOTER_COLORS} className="bg-[var(--footer-bg)] pt-10 text-[var(--footer-link)]">
       {/* Wider (was max-w-6xl), like the header, for seven columns of
           larger type. */}
-      <div className="mx-auto max-w-7xl px-6 lg:px-12">
+      {/* 90rem (was max-w-7xl): eight tracks now, the Why group taking three. */}
+      <div className="mx-auto max-w-[90rem] px-6 lg:px-12">
         {/* Grouped the way the top menu is (src/lib/site-nav.ts), from the
             same data, so the two cannot list different pages: Product, Why,
             Free tools, Compare, Resources, Company. Was Product (with docs,
@@ -190,7 +201,8 @@ export async function Footer() {
             beside Product on a phone. */}
         {/* Gaps tighter than the reference's 40px: 20px between columns,
             28px between rows (were gap-x-6 gap-y-10, mt-10). */}
-        <div className="mt-8 grid grid-flow-row-dense grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+        {/* Was xl:grid-cols-7, when the Why group took two tracks. */}
+        <div className="mt-8 grid grid-flow-row-dense grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
           <FooterColumn heading={t("product")}>
             {/* `/#` instead of bare `#`: the footer renders on every public
                 page, but the sections only exist on the home page. */}
@@ -277,7 +289,7 @@ export async function Footer() {
           than its 139px. Was a border-t row (mt-12 pt-8) with the
           PoweredBy badge centred under it (mt-8). */}
       <div className="mt-8 bg-[var(--footer-accent)] text-black">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-[15px] md:flex-row lg:px-12">
+        <div className="mx-auto flex max-w-[90rem] flex-col items-center justify-between gap-3 px-6 py-4 text-[15px] md:flex-row lg:px-12">
           <p>{t("copyright", { year: new Date().getFullYear(), site: siteConfig.name })}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <PoweredBy />
