@@ -157,7 +157,7 @@ test("the footer shows every social icon, linked only when its profile is set", 
   }
   // The badges, icons and logo mark are the supplied artwork's web copies
   // (public/brand/web, made by scripts/brand-web-assets.mjs).
-  for (const src of ["/brand/web/badge-app-store.png", "/brand/web/badge-google-play.png", "/brand/web/icon-pinterest.png", "/brand/web/logo-mark.png"]) {
+  for (const src of ["/badges/app-store-badge.svg", "/brand/web/badge-google-play.png", "/brand/web/icon-pinterest.png", "/brand/web/logo-mark.png"]) {
     expect((await page.request.get(src)).status(), src).toBe(200)
   }
 })

@@ -19,9 +19,9 @@
  *  - Instagram: its canvas is solid magenta, so it is cut to the circle;
  *  - YouTube: a JPEG on a navy vignette, cut to the red logo's rounded
  *    rectangle;
- *  - the store badges: JPEGs on grey and white, cut to the badge's rounded
- *    rectangle (the App Store render to its black face, without the bevel
- *    and base the source draws under it).
+ *  - the Google Play badge: a JPEG on white, cut to its rounded rectangle.
+ *    (The App Store badge is Apple's official SVG in public/badges/, used as
+ *    is; the supplied 3D render is no longer processed.)
  */
 import path from "node:path"
 import fs from "node:fs"
@@ -165,7 +165,10 @@ for (const name of ["facebook", "linkedin", "pinterest", "tiktok"]) {
   report.push("icon-youtube.png")
 }
 
-// Store badges, 108px tall (36px at 3x), off their backgrounds:
+// Store badges, 108px tall (36px at 3x), off their backgrounds. The App
+// Store entry is commented out: the footer uses Apple's official SVG
+// (public/badges/app-store-badge.svg), which needs no processing, instead of
+// the supplied 3D render. Its rules are kept for reference:
 //  - App Store: the source is a 3D render on a grey gradient, with a bevel
 //    and a metal base under the badge. At 36px those read as a grey lump, so
 //    only the black face is kept: the longest run of rows and columns that
@@ -173,7 +176,8 @@ for (const name of ["facebook", "linkedin", "pinterest", "tiktok"]) {
 //    bevel, so the dark shadow under the base is left out.
 //  - Google Play: a flat badge on white. Everything darker than the white
 //    background is kept (under 215), which keeps its thin grey border.
-for (const [name, darkLimit, radiusRatio, dense] of [["badge-app-store", 40, 0.12, true], ["badge-google-play", 215, 0.09, false]]) {
+// for (const [name, darkLimit, radiusRatio, dense] of [["badge-app-store", 40, 0.12, true], ["badge-google-play", 215, 0.09, false]]) {
+for (const [name, darkLimit, radiusRatio, dense] of [["badge-google-play", 215, 0.09, false]]) {
   const file = src(`${name}.jpg`)
   const dark = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b < darkLimit
   const box = dense ? await denseBounds(file, dark, 0.3) : await bounds(file, dark)
