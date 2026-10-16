@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { GithubIcon } from "@/components/icons/github"
-import { LinkedinIcon } from "@/components/icons/linkedin"
+// LinkedIn's mark is drawn by FooterSocial now, with the other networks.
+// import { LinkedinIcon } from "@/components/icons/linkedin"
+import { FooterSocial } from "@/components/landing/footer-social"
+import { StoreBadges } from "@/components/landing/store-badges"
 import { PoweredBy } from "@/components/powered-by"
 import { ContactDialog } from "@/components/landing/contact-dialog"
 import { Logo } from "@/components/logo"
@@ -17,13 +20,34 @@ import { footerTryLink } from "@/lib/landing-cta"
 import { getSiteNav } from "@/components/landing/site-nav-data"
 import { cn } from "@/lib/utils"
 
-function XIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  )
-}
+// Replaced by the X mark from simple-icons, in FooterSocial (footer-social.tsx).
+// function XIcon() {
+//   return (
+//     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+//       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+//     </svg>
+//   )
+// }
+
+/**
+ * The footer's colours, read from the reference footer's computed CSS (the
+ * SignEasy footer, inspected with Playwright at 1440px): background #000000,
+ * column headings #b2b2b2, link text #ffffff, bottom bar #00aaf9. The footer
+ * is dark in both themes, like the reference, so these do not switch with
+ * the theme. The bar's text is black, not the reference's white: white on
+ * #00aaf9 is about 2.6:1, below the 4.5:1 small text needs.
+ *
+ * Spacing is deliberately tighter than the reference (60px top padding,
+ * 40px column and row gaps, 19px under headings, 12px between links, a
+ * 139px bar): 40px, 20px and 28px, 12px, 8px and a 64px bar here.
+ */
+const FOOTER_COLORS = {
+  "--footer-bg": "#000000",
+  "--footer-heading": "#b2b2b2",
+  "--footer-link": "#ffffff",
+  "--footer-muted": "#b2b2b2",
+  "--footer-accent": "#00aaf9",
+} as React.CSSProperties
 
 // Type scale raised (was text-sm headings and links, space-y-2) to the size
 // the established e-signature sites use in their footers: the footer is a
@@ -31,8 +55,9 @@ function XIcon() {
 function FooterColumn({ heading, children, className }: { heading: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <h4 className="mb-4 text-base font-semibold text-foreground">{heading}</h4>
-      <ul className="space-y-2.5 text-[15px] text-muted-foreground sm:text-base">{children}</ul>
+      {/* Was mb-4, space-y-2.5, foreground and muted-foreground colours. */}
+      <h4 className="mb-3 text-base font-semibold text-[var(--footer-heading)]">{heading}</h4>
+      <ul className="space-y-2 text-[15px] text-[var(--footer-link)] sm:text-base">{children}</ul>
     </div>
   )
 }
@@ -47,12 +72,12 @@ function FooterColumn({ heading, children, className }: { heading: string; child
 function SplitFooterColumn({ heading, parts, footer }: { heading: string; parts: { heading: string; links: { href: string; label: string }[] }[]; footer: { href: string; label: string } }) {
   return (
     <div className="col-span-2 min-w-0">
-      <h4 className="mb-4 text-base font-semibold text-foreground">{heading}</h4>
-      <div className="grid grid-cols-2 gap-x-6 gap-y-8">
+      <h4 className="mb-3 text-base font-semibold text-[var(--footer-heading)]">{heading}</h4>
+      <div className="grid grid-cols-2 gap-x-5 gap-y-7">
         {parts.map((part, i) => (
           <div key={part.heading} className="min-w-0">
-            <h5 className="mb-3 text-sm font-semibold text-foreground/80">{part.heading}</h5>
-            <ul className="space-y-2.5 text-[15px] text-muted-foreground sm:text-base">
+            <h5 className="mb-2 text-sm font-semibold text-[var(--footer-heading)]">{part.heading}</h5>
+            <ul className="space-y-2 text-[15px] text-[var(--footer-link)] sm:text-base">
               {part.links.map((link) => (
                 <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
               ))}
@@ -67,7 +92,8 @@ function SplitFooterColumn({ heading, parts, footer }: { heading: string; parts:
 }
 
 function FooterLink({ href, external, children }: { href: string; external?: boolean; children: React.ReactNode }) {
-  const className = "transition-colors hover:text-foreground"
+  // Was hover:text-foreground; white links turn the bar's cyan on hover.
+  const className = "transition-colors hover:text-[var(--footer-accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-accent)]"
   return (
     <li>
       {external ? (
@@ -81,10 +107,21 @@ function FooterLink({ href, external, children }: { href: string; external?: boo
 
 export async function Footer() {
   const [t, nav] = await Promise.all([getTranslations("footer"), getSiteNav()])
+  const social = {
+    youtube: t("social.youtube"),
+    instagram: t("social.instagram"),
+    tiktok: t("social.tiktok"),
+    facebook: t("social.facebook"),
+    linkedin: t("linkedin"),
+    x: t("social.x"),
+  }
   const orgUrl = siteConfig.links.githubOrg ?? siteConfig.links.github
   const tryLink = footerTryLink(siteConfig.links.demo)
   return (
-    <footer className="border-t border-border bg-muted/30 py-12">
+    // Was border-t border-border bg-muted/30 py-12: the theme's surface. Now
+    // the reference footer's black, top padding tighter than its 60px, and
+    // the bottom padding moved into the cyan bar below.
+    <footer style={FOOTER_COLORS} className="bg-[var(--footer-bg)] pt-10 text-[var(--footer-link)]">
       {/* Wider (was max-w-6xl), like the header, for seven columns of
           larger type. */}
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
@@ -96,48 +133,54 @@ export async function Footer() {
             Resources column of its own. The old columns are kept at the
             bottom of this file. Brand on its own row, then two columns of
             links on a phone, three on a tablet, six on a desktop. */}
+        {/* Brand on the left; the social icons and store badges beside it
+            from lg, under it on smaller screens. */}
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-xs">
           <LogoLink className="flex items-center gap-2">
-            <Logo markClassName="h-9 w-9" wordmarkClassName="text-xl font-bold" />
+            <Logo markClassName="h-9 w-9" wordmarkClassName="text-xl font-bold text-[var(--footer-link)]" />
           </LogoLink>
-          <p className="mt-3 text-[15px] text-muted-foreground sm:text-base">
+          <p className="mt-3 text-[15px] text-[var(--footer-muted)] sm:text-base">
             {isKitSite ? t("blurb", { tagline: siteConfig.tagline }) : siteConfig.description}
           </p>
-          <div className="mt-4 flex items-center gap-2">
+          {/* The kit's own site keeps its GitHub icon here; the product's
+              social icons are FooterSocial, beside this block. */}
+          <div className="mt-4 flex items-center gap-2 empty:hidden">
             {orgUrl && (
               <a
                 href={orgUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t("github")}
-                className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-9 w-9 items-center justify-center bg-white text-black transition-opacity hover:opacity-85"
               >
                 <GithubIcon />
               </a>
             )}
-            {siteConfig.links.x && (
-              <a
-                href={siteConfig.links.x}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="X / Twitter"
-                className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                <XIcon />
-              </a>
-            )}
-            {siteConfig.links.linkedin && (
-              <a
-                href={siteConfig.links.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t("linkedin")}
-                className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                <LinkedinIcon />
-              </a>
-            )}
+            {/* X and LinkedIn moved into FooterSocial with the other networks.
+                Were links here only when set, in the theme's colours, as
+                <XIcon /> and <LinkedinIcon /> inside bordered squares. */}
           </div>
+        </div>
+        <div className="flex flex-col gap-4 lg:items-end">
+          <FooterSocial
+            links={{
+              youtube: siteConfig.links.youtube,
+              instagram: siteConfig.links.instagram,
+              tiktok: siteConfig.links.tiktok,
+              facebook: siteConfig.links.facebook,
+              linkedin: siteConfig.links.linkedin,
+              x: siteConfig.links.x,
+            }}
+            labels={social}
+            soonLabel={(name) => t("socialSoon", { name })}
+          />
+          <StoreBadges
+            appStore={siteConfig.links.appStore}
+            playStore={siteConfig.links.playStore}
+            labels={{ appStore: t("appStoreBadge"), playStore: t("playStoreBadge"), comingSoon: t("appsComingSoon") }}
+          />
+        </div>
         </div>
 
         {/* Was grid-cols-2 sm:grid-cols-3 lg:grid-cols-6, one column per
@@ -145,7 +188,9 @@ export async function Footer() {
             seven tracks on a wide screen, four on a laptop, three on a
             tablet, two on a phone; dense flow fills the cell its span leaves
             beside Product on a phone. */}
-        <div className="mt-10 grid grid-flow-row-dense grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+        {/* Gaps tighter than the reference's 40px: 20px between columns,
+            28px between rows (were gap-x-6 gap-y-10, mt-10). */}
+        <div className="mt-8 grid grid-flow-row-dense grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           <FooterColumn heading={t("product")}>
             {/* `/#` instead of bare `#`: the footer renders on every public
                 page, but the sections only exist on the home page. */}
@@ -200,7 +245,7 @@ export async function Footer() {
               <li>
                 <ContactDialog
                   trigger={
-                    <button type="button" className="transition-colors hover:text-foreground">
+                    <button type="button" className="transition-colors hover:text-[var(--footer-accent)]">
                       {t("contact")}
                     </button>
                   }
@@ -226,18 +271,23 @@ export async function Footer() {
           </FooterColumn>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-[15px] text-muted-foreground md:flex-row">
-          <p>{t("copyright", { year: new Date().getFullYear(), site: siteConfig.name })}</p>
-          <p>
-            <Link href="/changelog" className="transition-colors hover:text-foreground">
-              v{siteConfig.version}
-            </Link>
-            {isKitSite && ` · ${t("license")}`}
-          </p>
-        </div>
+      </div>
 
-        <div className="mt-8 flex justify-center">
-          <PoweredBy />
+      {/* The bottom bar, full width in the reference's cyan, much shorter
+          than its 139px. Was a border-t row (mt-12 pt-8) with the
+          PoweredBy badge centred under it (mt-8). */}
+      <div className="mt-8 bg-[var(--footer-accent)] text-black">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-[15px] md:flex-row lg:px-12">
+          <p>{t("copyright", { year: new Date().getFullYear(), site: siteConfig.name })}</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <PoweredBy />
+            <p>
+              <Link href="/changelog" className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
+                v{siteConfig.version}
+              </Link>
+              {isKitSite && ` · ${t("license")}`}
+            </p>
+          </div>
         </div>
       </div>
     </footer>

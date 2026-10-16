@@ -1365,6 +1365,17 @@
   "footer": {
     "whatYouCanDo": "What you can do",
     "whoItsFor": "Who it's for",
+    "social": {
+      "youtube": "YouTube",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "facebook": "Facebook",
+      "x": "X / Twitter"
+    },
+    "socialSoon": "{name} (coming soon)",
+    "appStoreBadge": "Download on the App Store",
+    "playStoreBadge": "Get it on Google Play",
+    "appsComingSoon": "Mobile apps coming soon",
     "blurb": {
       "$kit": "{tagline}. Production-ready boilerplate in plain Next.js."
     },
