@@ -59,7 +59,13 @@ export async function Navbar() {
         <LogoLink className="flex items-center gap-2">
           <Logo animated wordmarkClassName="text-base font-bold" />
         </LogoLink> */}
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 border border-border bg-background/70 px-4 pl-5 shadow-soft backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 lg:h-16 lg:gap-4 lg:px-6 xl:gap-6">
+      {/* Edge to edge: a full-width strip with a bottom rule, the way the
+          large e-signature sites draw their header. Was a centred box
+          (max-w-7xl, before that max-w-5xl) with a border and shadow on all
+          four sides inside the shell's 16px gutter, so it never reached the
+          screen's edges:
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 border border-border bg-background/70 px-4 pl-5 shadow-soft backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 lg:h-16 lg:gap-4 lg:px-6 xl:gap-6"> */}
+      <div className="flex h-14 w-full items-center justify-between gap-4 border-b border-border bg-background/80 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 sm:px-6 lg:h-16 lg:gap-4 lg:px-8 xl:gap-6 xl:px-10">
         <LogoLink className="flex shrink-0 items-center gap-2.5">
           <Logo animated markClassName="h-8 w-8 lg:h-9 lg:w-9" wordmarkClassName="text-xl font-bold xl:text-[22px]" />
         </LogoLink>

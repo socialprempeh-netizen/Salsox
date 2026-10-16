@@ -20,7 +20,7 @@ export async function getSiteNav(): Promise<SiteNav> {
     text: {
       why: t("menu.why", { site: siteConfig.name }),
       useCases: t("menu.useCases"),
-      byIndustry: t("menu.byIndustry"),
+      whoItsFor: t("menu.whoItsFor"),
       exploreFeatures: t("menu.exploreFeatures"),
       allUseCases: t("menu.allUseCases"),
       tools: t("menu.tools"),

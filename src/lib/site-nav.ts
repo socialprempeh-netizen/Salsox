@@ -34,7 +34,11 @@ export type NavText = {
   // the why group below), and the industry pages took a heading of their own.
   // whatYouCanDo: string
   useCases: string
-  byIndustry: string
+  // Was `byIndustry` ("By industry"): the column lists industries, teams
+  // and audiences (freelancers, enterprises, remote teams), so it is headed
+  // "Who it's for", the same as the footer's list of the same pages.
+  // byIndustry: string
+  whoItsFor: string
   exploreFeatures: string
   allUseCases: string
   tools: string
@@ -98,7 +102,7 @@ export function buildSiteNav({
     label: text.why,
     columns: [
       { heading: text.useCases, links: of("solution").map(link) },
-      { heading: text.byIndustry, links: [...of("use-case").map(link), { href: "/#features", label: text.exploreFeatures }] },
+      { heading: text.whoItsFor, links: [...of("use-case").map(link), { href: "/#features", label: text.exploreFeatures }] },
     ],
     footer: { href: HUB_PATHS.useCases, label: text.allUseCases },
   }
