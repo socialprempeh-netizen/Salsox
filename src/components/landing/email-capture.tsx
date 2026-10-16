@@ -95,7 +95,10 @@ export function EmailCapture({
           maxLength={254}
           placeholder={t("placeholder")}
           className={cn(
-            "min-w-0 flex-1 border border-input bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 min-[380px]:border-0 min-[380px]:bg-transparent min-[380px]:focus-visible:ring-0",
+            // flex-1 only once the row is a row (was flex-1 at every width): in
+            // the stacked column below 380px it made the height the flexible
+            // axis and collapsed the field to its text line, about 22px.
+            "w-full min-w-0 min-[380px]:w-auto min-[380px]:flex-1 border border-input bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 min-[380px]:border-0 min-[380px]:bg-transparent min-[380px]:focus-visible:ring-0",
             height
           )}
         />
