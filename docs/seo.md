@@ -19,7 +19,7 @@ How the public site is built to be found: the pages, the rules that keep them wo
 | 301 redirects for overlapping URLs | `src/lib/seo/redirects.ts` |
 | Structured data (Organization, WebSite, SoftwareApplication, WebApplication, BreadcrumbList, FAQPage, Article) | `src/lib/structured-data.ts`, `src/lib/seo/jsonld.ts`, `src/lib/seo/page-graph.ts` |
 | Structured data validation | `src/lib/seo/validate-jsonld.ts`, run in tests and in the crawl |
-| IndexNow (Bing and others) | `src/lib/indexnow.ts`, daily cron |
+| IndexNow (Bing and others) | `src/lib/indexnow.ts`, `src/lib/indexnow-store.ts`; key file at `/{key}.txt`; log on `/admin/seo/inventory` |
 | SEO health page | `/admin/seo` |
 | SEO inventory (every indexable page, its keyword, intent, type and status; CSV export) | `/admin/seo/inventory` |
 | First-party signup attribution | `src/lib/seo/attribution.ts` |
@@ -69,7 +69,7 @@ A translation is a file beside the English one: `content/pages/tools/sign-pdf.it
 1. **Set `NEXT_PUBLIC_APP_URL`** to the public `https://` address. Canonicals, the sitemap and structured data are built from it.
 2. **Google Search Console.** Add the site as a property. Verify by DNS, or paste the meta tag's content into `GOOGLE_SITE_VERIFICATION`. Submit `https://yourdomain.com/sitemap.xml` under Sitemaps.
 3. **Bing Webmaster Tools.** Import the site from Search Console, or verify with `BING_SITE_VERIFICATION`. Submit the same sitemap.
-4. **IndexNow** is already on when `CRON_SECRET` is set: new and updated sitemap URLs are submitted daily. Submission asks engines to crawl; it does not guarantee indexing.
+4. **IndexNow** is already on when `CRON_SECRET` is set. The first request a production deployment serves submits every sitemap URL that is new or changed since it was last accepted, in the background. The daily cron does the same as a safety net. Every submission and the status it got back is listed on `/admin/seo/inventory`. Submission asks engines to crawl; it does not guarantee indexing.
 5. **Open `/admin/seo`** and run a crawl. Fix anything marked as an error. The crawl also requests every internal link once and reports any that is broken.
 6. **Open `/admin/seo/inventory`.** It is built from the sitemap and the page data on every load. "Published but not in the sitemap" and "Keyword conflicts" should both be 0.
 

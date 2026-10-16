@@ -21,7 +21,7 @@ Come il sito pubblico è costruito per essere trovato: le pagine, le regole che 
 | Redirect 301 per URL che si sovrappongono | `src/lib/seo/redirects.ts` |
 | Dati strutturati (Organization, WebSite, SoftwareApplication, WebApplication, BreadcrumbList, FAQPage, Article) | `src/lib/structured-data.ts`, `src/lib/seo/jsonld.ts`, `src/lib/seo/page-graph.ts` |
 | Validazione dei dati strutturati | `src/lib/seo/validate-jsonld.ts`, eseguita nei test e nella scansione |
-| IndexNow (Bing e altri) | `src/lib/indexnow.ts`, cron giornaliero |
+| IndexNow (Bing e altri) | `src/lib/indexnow.ts`, `src/lib/indexnow-store.ts`; file della chiave su `/{key}.txt`; registro su `/admin/seo/inventory` |
 | Pagina di salute SEO | `/admin/seo` |
 | Inventario SEO (ogni pagina indicizzabile, con parola chiave, intento, tipo e stato; esportazione CSV) | `/admin/seo/inventory` |
 | Attribuzione delle iscrizioni, di prima parte | `src/lib/seo/attribution.ts` |
@@ -71,7 +71,7 @@ Una traduzione è un file accanto a quello inglese: `content/pages/tools/sign-pd
 1. **Imposta `NEXT_PUBLIC_APP_URL`** all'indirizzo pubblico `https://`. Canonical, sitemap e dati strutturati sono costruiti da qui.
 2. **Google Search Console.** Aggiungi il sito come proprietà. Verifica via DNS, oppure incolla il contenuto del meta tag in `GOOGLE_SITE_VERIFICATION`. Invia `https://tuodominio.com/sitemap.xml` nella sezione Sitemap.
 3. **Bing Webmaster Tools.** Importa il sito da Search Console, o verifica con `BING_SITE_VERIFICATION`. Invia la stessa sitemap.
-4. **IndexNow** è già attivo quando `CRON_SECRET` è impostato: gli URL nuovi e aggiornati della sitemap vengono inviati ogni giorno. L'invio chiede ai motori di scansionare; non garantisce l'indicizzazione.
+4. **IndexNow** è già attivo quando `CRON_SECRET` è impostato. La prima richiesta servita da un deploy di produzione invia, in background, ogni URL della sitemap nuovo o modificato dall'ultimo invio accettato. Il cron giornaliero fa lo stesso come rete di sicurezza. Ogni invio, con lo stato ricevuto in risposta, è elencato su `/admin/seo/inventory`. L'invio chiede ai motori di scansionare; non garantisce l'indicizzazione.
 5. **Apri `/admin/seo`** e avvia una scansione. Correggi tutto ciò che è segnato come errore. La scansione richiede anche ogni link interno una volta e segnala quelli non funzionanti.
 6. **Apri `/admin/seo/inventory`.** Viene generato dalla sitemap e dai dati delle pagine a ogni caricamento. "Pubblicate ma non nella sitemap" e "Conflitti di parole chiave" devono essere entrambi 0.
 

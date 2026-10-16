@@ -8,6 +8,9 @@
  * page ships, with nothing to keep in sync by hand. It also flags published
  * pages the sitemap leaves out and keywords two URLs compete for.
  *
+ * Below it, the IndexNow log (src/lib/indexnow-store.ts): the latest
+ * submissions to search engines and what they answered.
+ *
  * A tab of the Analytics section, beside SEO health. Admin only: the layout
  * restricts the route and the role is checked again here, as on every admin
  * page.
@@ -24,7 +27,10 @@ import { loadAllPages } from "@/lib/seo/pages"
 import { buildInventory } from "@/lib/seo/inventory"
 import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES, TEMPLATE_INDUSTRIES, TEMPLATE_TEAMS } from "@/lib/templates-taxonomy"
+import { indexNowKeyFilePath, resolveIndexNowKey } from "@/lib/indexnow"
+import { indexNowLog, skipReason } from "@/lib/indexnow-store"
 import { AdminReveal } from "@/components/admin/admin-reveal"
+import { IndexNowLog } from "@/components/admin/indexnow-log"
 import { SeoInventory } from "@/components/admin/seo-inventory"
 
 export const dynamic = "force-dynamic"
@@ -57,6 +63,9 @@ export default async function SeoInventoryPage() {
     defaultLocale: routing.defaultLocale,
   })
 
+  const key = resolveIndexNowKey(process.env)
+  const log = await indexNowLog(20)
+
   return (
     <div className="space-y-6">
       <AdminReveal>
@@ -65,6 +74,9 @@ export default async function SeoInventoryPage() {
       </AdminReveal>
       <AdminReveal index={1}>
         <SeoInventory rows={rows} conflicts={conflicts} origin={siteConfig.url} />
+      </AdminReveal>
+      <AdminReveal index={2}>
+        <IndexNowLog log={log} keyFileUrl={key ? `${siteConfig.url}${indexNowKeyFilePath(key)}` : null} disabledReason={skipReason()} />
       </AdminReveal>
     </div>
   )
