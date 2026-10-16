@@ -5,9 +5,9 @@ description: "Add a signature image to a PDF, on one page or every page. Upload 
 h1: "Add a signature to a PDF, on one page or on every page"
 lede: "Place your signature image exactly where it belongs, repeat it on every page for initialling, and download the result. Your PDF stays on your device."
 primaryKeyword: "add signature to pdf"
-aliases: ["insert signature in pdf", "put signature on pdf", "add signature image to pdf", "initial every page pdf"]
+aliases: ["insert signature in pdf", "put signature on pdf", "add signature image to pdf", "initial every page pdf", "add signature to pdf online"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-16
 breadcrumb: "Add signature to PDF"
 howItWorks:
   - title: "Choose the PDF"

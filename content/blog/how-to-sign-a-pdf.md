@@ -2,8 +2,14 @@
 title: "How to sign a PDF: every method, on any device"
 description: "How to sign a PDF on a computer, iPhone or Android, with free tools or the apps you already have, and when signing your own copy is not enough."
 date: 2026-10-06
+updated: 2026-10-16
 category: Guides
-related: ["/sign-pdf", "/fill-and-sign-pdf", "/pdf-signature", "/request-signature"]
+keyword: "how to electronically sign a pdf"
+cover: "/blog/covers/how-to-sign-a-pdf.png"
+coverAlt: "How to electronically sign a PDF: a document with a teal signature line, tagged PDF"
+coverTitle: "How to electronically sign a PDF"
+coverLabel: "PDF"
+related: ["/sign-pdf", "/fill-and-sign-pdf", "/blog/sign-documents-on-your-phone", "/blog/add-signature-to-word-document", "/request-signature"]
 faq:
   - q: "How do I sign a PDF for free?"
     a: "Open it in a free browser tool such as Sign PDF, draw or type your signature, place it and download the result. Preview on a Mac and the markup tools on iPhone and Android also work without paying."
@@ -14,6 +20,8 @@ faq:
 ---
 
 Somebody has emailed you a PDF and asked you to "sign and return". There are four or five ways to do it, and the right one depends on your device, whether the PDF has form fields, and whether anyone might later need proof that you were the one who signed.
+
+This guide covers how to electronically sign a PDF on each kind of device, from a free PDF signature you add in seconds to an electronic signature on a PDF that records who signed and when. Every method here lets you sign a PDF online or on your device without printing anything.
 
 ## The quickest way on any device: a browser tool
 
@@ -50,6 +58,8 @@ Download a **flattened** copy, which turns your answers into part of the page so
 ## Initialling every page
 
 Long contracts often ask for initials on each page. Doing that one page at a time is slow. The [Add signature to PDF](/add-signature-to-pdf) tool places your initials on page one and repeats them at the same spot on every page in one step.
+
+If the document started life in Word, convert it first: [how to add a signature to a Word document](/blog/add-signature-to-word-document) covers both routes. And for every screen of signing on an iPhone or Android, see [how to sign documents on your phone](/blog/sign-documents-on-your-phone).
 
 ## When signing your own copy is not enough
 

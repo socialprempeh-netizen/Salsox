@@ -40,8 +40,21 @@ export type Post = {
    */
   updated?: string
   category: string
-  /** Optional cover image path (e.g. "/blog/covers/my-post.svg"). */
+  /** Optional cover image path (e.g. "/blog/covers/my-post.png"). */
   cover?: string
+  /**
+   * The cover's alt text, required whenever there is a cover: it describes
+   * the image to someone who cannot see it, and the image is also the post's
+   * social card. Covers are made by scripts/blog-images.mjs.
+   */
+  coverAlt?: string
+  /**
+   * The search phrase this post is written for, from the optional
+   * `keyword:` frontmatter. One post per phrase, and never one a registry
+   * page or template already targets: src/lib/seo/pages.test.ts enforces it,
+   * so a new post cannot quietly compete with an existing page in search.
+   */
+  keyword?: string
   /**
    * Optional Q&A pairs, published as FAQPage structured data by the post page.
    * Search engines require every answer you declare to be visible to the
@@ -128,6 +141,10 @@ export function getAllPosts(): Post[] {
         return { q, a }
       })
     }
+    // A cover without alt text would ship an image nobody can describe.
+    if (data.cover && (typeof data.coverAlt !== "string" || !data.coverAlt.trim())) {
+      throw new Error(`content/blog/${file}: a "cover" needs "coverAlt" describing it`)
+    }
     // Optional related paths: site-relative only, so a typo cannot send a
     // reader off-site. Whether each one exists is checked by the SEO tests.
     let related: string[] = []
@@ -153,6 +170,8 @@ export function getAllPosts(): Post[] {
       updated,
       category: String(data.category),
       cover: data.cover ? String(data.cover) : undefined,
+      coverAlt: data.cover ? fill(String(data.coverAlt)) : undefined,
+      keyword: typeof data.keyword === "string" && data.keyword.trim() ? data.keyword.trim().toLowerCase() : undefined,
       faq: faq?.map(({ q, a }) => ({ q: fill(q), a: fill(a) })),
       related,
       content: fill(content),

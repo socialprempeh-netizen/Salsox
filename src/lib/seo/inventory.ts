@@ -102,7 +102,7 @@ export type InventoryInput = {
   teamPaths: string[]
   /** Listing pages: /tools, /compare, /esignature-for, /templates, /blog, /docs. */
   hubPaths: string[]
-  posts: { path: string; title: string; updated: string | null }[]
+  posts: { path: string; title: string; updated: string | null; keyword?: string | null }[]
   blogCategories: { path: string; title: string }[]
   docs: { path: string; title: string }[]
   /** Non-default locales, as the first path segment of a translated URL. */
@@ -141,7 +141,7 @@ export function buildInventory(input: InventoryInput): { rows: InventoryRow[]; c
   }
   for (const t of input.templates) known.set(t.path, { type: "template", title: t.title, keyword: t.keyword, aliases: [], updated: t.updated })
   for (const c of input.categories) known.set(c.path, { type: "category", title: c.title, keyword: c.keyword, aliases: [], updated: c.updated ?? null })
-  for (const p of input.posts) known.set(p.path, { type: "blog", title: p.title, keyword: null, aliases: [], updated: p.updated })
+  for (const p of input.posts) known.set(p.path, { type: "blog", title: p.title, keyword: p.keyword ?? null, aliases: [], updated: p.updated })
   for (const c of input.blogCategories) known.set(c.path, { type: "blog-category", title: c.title, keyword: null, aliases: [], updated: null })
   for (const d of input.docs) known.set(d.path, { type: "docs", title: d.title, keyword: null, aliases: [], updated: null })
 

@@ -4,11 +4,13 @@ description: "Looking for a DocuSign alternative? When switching makes sense, wh
 h1: "A DocuSign alternative for people who send their own contracts"
 lede: "Most people who look for a DocuSign alternative are not unhappy with the signing. They are unhappy with envelope counts, per-seat pricing, or paying for features they never use. If that is you, here is how to decide whether to switch, and how."
 primaryKeyword: "docusign alternative"
-aliases: ["free docusign alternative", "docusign alternative for small business", "docusign alternatives", "cheaper than docusign", "alternative to docusign"]
+aliases: ["best docusign alternatives", "docusign competitors", "free docusign alternative", "docusign alternative for small business", "docusign alternatives", "cheaper than docusign", "alternative to docusign"]
 published: 2026-10-06
-updated: 2026-10-15
+updated: 2026-10-16
 breadcrumb: "DocuSign alternative"
 faq:
+  - q: "Who are DocuSign's main competitors?"
+    a: "Adobe Acrobat Sign, Dropbox Sign, PandaDoc, signNow, SignWell, DocuSeal, Jotform Sign and smaller tools such as {site}. They differ most in pricing model, bulk send, templates and integrations."
   - q: "Is there a free DocuSign alternative?"
     a: "Yes, with limits. {site}'s free plan sends 3 documents a month for signature and does not expire, and its PDF tools sign and fill documents in your browser free with no account."
   - q: "What is a good DocuSign alternative for a small business?"
@@ -74,6 +76,10 @@ Small businesses usually feel the per-seat and per-envelope model most, because 
 | {site} | Phone-first signing with payments | Personal $9/month | 3 documents a month |
 
 If you rely on DocuSign's API, integrations or enterprise controls, look first at the alternatives that publish those: DocuSeal and SignWell list APIs, Adobe lists Microsoft, Salesforce and Workday integrations. If you mainly need documents signed, and especially if clients pay deposits, compare the simpler tools on price per sender and on how signing feels on a phone. The [PandaDoc alternatives](/alternatives/pandadoc) page covers the sales-document side of the market.
+
+## Before you compare prices
+
+DocuSign's list prices are per user and include a set number of envelopes, so the yearly bill depends on how many people send and how often. [DocuSign pricing, explained](/blog/docusign-pricing) works through the plans with examples, and if you are also weighing Dropbox Sign, [Dropbox Sign alternatives](/blog/dropbox-sign-alternatives) compares the same competitors from that side.
 
 ## How to switch
 

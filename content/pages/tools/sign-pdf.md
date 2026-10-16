@@ -5,9 +5,9 @@ description: "Sign a PDF online for free: draw, type or upload your signature, p
 h1: "Sign a PDF online, free"
 lede: "Open a PDF, add your signature and the date, and download the signed copy. It all happens in your browser: the file is never uploaded."
 primaryKeyword: "sign pdf"
-aliases: ["sign pdf online", "sign pdf free", "sign a pdf", "how to sign a pdf online"]
+aliases: ["sign pdf online", "sign pdf free", "sign a pdf", "how to sign a pdf online", "free online pdf signer", "sign pdf without printing", "free pdf signing tool"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-16
 breadcrumb: "Sign PDF"
 howItWorks:
   - title: "Open your PDF"
@@ -26,6 +26,8 @@ benefits:
   - title: "Works on a phone"
     body: "Sign with your finger on a touchscreen; the page is built for small screens first."
 faq:
+  - q: "Can I sign a PDF without printing it?"
+    a: "Yes. Open the PDF here, draw, type or upload your signature, place it and download the signed copy. Nothing is printed or scanned, and the file never leaves your device."
   - q: "Is it really free?"
     a: "Yes. There is no account, no watermark and no usage limit. It costs us very little to run because your device does the work."
   - q: "Is my document uploaded anywhere?"
@@ -50,6 +52,10 @@ If you are the one who needs signatures from other people, this is not the tool.
 The tool adds your signature and any date or text you place as part of the page content, then saves a new PDF. If the document contains fillable form fields, they are flattened so the signed copy cannot be quietly edited in a PDF reader afterwards. Your original file on your device is not changed; the signed copy downloads under a new name ending in "(signed)".
 
 Signatures drawn on screen are smoothed and saved as a transparent image, so they sit naturally on the page whatever its background. Typed signatures are set in a script typeface. Uploaded images are scaled down before use, which keeps the signed PDF small enough to email.
+
+## Sign without printing or scanning
+
+Printing a PDF only to sign it and scan it back costs time and gives you a blurry copy. This free online PDF signer replaces all three steps: the signature goes straight onto the original page, at full quality, and you download a clean file. It works the same on a phone; see [how to sign documents on your phone](/blog/sign-documents-on-your-phone), and for a Word file, [how to add a signature to a Word document](/blog/add-signature-to-word-document).
 
 ## Why it does not upload anything
 

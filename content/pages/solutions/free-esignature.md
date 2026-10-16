@@ -4,9 +4,9 @@ description: "Sign PDFs free in your browser and send 3 documents a month for si
 h1: "Free eSignature, with the limits written down"
 lede: "\"Free\" in e-signature often means a trial that ends, or a plan you cannot actually send from. Here is exactly what {site} gives you for nothing, where the limits are, and what paying adds."
 primaryKeyword: "free esignature"
-aliases: ["free electronic signature", "free e-signature", "esign free", "cheap esignature software", "affordable esignature software"]
+aliases: ["free electronic signature software", "free e-signature software", "free online signature software", "free document signing software", "free electronic signature", "free e-signature", "esign free", "cheap esignature software", "affordable esignature software"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-16
 breadcrumb: "Free eSignature"
 benefits:
   - title: "Free tools, no account"
@@ -16,6 +16,8 @@ benefits:
   - title: "No surprise renewals"
     body: "Paid plans can be cancelled in one click, and you are emailed before every renewal."
 faq:
+  - q: "What should free electronic signature software include?"
+    a: "Signing links for people without an account, a record of who signed and when, the signed PDF for everyone, and a way to export your documents. Check the monthly document limit and whether the free plan is a trial that ends."
   - q: "Is the free plan a trial?"
     a: "No. It does not expire. A free account can send 3 documents for signature every calendar month for as long as you keep it."
   - q: "Are the free PDF tools really free?"
@@ -65,6 +67,10 @@ The count resets on the first of each month (UTC). If you send fewer than three 
 | Audit certificate page in the signed PDF | No | No | Yes |
 
 A one-time Lifetime plan ($299) includes everything in Business with no subscription. Current prices and trial terms are always on the [pricing page](/pricing).
+
+## Comparing free e-signature software
+
+Free electronic signature software comes in three kinds: free PDF tools that sign your own copy, free plans with a monthly document limit, and free trials that end. Only the first two stay free. When comparing them, look at the document limit, whether signers need an account, what record of the signing you keep, and whether you can export everything if you leave. Our guides to [Dropbox Sign alternatives](/blog/dropbox-sign-alternatives) and [DocuSign pricing](/blog/docusign-pricing) set out what other tools offer for free and what their paid plans cost.
 
 ## Is low-cost e-signature software good enough?
 

@@ -2,7 +2,13 @@
 title: "How to send a document for signature, step by step"
 description: "A practical guide to sending a PDF for e-signature: preparing the file, choosing roles and order, writing the message, following up, and fixing mistakes."
 date: 2026-10-06
+updated: 2026-10-16
 category: Guides
+keyword: "how to send a document for signature"
+cover: "/blog/covers/how-to-send-a-document-for-signature.png"
+coverAlt: "How to send a document for signature: a document with a teal signature line, tagged Send"
+coverTitle: "How to send a document for signature"
+coverLabel: "Send"
 related: ["/send-documents-for-signature", "/request-signature", "/document-signing-software", "/blog/document-approval-workflows"]
 faq:
   - q: "What file format should I send for signature?"
@@ -42,7 +48,9 @@ In **sequential** signing each person is invited only after the previous one fin
 
 ## 4. Place the fields
 
-For a document that just needs "sign here and date it", let Quick Send do it: it adds a signature and date field for each signer at the end of the document. For anything more specific, such as initials on every page, a name in a box or a checkbox beside a clause, place each field in the editor, choosing the signer first so their fields are assigned to them.
+For a document that just needs "sign here and date it", let Quick Send do it: it adds a signature and date field for each signer at the end of the document.
+
+[![Salsox Quick Send: upload a PDF, enter who signs, and send; a signature and date field are placed for each signer](/blog/screens/quick-send.png)](/blog/screens/quick-send.png) For anything more specific, such as initials on every page, a name in a box or a checkbox beside a clause, place each field in the editor, choosing the signer first so their fields are assigned to them.
 
 ## 5. Set the expiry
 
@@ -50,7 +58,7 @@ Links should expire. An unsigned offer from three months ago should not be signa
 
 ## 6. Write a short message
 
-The email is from you, so write one or two lines of context: what the document is, what you need, and by when. "Here's the lease we discussed. Could you sign by Friday so we can hand over keys on Monday?" outperforms a bare link.
+The email is from you, so write one or two lines of context: what the document is, what you need, and by when. "Here's the lease we discussed. Could you sign by Friday so we can hand over keys on Monday?" outperforms a bare link. For subject lines and more wording you can copy, see [how to request an e-signature by email](/blog/request-electronic-signature-by-email).
 
 ## 7. Send, and share where people read
 
@@ -59,6 +67,8 @@ Email goes automatically. If your signer is more likely to see a WhatsApp or SMS
 ## 8. Follow up without nagging
 
 The document's page shows each recipient's status: sent, viewed or signed. {site} reminds unsigned recipients automatically every three days, so you rarely need to chase. If someone has viewed the document but not signed, a personal message usually works better than another automatic reminder.
+
+If you have several documents for the same person, [signing multiple documents online](/blog/sign-multiple-documents-online) explains when to combine them into one PDF.
 
 ## 9. Fix problems in place
 

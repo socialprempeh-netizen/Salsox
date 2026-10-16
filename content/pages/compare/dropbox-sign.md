@@ -6,12 +6,12 @@ lede: "Dropbox Sign, known as HelloSign until 2022, offers unlimited signature r
 primaryKeyword: "dropbox sign"
 aliases: ["hellosign", "salsox vs dropbox sign", "dropbox sign vs salsox", "hellosign comparison"]
 published: 2026-10-06
-updated: 2026-10-15
+updated: 2026-10-16
 breadcrumb: "vs Dropbox Sign"
 competitor:
   name: "Dropbox Sign"
   url: "https://sign.dropbox.com"
-checked: 2026-10-06
+checked: 2026-10-16
 sources:
   - label: "Dropbox Sign pricing"
     url: "https://sign.dropbox.com/products/dropbox-sign/pricing"
@@ -19,7 +19,7 @@ faq:
   - q: "Is Dropbox Sign the same as HelloSign?"
     a: "Yes. HelloSign was acquired by Dropbox and renamed Dropbox Sign in 2022."
   - q: "Which is cheaper for one person?"
-    a: "On published list prices checked on 6 October 2026, {site} Personal is $90 a year and Dropbox Sign Essentials is $120.60 a year when billed yearly ($15 a month billed monthly). Both offer unlimited sending at that level."
+    a: "On published list prices checked on 16 October 2026, {site} Personal is $90 a year and Dropbox Sign Essentials is $180 a year when billed yearly ($15 a month), or $20 a month billed monthly. Both offer unlimited sending at that level."
   - q: "Does Dropbox Sign collect payments with a signature?"
     a: "Payment collection is not listed on Dropbox Sign's pricing page. {site} includes Sign & Pay on its Business plan."
   - q: "Does {site} have templates like Dropbox Sign?"
@@ -29,13 +29,13 @@ related: ["/vs/docusign", "/vs/pandadoc", "/vs/signnow", "/online-esignature", "
 
 ## At a glance
 
-Dropbox Sign's figures were taken from its pricing page on **6 October 2026**, in USD. Prices change; check the source before you decide.
+Dropbox Sign's figures were taken from its pricing page on **16 October 2026**, in USD (they had changed since our first check on 6 October). Prices change; check the source before you decide.
 
 | | {site} | Dropbox Sign |
 |---|---|---|
-| One-sender plan | Personal: $9/month or $90/year | Essentials: $15/month, or $120.60/year billed yearly |
+| One-sender plan | Personal: $9/month or $90/year | Essentials: $20/month, or $15/month billed yearly ($180/year) |
 | Sending | No count on paid plans (fair use) | Unlimited signature requests on paid plans |
-| Small team plan | No team seats today | Standard: $25 per user per month, or $17.50 billed yearly, 2 or more users |
+| Small team plan | No team seats today | Standard: $30 per user per month, or $25 billed yearly, 2 or more users |
 | Templates | Ready-made library; your own PDFs are set up each time | Your own documents, on every plan |
 | Bulk send | Not offered | Standard and above |
 | Payment collection | Business plan (Stripe or Paystack) | Not listed on the pricing page |

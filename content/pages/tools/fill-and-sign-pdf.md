@@ -5,9 +5,9 @@ description: "Fill in a PDF form and sign it online: complete its own fields, ad
 h1: "Fill and sign a PDF form"
 lede: "Complete a PDF form's own boxes, add text, ticks and dates wherever the form has none, sign it, and download a flattened copy ready to send. Everything stays on your device."
 primaryKeyword: "fill and sign pdf"
-aliases: ["fill pdf form", "fill out pdf online", "fill and sign pdf free", "complete pdf form"]
+aliases: ["fill pdf form", "fill out pdf online", "fill and sign pdf free", "complete pdf form", "fill out and sign pdf", "fillable pdf forms", "sign pdf form online", "complete pdf documents electronically"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-16
 breadcrumb: "Fill and sign PDF"
 howItWorks:
   - title: "Open the form"
@@ -26,6 +26,8 @@ benefits:
   - title: "Flattened for sending"
     body: "The downloaded copy has no editable fields left, which is what most offices ask for."
 faq:
+  - q: "Can I fill out and sign a PDF form on my phone?"
+    a: "Yes. The tool runs in your phone's browser: tap a field to type, tick the boxes, add your signature and download the completed form. Nothing is uploaded."
   - q: "What is a fillable PDF form?"
     a: "A PDF with interactive fields (text boxes, checkboxes, drop-downs) built in by whoever made it. The tool reads those fields and lets you fill them in a list."
   - q: "My form is a scan with no fields. Can I still fill it?"
@@ -50,6 +52,10 @@ Forms arrive in two shapes, and the tool handles both.
 Many real forms are a mix: fields for most answers, and a signature line with no field. That is why both modes are on one page.
 
 ## Signing the form
+
+Most fillable PDF forms end with a signature box, so filling and signing happen in one pass here: complete each field, sign the form online, and download one finished document instead of printing it to sign by hand. If the form must come back signed by someone else too, send it for signature instead; [how to sign a contract online](/blog/how-to-sign-a-contract-online) shows how that works.
+
+### Placing the signature
 
 When the answers are in, add your signature: drawn, typed or uploaded. It is stamped onto the page, then every form field is flattened. Flattening turns your answers into normal page content. The copy you send cannot be edited in a PDF reader without the change being obvious, and it looks the same on every device, which is not always true of live form fields.
 
