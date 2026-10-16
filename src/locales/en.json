@@ -1426,7 +1426,7 @@
     "dashboard": "Dashboard",
     "menu": {
       "why": "Why {site}",
-      "useCases": "Use cases",
+      "whatYouCanDo": "What you can do",
       "whoItsFor": "Who it's for",
       "exploreFeatures": "Explore all features",
       "allUseCases": "All use cases",

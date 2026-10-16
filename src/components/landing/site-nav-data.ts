@@ -19,7 +19,7 @@ export async function getSiteNav(): Promise<SiteNav> {
     toolOrder: TOOL_IDS,
     text: {
       why: t("menu.why", { site: siteConfig.name }),
-      useCases: t("menu.useCases"),
+      whatYouCanDo: t("menu.whatYouCanDo"),
       whoItsFor: t("menu.whoItsFor"),
       exploreFeatures: t("menu.exploreFeatures"),
       allUseCases: t("menu.allUseCases"),

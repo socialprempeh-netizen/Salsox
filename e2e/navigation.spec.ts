@@ -43,7 +43,8 @@ test("desktop: each group opens a panel that reaches its pages and its hub", asy
   // pages took "By industry" (site-nav.ts, since baa260f), now "Who it's
   // for", matching the footer's heading for the same pages.
   await expect(nav.getByText("Who it's for", { exact: true })).toBeVisible()
-  await expect(nav.getByText("Use cases", { exact: true })).toBeVisible()
+  // And "Use cases" is "What you can do" again, as in the footer.
+  await expect(nav.getByText("What you can do", { exact: true })).toBeVisible()
   if (shotDir) await page.screenshot({ path: path.join(shotDir, "nav-desktop-why.png") })
 
   await nav.getByRole("button", { name: "Resources" }).click()
