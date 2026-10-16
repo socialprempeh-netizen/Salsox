@@ -1214,6 +1214,13 @@
       "unsubscribe": "Unsubscribe"
     }
   },
+  "emailCapture": {
+    "label": "Your email address",
+    "placeholder": "Enter your email",
+    "submit": "Get started",
+    "signedIn": "Send a document",
+    "note": "Free to start, no card needed."
+  },
   "hero": {
     "liveDemo": "Live demo",
     "howItWorks": "See how it works",
@@ -1328,6 +1335,8 @@
     }
   },
   "footer": {
+    "whatYouCanDo": "What you can do",
+    "whoItsFor": "Who it's for",
     "blurb": {
       "$kit": "{tagline}. Production-ready boilerplate in plain Next.js."
     },
@@ -2336,6 +2345,7 @@
     "breadcrumbUseCases": "Use cases",
     "ctaPrimary": "Start free",
     "ctaSecondary": "See pricing",
+    "heroNote": "Free to start, no card needed.",
     "benefits": "Why use it",
     "howItWorks": "How it works",
     "faq": "Frequently asked questions",

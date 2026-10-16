@@ -50,10 +50,18 @@ export async function Navbar() {
 
   return (
     <NavbarWrapper>
-      {/* Squared (was rounded-full) per the site-wide square-corners rule. */}
+      {/* Squared (was rounded-full) per the site-wide square-corners rule.
+          A larger type scale, as the established e-signature sites use: the
+          bar runs nearly full width (was max-w-5xl, h-14) so the bigger
+          wordmark and menu items still sit evenly spaced on one line, and the
+          menu takes the room between the logo and the account buttons. Was:
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 border border-border bg-background/70 px-4 pl-5 shadow-soft backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <LogoLink className="flex items-center gap-2">
           <Logo animated wordmarkClassName="text-base font-bold" />
+        </LogoLink> */}
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 border border-border bg-background/70 px-4 pl-5 shadow-soft backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 lg:h-16 lg:gap-4 lg:px-6 xl:gap-6">
+        <LogoLink className="flex shrink-0 items-center gap-2.5">
+          <Logo animated markClassName="h-8 w-8 lg:h-9 lg:w-9" wordmarkClassName="text-xl font-bold xl:text-[22px]" />
         </LogoLink>
 
         {/* Was <NavLinks showBlog={showBlog} />: a flat row of home-page anchors. */}
