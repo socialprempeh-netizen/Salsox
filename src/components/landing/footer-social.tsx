@@ -18,6 +18,14 @@ import { cn } from "@/lib/utils"
  * stays visible but inert: not a link, not focusable, and announced as
  * coming soon, so it never sends anyone to a page that does not exist.
  *
+ * Size: on the reference footer (signeasy.com, measured with Playwright) each
+ * icon is the whole link, 20-25px wide with no tile and no padding, a 1:1
+ * ratio. Here a white tile stays, because the brand marks' cut-outs (the
+ * YouTube play triangle, the Facebook "f", the LinkedIn "in") and the black
+ * X and TikTok marks need white behind them on a black footer; it is sized
+ * to the mark, a 24px glyph in a 26px tile (about 92%), rather than the
+ * 18px glyph in a 36px tile (50%) it was.
+ *
  * Motion: a linked tile lifts slightly on hover with a CSS transition, the
  * public pages' documented exception to framer-motion (no animation library
  * on their first load); off under prefers-reduced-motion.
@@ -35,7 +43,9 @@ const GLYPHS: Record<Exclude<SocialNetwork, "linkedin">, { path: string; hex: st
 
 export const SOCIAL_ORDER: SocialNetwork[] = ["youtube", "instagram", "tiktok", "facebook", "linkedin", "x"]
 
-const TILE = "flex h-9 w-9 items-center justify-center bg-white"
+// Was h-9 w-9 (36px) around an 18px glyph.
+// const TILE = "flex h-9 w-9 items-center justify-center bg-white"
+const TILE = "flex h-[26px] w-[26px] items-center justify-center bg-white"
 
 export function FooterSocial({
   links,
@@ -49,14 +59,14 @@ export function FooterSocial({
   soonLabel: (name: string) => string
 }) {
   return (
-    <ul className="flex flex-wrap items-center gap-2">
+    <ul className="flex flex-wrap items-center gap-2.5">
       {SOCIAL_ORDER.map((network) => {
         // LinkedIn in its published brand blue, #0A66C2.
         const glyph =
           network === "linkedin" ? (
-            <LinkedinIcon className="h-[18px] w-[18px] text-[#0A66C2]" />
+            <LinkedinIcon className="h-6 w-6 text-[#0A66C2]" />
           ) : (
-            <svg viewBox="0 0 24 24" width="18" height="18" fill={`#${GLYPHS[network].hex}`} aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill={`#${GLYPHS[network].hex}`} aria-hidden="true">
               <path d={GLYPHS[network].path} />
             </svg>
           )
