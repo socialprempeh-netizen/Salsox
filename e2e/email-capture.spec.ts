@@ -18,6 +18,11 @@ for (const [path, location] of [["/", "home"], ["/sign-and-pay", "landing"]] as 
       const button = page.locator("main").getByRole("button", { name: "Get started" })
       await expect(field).toBeVisible()
       await expect(button).toBeVisible()
+      // Full height at every width, stacked or not: the field once collapsed
+      // to its text line when the row stacked below 380px.
+      const [fh, bh] = [(await field.boundingBox())!.height, (await button.boundingBox())!.height]
+      expect(fh, `field height @${width}`).toBeGreaterThanOrEqual(44)
+      expect(Math.abs(fh - bh), `field and button the same height @${width}`).toBeLessThan(2)
       if (width >= 390) {
         const [f, b] = [await field.boundingBox(), await button.boundingBox()]
         expect(Math.abs((f?.y ?? 0) - (b?.y ?? 1)), `same row @${width}`).toBeLessThan(2)
