@@ -143,7 +143,7 @@ Il kit arriva **neutro**: un nome segnaposto e un tema nero con scala di grigi, 
 | `NEXT_PUBLIC_CONTACT_EMAIL` | Indirizzo di contatto pubblico. |
 | `NEXT_PUBLIC_MAINTAINER_NAME`, `NEXT_PUBLIC_MAINTAINER_URL` | Chi costruisce il prodotto, mostrato in una sezione «Who builds it» nella pagina About. La sezione sparisce del tutto quando il nome non è impostato; l'indirizzo è facoltativo e il nome rende comunque, senza link. |
 | `NEXT_PUBLIC_GITHUB_ORG_URL` | Presenza su GitHub; l'icona nel footer si nasconde quando non c'è. |
-| `NEXT_PUBLIC_X_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, `NEXT_PUBLIC_YOUTUBE_URL`, `NEXT_PUBLIC_INSTAGRAM_URL`, `NEXT_PUBLIC_TIKTOK_URL`, `NEXT_PUBLIC_FACEBOOK_URL` | Profili social. Ogni icona nel footer è un link quando l'indirizzo è impostato, e resta visibile ma inattiva finché non lo è. |
+| `NEXT_PUBLIC_X_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, `NEXT_PUBLIC_YOUTUBE_URL`, `NEXT_PUBLIC_INSTAGRAM_URL`, `NEXT_PUBLIC_TIKTOK_URL`, `NEXT_PUBLIC_FACEBOOK_URL`, `NEXT_PUBLIC_PINTEREST_URL` | Profili social. Ogni icona nel footer è un link quando l'indirizzo è impostato, e resta visibile ma inattiva finché non lo è. |
 | `NEXT_PUBLIC_APP_STORE_URL`, `NEXT_PUBLIC_PLAY_STORE_URL` | Schede delle app negli store. Finché non sono impostate, i badge nel footer sono segnaposto inattivi con la dicitura "in arrivo". |
 | `NEXT_PUBLIC_BRAND_WORDMARK_ACCENT` | La porzione del nome da evidenziare col gradiente nel logo. |
 | `NEXT_PUBLIC_BRAND_PRIMARY`, `NEXT_PUBLIC_BRAND_PRIMARY_2` | Colori d'accento (esadecimali). Pulsanti, link, anelli di focus e immagini Open Graph li seguono da soli. L'interfaccia è piatta: l'accento è usato pieno, non come gradiente. |

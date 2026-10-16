@@ -4,9 +4,10 @@ import { cn } from "@/lib/utils"
  * The official "Download on the App Store" and "Get it on Google Play"
  * badges in the footer.
  *
- * The artwork is Apple's and Google's own, unmodified, served from
- * public/badges: Apple's SVG from developer.apple.com's badge resources, and
- * Google's PNG from the Google Play badge generator.
+ * The artwork is the supplied badge files in public/brand/ (badge-app-store.jpg,
+ * badge-google-play.jpg), cut from their backgrounds by
+ * scripts/brand-web-assets.mjs. Apple's and Google's own downloads, used
+ * before, are still in public/badges/.
  *
  * Size and layout follow the reference footer (signeasy.com, measured with
  * Playwright): a short label, then the two badges on one line at 36px tall,
@@ -37,12 +38,16 @@ export function StoreBadges({
 }) {
   // Were 40px (Apple) and an estimated 58px PNG with -9px margins (Google),
   // listed above their "coming soon" note.
+  // Were Apple's SVG (/badges/app-store-badge.svg, 108x36) and Google's PNG
+  // (/badges/google-play-badge.png, drawn at 53.6px with its clear space
+  // cropped to 121x36). Now the supplied badges in public/brand/, served as
+  // the trimmed 108px-tall copies scripts/brand-web-assets.mjs makes (3x the
+  // 36px they are drawn at): 127x36 and 120x36.
+  // { key: "app-store", ..., src: "/badges/app-store-badge.svg", width: 108, height: 36, box: "h-9 w-[108px]", className: "h-9 w-[108px]" },
+  // { key: "google-play", ..., src: "/badges/google-play-badge.png", width: 138, height: 54, box: "h-9 w-[121px]", className: "-m-[8.8px] h-[53.6px] w-[138.4px] max-w-none" },
   const badges = [
-    // Apple's 119.66x40 SVG at 36px tall: 108x36.
-    { key: "app-store", href: appStore, alt: labels.appStore, src: "/badges/app-store-badge.svg", width: 108, height: 36, box: "h-9 w-[108px]", className: "h-9 w-[108px]" },
-    // Google's 646x250 PNG at 53.6px tall is 138.4 wide; minus 8.8px of
-    // clear space each side it shows 121x36.
-    { key: "google-play", href: playStore, alt: labels.playStore, src: "/badges/google-play-badge.png", width: 138, height: 54, box: "h-9 w-[121px]", className: "-m-[8.8px] h-[53.6px] w-[138.4px] max-w-none" },
+    { key: "app-store", href: appStore, alt: labels.appStore, src: "/brand/web/badge-app-store.png", width: 127, height: 36, box: "h-9 w-[127px]", className: "h-9 w-[127px]" },
+    { key: "google-play", href: playStore, alt: labels.playStore, src: "/brand/web/badge-google-play.png", width: 120, height: 36, box: "h-9 w-[120px]", className: "h-9 w-[120px]" },
   ]
   const anyInert = badges.some((b) => !b.href)
 

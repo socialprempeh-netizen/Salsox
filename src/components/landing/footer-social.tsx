@@ -1,51 +1,68 @@
-import { siFacebook, siInstagram, siTiktok, siX, siYoutube } from "simple-icons"
-import { LinkedinIcon } from "@/components/icons/linkedin"
+// Was: import { siFacebook, siInstagram, siTiktok, siX, siYoutube } from "simple-icons"
+// The supplied brand images replaced the drawn marks; only X is still drawn.
+import { siX } from "simple-icons"
+// import { LinkedinIcon } from "@/components/icons/linkedin"
 import { cn } from "@/lib/utils"
 
 /**
- * The footer's social icons: YouTube, Instagram, TikTok, Facebook, LinkedIn
- * and X, each in its brand colour on a white tile, so the black-glyph brands
- * (X, TikTok) stay visible on the footer's black background.
+ * The footer's social icons: YouTube, Instagram, TikTok, Facebook, LinkedIn,
+ * Pinterest and X.
  *
- * The glyphs are the brands' own marks from the `simple-icons` package (its
- * path data and its listed brand hex), except LinkedIn: LinkedIn asked for
- * its mark to be removed from simple-icons, so LinkedIn uses the mark this
- * site already had (src/components/icons/linkedin.tsx), in LinkedIn's
- * published brand blue.
+ * Each is the brand's own artwork from public/brand/ (icon-*.png and
+ * icon-youtube.jpg), served from the trimmed, background-free 78px copies in
+ * public/brand/web/ that scripts/brand-web-assets.mjs makes, 3x the 26px they
+ * are drawn at, so they stay crisp without shipping the 1600px sources.
+ * These are full-colour badges with their own white glyphs, so they fill
+ * their 26px tile edge to edge, the 1:1 icon-to-tile ratio measured on the
+ * reference footer (signeasy.com), with no white backing.
+ *
+ * X has no supplied image, so it stays the X mark from the `simple-icons`
+ * package, drawn white on a black disc to sit with the circular badges (the
+ * TikTok badge is the same black disc).
  *
  * Every icon is always shown. One whose profile URL is configured
  * (src/config/site.ts, NEXT_PUBLIC_*_URL) is a link; one that is not yet set
  * stays visible but inert: not a link, not focusable, and announced as
  * coming soon, so it never sends anyone to a page that does not exist.
  *
- * Size: on the reference footer (signeasy.com, measured with Playwright) each
- * icon is the whole link, 20-25px wide with no tile and no padding, a 1:1
- * ratio. Here a white tile stays, because the brand marks' cut-outs (the
- * YouTube play triangle, the Facebook "f", the LinkedIn "in") and the black
- * X and TikTok marks need white behind them on a black footer; it is sized
- * to the mark, a 24px glyph in a 26px tile (about 92%), rather than the
- * 18px glyph in a 36px tile (50%) it was.
- *
- * Motion: a linked tile lifts slightly on hover with a CSS transition, the
+ * Motion: a linked icon lifts slightly on hover with a CSS transition, the
  * public pages' documented exception to framer-motion (no animation library
  * on their first load); off under prefers-reduced-motion.
  */
 
-export type SocialNetwork = "youtube" | "instagram" | "tiktok" | "facebook" | "linkedin" | "x"
+export type SocialNetwork = "youtube" | "instagram" | "tiktok" | "facebook" | "linkedin" | "pinterest" | "x"
 
-const GLYPHS: Record<Exclude<SocialNetwork, "linkedin">, { path: string; hex: string }> = {
-  youtube: { path: siYoutube.path, hex: siYoutube.hex },
-  instagram: { path: siInstagram.path, hex: siInstagram.hex },
-  tiktok: { path: siTiktok.path, hex: siTiktok.hex },
-  facebook: { path: siFacebook.path, hex: siFacebook.hex },
-  x: { path: siX.path, hex: siX.hex },
+// Was: brand-coloured simple-icons glyphs (24px) on a 26px white tile, the
+// white needed behind the marks' cut-outs on a black footer:
+// const GLYPHS = { youtube: siYoutube, instagram: siInstagram, tiktok: siTiktok, facebook: siFacebook, x: siX }
+// const TILE = "flex h-[26px] w-[26px] items-center justify-center bg-white"
+// with LinkedIn as <LinkedinIcon className="h-6 w-6 text-[#0A66C2]" />.
+const IMAGES: Record<Exclude<SocialNetwork, "x">, string> = {
+  youtube: "/brand/web/icon-youtube.png",
+  instagram: "/brand/web/icon-instagram.png",
+  tiktok: "/brand/web/icon-tiktok.png",
+  facebook: "/brand/web/icon-facebook.png",
+  linkedin: "/brand/web/icon-linkedin.png",
+  pinterest: "/brand/web/icon-pinterest.png",
 }
 
-export const SOCIAL_ORDER: SocialNetwork[] = ["youtube", "instagram", "tiktok", "facebook", "linkedin", "x"]
+export const SOCIAL_ORDER: SocialNetwork[] = ["youtube", "instagram", "tiktok", "facebook", "linkedin", "pinterest", "x"]
 
-// Was h-9 w-9 (36px) around an 18px glyph.
-// const TILE = "flex h-9 w-9 items-center justify-center bg-white"
-const TILE = "flex h-[26px] w-[26px] items-center justify-center bg-white"
+const TILE = "flex h-[26px] w-[26px] items-center justify-center"
+
+function Mark({ network }: { network: SocialNetwork }) {
+  if (network === "x") {
+    return (
+      <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-black ring-1 ring-white/25">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="#ffffff" aria-hidden="true">
+          <path d={siX.path} />
+        </svg>
+      </span>
+    )
+  }
+  // eslint-disable-next-line @next/next/no-img-element -- small static brand artwork, already sized
+  return <img src={IMAGES[network]} alt="" width={26} height={26} className="h-[26px] w-[26px]" />
+}
 
 export function FooterSocial({
   links,
@@ -61,15 +78,6 @@ export function FooterSocial({
   return (
     <ul className="flex flex-wrap items-center gap-2.5">
       {SOCIAL_ORDER.map((network) => {
-        // LinkedIn in its published brand blue, #0A66C2.
-        const glyph =
-          network === "linkedin" ? (
-            <LinkedinIcon className="h-6 w-6 text-[#0A66C2]" />
-          ) : (
-            <svg viewBox="0 0 24 24" width="24" height="24" fill={`#${GLYPHS[network].hex}`} aria-hidden="true">
-              <path d={GLYPHS[network].path} />
-            </svg>
-          )
         const href = links[network]
         return (
           <li key={network}>
@@ -84,11 +92,11 @@ export function FooterSocial({
                   "transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-accent)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                 )}
               >
-                {glyph}
+                <Mark network={network} />
               </a>
             ) : (
               <span role="img" aria-label={soonLabel(labels[network])} title={soonLabel(labels[network])} className={TILE}>
-                {glyph}
+                <Mark network={network} />
               </span>
             )}
           </li>
