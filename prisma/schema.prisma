@@ -539,3 +539,40 @@ model SavedTemplate {
 
   @@index([userId])
 }
+
+// ─── IndexNow ───────────────────────────────────────────────────────────────
+// What this site has told search engines, so submission is not a black box
+// (src/lib/indexnow-store.ts, shown on /admin/seo/inventory).
+
+// One request to api.indexnow.org: why it was sent, which URLs (the first 50;
+// `urlCount` has the total) and what the endpoint answered. `status` is 0
+// when no answer came back at all (network error, timeout).
+model IndexNowPing {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  // deploy (first request a new production deployment served), cron (the
+  // daily safety net) or manual (a POST to /api/indexnow).
+  trigger   String
+  urlCount  Int
+  urls      String[]
+  status    Int
+  ok        Boolean
+  error     String?
+
+  @@index([createdAt])
+}
+
+// The last version of each URL that was accepted: a URL is submitted again
+// only when its sitemap lastModified moves past this (or it is new).
+model IndexNowUrl {
+  url          String    @id
+  lastModified DateTime?
+  submittedAt  DateTime
+}
+
+// One row per production deployment that has run its deploy-time sync, so
+// several instances starting at once submit once between them.
+model IndexNowDeploy {
+  id        String   @id
+  createdAt DateTime @default(now())
+}
