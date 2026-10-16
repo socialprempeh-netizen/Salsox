@@ -8,14 +8,21 @@ import { test, expect } from "@playwright/test"
  * page, on a phone and on a desktop, that both now lead to sign up.
  */
 
-test("on a phone, 'Send your first document' opens sign up", async ({ browser }) => {
+// Was "on a phone, 'Send your first document' opens sign up", a link with
+// href /signup?next=/dashboard/documents/quick-send. The hero's email row
+// (src/components/landing/email-capture.tsx) submits to the same place, with
+// the address added.
+test("on a phone, the hero email row opens sign up with the address filled in", async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   const page = await ctx.newPage()
   await page.goto("/")
-  const cta = page.getByRole("link", { name: "Send your first document" })
-  await expect(cta).toHaveAttribute("href", "/signup?next=/dashboard/documents/quick-send")
-  await cta.click()
-  await page.waitForURL(/\/signup\?next=/)
+  const main = page.getByRole("main")
+  await main.getByRole("textbox", { name: "Your email address" }).fill("ama.mensah@example.com")
+  await main.getByRole("button", { name: "Get started" }).click()
+  await page.waitForURL(/\/signup\?/)
+  const url = new URL(page.url())
+  expect(url.searchParams.get("next")).toBe("/dashboard/documents/quick-send")
+  expect(url.searchParams.get("email")).toBe("ama.mensah@example.com")
   await ctx.close()
 })
 
@@ -38,7 +45,11 @@ test("signed in, the landing page offers the dashboard and a new document", asyn
   await page.goto("/")
   await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible()
   await expect(page.getByRole("link", { name: "Get started" })).toHaveCount(0)
-  await expect(page.getByRole("link", { name: "Send your first document" })).toHaveAttribute("href", "/dashboard/documents/new")
+  // Was the hero button "Send your first document"; the email row shows a
+  // signed-in visitor one button to a new document instead of the field.
+  // await expect(page.getByRole("link", { name: "Send your first document" })).toHaveAttribute("href", "/dashboard/documents/new")
+  await expect(page.getByRole("main").getByRole("link", { name: "Send a document" })).toHaveAttribute("href", "/dashboard/documents/new")
+  await expect(page.getByRole("main").getByRole("textbox", { name: "Your email address" })).toHaveCount(0)
 
   // And on a phone, the menu carries the Dashboard link instead of Sign in.
   await page.setViewportSize({ width: 390, height: 844 })
