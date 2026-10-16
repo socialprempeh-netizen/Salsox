@@ -4,9 +4,15 @@ import { cn } from "@/lib/utils"
  * The official "Download on the App Store" and "Get it on Google Play"
  * badges in the footer.
  *
- * The artwork is Apple's and Google's own, unmodified, served from
- * public/badges: Apple's SVG from developer.apple.com's badge resources, and
- * Google's PNG from the Google Play badge generator.
+ * App Store: Apple's official flat badge, the SVG downloaded from
+ * developer.apple.com into public/badges/. A vector, so it is sharp at any
+ * size and has no background to remove; it is drawn at 36px tall, 108x36.
+ * The supplied public/brand/badge-app-store.jpg was a 3D render, not Apple's
+ * badge, and is no longer used (the file is kept).
+ *
+ * Google Play: the supplied public/brand/badge-google-play.jpg, cut from its
+ * white background by scripts/brand-web-assets.mjs to a 108px-tall copy (3x
+ * the 36px it is drawn at), 120x36.
  *
  * Size and layout follow the reference footer (signeasy.com, measured with
  * Playwright): a short label, then the two badges on one line at 36px tall,
@@ -37,12 +43,19 @@ export function StoreBadges({
 }) {
   // Were 40px (Apple) and an estimated 58px PNG with -9px margins (Google),
   // listed above their "coming soon" note.
+  // Were Apple's SVG (/badges/app-store-badge.svg, 108x36) and Google's PNG
+  // (/badges/google-play-badge.png, drawn at 53.6px with its clear space
+  // cropped to 121x36). Now the supplied badges in public/brand/, served as
+  // the trimmed 108px-tall copies scripts/brand-web-assets.mjs makes (3x the
+  // 36px they are drawn at): 127x36 and 120x36.
+  // { key: "app-store", ..., src: "/badges/app-store-badge.svg", width: 108, height: 36, box: "h-9 w-[108px]", className: "h-9 w-[108px]" },
+  // { key: "google-play", ..., src: "/badges/google-play-badge.png", width: 138, height: 54, box: "h-9 w-[121px]", className: "-m-[8.8px] h-[53.6px] w-[138.4px] max-w-none" },
+  // App Store was the cut 3D render (/brand/web/badge-app-store.png, 127x36);
+  // back to Apple's official SVG.
+  // { key: "app-store", ..., src: "/brand/web/badge-app-store.png", width: 127, height: 36, box: "h-9 w-[127px]", className: "h-9 w-[127px]" },
   const badges = [
-    // Apple's 119.66x40 SVG at 36px tall: 108x36.
     { key: "app-store", href: appStore, alt: labels.appStore, src: "/badges/app-store-badge.svg", width: 108, height: 36, box: "h-9 w-[108px]", className: "h-9 w-[108px]" },
-    // Google's 646x250 PNG at 53.6px tall is 138.4 wide; minus 8.8px of
-    // clear space each side it shows 121x36.
-    { key: "google-play", href: playStore, alt: labels.playStore, src: "/badges/google-play-badge.png", width: 138, height: 54, box: "h-9 w-[121px]", className: "-m-[8.8px] h-[53.6px] w-[138.4px] max-w-none" },
+    { key: "google-play", href: playStore, alt: labels.playStore, src: "/brand/web/badge-google-play.png", width: 120, height: 36, box: "h-9 w-[120px]", className: "h-9 w-[120px]" },
   ]
   const anyInert = badges.some((b) => !b.href)
 

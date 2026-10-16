@@ -17,7 +17,12 @@ const gradient = process.env.NEXT_PUBLIC_BRAND_GRADIENT?.trim() || null
  * home-screen icon and the header of every email. Unset, the kit stays
  * neutral.
  */
-const mark = process.env.NEXT_PUBLIC_BRAND_MARK?.trim() || null
+// The product's own mark is the supplied logo (public/brand/logo-mark.png),
+// served as its trimmed 256px copy (scripts/brand-web-assets.mjs). The
+// variable still wins when set: a deployment pointing it at the old
+// /brand/mark.png keeps that until the variable is changed or removed.
+// Was: process.env.NEXT_PUBLIC_BRAND_MARK?.trim() || null
+const mark = process.env.NEXT_PUBLIC_BRAND_MARK?.trim() || (isKitSite ? null : "/brand/web/logo-mark.png")
 
 /**
  * The kit's own palette, restored token by token on its site

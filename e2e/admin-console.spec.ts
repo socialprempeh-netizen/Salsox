@@ -139,6 +139,7 @@ test("the footer shows every social icon, linked only when its profile is set", 
     ["Instagram", "NEXT_PUBLIC_INSTAGRAM_URL", /^https:\/\/(www\.)?instagram\.com\//],
     ["TikTok", "NEXT_PUBLIC_TIKTOK_URL", /^https:\/\/(www\.)?tiktok\.com\//],
     ["Facebook", "NEXT_PUBLIC_FACEBOOK_URL", /^https:\/\/(www\.)?facebook\.com\//],
+    ["Pinterest", "NEXT_PUBLIC_PINTEREST_URL", /^https:\/\/([a-z]+\.)?pinterest\.[a-z.]+\//],
     ["LinkedIn", "NEXT_PUBLIC_LINKEDIN_URL", /^https:\/\/(www\.)?linkedin\.com\//],
     ["X / Twitter", "NEXT_PUBLIC_X_URL", /^https:\/\/(x|twitter)\.com\//],
   ]
@@ -154,8 +155,9 @@ test("the footer shows every social icon, linked only when its profile is set", 
     await expect(footer.getByRole("img", { name: "Download on the App Store (Mobile apps coming soon)" })).toBeVisible()
     await expect(footer.getByText("Mobile apps coming soon", { exact: true })).toBeVisible()
   }
-  // The official artwork is served, not a stand-in.
-  for (const src of ["/badges/app-store-badge.svg", "/badges/google-play-badge.png"]) {
+  // The badges, icons and logo mark are the supplied artwork's web copies
+  // (public/brand/web, made by scripts/brand-web-assets.mjs).
+  for (const src of ["/badges/app-store-badge.svg", "/brand/web/badge-google-play.png", "/brand/web/icon-pinterest.png", "/brand/web/logo-mark.png"]) {
     expect((await page.request.get(src)).status(), src).toBe(200)
   }
 })

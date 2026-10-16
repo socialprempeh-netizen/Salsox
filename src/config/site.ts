@@ -112,6 +112,7 @@ export const siteConfig = {
     instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || null,
     tiktok: process.env.NEXT_PUBLIC_TIKTOK_URL || null,
     facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || null,
+    pinterest: process.env.NEXT_PUBLIC_PINTEREST_URL || null,
     /**
      * Store listings for mobile apps. There is no app yet: until these are
      * set, the footer shows the official badges as inert placeholders,

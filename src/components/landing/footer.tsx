@@ -122,6 +122,7 @@ export async function Footer() {
     instagram: t("social.instagram"),
     tiktok: t("social.tiktok"),
     facebook: t("social.facebook"),
+    pinterest: t("social.pinterest"),
     linkedin: t("linkedin"),
     x: t("social.x"),
   }
@@ -181,6 +182,7 @@ export async function Footer() {
               tiktok: siteConfig.links.tiktok,
               facebook: siteConfig.links.facebook,
               linkedin: siteConfig.links.linkedin,
+              pinterest: siteConfig.links.pinterest,
               x: siteConfig.links.x,
             }}
             labels={social}
