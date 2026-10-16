@@ -42,6 +42,8 @@ export const CLIENT_MESSAGES = {
     "docs",
     "language",
     "verify",
+    // The hero "Get started" email row (home page and landing pages).
+    "emailCapture",
     // Plan cards render on the landing and pricing pages as well as in billing.
     "billing.plans",
     "billing.upgrade",

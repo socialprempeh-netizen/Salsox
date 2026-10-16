@@ -15,6 +15,7 @@ import { Logo } from "@/components/logo"
 import { siteConfig } from "@/config/site"
 import { heroSecondaryCta } from "@/lib/landing-cta"
 import { HeroCta } from "@/components/landing/session-aware"
+import { EmailCapture } from "@/components/landing/email-capture"
 
 /**
  * The hero copy lives in the message files, under two parallel namespaces:
@@ -108,6 +109,21 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
           {t("subtitle")}
         </p>
 
+        {/* The email row (email-capture.tsx) when the call to action is
+            signup, as on every clone; the kit's own site points at its
+            pricing section instead and keeps the two buttons below. */}
+        {ctaHrefs.signedOut.startsWith("/signup") ? (
+          <div className="mt-10">
+            <EmailCapture signupHref={ctaHrefs.signedOut} signedInHref={ctaHrefs.signedIn} location="hero:/" showNote={false} />
+            <p className="mt-5 text-sm text-muted-foreground">
+              {t("trust")}
+              {" "}
+              <Link href={secondary.href} className="font-medium text-foreground underline-offset-4 hover:underline">
+                {t(secondary.label === "liveDemo" ? "liveDemo" : "howItWorks")}
+              </Link>
+            </p>
+          </div>
+        ) : (
         <div
           className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
         >
@@ -133,12 +149,15 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
             <Link href={secondary.href}>{t(secondary.label === "liveDemo" ? "liveDemo" : "howItWorks")}</Link>
           </Button>
         </div>
+        )}
 
-        <p
-          className="mt-5 text-sm text-muted-foreground"
-        >
-          {t("trust")}
-        </p>
+        {!ctaHrefs.signedOut.startsWith("/signup") && (
+          <p
+            className="mt-5 text-sm text-muted-foreground"
+          >
+            {t("trust")}
+          </p>
+        )}
 
         {/* Dashboard mockup — mirrors the real app shell.
 

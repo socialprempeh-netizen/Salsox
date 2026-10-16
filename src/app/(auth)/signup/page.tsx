@@ -9,6 +9,7 @@ import { AuthNotice } from "@/components/auth/auth-notice"
 import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
 import { safeNext } from "@/lib/safe-next"
+import { prefillEmail } from "@/lib/signup-prefill"
 import type { Metadata } from "next"
 
 // Its own title in the tab and in any result that slips through; the
@@ -21,9 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>
+  searchParams: Promise<{ error?: string; next?: string; email?: string }>
 }) {
-  const { error, next } = await searchParams
+  const { error, next, email } = await searchParams
+  // The address typed into a "Get started" row on a public page, echoed
+  // into the form only when it is one plain email (src/lib/signup-prefill.ts).
+  const prefilledEmail = prefillEmail(email)
   // Where to land after signing up, when a public tool asked (the request a
   // signature tool hands its draft to Quick Send). Dashboard paths only.
   const after = safeNext(next)
@@ -120,7 +124,7 @@ export default async function SignupPage({
         <form action={registerUser} className="flex flex-col gap-3">
           {after !== "/dashboard" && <input type="hidden" name="next" value={after} />}
           <Input name="name" type="text" placeholder={t("namePlaceholder")} autoComplete="name" maxLength={100} disabled={isDemo} className="h-12 rounded-none px-4" />
-          <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required disabled={isDemo} className="h-12 rounded-none px-4" />
+          <Input name="email" type="email" placeholder={t("emailPlaceholder")} autoComplete="email" required disabled={isDemo} defaultValue={prefilledEmail} className="h-12 rounded-none px-4" />
           <Input
             name="password"
             type="password"

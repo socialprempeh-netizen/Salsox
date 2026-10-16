@@ -4,6 +4,8 @@ import { ArrowRight, Check, ExternalLink, ShieldCheck } from "lucide-react"
 import { BreadcrumbTrail } from "@/components/ui/breadcrumb"
 import { Reveal } from "@/components/landing/reveal"
 import { TrackedLink } from "@/components/analytics/tracked-link"
+import { EmailCapture } from "@/components/landing/email-capture"
+import { NEW_DOCUMENT_PATH, SIGNUP_TO_FIRST_DOCUMENT_PATH } from "@/lib/landing-cta"
 import { MarkdownBody } from "@/components/seo/markdown-body"
 import { jsonLdScript } from "@/lib/json-ld"
 import { pageGraph, pageTrail } from "@/lib/seo/page-graph"
@@ -72,13 +74,24 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
               </p>
             </div>
           ) : (
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <TrackedLink href="/signup" location={`hero:${page.path}`} className="inline-flex h-12 items-center justify-center gap-2 bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
-                {t("ctaPrimary")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </TrackedLink>
-              <TrackedLink href="/pricing" location={`hero-pricing:${page.path}`} className="inline-flex h-12 items-center justify-center border border-border px-6 text-sm font-semibold transition-colors hover:bg-secondary">
-                {t("ctaSecondary")}
-              </TrackedLink>
+            // Was a "Start free" button beside "See pricing"; the email row
+            // (email-capture.tsx) now leads, and pricing follows as a link.
+            // <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            //   <TrackedLink href="/signup" location={`hero:${page.path}`} className="inline-flex h-12 items-center justify-center gap-2 bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+            //     {t("ctaPrimary")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            //   </TrackedLink>
+            //   <TrackedLink href="/pricing" location={`hero-pricing:${page.path}`} className="inline-flex h-12 items-center justify-center border border-border px-6 text-sm font-semibold transition-colors hover:bg-secondary">
+            //     {t("ctaSecondary")}
+            //   </TrackedLink>
+            // </div>
+            <div className="mt-6">
+              <EmailCapture signupHref={SIGNUP_TO_FIRST_DOCUMENT_PATH} signedInHref={NEW_DOCUMENT_PATH} location={`hero:${page.path}`} align="start" size="md" showNote={false} />
+              <p className="mt-3 text-sm text-muted-foreground">
+                {t("heroNote")}{" "}
+                <TrackedLink href="/pricing" location={`hero-pricing:${page.path}`} className="font-medium text-foreground underline-offset-4 hover:underline">
+                  {t("ctaSecondary")}
+                </TrackedLink>
+              </p>
             </div>
           )}
 

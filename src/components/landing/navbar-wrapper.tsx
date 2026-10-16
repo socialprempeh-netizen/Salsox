@@ -9,5 +9,8 @@ import type { ReactNode } from "react"
  * demo mode) rather than here.
  */
 export function NavbarWrapper({ children }: { children: ReactNode }) {
-  return <header className="w-full px-4 pt-4">{children}</header>
+  // Was `w-full px-4 pt-4`: the gutter around a floating bar. The bar now
+  // runs edge to edge (navbar.tsx), so the shell adds no space of its own.
+  // return <header className="w-full px-4 pt-4">{children}</header>
+  return <header className="w-full">{children}</header>
 }

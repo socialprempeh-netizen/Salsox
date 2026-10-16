@@ -8,8 +8,8 @@ import { buildSiteNav, isCurrent, type NavPage, type NavText } from "./site-nav"
 
 const text: NavText = {
   why: "Why us",
-  useCases: "Use cases",
-  byIndustry: "By industry",
+  whatYouCanDo: "What you can do",
+  whoItsFor: "Who it's for",
   exploreFeatures: "Explore features",
   allUseCases: "All use cases",
   tools: "Free tools",

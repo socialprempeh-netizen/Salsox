@@ -83,14 +83,20 @@ export function NavMenu({ nav }: { nav: SiteNav }) {
   // text-sm 500 in grey, with a tinted fill when active or hovered.
   const itemClass = (active: boolean) =>
     cn(
-      "inline-flex items-center gap-1 px-3 py-1.5 text-[15px] font-semibold transition-colors",
+      // Was text-[15px] at every width: the larger header type scale
+      // (navbar.tsx) from 1280px up. Between 1024 and 1279 five groups, the
+      // logo and the account buttons only fit on one line at the old size,
+      // so it stays there, never wrapping a label onto two lines.
+      "inline-flex items-center gap-1 whitespace-nowrap px-2 py-2 text-[15px] font-semibold transition-colors xl:gap-1.5 xl:px-3 xl:text-[17px]",
       active ? "text-primary" : "text-foreground hover:text-primary"
     )
 
   return (
-    <nav ref={root} aria-label={t("menu.mainMenu")} className="hidden lg:block">
-      <ul className="flex items-center gap-1">
-        {nav.groups.map((group) => {
+    // Takes the width between the logo and the account buttons, items spread
+    // evenly across it (was a tight cluster: `hidden lg:block`, gap-1).
+    <nav ref={root} aria-label={t("menu.mainMenu")} className="hidden min-w-0 flex-1 lg:block">
+      <ul className="mx-auto flex max-w-3xl items-center justify-evenly">
+        {nav.groups.map((group, index) => {
           const isOpen = open === group.id
           const active = group.columns.some((c) => c.links.some((l) => isCurrent(l.href, pathname))) || isCurrent(group.footer.href, pathname)
           return (
@@ -108,9 +114,12 @@ export function NavMenu({ nav }: { nav: SiteNav }) {
                 className={itemClass(active || isOpen)}
               >
                 {group.label}
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform motion-reduce:transition-none", isOpen && "rotate-180")} aria-hidden="true" />
+                <ChevronDown className={cn("h-4 w-4 transition-transform motion-reduce:transition-none", isOpen && "rotate-180")} aria-hidden="true" />
               </button>
-              {isOpen && <Panel group={group} pathname={pathname} />}
+              {/* The last two open from their right edge: with the menu spread
+                  across the bar they sit near the screen's edge, where a
+                  panel opening rightwards would run off it. */}
+              {isOpen && <Panel group={group} pathname={pathname} align={index >= nav.groups.length - 2 ? "end" : "start"} />}
             </li>
           )
         })}
@@ -124,13 +133,13 @@ export function NavMenu({ nav }: { nav: SiteNav }) {
   )
 }
 
-function Panel({ group, pathname }: { group: NavGroup; pathname: string }) {
+function Panel({ group, pathname, align = "start" }: { group: NavGroup; pathname: string; align?: "start" | "end" }) {
   const headingId = useId()
   const wide = group.columns.length > 1
   return (
     // pt-2 rather than a margin: the gap stays inside the hover area, so the
     // pointer can cross it without leaving the group.
-    <div id={`nav-panel-${group.id}`} className="absolute left-0 top-full z-50 pt-2">
+    <div id={`nav-panel-${group.id}`} className={cn("absolute top-full z-50 pt-2", align === "end" ? "right-0" : "left-0")}>
       <div
         className={cn(
           "border border-border bg-popover text-popover-foreground shadow-lg",

@@ -40,9 +40,11 @@ test("desktop: each group opens a panel that reaches its pages and its hub", asy
 
   await nav.getByRole("button", { name: /^Why / }).click()
   // Was "What you can do": that heading became "Use cases", and the industry
-  // pages took "By industry" (site-nav.ts, since baa260f).
-  await expect(nav.getByText("By industry", { exact: true })).toBeVisible()
-  await expect(nav.getByText("Use cases", { exact: true })).toBeVisible()
+  // pages took "By industry" (site-nav.ts, since baa260f), now "Who it's
+  // for", matching the footer's heading for the same pages.
+  await expect(nav.getByText("Who it's for", { exact: true })).toBeVisible()
+  // And "Use cases" is "What you can do" again, as in the footer.
+  await expect(nav.getByText("What you can do", { exact: true })).toBeVisible()
   if (shotDir) await page.screenshot({ path: path.join(shotDir, "nav-desktop-why.png") })
 
   await nav.getByRole("button", { name: "Resources" }).click()
@@ -120,4 +122,20 @@ test("footer: grouped like the top menu, with a Company column", async ({ page }
   await expect(footer.getByRole("link", { name: "All free tools" })).toHaveAttribute("href", "/tools")
   await expect(footer.getByRole("link", { name: "Help and docs" })).toHaveAttribute("href", "/docs")
   await expect(footer.getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "/terms")
+
+  // The "Why" group is two lists under their own subheadings, side by side
+  // even on a phone: what the product does, and who it is for.
+  const what = footer.getByRole("heading", { name: "What you can do", exact: true })
+  const who = footer.getByRole("heading", { name: "Who it's for", exact: true })
+  await expect(what).toBeVisible()
+  await expect(who).toBeVisible()
+  await expect(what.locator("xpath=following-sibling::ul").getByRole("link", { name: "Sign and pay" })).toHaveAttribute("href", "/sign-and-pay")
+  await expect(who.locator("xpath=following-sibling::ul").getByRole("link", { name: "Clinics" })).toHaveAttribute("href", "/esignature-for/clinics")
+  await expect(who.locator("xpath=following-sibling::ul").getByRole("link", { name: "All use cases" })).toHaveAttribute("href", "/esignature-for")
+  for (const width of [360, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    const [a, b] = [await what.boundingBox(), await who.boundingBox()]
+    expect(Math.abs((a?.y ?? 0) - (b?.y ?? 1)), `subheadings side by side @${width}`).toBeLessThan(2)
+    await expectNoHorizontalScroll(page, `footer @${width}`)
+  }
 })

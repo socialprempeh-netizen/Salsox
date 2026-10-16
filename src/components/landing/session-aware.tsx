@@ -61,7 +61,7 @@ export function NavbarAuthActions({
 
   if (signedIn) {
     return (
-      <Button asChild size="sm" className={`hidden md:inline-flex ${FADE}`}>
+      <Button asChild size="sm" className={`hidden md:inline-flex lg:h-10 lg:px-5 lg:text-[15px] ${FADE}`}>
         <Link href="/dashboard">{t("dashboard")}</Link>
       </Button>
     )
@@ -69,10 +69,10 @@ export function NavbarAuthActions({
 
   return (
     <>
-      <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
+      <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex lg:h-10 lg:px-4 lg:text-[15px]">
         <Link href={signInHref}>{t("signIn")}</Link>
       </Button>
-      <Button asChild variant="gradient" size="sm" className="hidden md:inline-flex">
+      <Button asChild variant="gradient" size="sm" className="hidden md:inline-flex lg:h-10 lg:px-5 lg:text-[15px]">
         {starHref ? (
           <a href={starHref} target="_blank" rel="noreferrer">
             <GithubIcon className="h-4 w-4" />

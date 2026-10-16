@@ -30,11 +30,18 @@ test("a new visitor goes from the home page to a sent document quickly, without 
   await page.goto("/")
   mark("home page loaded")
 
-  await page.getByRole("main").getByRole("link", { name: /send your first document/i }).first().click()
+  // Was a click on the hero's "Send your first document" button. The hero
+  // now asks for the email in place (email-capture.tsx), and signup opens
+  // with it filled in, so the visitor types it once.
+  // await page.getByRole("main").getByRole("link", { name: /send your first document/i }).first().click()
+  const email = freshEmail("first-doc")
+  await page.getByRole("main").getByRole("textbox", { name: "Your email address" }).fill(email)
+  await page.getByRole("main").getByRole("button", { name: "Get started" }).click()
   await page.getByPlaceholder("you@example.com").waitFor()
   mark("signup form shown")
 
-  await page.getByPlaceholder("you@example.com").fill(freshEmail("first-doc"))
+  // await page.getByPlaceholder("you@example.com").fill(freshEmail("first-doc"))
+  await expect(page.getByPlaceholder("you@example.com")).toHaveValue(email)
   await page.getByPlaceholder(/Password/).fill(password)
   await page.getByRole("button", { name: /create account|sign up/i }).click()
   // By path: the signup URL itself carries ?next=/dashboard/...

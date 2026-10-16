@@ -15,6 +15,7 @@ import { isKitSite } from "@/config/kit"
 import { footerTryLink } from "@/lib/landing-cta"
 // import { getPages } from "@/lib/seo/pages"
 import { getSiteNav } from "@/components/landing/site-nav-data"
+import { cn } from "@/lib/utils"
 
 function XIcon() {
   return (
@@ -24,11 +25,43 @@ function XIcon() {
   )
 }
 
-function FooterColumn({ heading, children }: { heading: string; children: React.ReactNode }) {
+// Type scale raised (was text-sm headings and links, space-y-2) to the size
+// the established e-signature sites use in their footers: the footer is a
+// map of the site, and at 14px it read as fine print.
+function FooterColumn({ heading, children, className }: { heading: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="min-w-0">
-      <h4 className="mb-4 text-sm font-semibold text-foreground">{heading}</h4>
-      <ul className="space-y-2 text-sm text-muted-foreground">{children}</ul>
+    <div className={cn("min-w-0", className)}>
+      <h4 className="mb-4 text-base font-semibold text-foreground">{heading}</h4>
+      <ul className="space-y-2.5 text-[15px] text-muted-foreground sm:text-base">{children}</ul>
+    </div>
+  )
+}
+
+/**
+ * The "Why" group in two side-by-side lists under one heading, each with its
+ * own subheading: what the product does (the solution pages) and who it is
+ * for (the industry, team and audience pages). As one column it ran to more
+ * than thirty links. It spans two grid columns at every width, so on a phone
+ * it takes the full row with its two lists beside each other.
+ */
+function SplitFooterColumn({ heading, parts, footer }: { heading: string; parts: { heading: string; links: { href: string; label: string }[] }[]; footer: { href: string; label: string } }) {
+  return (
+    <div className="col-span-2 min-w-0">
+      <h4 className="mb-4 text-base font-semibold text-foreground">{heading}</h4>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-8">
+        {parts.map((part, i) => (
+          <div key={part.heading} className="min-w-0">
+            <h5 className="mb-3 text-sm font-semibold text-foreground/80">{part.heading}</h5>
+            <ul className="space-y-2.5 text-[15px] text-muted-foreground sm:text-base">
+              {part.links.map((link) => (
+                <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+              ))}
+              {/* The hub link closes the second list, as it closes every group. */}
+              {i === parts.length - 1 && <FooterLink href={footer.href}>{footer.label}</FooterLink>}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -52,7 +85,9 @@ export async function Footer() {
   const tryLink = footerTryLink(siteConfig.links.demo)
   return (
     <footer className="border-t border-border bg-muted/30 py-12">
-      <div className="mx-auto max-w-6xl px-6 lg:px-12">
+      {/* Wider (was max-w-6xl), like the header, for seven columns of
+          larger type. */}
+      <div className="mx-auto max-w-7xl px-6 lg:px-12">
         {/* Grouped the way the top menu is (src/lib/site-nav.ts), from the
             same data, so the two cannot list different pages: Product, Why,
             Free tools, Compare, Resources, Company. Was Product (with docs,
@@ -63,9 +98,9 @@ export async function Footer() {
             links on a phone, three on a tablet, six on a desktop. */}
         <div className="max-w-xs">
           <LogoLink className="flex items-center gap-2">
-            <Logo wordmarkClassName="text-base font-bold" />
+            <Logo markClassName="h-9 w-9" wordmarkClassName="text-xl font-bold" />
           </LogoLink>
-          <p className="mt-3 text-sm text-muted-foreground">
+          <p className="mt-3 text-[15px] text-muted-foreground sm:text-base">
             {isKitSite ? t("blurb", { tagline: siteConfig.tagline }) : siteConfig.description}
           </p>
           <div className="mt-4 flex items-center gap-2">
@@ -105,7 +140,12 @@ export async function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
+        {/* Was grid-cols-2 sm:grid-cols-3 lg:grid-cols-6, one column per
+            group. The "Why" group now spans two (SplitFooterColumn), so
+            seven tracks on a wide screen, four on a laptop, three on a
+            tablet, two on a phone; dense flow fills the cell its span leaves
+            beside Product on a phone. */}
+        <div className="mt-10 grid grid-flow-row-dense grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           <FooterColumn heading={t("product")}>
             {/* `/#` instead of bare `#`: the footer renders on every public
                 page, but the sections only exist on the home page. */}
@@ -121,7 +161,22 @@ export async function Footer() {
           {/* Every public page links to the solution, use-case, tool and
               comparison pages from here: the internal links that make them
               findable (src/lib/seo/pages.ts lists them). */}
-          {nav.groups.map((group) => (
+          {nav.groups.map((group) =>
+            group.id === "why" ? (
+              <SplitFooterColumn
+                key={group.id}
+                heading={group.label}
+                // The group's two columns in the shared navigation data
+                // (src/lib/site-nav.ts): solution pages, then the use-case
+                // pages. Headed here by what the links are; the menu's "By
+                // industry" fits only the twelve industries among them.
+                parts={[
+                  { heading: t("whatYouCanDo"), links: group.columns[0]?.links ?? [] },
+                  { heading: t("whoItsFor"), links: (group.columns[1]?.links ?? []).filter((link) => link.href !== "/#features") },
+                ]}
+                footer={group.footer}
+              />
+            ) : (
             <FooterColumn key={group.id} heading={group.label}>
               {group.columns
                 .flatMap((column) => column.links)
@@ -132,7 +187,8 @@ export async function Footer() {
                 ))}
               <FooterLink href={group.footer.href}>{group.footer.label}</FooterLink>
             </FooterColumn>
-          ))}
+            )
+          )}
 
           <FooterColumn heading={t("company")}>
             <FooterLink href="/about">{t("aboutLink")}</FooterLink>
@@ -170,7 +226,7 @@ export async function Footer() {
           </FooterColumn>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-sm text-muted-foreground md:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-[15px] text-muted-foreground md:flex-row">
           <p>{t("copyright", { year: new Date().getFullYear(), site: siteConfig.name })}</p>
           <p>
             <Link href="/changelog" className="transition-colors hover:text-foreground">
