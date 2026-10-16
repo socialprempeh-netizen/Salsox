@@ -9,14 +9,19 @@
 import { describe, expect, it } from "vitest"
 import { getAllPosts } from "@/lib/blog"
 import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
+import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
 import { SEO_REDIRECTS } from "./redirects"
 import { getPages, loadAllPages, pagePath, parseFileName, similarity, validatePages, wordCount, type SitePage } from "./pages"
 
 /** Routes outside the registry that pages may link to. */
 const STATIC_PATHS = ["/", "/pricing", "/verify", "/docs", "/blog", "/about", "/contact", "/changelog", "/tools", "/compare"]
 // The template library's pages are linkable too (industry and team pages
-// point at their templates).
-const knownPaths = () => new Set([...STATIC_PATHS, TEMPLATES_PATH, ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`)])
+// point at their templates), including the category pages that exist: only
+// categories with enough templates get one (MIN_TEMPLATES_PER_CATEGORY_PAGE).
+const categoryPaths = () =>
+  TEMPLATE_CATEGORIES.filter((c) => getTemplates().filter((t) => t.category === c).length >= MIN_TEMPLATES_PER_CATEGORY_PAGE).map(categoryPath)
+// Was: new Set([...STATIC_PATHS, TEMPLATES_PATH, ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`)])
+const knownPaths = () => new Set([...STATIC_PATHS, TEMPLATES_PATH, ...categoryPaths(), ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`)])
 
 describe("registry basics", () => {
   it("puts each kind at its URL", () => {
@@ -85,6 +90,24 @@ describe("the real content", () => {
       for (const target of post.related) expect(all.has(target), `${post.slug} -> ${target}`).toBe(true)
       expect(post.content).not.toContain("{site}")
     }
+  })
+
+  // A post written for a phrase a page already targets would compete with
+  // that page in search, usually leaving both weaker. Each post's `keyword`
+  // must be its own: not another post's, not a registry page's primary
+  // keyword or alias, not a template's keyword.
+  it("gives each blog post a keyword no other post, page or template targets", () => {
+    const owners = new Map<string, string>()
+    for (const page of getPages()) for (const k of [page.primaryKeyword, ...page.aliases]) owners.set(k.toLowerCase(), page.path)
+    for (const t of getTemplates()) owners.set(t.keyword.toLowerCase(), t.path)
+    const problems: string[] = []
+    for (const post of getAllPosts()) {
+      if (!post.keyword) continue
+      const owner = owners.get(post.keyword)
+      if (owner) problems.push(`/blog/${post.slug} targets "${post.keyword}", already ${owner}'s`)
+      else owners.set(post.keyword, `/blog/${post.slug}`)
+    }
+    expect(problems, problems.join("\n")).toEqual([])
   })
 
   it("does not let blog posts and pages say the same thing", () => {

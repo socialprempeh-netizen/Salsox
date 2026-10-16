@@ -78,6 +78,10 @@ test("overlapping URLs redirect permanently, and unknown URLs are real 404s", as
 })
 
 test("every sitemap URL is reachable from the homepage, and no internal link is broken", async ({ request }) => {
+  // One request per sitemap URL and per link target, so its run time grows
+  // with every page published: 4.4 minutes alone at 143 URLs, too close to
+  // the file's 5-minute default once the rest of the suite shares the server.
+  test.setTimeout(600_000)
   const xml = await (await request.get("/sitemap.xml")).text()
   const wanted = new Set(parseSitemap(xml).map((e) => new URL(e.loc).pathname))
   const seen = new Set<string>()

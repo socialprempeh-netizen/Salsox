@@ -46,8 +46,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: post.description,
       publishedTime: `${post.date}T00:00:00Z`,
       ...(post.updated ? { modifiedTime: `${post.updated}T00:00:00Z` } : {}),
+      // A post with a cover (1200x630, scripts/blog-images.mjs) shares it;
+      // without one, the generated card (opengraph-image.tsx) is used.
+      ...(post.cover ? { images: [{ url: `${siteConfig.url}${post.cover}`, width: 1200, height: 630, alt: post.coverAlt }] } : {}),
     },
-    twitter: { card: "summary_large_image", title: post.title, description: post.description },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
+      ...(post.cover ? { images: [{ url: `${siteConfig.url}${post.cover}`, alt: post.coverAlt }] } : {}),
+    },
   }
 }
 
@@ -218,10 +226,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </header>
 
         {post.cover && (
+          // Was alt="": the cover carries the post's subject, so it is described.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={post.cover}
-            alt=""
+            alt={post.coverAlt ?? ""}
+            width={1200}
+            height={630}
             className="mt-8 aspect-[1200/630] w-full border border-border object-cover"
           />
         )}

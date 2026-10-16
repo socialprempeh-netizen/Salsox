@@ -1,8 +1,14 @@
 ---
-title: "Are electronic signatures legal? A plain-language guide"
+title: "Are electronic signatures legally binding? A plain guide"
 description: "Where electronic signatures are legally recognised, the main laws (ESIGN, UETA, eIDAS, UK and African frameworks), common exclusions and what evidence helps."
 date: 2026-10-06
+updated: 2026-10-16
 category: Legal
+keyword: "are electronic signatures legally binding"
+cover: "/blog/covers/are-electronic-signatures-legal.png"
+coverAlt: "Are electronic signatures legally binding: a signed document with a teal signature line, tagged with a section sign"
+coverTitle: "Are electronic signatures legally binding?"
+coverLabel: "Law"
 related: ["/online-esignature", "/pdf-signature", "/blog/how-electronic-signatures-work", "/esignature-for/real-estate"]
 faq:
   - q: "Are electronic signatures legally binding in the US?"
@@ -62,6 +68,10 @@ Across jurisdictions, the exceptions look similar. Documents that often still re
 - certain court orders, notices and filings;
 - some family law documents;
 - documents that must be notarised or witnessed in person.
+
+## Legal validity is not the same as good evidence
+
+Electronic signature laws settle the legal validity of e-signatures in general. They do not prove that a particular person signed a particular document. That still depends on evidence: consent to sign electronically, a link that only the signer could use, an audit trail and a sealed copy. Our guide to [creating a legally binding electronic signature](/blog/legally-binding-electronic-signature) goes through what to capture, and [electronic signature vs wet signature](/blog/electronic-signature-vs-wet-signature) covers where ink is still required.
 
 ## What makes an electronic signature hold up
 

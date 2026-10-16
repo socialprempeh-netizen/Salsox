@@ -4,9 +4,9 @@ description: "Send a PDF for signature in under a minute: add signers, place fie
 h1: "Send documents for signature, and see exactly where each one is"
 lede: "Sending is the easy part. Knowing who has opened it, who is holding things up and what to do when an address bounces is where most of the time goes. {site} is built around that second part."
 primaryKeyword: "send documents for signature"
-aliases: ["send document for signature", "send pdf for signature", "get documents signed", "collect signatures"]
+aliases: ["send document for signature", "send pdf for signature", "get documents signed", "collect signatures", "send documents for electronic signature", "send document for signature online", "send pdf for signing"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-16
 breadcrumb: "Send for signature"
 benefits:
   - title: "Quick Send for the simple case"
@@ -16,6 +16,8 @@ benefits:
   - title: "Reach people where they read"
     body: "Copy any signing link, or share it straight to WhatsApp or SMS from the document page."
 faq:
+  - q: "Can I send a document for electronic signature for free?"
+    a: "Yes. The free plan sends 3 documents a month for electronic signature, with signing links by email and a shareable link for WhatsApp or SMS. Paid plans remove the monthly count."
   - q: "How many people can I send one document to?"
     a: "Up to ten recipients per document. Each can be a signer, an approver, a viewer who only reads it, or someone copied on the signed result."
   - q: "Can signers sign in a particular order?"
@@ -41,6 +43,10 @@ Not everyone on a document needs to sign it. Giving each person the right role k
 - **Approver:** confirms the document before or alongside signers (Business plan).
 - **Viewer:** receives the document to read, without fields.
 - **CC:** receives the signed copy when it is complete.
+
+## Sending more than one document
+
+Several documents for the same person can go as one combined PDF, signed in one session; documents for different people go separately. [Signing multiple documents online](/blog/sign-multiple-documents-online) explains when to do which, and [requesting an e-signature by email](/blog/request-electronic-signature-by-email) has message wording that gets documents back sooner.
 
 ## Following up without chasing
 

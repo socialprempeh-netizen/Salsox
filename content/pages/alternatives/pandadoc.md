@@ -6,7 +6,7 @@ lede: "People leave PandaDoc for two different reasons: they need a cheaper or s
 primaryKeyword: "pandadoc alternatives"
 aliases: ["pandadoc alternative", "best pandadoc alternatives", "cheaper than pandadoc", "alternative to pandadoc"]
 published: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 breadcrumb: "PandaDoc alternatives"
 sources:
   - label: "PandaDoc pricing"
@@ -41,7 +41,7 @@ If you are leaving because you only use it to get PDFs signed, a simpler and che
 
 **DocuSign.** The best-known e-signature platform, with templates, bulk sending, an API and a large catalogue of integrations. Plans are priced per user with envelope limits; see [{site} vs DocuSign](/vs/docusign) for the figures from its pricing page.
 
-**Dropbox Sign.** Formerly HelloSign, with unlimited signature requests on paid plans, templates on every plan and a clean sender experience. Its Essentials plan listed $15 a month, or $120.60 a year billed yearly, on 6 October 2026. See [{site} vs Dropbox Sign](/vs/dropbox-sign).
+**Dropbox Sign.** Formerly HelloSign, with unlimited signature requests on paid plans, templates on every plan and a clean sender experience. Its Essentials plan listed $20 a month, or $15 a month billed yearly ($180 a year), on 16 October 2026. See [{site} vs Dropbox Sign](/vs/dropbox-sign).
 
 **SignWell.** Simple e-signatures for small businesses, with templates, bulk send and an API allowance. Light was $10 a month billed yearly or $12 monthly, with unlimited documents, on 15 October 2026; a free plan allows 3 documents a month. See [{site} vs SignWell](/vs/signwell).
 
