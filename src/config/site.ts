@@ -98,9 +98,27 @@ export const siteConfig = {
     // PLACEHOLDERS until the accounts exist: set NEXT_PUBLIC_X_URL and
     // NEXT_PUBLIC_LINKEDIN_URL to the real pages, or change these.
     // x: process.env.NEXT_PUBLIC_X_URL || (isKitSite ? "https://x.com/openstarterkit" : null),
-    x: process.env.NEXT_PUBLIC_X_URL || (isKitSite ? "https://x.com/openstarterkit" : "https://x.com/salsox"),
-    /** LinkedIn company page — the footer icon hides when unset. Placeholder on the product site, as above. */
-    linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || (isKitSite ? null : "https://www.linkedin.com/company/salsox"),
+    // The guessed product fallbacks below were replaced: off the kit site an
+    // unset profile is null, and the footer shows its icon inert (not a
+    // link) until the real address is configured, rather than linking an
+    // account that may not exist. Was:
+    // x: process.env.NEXT_PUBLIC_X_URL || (isKitSite ? "https://x.com/openstarterkit" : "https://x.com/salsox"),
+    // linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || (isKitSite ? null : "https://www.linkedin.com/company/salsox"),
+    x: process.env.NEXT_PUBLIC_X_URL || (isKitSite ? "https://x.com/openstarterkit" : null),
+    /** LinkedIn company page. Inert footer icon on the product site when unset. */
+    linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || null,
+    /** The other social profiles, same rule: a link when set, an inert icon when not. */
+    youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL || null,
+    instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || null,
+    tiktok: process.env.NEXT_PUBLIC_TIKTOK_URL || null,
+    facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || null,
+    /**
+     * Store listings for mobile apps. There is no app yet: until these are
+     * set, the footer shows the official badges as inert placeholders,
+     * labelled "coming soon", never as a download link.
+     */
+    appStore: process.env.NEXT_PUBLIC_APP_STORE_URL || null,
+    playStore: process.env.NEXT_PUBLIC_PLAY_STORE_URL || null,
     /**
      * Live demo URL. When set, "Sign in" and "Demo" on the public pages
      * point here instead of the local /login — useful when this deployment

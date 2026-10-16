@@ -126,9 +126,36 @@ test("every admin section and tab opens and fits a phone", async ({ browser }) =
   await ctx.close()
 })
 
-test("the footer links to the X and LinkedIn pages", async ({ page }) => {
+// Was "the footer links to the X and LinkedIn pages", against guessed
+// placeholder addresses. Each of the six networks now shows either way: a
+// link to the configured profile (NEXT_PUBLIC_*_URL), or an inert icon
+// announced as coming soon, never a link to an address nobody set. The store
+// badges are inert placeholders until a store URL is set.
+test("the footer shows every social icon, linked only when its profile is set", async ({ page }) => {
   await page.goto("/")
   const footer = page.locator("footer")
-  await expect(footer.getByRole("link", { name: "X / Twitter" })).toHaveAttribute("href", /^https:\/\/(x|twitter)\.com\//)
-  await expect(footer.getByRole("link", { name: "LinkedIn" })).toHaveAttribute("href", /^https:\/\/(www\.)?linkedin\.com\//)
+  const networks: [string, string, RegExp][] = [
+    ["YouTube", "NEXT_PUBLIC_YOUTUBE_URL", /^https:\/\/(www\.)?youtube\.com\//],
+    ["Instagram", "NEXT_PUBLIC_INSTAGRAM_URL", /^https:\/\/(www\.)?instagram\.com\//],
+    ["TikTok", "NEXT_PUBLIC_TIKTOK_URL", /^https:\/\/(www\.)?tiktok\.com\//],
+    ["Facebook", "NEXT_PUBLIC_FACEBOOK_URL", /^https:\/\/(www\.)?facebook\.com\//],
+    ["LinkedIn", "NEXT_PUBLIC_LINKEDIN_URL", /^https:\/\/(www\.)?linkedin\.com\//],
+    ["X / Twitter", "NEXT_PUBLIC_X_URL", /^https:\/\/(x|twitter)\.com\//],
+  ]
+  for (const [name, env, href] of networks) {
+    if (process.env[env]) {
+      await expect(footer.getByRole("link", { name })).toHaveAttribute("href", href)
+    } else {
+      await expect(footer.getByRole("link", { name })).toHaveCount(0)
+      await expect(footer.getByRole("img", { name: `${name} (coming soon)` })).toBeVisible()
+    }
+  }
+  if (!process.env.NEXT_PUBLIC_APP_STORE_URL) {
+    await expect(footer.getByRole("img", { name: "Download on the App Store (Mobile apps coming soon)" })).toBeVisible()
+    await expect(footer.getByText("Mobile apps coming soon", { exact: true })).toBeVisible()
+  }
+  // The official artwork is served, not a stand-in.
+  for (const src of ["/badges/app-store-badge.svg", "/badges/google-play-badge.png"]) {
+    expect((await page.request.get(src)).status(), src).toBe(200)
+  }
 })

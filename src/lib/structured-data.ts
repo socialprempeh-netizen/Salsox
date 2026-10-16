@@ -25,7 +25,18 @@ export function organizationJsonLd() {
     description: siteConfig.description,
     logo: `${siteConfig.url}/icon`,
     email: siteConfig.contactEmail,
-    sameAs: [siteConfig.links.githubOrg, siteConfig.links.x].filter(Boolean),
+    // Every configured profile; unset ones (null) are left out. Was only
+    // githubOrg and x, before the footer had the other networks.
+    // sameAs: [siteConfig.links.githubOrg, siteConfig.links.x].filter(Boolean),
+    sameAs: [
+      siteConfig.links.githubOrg,
+      siteConfig.links.x,
+      siteConfig.links.linkedin,
+      siteConfig.links.youtube,
+      siteConfig.links.instagram,
+      siteConfig.links.tiktok,
+      siteConfig.links.facebook,
+    ].filter(Boolean),
   }
 }
 
