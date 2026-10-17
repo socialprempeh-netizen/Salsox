@@ -35,7 +35,7 @@ describe("demo links", () => {
 
   it("lead to a configured demo deployment, and otherwise to the guide and the free plan", () => {
     expect(heroSecondaryCta("https://demo.example")).toEqual({ href: "https://demo.example", label: "liveDemo" })
-    expect(heroSecondaryCta(null)).toEqual({ href: "/docs/getting-started", label: "howItWorks" })
+    expect(heroSecondaryCta(null)).toEqual({ href: "/resources/help/send-a-document-step-by-step", label: "howItWorks" })
     expect(footerTryLink(null)).toEqual({ href: "/signup?next=/dashboard/documents/quick-send", label: "tryFree" })
   })
 })

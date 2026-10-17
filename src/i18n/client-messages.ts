@@ -44,6 +44,9 @@ export const CLIENT_MESSAGES = {
     "verify",
     // The hero "Get started" email row (home page and landing pages).
     "emailCapture",
+    // The Help Center's search box (components/help/help-search.tsx): only
+    // its four strings, not the whole Help Center namespace.
+    "help.search",
     // Plan cards render on the landing and pricing pages as well as in billing.
     "billing.plans",
     "billing.upgrade",

@@ -37,10 +37,13 @@ export async function getSiteNav(): Promise<SiteNav> {
       resources: t("menu.resources"),
       templates: t("menu.templates"),
       templatesBlurb: t("menu.templatesBlurb"),
+      helpCenter: t("menu.helpCenter"),
+      helpCenterBlurb: t("menu.helpCenterBlurb"),
       blog: t("blog"),
       blogBlurb: t("menu.blogBlurb"),
-      docs: t("menu.docs"),
-      docsBlurb: t("menu.docsBlurb"),
+      // "Help and docs" left the menu for the Help Center (site-nav.ts). Were
+      // docs and docsBlurb, read from the menu keys of the same names; those
+      // keys left en.json with them (the message test reads comments too).
       verify: t("menu.verify"),
       verifyBlurb: t("menu.verifyBlurb"),
       changelog: t("changelog"),

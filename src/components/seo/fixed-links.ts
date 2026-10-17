@@ -8,7 +8,8 @@ import { getTranslations } from "next-intl/server"
 import type { FixedLabels } from "@/lib/seo/links"
 import { siteConfig } from "@/config/site"
 
-const FIXED = { pricing: "/pricing", verify: "/verify", blog: "/blog", tools: "/tools", compare: "/compare", useCases: "/esignature-for", docs: "/docs" } as const
+const FIXED = { pricing: "/pricing", verify: "/verify", blog: "/blog", tools: "/tools", compare: "/compare", useCases: "/esignature-for", docs: "/resources/help" } as const
+// docs was "/docs", which now redirects to the Help Center.
 
 export async function fixedLinkLabels(): Promise<FixedLabels> {
   const t = await getTranslations("seoPages.fixedLinks")

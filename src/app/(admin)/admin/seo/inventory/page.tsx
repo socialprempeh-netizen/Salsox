@@ -22,7 +22,8 @@ import { siteConfig } from "@/config/site"
 import { routing } from "@/i18n/routing"
 import sitemap from "@/app/sitemap"
 import { getAllPosts, getCategories } from "@/lib/blog"
-import { getDocs } from "@/lib/docs"
+// Unused since /docs redirects to the Help Center (see docs below).
+// import { getDocs } from "@/lib/docs"
 import { loadAllPages } from "@/lib/seo/pages"
 import { buildInventory } from "@/lib/seo/inventory"
 import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
@@ -55,10 +56,13 @@ export default async function SeoInventoryPage() {
     })),
     industryPaths: Object.values(TEMPLATE_INDUSTRIES),
     teamPaths: Object.values(TEMPLATE_TEAMS),
-    hubPaths: ["/tools", "/compare", "/esignature-for", TEMPLATES_PATH, "/blog", "/docs"],
+    // "/docs" was the last hub; it redirects to the Help Center now.
+    hubPaths: ["/tools", "/compare", "/esignature-for", TEMPLATES_PATH, "/blog", "/resources/help"],
     posts: getAllPosts().map((p) => ({ path: `/blog/${p.slug}`, title: p.title, updated: p.updated ?? p.date, keyword: p.keyword ?? null })),
     blogCategories: getCategories().map((c) => ({ path: `/blog/category/${c.slug}`, title: c.name })),
-    docs: getDocs().map((d) => ({ path: `/docs/${d.slug}`, title: d.title })),
+    // Empty since /docs redirects to the Help Center: the guides are not pages any more. Was:
+    // docs: getDocs().map((d) => ({ path: `/docs/${d.slug}`, title: d.title })),
+    docs: [],
     locales: [...routing.locales],
     defaultLocale: routing.defaultLocale,
   })

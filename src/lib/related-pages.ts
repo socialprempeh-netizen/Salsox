@@ -15,7 +15,8 @@ export type RelatedKey = "pricing" | "docs" | "blog" | "about" | "contact" | "ch
 
 export const RELATED_HREF: Record<RelatedKey, string> = {
   pricing: "/pricing",
-  docs: "/docs",
+  // Was "/docs", which now redirects to the Help Center.
+  docs: "/resources/help",
   blog: "/blog",
   about: "/about",
   contact: "/contact",
@@ -28,7 +29,8 @@ const NEIGHBOURS: Record<string, RelatedKey[]> = {
   "/contact": ["docs", "pricing", "about", "blog"],
   "/changelog": ["blog", "docs", "pricing", "about"],
   "/blog": ["docs", "pricing", "changelog", "about"],
-  "/docs": ["pricing", "blog", "contact", "changelog"],
+  // Was "/docs": the same neighbours, for the page that replaced it.
+  "/resources/help": ["pricing", "blog", "contact", "changelog"],
 }
 
 const DEFAULT: RelatedKey[] = ["pricing", "docs", "blog", "contact"]

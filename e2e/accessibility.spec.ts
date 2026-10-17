@@ -23,7 +23,8 @@ const PUBLIC_PAGES = [
   { path: "/", name: "home" },
   { path: "/pricing", name: "pricing" },
   { path: "/blog", name: "blog" },
-  { path: "/docs", name: "docs" },
+  // Was /docs, which now redirects here.
+  { path: "/resources/help", name: "help center" },
   { path: "/login", name: "sign in" },
   // An error message is red text on a red tint, which no page shows until
   // something goes wrong, so one is asked for on purpose.

@@ -23,6 +23,24 @@
 
 export type SeoRedirect = { source: string; destination: string }
 
+/**
+ * The old /docs section (content/docs, two guides) was replaced by the Help
+ * Center at /resources/help (src/lib/help.ts), which covers the same ground
+ * in more, shorter guides. Each guide goes to the Help Center guide that
+ * answers the same question; anything else under /docs to the Help Center's
+ * front page. The pages under src/app/[locale]/(docs) and (public)/docs are
+ * left in place, unreachable behind these, so the earlier approach stays
+ * readable. Specific entries come before the catch-all: Next.js applies the
+ * first match. Spelled out (not imported from lib/help) because this file is
+ * loaded by next.config.ts with a relative path.
+ */
+export const DOCS_REDIRECTS: SeoRedirect[] = [
+  { source: "/docs", destination: "/resources/help" },
+  { source: "/docs/getting-started", destination: "/resources/help/send-a-document-step-by-step" },
+  { source: "/docs/billing-and-plans", destination: "/resources/help/plans-and-what-they-include" },
+  { source: "/docs/:path*", destination: "/resources/help" },
+]
+
 export const SEO_REDIRECTS: SeoRedirect[] = [
   { source: "/sign-pdf-online", destination: "/sign-pdf" },
   { source: "/docusign-alternative", destination: "/alternatives/docusign" },
@@ -54,6 +72,7 @@ export const SEO_REDIRECTS: SeoRedirect[] = [
   { source: "/contract-management", destination: "/online-contract-management" },
   // Blog and resources are one hub: /resources is the name some people expect.
   { source: "/resources", destination: "/blog" },
+  ...DOCS_REDIRECTS,
 ]
 
 /** In the shape next.config's `redirects()` returns: 301, not Next's default 308. */

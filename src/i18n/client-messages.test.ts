@@ -39,7 +39,7 @@ function areasOf(file: string): ClientMessageArea[] {
   if (/^components\/billing\/(plan-cards|upgrade-button)\.tsx$/.test(file)) return ["public", "app"]
   if (/^components\/landing\/contact-dialog(-content)?\.tsx$/.test(file)) return ["public", "app"]
   if (/^components\/(ui\/|theme-toggle|not-found-view|landing\/related-links)/.test(file)) return ["shell"]
-  if (/^components\/(landing|blog|docs|verify)\//.test(file)) return ["public"]
+  if (/^components\/(landing|blog|docs|verify|help)\//.test(file)) return ["public"]
   if (/^components\/(esign|dashboard|settings|admin|billing|auth)\//.test(file)) return ["app"]
   if (/^app\/\[locale\]\//.test(file)) return ["public"]
   if (/^app\/sign\//.test(file)) return ["sign"]

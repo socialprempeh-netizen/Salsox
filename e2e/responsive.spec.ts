@@ -32,7 +32,7 @@ for (const width of WIDTHS) {
     await check("/about", "about")
     await check("/contact", "contact")
     await check("/blog", "blog")
-    await check("/docs", "docs")
+    // Was /docs: it redirects to the Help Center, checked below.
     await check("/changelog", "changelog")
     await check("/this-page-does-not-exist", "not-found")
     await check("/privacy", "privacy")
@@ -71,7 +71,11 @@ for (const width of WIDTHS) {
       "/compare",
       "/esignature-for",
       "/blog/how-to-sign-a-pdf",
-      "/docs/getting-started",
+      // Was "/docs/getting-started": now a redirect to a Help Center guide.
+      // The Help Center: its front page, a guide with a table, and the videos.
+      "/resources/help",
+      "/resources/help/plans-and-what-they-include",
+      "/resources/help/videos",
     ]) {
       await check(path, path.slice(1).replaceAll("/", "-"))
     }
