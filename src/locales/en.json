@@ -1276,7 +1276,7 @@
       "statStatus": "This week",
       "statStatusValue": "All signed",
       "statSentValue": "24",
-      "statCollectedValue": "GH₵ 4,800",
+      "statCollectedValue": "$4,800",
       "userInitials": "AM",
       "userName": "Ama Mensah",
       "userPlan": "Business plan",
@@ -1288,7 +1288,7 @@
       "greetingBody": "3 documents are waiting on others.",
       "chartTitle": "Signed per week",
       "docsTitle": "Service agreement",
-      "docsBody": "Kofi signed and paid GH₵ 1,200",
+      "docsBody": "Kofi signed and paid $1,200",
       "viewAll": "Open"
     }
   },

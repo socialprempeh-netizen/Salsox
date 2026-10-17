@@ -2,11 +2,13 @@ import type { Metadata } from "next"
 // Geist (sans) was the UI face until the visual system moved to Inter, the
 // open stand-in for PandaDoc's Graphik (see the note in globals.css).
 // import { Geist, Geist_Mono } from "next/font/google"
-import { Geist_Mono, Inter, Source_Serif_4 } from "next/font/google"
+// Source_Serif_4 was the headline serif until the palette audit chose Fraunces.
+// import { Geist_Mono, Inter, Source_Serif_4 } from "next/font/google"
+import { Fraunces, Geist_Mono, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { siteConfig } from "@/config/site"
-import { brandOverrideCss } from "@/config/brand"
+import { brandOverrideCss, landingPaletteCss } from "@/config/brand"
 import { getLocale } from "next-intl/server"
 import { routing } from "@/i18n/routing"
 import { singleLocale } from "@/i18n/static-locale"
@@ -30,7 +32,10 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 // The serif for the homepage headlines (`font-display`), beside Inter for
 // everything else. Preloaded: the hero headline is the landing page's
 // largest paint. Variable, so 600 and 700 are one file.
-const serifDisplay = Source_Serif_4({ variable: "--font-serif-display", subsets: ["latin"], display: "swap" })
+// Fraunces, per the audit of the reference build (H1 and H2 only; Inter for
+// everything else). Same variable as before, so --font-display is unchanged.
+// Was: Source_Serif_4({ variable: "--font-serif-display", subsets: ["latin"], display: "swap" })
+const serifDisplay = Fraunces({ variable: "--font-serif-display", subsets: ["latin"], display: "swap" })
 
 export const metadata: Metadata = {
   // Absolute base for every relative URL in the metadata: without it the
@@ -70,7 +75,10 @@ const sidebarInit =
   "try{if(localStorage.getItem('sidebar-collapsed')==='1')document.documentElement.classList.add('sidebar-collapsed')}catch(e){}"
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const brandCss = brandOverrideCss()
+  // The public pages' palette rides along: scoped to .brand-landing, so it
+  // only applies where the public layout sets that class.
+  // Was: const brandCss = brandOverrideCss()
+  const brandCss = brandOverrideCss() + landingPaletteCss()
   // Read from the request instead of hardcoded. This layout sits above
   // `[locale]` so it cannot take the segment as a param, but the locale is
   // already resolved when it renders. Outside the localized surface (dashboard,

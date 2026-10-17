@@ -65,16 +65,18 @@ function formatPrice(cents: number) {
   return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`
 }
 
-function FeatureList({ features }: { features: string[] }) {
+/** `inverted`: on the black Lifetime card, where the text is white. */
+function FeatureList({ features, inverted = false }: { features: string[]; inverted?: boolean }) {
   return (
     <ul className="space-y-2.5">
       {features.map((feature) => (
         <li key={feature} className="flex items-start gap-2.5 text-sm">
-          {/* Squared in the homepage redesign (was rounded-full). */}
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center bg-primary/10 text-primary">
+          {/* Squared in the homepage redesign (was rounded-full); bright teal
+              check marks since the palette audit (were bg-primary/10 text-primary). */}
+          <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-brand-teal", inverted ? "bg-brand-teal/20" : "bg-brand-teal/10")}>
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
-          <span className="text-foreground">{feature}</span>
+          <span className={inverted ? "text-white" : "text-foreground"}>{feature}</span>
         </li>
       ))}
     </ul>
@@ -94,7 +96,7 @@ function ContactTierCard({ card, onYearly }: { card: ContactCardData; onYearly: 
         <CardTitle className="text-lg">{card.name}</CardTitle>
         <CardDescription>{card.description}</CardDescription>
         <div key={`${priceLabel}-${note ?? ""}`} className="animate-price-swap pt-2">
-          <span className="text-4xl font-extrabold text-foreground">{priceLabel}</span>
+          <span className="text-[34px] font-bold leading-none text-foreground">{priceLabel}</span>
           {/* Own line, rendered on both sides of the toggle, so swapping the
               text can't reflow the card the way an inline note would. Mirrors
               the "billed monthly / billed yearly" line on the priced tiers. */}
@@ -204,7 +206,7 @@ export function PlanCards({
             >
               {value === "MONTH" ? t("monthly") : t("yearly")}
               {value === "YEAR" && yearlyNote && (
-                <span className={cn("px-1.5 py-0.5 text-[11px] font-semibold", interval === value ? "bg-white/20 text-white" : "bg-brand-accent text-white")}>{yearlyNote}</span>
+                <span className={cn("px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide", interval === value ? "bg-white/20 text-white" : "bg-brand-accent text-white")}>{yearlyNote}</span>
               )}
             </button>
           ))}
@@ -226,9 +228,12 @@ export function PlanCards({
           const monthlyPrice = active.interval === "YEAR" ? Math.round(active.price / 12) : active.price
           const raised = highlight?.tierKey === tier.key
           return (
-            <Card key={tier.key} className={cn(CARD, raised && "relative border-2 border-brand-accent shadow-[var(--shadow-soft-lg)]")}>
+            // The raised card's outline is the bright teal accent (was the purple
+            // brand accent); its tag stays purple, in the badge type: 10px
+            // bold capitals (was text-xs font-semibold).
+            <Card key={tier.key} className={cn(CARD, raised && "relative border-2 border-brand-teal shadow-[var(--shadow-soft-lg)]")}>
               {raised && (
-                <span className="absolute -top-3 left-6 bg-brand-accent px-2.5 py-1 text-xs font-semibold text-white">{highlight.label}</span>
+                <span className="absolute -top-3 left-6 bg-brand-accent px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{highlight.label}</span>
               )}
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
@@ -237,7 +242,7 @@ export function PlanCards({
                 </div>
                 {base.description && <CardDescription>{base.description}</CardDescription>}
                 <div key={active.id} className="animate-price-swap pt-2">
-                  <span className="text-4xl font-extrabold text-foreground">
+                  <span className="text-[34px] font-bold leading-none text-foreground">
                     {formatPrice(monthlyPrice)}
                   </span>
                   <span className="ml-1.5 text-sm text-muted-foreground">{t("perMonth")}</span>
@@ -278,33 +283,37 @@ export function PlanCards({
         {oneTime.map((plan) => {
           const isCurrent = plan.id === currentPlanId
           return (
-            <Card key={plan.id} className={CARD}>
+            // The Lifetime card is black with white text, on purpose: a pay-once
+            // plan set apart from the monthly ones beside it (palette audit).
+            // Was <Card className={CARD}> in the light style of the others.
+            <Card key={plan.id} className={cn(CARD, "border-brand-ink bg-brand-ink text-white dark:border-white/15")}>
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-lg">{plan.name}</CardTitle>
-                  {isCurrent ? <Badge>{t("current")}</Badge> : <Badge variant="secondary">{t("payOnce")}</Badge>}
+                  <CardTitle className="text-lg text-white">{plan.name}</CardTitle>
+                  {isCurrent ? <Badge>{t("current")}</Badge> : <Badge variant="secondary" className="bg-white/10 text-[10px] font-bold uppercase tracking-wide text-white">{t("payOnce")}</Badge>}
                 </div>
-                {plan.description && <CardDescription>{plan.description}</CardDescription>}
+                {plan.description && <CardDescription className="text-white/70">{plan.description}</CardDescription>}
                 <div className="pt-2">
-                  <span className="text-4xl font-extrabold text-foreground">
+                  <span className="text-[34px] font-bold leading-none text-white">
                     {formatPrice(plan.price)}
                   </span>
-                  <span className="ml-1.5 text-sm text-muted-foreground">{t("oneTime")}</span>
+                  <span className="ml-1.5 text-sm text-white/70">{t("oneTime")}</span>
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
-                <FeatureList features={plan.features} />
+                <FeatureList features={plan.features} inverted />
               </CardContent>
               <CardFooter>
+                {/* A white button on the black card (was the primary button). */}
                 {ctaHref ? (
-                  <Button asChild className="w-full">
+                  <Button asChild className="w-full border-white bg-white text-brand-ink hover:bg-white/90">
                     <Link href={ctaHref}>{t("get", { plan: plan.name })}</Link>
                   </Button>
                 ) : (
                   <UpgradeButton
                     priceId={plan.stripePriceId}
                     disabled={checkoutDisabled || isCurrent}
-                    className="w-full"
+                    className="w-full border-white bg-white text-brand-ink hover:bg-white/90"
                   >
                     {isCurrent ? t("current") : t("get", { plan: plan.name })}
                   </UpgradeButton>

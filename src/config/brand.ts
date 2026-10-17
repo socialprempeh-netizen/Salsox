@@ -126,6 +126,83 @@ export const neutralMarkPath =
   "M21.75 16.333V7.667a2.167 2.167 0 0 0 -1.083 -1.874l-7.583 -4.333a2.167 2.167 0 0 0 -2.167 0l-7.583 4.333A2.167 2.167 0 0 0 2.25 7.667v8.667a2.167 2.167 0 0 0 1.083 1.874l7.583 4.333a2.167 2.167 0 0 0 2.167 0l7.583 -4.333A2.167 2.167 0 0 0 21.75 16.333z" +
   "M12 6.475l4.767 2.762v5.525L12 17.525l-4.767 -2.762v-5.525z"
 
+/**
+ * The public pages' palette, from the audit of the reference build: eight
+ * colours and no others. Cream for backgrounds, mint where the hero's wash
+ * starts, dark teal for headline text and the primary button, bright teal
+ * for the logo, icon tiles, check marks and small accents, deep purple for
+ * the features band, the footer's bottom bar and badges, black for the
+ * footer and the Lifetime plan card, grey for supporting text, and white.
+ *
+ * Scoped to the public pages (`.brand-landing`, set by their layout), not
+ * the whole app: production sets NEXT_PUBLIC_BRAND_PRIMARY (#0f766e), laid
+ * down at :root with !important by brandOverrideCss, and a declaration on
+ * the wrapper is the only thing that beats an inherited !important. The
+ * dashboard keeps that primary until the variable is changed. Null on the
+ * kit's own site, which stays on its own palette.
+ */
+export const landingPalette = isKitSite
+  ? null
+  : {
+      cream: "#F8F7F3",
+      mint: "#E5F3F4",
+      darkTeal: "#0B3D3A",
+      teal: "#11928F",
+      purple: "#4C1D95",
+      ink: "#0F0F19",
+      gray: "#6B7280",
+      white: "#FFFFFF",
+    }
+
+/**
+ * The palette as tokens on `.brand-landing`. Derived tokens (--primary-hover,
+ * --brand-accent-text) are declared again here because a var() resolves
+ * where it is declared: inherited from :root they would still be computed
+ * from the env primary. The light set applies only outside dark mode (the
+ * theme script puts `dark` on <html>), so dark mode keeps the dark theme's
+ * own surfaces and takes only the brand colours, bright teal standing in
+ * for the dark teal, which would not read on a dark background.
+ */
+export function landingPaletteCss(): string {
+  const p = landingPalette
+  if (!p) return ""
+  // Borders and the hover fill are tints of the palette, not new colours.
+  const line = `color-mix(in srgb, ${p.darkTeal} 14%, ${p.white})`
+  return [
+    // Brand colours, both themes.
+    ".brand-landing{",
+    `--brand-teal:${p.teal};--brand-ink:${p.ink};--brand-accent:${p.purple};`,
+    `--ring:${p.teal};--primary-2:${p.teal};`,
+    "}",
+    // The light surfaces and text.
+    ":root:not(.dark) .brand-landing{",
+    `--background:${p.cream};--foreground:${p.darkTeal};`,
+    `--card:${p.white};--card-foreground:${p.darkTeal};`,
+    `--popover:${p.white};--popover-foreground:${p.darkTeal};`,
+    // Supporting text is the grey shaded 15% toward the dark teal: the grey
+    // alone is 4.50:1 on the cream, on the AA line, and under it on the
+    // tinted surfaces (axe failed the compliance strip and the plan toggle).
+    // Was: --muted-foreground:${p.gray}
+    `--muted:color-mix(in srgb, ${p.mint} 45%, ${p.cream});--muted-foreground:color-mix(in srgb, ${p.gray} 85%, ${p.darkTeal});`,
+    `--accent:${p.mint};--accent-foreground:${p.darkTeal};`,
+    `--secondary:${p.mint};--secondary-foreground:${p.darkTeal};`,
+    `--border:${line};--input:${line};`,
+    `--primary:${p.darkTeal};--primary-foreground:${p.white};`,
+    `--primary-hover:color-mix(in srgb, ${p.darkTeal} 82%, #000000);`,
+    `--gradient-brand:linear-gradient(${p.darkTeal}, ${p.darkTeal});`,
+    `--brand-accent-text:${p.purple};--brand-mint:${p.mint};--brand-cream:${p.cream};`,
+    "}",
+    // Dark mode: the theme's surfaces stay, the brand colours brighten.
+    ".dark .brand-landing{",
+    `--primary:${p.teal};--primary-foreground:${p.white};`,
+    `--primary-hover:color-mix(in srgb, ${p.teal} 85%, #ffffff);`,
+    `--brand-accent-text:color-mix(in srgb, ${p.purple} 35%, #ffffff);`,
+    `--gradient-brand:linear-gradient(${p.teal}, ${p.teal});`,
+    `--brand-mint:color-mix(in srgb, ${p.teal} 18%, var(--background));--brand-cream:var(--background);`,
+    "}",
+  ].join("")
+}
+
 /** Solid brand accent for HTML emails (no CSS vars available there). */
 export const emailAccent = brand.primary ?? (isKitSite ? "#2563eb" : "#0a0a0a")
 

@@ -58,7 +58,7 @@ export function EmailCapture({
         <Link
           href={signedInHref}
           className={cn(
-            "group inline-flex items-center justify-center gap-2 bg-primary px-7 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 animate-in fade-in duration-300 motion-reduce:animate-none",
+            "group inline-flex items-center justify-center gap-2 bg-primary px-7 text-[14px] font-medium text-primary-foreground transition-opacity hover:opacity-90 animate-in fade-in duration-300 motion-reduce:animate-none",
             height
           )}
         >
@@ -105,7 +105,7 @@ export function EmailCapture({
         <button
           type="submit"
           className={cn(
-            "group inline-flex shrink-0 items-center justify-center gap-2 bg-primary px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+            "group inline-flex shrink-0 items-center justify-center gap-2 bg-primary px-6 text-[14px] font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
             height
           )}
         >

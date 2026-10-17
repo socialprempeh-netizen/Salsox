@@ -3,8 +3,9 @@
 /**
  * The floating dashboard card beside the homepage headline (hero.tsx): a
  * compact picture of the Salsox dashboard, with the same data as the earlier
- * full mock-up (Ama Mensah's month: 24 sent, GH₵ 4,800 collected, signed per
- * week, Kofi's paid service agreement), not invented figures.
+ * full mock-up (Ama Mensah's month: 24 sent, $4,800 collected, signed per
+ * week, Kofi's paid service agreement), not invented figures. The amounts
+ * are in dollars here only (they were cedis): the app itself keeps GH₵.
  *
  * A picture, so it is hidden from assistive technology: the headline beside
  * it already says what the product is (see hero-classic.tsx for the reasons).
@@ -50,7 +51,8 @@ export function HeroDashboard({ text }: { text: HeroDashboardText }) {
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
           <Lock className="h-3.5 w-3.5" />
           <span className="truncate">{text.host}/dashboard</span>
-          <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-primary" />
+          {/* Squared (was rounded-full), bright teal (was the primary). */}
+          <span className="ml-auto h-2 w-2 shrink-0 bg-brand-teal" />
         </div>
 
         <div className="space-y-4 p-5">
@@ -74,13 +76,15 @@ export function HeroDashboard({ text }: { text: HeroDashboardText }) {
             <p className="text-xs font-semibold text-foreground">{text.chartTitle}</p>
             <div className="mt-3 flex h-20 items-end gap-2">
               {BARS.map((h, i) => (
-                <div key={i} className={i === BARS.length - 1 ? "flex-1 bg-brand-accent" : "flex-1 bg-primary/80"} style={{ height: `${h}%` }} />
+                // The week's bars in bright teal (were bg-primary/80), this week in purple.
+                <div key={i} className={i === BARS.length - 1 ? "flex-1 bg-brand-accent" : "flex-1 bg-brand-teal/80"} style={{ height: `${h}%` }} />
               ))}
             </div>
           </div>
 
           <div className="flex items-center gap-3 border border-border bg-background p-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-primary/10 text-primary">
+            {/* Icon tile in bright teal (was primary). */}
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-brand-teal/10 text-brand-teal">
               <FileSignature className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">

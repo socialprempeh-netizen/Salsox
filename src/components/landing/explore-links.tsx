@@ -52,7 +52,7 @@ export async function ExploreLinks() {
       {pages.map((p) => (
         <li key={p.path}>
           <Link href={p.path} className="group flex items-start gap-2 text-sm text-foreground hover:text-primary">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-teal" aria-hidden="true" />
             <span className="underline-offset-4 group-hover:underline">{p.breadcrumb}</span>
           </Link>
         </li>
@@ -64,18 +64,19 @@ export async function ExploreLinks() {
     <section id="explore" className="bg-muted/40 py-20 sm:py-24">
       <Reveal className="mx-auto max-w-6xl px-6 lg:px-12">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-[2.75rem]">{t("title")}</h2>
+          {/* 32px to 40px (was text-3xl sm:text-[2.75rem]). */}
+          <h2 className="font-display text-[32px] font-semibold leading-tight tracking-tight text-foreground sm:text-[40px]">{t("title")}</h2>
           <p className="mt-4 text-lg text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="grid items-start gap-6 lg:grid-cols-3">
           <div className={card}>
             <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <FileSignature className="h-5 w-5 text-primary" aria-hidden="true" /> {t("solutions")}
+              <FileSignature className="h-5 w-5 text-brand-teal" aria-hidden="true" /> {t("solutions")}
             </h3>
             <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
               {solutions.map((p) => (
                 <li key={p.path} className="flex items-start gap-2">
-                  <span aria-hidden className="mt-2 h-px w-2.5 shrink-0 bg-primary" />
+                  <span aria-hidden className="mt-2 h-px w-2.5 shrink-0 bg-brand-teal" />
                   <Link href={p.path} className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
                     {p.breadcrumb}
                   </Link>
@@ -89,7 +90,7 @@ export async function ExploreLinks() {
 
           {/* The free tools: raised and edged in the accent. */}
           <div className={`${card} relative border-2 border-brand-accent shadow-[var(--shadow-soft-lg)] lg:-mt-3`}>
-            <span className="absolute -top-3 left-6 bg-brand-accent px-2.5 py-1 text-xs font-semibold text-white">{t("toolsBadge")}</span>
+            <span className="absolute -top-3 left-6 bg-brand-accent px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{t("toolsBadge")}</span>
             <h3 className="mt-1 flex items-center gap-2 text-lg font-semibold">
               <Wrench className="h-5 w-5 text-brand-accent-text" aria-hidden="true" /> {t("tools")}
             </h3>
@@ -102,7 +103,7 @@ export async function ExploreLinks() {
 
           <div className={card}>
             <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <Scale className="h-5 w-5 text-primary" aria-hidden="true" /> {t("compare")}
+              <Scale className="h-5 w-5 text-brand-teal" aria-hidden="true" /> {t("compare")}
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">{t("compareBody", { count: comparisons.length })}</p>
             {checkList(comparisons)}

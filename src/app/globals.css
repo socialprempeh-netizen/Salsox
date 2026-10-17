@@ -242,7 +242,15 @@
      a surface colour, and a text shade of it that stays readable in dark mode. */
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-text: var(--brand-accent-text);
-  /* The homepage's serif headlines (src/app/layout.tsx loads Source Serif 4). */
+  /* The public pages' palette (landingPalette in src/config/brand.ts): bright
+     teal for icons, checks and accents, black for the footer and the Lifetime
+     card, mint and cream for the hero's wash. */
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-mint: var(--brand-mint);
+  --color-brand-cream: var(--brand-cream);
+  /* The homepage's serif headlines (src/app/layout.tsx loads Fraunces; was
+     Source Serif 4). */
   --font-display: var(--font-serif-display), Georgia, "Times New Roman", serif;
   /* Inter stands in for PandaDoc's Graphik (see the note above :root). */
   /* --font-sans: var(--font-geist-sans); */
@@ -471,6 +479,13 @@ body {
 :root {
   --brand-accent: var(--primary);
   --brand-accent-text: var(--brand-accent);
+  /* Neutral outside .brand-landing (and on the kit's site, which has no
+     landing palette): the teal is the primary, the black the foreground,
+     the wash the page itself. */
+  --brand-teal: var(--primary);
+  --brand-ink: #0a0a0a;
+  --brand-mint: var(--muted);
+  --brand-cream: var(--background);
 }
 .dark {
   --brand-accent-text: color-mix(in srgb, var(--brand-accent) 35%, #ffffff);

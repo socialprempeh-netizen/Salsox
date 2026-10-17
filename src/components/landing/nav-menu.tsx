@@ -87,7 +87,9 @@ export function NavMenu({ nav }: { nav: SiteNav }) {
       // (navbar.tsx) from 1280px up. Between 1024 and 1279 five groups, the
       // logo and the account buttons only fit on one line at the old size,
       // so it stays there, never wrapping a label onto two lines.
-      "inline-flex items-center gap-1 whitespace-nowrap px-2 py-2 text-[15px] font-semibold transition-colors xl:gap-1.5 xl:px-3 xl:text-[17px]",
+      // Then 14px medium at every width, per the palette audit's type scale
+      // (nav and buttons 13-14px). Was text-[15px] font-semibold … xl:text-[17px].
+      "inline-flex items-center gap-1 whitespace-nowrap px-2 py-2 text-[14px] font-medium transition-colors xl:gap-1.5 xl:px-3",
       active ? "text-primary" : "text-foreground hover:text-primary"
     )
 

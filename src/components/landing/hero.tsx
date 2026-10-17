@@ -21,9 +21,11 @@ import { HeroDashboard } from "@/components/landing/hero-dashboard"
  * accented one, and when empty the split follows `tagline` in
  * src/config/site.ts, accenting its last word.
  *
- * The background is a wash from the primary colour to the brand accent
- * (src/config/brand.ts), faint enough that text keeps its contrast. Nothing
- * here starts hidden: the headline is the page's largest paint.
+ * The background is a wash from mint into the cream page, with a trace of
+ * the purple accent at the far end (landingPalette in src/config/brand.ts);
+ * it was primary into brand accent. Faint enough that text keeps its
+ * contrast. Nothing here starts hidden: the headline is the page's largest
+ * paint.
  */
 export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: string } }) {
   const t = useTranslations("hero")
@@ -42,7 +44,8 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
     <section className="relative overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(120deg,color-mix(in_srgb,var(--primary)_12%,transparent)_0%,transparent_45%,color-mix(in_srgb,var(--brand-accent)_14%,transparent)_100%)]"
+        // Was: bg-[linear-gradient(120deg,color-mix(in_srgb,var(--primary)_12%,transparent)_0%,transparent_45%,color-mix(in_srgb,var(--brand-accent)_14%,transparent)_100%)]
+        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(120deg,var(--brand-mint)_0%,var(--brand-mint)_18%,var(--brand-cream)_68%,color-mix(in_srgb,var(--brand-accent)_7%,var(--brand-cream))_100%)]"
       />
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grid opacity-60" />
 
@@ -50,14 +53,18 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
         <div>
           {/* What is new: the product's own line, next to its version. */}
           <div className="mb-6 inline-flex max-w-full items-center gap-2 border border-border bg-card/80 py-1.5 pl-2 pr-3 text-sm font-medium backdrop-blur">
-            <span className="inline-flex shrink-0 items-center gap-1 bg-brand-accent px-2 py-0.5 text-xs font-semibold text-white">
+            {/* Badge type: 10px bold capitals (was text-xs font-semibold). */}
+            <span className="inline-flex shrink-0 items-center gap-1 bg-brand-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
               <Sparkles className="h-3 w-3" aria-hidden="true" /> v{siteConfig.version}
             </span>
             <span className="truncate text-muted-foreground">{t("pill")}</span>
           </div>
 
-          <h1 className="font-display text-[2.6rem] font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-[4.25rem]">
-            {headline.head} <span className="text-primary">{headline.accent}</span>
+          {/* 36px on a phone to 60px on a laptop, line height 0.92, all dark
+              teal. Was text-[2.6rem] sm:text-6xl lg:text-[4.25rem], leading 1.05. */}
+          <h1 className="font-display text-[36px] font-semibold leading-[0.92] tracking-tight text-foreground sm:text-[48px] lg:text-[60px]">
+            {/* One colour for the whole line: the accent span was text-primary. */}
+            {headline.head} <span>{headline.accent}</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-muted-foreground md:text-xl">{t("subtitle")}</p>
@@ -80,7 +87,7 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
           <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {trustPoints.map((point) => (
               <li key={point} className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 shrink-0 text-primary" strokeWidth={2.5} aria-hidden="true" />
+                <Check className="h-4 w-4 shrink-0 text-brand-teal" strokeWidth={2.5} aria-hidden="true" />
                 {point}
               </li>
             ))}
