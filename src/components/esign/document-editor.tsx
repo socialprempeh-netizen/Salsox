@@ -24,6 +24,7 @@ import { SIGN_AND_PAY_CURRENCIES } from "@/lib/esign/payments/select"
 import { MAX_RECIPIENTS } from "@/lib/esign/email-list"
 import type { DocumentSetup } from "@/lib/esign/schemas"
 import { toE164 } from "@/lib/esign/phone"
+import { isStepRole, joinFlagsFromOrders, ordersFromSteps, signingSteps } from "@/lib/esign/signing-steps"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,11 +33,15 @@ import { toast } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { PdfPages } from "./pdf-pages"
 import { PlanLock, useActionErrorToast } from "./plan-upsell"
+import { SigningStepList } from "./signing-step-list"
 import { track } from "@/lib/analytics"
 
 type FieldType = DocumentSetup["fields"][number]["type"]
 type Role = DocumentSetup["recipients"][number]["role"]
-type EditorRecipient = { key: string; name: string; email: string; phone: string; role: Role; order: number }
+// `joinPrevious`: in a sequential document, signs at the same step as the
+// nearest signer or approver above (signing-steps.ts). Derived from the saved
+// orders when a draft opens, so it is not part of what the page passes in.
+type EditorRecipient = { key: string; name: string; email: string; phone: string; role: Role; order: number; joinPrevious: boolean }
 type EditorField = { id: string; recipientKey: string; type: FieldType; page: number; x: number; y: number; width: number; height: number; required: boolean }
 
 const FIELD_TYPES: FieldType[] = ["SIGNATURE", "INITIALS", "NAME", "DATE", "EMAIL", "TEXT", "CHECKBOX"]
@@ -65,7 +70,7 @@ type Props = {
     subject: string
     message: string
     expiresInDays: number | null
-    recipients: EditorRecipient[]
+    recipients: Omit<EditorRecipient, "joinPrevious">[]
     fields: EditorField[]
     payment: { amount: string; currency: string; recipientKey: string } | null
     smsReminders: boolean
@@ -91,6 +96,7 @@ const localId = (prefix: string) => `${prefix}_${Date.now().toString(36)}_${(cou
 
 export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyProviders, plan, smsAvailable }: Props) {
   const t = useTranslations("esign.editor")
+  const tSteps = useTranslations("esign.steps")
   const tPlans = useTranslations("esign.plans")
   const showError = useActionErrorToast()
   const router = useRouter()
@@ -104,9 +110,13 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
   const [subject, setSubject] = useState(initial.subject)
   const [message, setMessage] = useState(initial.message)
   const [expiry, setExpiry] = useState<string>(initial.expiresInDays === null ? "never" : String(initial.expiresInDays))
-  const [recipients, setRecipients] = useState<EditorRecipient[]>(
-    initial.recipients.length > 0 ? initial.recipients : [{ key: localId("r"), name: "", email: "", phone: "", role: "SIGNER", order: 0 }]
-  )
+  // Was: initial.recipients as they came, every recipient its own position.
+  // Shared steps are read back from the saved orders (joinFlagsFromOrders).
+  const [recipients, setRecipients] = useState<EditorRecipient[]>(() => {
+    if (initial.recipients.length === 0) return [{ key: localId("r"), name: "", email: "", phone: "", role: "SIGNER", order: 0, joinPrevious: false }]
+    const joins = joinFlagsFromOrders(initial.recipients)
+    return initial.recipients.map((r, i) => ({ ...r, joinPrevious: joins[i] }))
+  })
   const [fields, setFields] = useState<EditorField[]>(initial.fields)
   const [activeRecipient, setActiveRecipient] = useState<string>(initial.recipients[0]?.key ?? "")
   const [armed, setArmed] = useState<FieldType | null>(null)
@@ -128,13 +138,19 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
   // international form. The same rule the sender applies (toE164).
   const smsReach = actionable.filter((r) => toE164(r.phone) !== null).length
   const currentRecipient = actionable.find((r) => r.key === activeRecipient) ?? actionable[0]
+  // The order each recipient is saved with, and the steps they make, for the
+  // labels and the preview. In a parallel document every order is ignored.
+  const orders = ordersFromSteps(recipients)
+  const steps = signingSteps(recipients.map((r, i) => ({ ...r, order: orders[i], signingStatus: "NOT_SIGNED" as const })), "SEQUENTIAL")
+  const stepOf = new Map(steps.flatMap((s) => s.recipients.map((r) => [r.key, s.number] as const)))
+  const displayName = (r: EditorRecipient) => r.name.trim() || r.email.trim() || tSteps("unnamed")
 
   // ── Recipients ───────────────────────────────────────────────────────────
   function updateRecipient(key: string, patch: Partial<EditorRecipient>) {
     setRecipients((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)))
   }
   function addRecipient() {
-    setRecipients((prev) => [...prev, { key: localId("r"), name: "", email: "", phone: "", role: "SIGNER", order: prev.length }])
+    setRecipients((prev) => [...prev, { key: localId("r"), name: "", email: "", phone: "", role: "SIGNER", order: prev.length, joinPrevious: false }])
   }
   function removeRecipient(key: string) {
     setRecipients((prev) => prev.filter((r) => r.key !== key).map((r, i) => ({ ...r, order: i })))
@@ -222,7 +238,10 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
         email: r.email.trim().toLowerCase(),
         phone: r.phone.trim() || undefined,
         role: r.role,
-        order: i,
+        // Was `order: i`: one recipient per position, so nobody could share
+        // a step. Now recipients marked "at the same time" share one.
+        // order: i,
+        order: orders[i],
       })),
       fields: fields.map(({ recipientKey, type, page, x, y, width, height, required }) => ({ recipientKey, type, page, x, y, width, height, required })),
       payment:
@@ -266,12 +285,12 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
     })
   }
 
-  const steps = [t("stepRecipients"), t("stepFields"), t("stepReview")]
+  const wizardSteps = [t("stepRecipients"), t("stepFields"), t("stepReview")]
 
   return (
     <div className="space-y-4">
       <ol className="grid grid-cols-3 gap-2" aria-label={t("steps")}>
-        {steps.map((label, i) => (
+        {wizardSteps.map((label, i) => (
           <li key={label}>
             <button
               type="button"
@@ -327,8 +346,26 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
                     </select>
                   </div>
                 </div>
+                {/* Sharing a step: only in a sequential document, and only for a
+                    signer or approver with another one above it. */}
+                {signingOrder === "SEQUENTIAL" && isStepRole(r.role) && recipients.slice(0, i).some((x) => isStepRole(x.role)) && (
+                  <label className="flex min-h-11 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5"
+                      checked={r.joinPrevious}
+                      onChange={(e) => updateRecipient(r.key, { joinPrevious: e.target.checked })}
+                    />
+                    {t("sameStep", { n: stepOf.get(recipients.slice(0, i).findLast((x) => isStepRole(x.role))!.key) ?? 1 })}
+                  </label>
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{signingOrder === "SEQUENTIAL" ? t("orderN", { n: i + 1 }) : ""}</span>
+                  {/* Was the orderN message with i + 1 ("Signs 1st") for everyone,
+                      approvers, viewers and copy recipients included, and
+                      counting them all. Now the step, for those who have one. */}
+                  <span className="text-xs text-muted-foreground">
+                    {signingOrder === "SEQUENTIAL" ? (isStepRole(r.role) ? tSteps("step", { n: stepOf.get(r.key) ?? 1 }) : t("notInOrder")) : ""}
+                  </span>
                   <div className="flex gap-1">
                     {signingOrder === "SEQUENTIAL" && (
                       <>
@@ -344,6 +381,24 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
               </div>
             ))}
           </div>
+          <AnimatePresence initial={false}>
+            {signingOrder === "SEQUENTIAL" && steps.length > 0 && (
+              <motion.div
+                key="order-preview"
+                initial={reduceMotion ? false : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-3 border bg-muted/30 p-4">
+                  <p className="text-sm font-medium">{tSteps("title")}</p>
+                  <SigningStepList steps={steps.map((s) => ({ key: s.recipients[0].key, number: s.number, names: s.recipients.map(displayName) }))} />
+                  {recipients.some((r) => !isStepRole(r.role)) && <p className="text-xs text-muted-foreground">{tSteps("outside")}</p>}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button type="button" variant="outline" onClick={addRecipient} disabled={recipients.length >= MAX_RECIPIENTS}><Plus className="h-4 w-4" /> {t("addRecipient")}</Button>
             <label className={cn("flex min-h-11 items-center gap-2 text-sm", !plan.sequentialSigning && signingOrder !== "SEQUENTIAL" && "text-muted-foreground")}>

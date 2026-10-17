@@ -7,6 +7,10 @@
  * is out for signature (when the deployment can send SMS), and the public
  * verification code once it is sealed. Cards, rows and banners on this page
  * were squared in the same edit, per the design rules.
+ *
+ * A sequential document also shows its signing order: each step, who is in
+ * it, which one is current, and each recipient's step beside their name
+ * (src/lib/esign/signing-steps.ts).
  */
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
@@ -25,6 +29,8 @@ import { formatMinorUnits } from "@/lib/esign/payments/select"
 import { smsConfigured } from "@/lib/esign/sms"
 import { toE164 } from "@/lib/esign/phone"
 import { verificationUrl } from "@/lib/esign/verify"
+import { signingSteps } from "@/lib/esign/signing-steps"
+import { SigningStepList } from "@/components/esign/signing-step-list"
 import { SmsReminderToggle } from "@/components/esign/sms-reminder-toggle"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -46,6 +52,7 @@ export default async function DocumentPage({
   const { sent } = await searchParams
   const user = await requireUser()
   const t = await getTranslations("esign.detail")
+  const tSteps = await getTranslations("esign.steps")
   const format = await getFormatter()
 
   const document = await prisma.document.findFirst({
@@ -90,6 +97,13 @@ export default async function DocumentPage({
   const missing = missingInvites(emailOn, document.status, document.recipients, document.signingOrder)
   const undelivered = new Set(missing.undelivered.map((r) => r.id))
   const shareByHand = new Set(missing.shareByHand.map((r) => r.id))
+  // The signing order, for a sequential document. Progress (done / their turn
+  // / waiting) is shown while it can still move or once it is complete; on a
+  // declined or cancelled document only the order itself.
+  const steps = document.signingOrder === "SEQUENTIAL" ? signingSteps(document.recipients, "SEQUENTIAL") : []
+  const stepOf = new Map(steps.flatMap((s) => s.recipients.map((r) => [r.id, s.number] as const)))
+  const showProgress = document.status === "PENDING" || document.status === "EXPIRED" || document.status === "COMPLETED"
+  const currentStep = showProgress ? steps.find((s) => s.state === "current") : undefined
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -138,6 +152,24 @@ export default async function DocumentPage({
         )}
       </div>
 
+      {steps.length > 1 && (
+        <Card className="rounded-none">
+          <CardHeader>
+            <CardTitle className="text-base">{tSteps("title")}</CardTitle>
+            <CardDescription>
+              {currentStep
+                ? tSteps("nextToSign", { names: format.list(currentStep.recipients.filter((r) => r.signingStatus !== "SIGNED").map((r) => r.name), { type: "conjunction" }) })
+                : tSteps("hint")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SigningStepList
+              steps={steps.map((s) => ({ key: s.recipients[0].id, number: s.number, names: s.recipients.map((r) => r.name), state: showProgress ? s.state : undefined }))}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="rounded-none">
         <CardHeader>
           <CardTitle className="text-base">{t("recipients")}</CardTitle>
@@ -163,6 +195,7 @@ export default async function DocumentPage({
                     <p className="truncate text-sm text-muted-foreground">{r.email}</p>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       <Badge variant="outline">{t(`role.${r.role}`)}</Badge>
+                      {steps.length > 1 && stepOf.has(r.id) && <Badge variant="outline">{tSteps("step", { n: stepOf.get(r.id)! })}</Badge>}
                       {r.signingStatus === "SIGNED" && r.signedAt && <Badge variant="success">{t("signedAt", { date: when(r.signedAt) })}</Badge>}
                       {r.signingStatus === "REJECTED" && <Badge variant="destructive">{t("declined")}</Badge>}
                       {r.signingStatus === "NOT_SIGNED" && isActionable(r.role) && (
