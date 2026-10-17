@@ -6,7 +6,7 @@ import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/esign/limits";
 import { securityHeaders as buildSecurityHeaders } from "./src/lib/security-headers";
 import { sentryIngestOrigin } from "./src/lib/sentry";
 import { posthogConfig } from "./src/lib/posthog-config";
-import { seoRedirectsForNext } from "./src/lib/seo/redirects";
+import { DOCS_REDIRECTS, seoRedirectsForNext } from "./src/lib/seo/redirects";
 
 // Points next-intl at the request config that loads the message files.
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
@@ -87,6 +87,9 @@ const nextConfig: NextConfig = {
   // one hop, to the English page it translated rather than to a 404.
   async redirects() {
     return [
+      // The Italian docs go straight to the Help Center, not through /docs
+      // first: the /it rule below would otherwise make them two hops.
+      ...DOCS_REDIRECTS.map((r) => ({ source: `/it${r.source}`, destination: r.destination, statusCode: 301 as const })),
       { source: "/it", destination: "/", permanent: true },
       { source: "/it/:path*", destination: "/:path*", permanent: true },
       // One page per search intent: overlapping URLs 301 to the page that

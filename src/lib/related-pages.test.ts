@@ -20,6 +20,6 @@ describe("relatedPagesFor", () => {
 
   // The 404 page and anything not listed get a sensible default set.
   it("falls back to the default neighbours for an unknown path", () => {
-    expect(relatedPagesFor("/no-such-page").map((p) => p.href)).toEqual(["/pricing", "/docs", "/blog"])
+    expect(relatedPagesFor("/no-such-page").map((p) => p.href)).toEqual(["/pricing", "/resources/help", "/blog"])
   })
 })

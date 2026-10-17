@@ -1487,8 +1487,6 @@
       "templatesBlurb": "NDAs, contracts, leases and invoices to copy",
       "helpCenter": "Help Center",
       "helpCenterBlurb": "Step-by-step guides to every feature",
-      "docs": "Help and docs",
-      "docsBlurb": "How to set up and use each feature",
       "verify": "Verify a document",
       "verifyBlurb": "Check that a signed PDF is genuine",
       "changelogBlurb": "What changed in each release",
@@ -1756,7 +1754,7 @@
   "related": {
     "title": "Keep exploring",
     "pricing": { "title": "Pricing", "body": "Plans, limits and what each one costs." },
-    "docs": { "title": "Documentation", "body": "Step-by-step guides for every feature." },
+    "docs": { "title": "Help Center", "body": "Step-by-step guides for every feature." },
     "blog": { "title": "Blog", "body": "Product updates, guides and build notes." },
     "about": { "title": "About", "body": "What we are building, and why." },
     "contact": { "title": "Contact", "body": "Questions or feedback? Get in touch." },
@@ -2444,8 +2442,8 @@
         "description": "Sending for signature, signing PDFs online, and e-signatures for real estate, HR and freelancers."
       },
       "docs": {
-        "name": "Help and docs",
-        "description": "Getting started, billing and plans."
+        "name": "Help Center",
+        "description": "Step-by-step guides to sending, signing, templates, Sign & Pay and billing."
       }
     },
     "hubs": {

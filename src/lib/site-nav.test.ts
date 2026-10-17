@@ -30,8 +30,6 @@ const text: NavText = {
   helpCenterBlurb: "x",
   blog: "Blog",
   blogBlurb: "x",
-  docs: "Docs",
-  docsBlurb: "x",
   verify: "Verify",
   verifyBlurb: "x",
   changelog: "Changelog",

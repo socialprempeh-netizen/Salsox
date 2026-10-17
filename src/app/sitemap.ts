@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next"
 import { getAllPosts, getCategories, categorySlug, hasPosts } from "@/lib/blog"
 import { getChangelog } from "@/lib/changelog"
-import { getDocs, translatedLocales } from "@/lib/docs"
-import { routing } from "@/i18n/routing"
+// Unused since /docs redirects to the Help Center (see the docs list below).
+// import { getDocs, translatedLocales } from "@/lib/docs"
+// Unused since /docs left the sitemap (its index was the one localized entry).
+// import { routing } from "@/i18n/routing"
 import { localizedPath } from "@/i18n/alternates"
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
@@ -60,7 +62,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${siteConfig.url}/pricing`, changeFrequency: "weekly", priority: 0.9 },
     // The index renders from the message files, so it exists in every language
     // that has one.
-    ...localized("/docs", routing.locales, { changeFrequency: "weekly", priority: 0.8 }),
+    // Removed: /docs redirects to the Help Center (DOCS_REDIRECTS), listed below.
+    // ...localized("/docs", routing.locales, { changeFrequency: "weekly", priority: 0.8 }),
     // The blog index only once there is something in it: while empty it is
     // noindex, and listing it here would contradict that.
     ...(hasPosts()
@@ -95,12 +98,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ]),
   ]
 
-  const docs: MetadataRoute.Sitemap = getDocs().flatMap((doc) =>
-    localized(`/docs/${doc.slug}`, translatedLocales(doc.slug), {
-      changeFrequency: "weekly",
-      priority: 0.7,
-    })
-  )
+  // Removed with the /docs section: each guide redirects to a Help Center
+  // guide (DOCS_REDIRECTS), and a sitemap lists pages, not redirects.
+  // const docs: MetadataRoute.Sitemap = getDocs().flatMap((doc) =>
+  //   localized(`/docs/${doc.slug}`, translatedLocales(doc.slug), {
+  //     changeFrequency: "weekly",
+  //     priority: 0.7,
+  //   })
+  // )
 
   const posts: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${siteConfig.url}/blog/${post.slug}`,
@@ -167,5 +172,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ]
 
   // Was: return [...staticRoutes, ...registry, ...hubs, ...templateRoutes, ...docs, ...posts, ...categories]
-  return [...staticRoutes, ...registry, ...hubs, ...templateRoutes, ...helpRoutes, ...docs, ...posts, ...categories]
+  // Then with ...docs after helpRoutes, until /docs redirected to the Help Center.
+  return [...staticRoutes, ...registry, ...hubs, ...templateRoutes, ...helpRoutes, ...posts, ...categories]
 }

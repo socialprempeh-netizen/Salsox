@@ -48,9 +48,11 @@ test("desktop: each group opens a panel that reaches its pages and its hub", asy
   if (shotDir) await page.screenshot({ path: path.join(shotDir, "nav-desktop-why.png") })
 
   await nav.getByRole("button", { name: "Resources" }).click()
-  await nav.getByRole("link", { name: /^Help and docs/ }).click()
-  await page.waitForURL("**/docs")
+  // Was "Help and docs" to /docs: that entry left for the Help Center.
+  await nav.getByRole("link", { name: /^Help Center/ }).click()
+  await page.waitForURL("**/resources/help")
   // A followed link closes the panel.
+  await expect(nav.getByRole("link", { name: /^Help Center/ })).toHaveCount(0)
   await expect(nav.getByRole("link", { name: /^Help and docs/ })).toHaveCount(0)
   // Was "/pricing": the link opens on the plan cards (PRICING_HREF in site-nav.ts).
   await expect(nav.getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing#plans")
@@ -120,7 +122,9 @@ test("footer: grouped like the top menu, with a Company column", async ({ page }
     await expect(footer.getByRole("heading", { name: heading, exact: true })).toBeVisible()
   }
   await expect(footer.getByRole("link", { name: "All free tools" })).toHaveAttribute("href", "/tools")
-  await expect(footer.getByRole("link", { name: "Help and docs" })).toHaveAttribute("href", "/docs")
+  // Was "Help and docs" to /docs, replaced by the Help Center.
+  await expect(footer.getByRole("link", { name: "Help Center" })).toHaveAttribute("href", "/resources/help")
+  await expect(footer.getByRole("link", { name: "Help and docs" })).toHaveCount(0)
   await expect(footer.getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "/terms")
 
   // The "Why" group is two lists under their own subheadings, side by side

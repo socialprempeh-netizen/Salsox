@@ -40,7 +40,8 @@ export function getStartedHref(): string {
   return SIGNUP_TO_FIRST_DOCUMENT_PATH
 }
 
-export const GUIDE_PATH = "/docs/getting-started"
+// Was "/docs/getting-started", which now redirects here (DOCS_REDIRECTS).
+export const GUIDE_PATH = "/resources/help/send-a-document-step-by-step"
 
 /**
  * The secondary "demo" links: the hero's second button and the footer's last

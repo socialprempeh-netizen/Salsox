@@ -98,3 +98,22 @@ test("an unknown guide is a 404", async ({ page }) => {
   const response = await page.goto("/resources/help/not-a-guide")
   expect(response?.status()).toBe(404)
 })
+
+// /docs and its guides moved here (DOCS_REDIRECTS in src/lib/seo/redirects.ts):
+// every old link, including the retired Italian ones, lands in one 301 hop.
+for (const [from, to] of [
+  ["/docs", "/resources/help"],
+  ["/docs/getting-started", "/resources/help/send-a-document-step-by-step"],
+  ["/docs/billing-and-plans", "/resources/help/plans-and-what-they-include"],
+  ["/docs/no-such-guide", "/resources/help"],
+  ["/it/docs/getting-started", "/resources/help/send-a-document-step-by-step"],
+]) {
+  test(`${from} redirects to ${to}`, async ({ request, page }) => {
+    const res = await request.get(from, { maxRedirects: 0 })
+    expect(res.status()).toBe(301)
+    expect(new URL(res.headers()["location"], "http://x").pathname).toBe(to)
+    await page.goto(from)
+    await expect(page).toHaveURL(new RegExp(`${to}$`))
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+  })
+}

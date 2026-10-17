@@ -1,7 +1,8 @@
 import { siteConfig } from "@/config/site"
 import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 import { isKitSite } from "@/config/kit"
-import { getDocs } from "@/lib/docs"
+// Was getDocs from "@/lib/docs": /docs now redirects to the Help Center.
+import { getHelpArticles, helpArticlePath } from "@/lib/help"
 import { getAllPosts, getCategories, hasPosts } from "@/lib/blog"
 
 /**
@@ -15,8 +16,12 @@ export function GET(): Response {
   const base = siteConfig.url
   const repo = siteConfig.links.github
 
-  const docs = getDocs().map(
-    (d) => `- [${d.title}](${base}/docs/${d.slug}): ${d.description}`,
+  // Was the /docs guides; that section now redirects to the Help Center.
+  // const docs = getDocs().map(
+  //   (d) => `- [${d.title}](${base}/docs/${d.slug}): ${d.description}`,
+  // ).join("\n")
+  const docs = getHelpArticles().map(
+    (a) => `- [${a.title}](${base}${helpArticlePath(a.slug)}): ${a.description}`,
   ).join("\n")
 
   const categories = getCategories()

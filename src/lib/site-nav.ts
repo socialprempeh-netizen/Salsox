@@ -56,8 +56,9 @@ export type NavText = {
   helpCenterBlurb: string
   blog: string
   blogBlurb: string
-  docs: string
-  docsBlurb: string
+  // Gone with the "Help and docs" link (see the resources group below).
+  // docs: string
+  // docsBlurb: string
   verify: string
   verifyBlurb: string
   changelog: string
@@ -142,7 +143,9 @@ export function buildSiteNav({
           { href: "/resources/help", label: text.helpCenter, description: text.helpCenterBlurb },
           // An empty blog gets no link (hasPosts()).
           ...(showBlog ? [{ href: "/blog", label: text.blog, description: text.blogBlurb }] : []),
-          { href: "/docs", label: text.docs, description: text.docsBlurb },
+          // Removed: the Help Center above covers it, and /docs now
+          // redirects there (DOCS_REDIRECTS in src/lib/seo/redirects.ts).
+          // { href: "/docs", label: text.docs, description: text.docsBlurb },
           { href: "/verify", label: text.verify, description: text.verifyBlurb },
           { href: "/changelog", label: text.changelog, description: text.changelogBlurb },
         ],

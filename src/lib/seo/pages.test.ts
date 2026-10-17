@@ -10,18 +10,25 @@ import { describe, expect, it } from "vitest"
 import { getAllPosts } from "@/lib/blog"
 import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
-import { SEO_REDIRECTS } from "./redirects"
+import { getDocs } from "@/lib/docs"
+import { getHelpArticles, HELP_PATH, HELP_VIDEOS_PATH, helpArticlePath } from "@/lib/help"
+import { DOCS_REDIRECTS, SEO_REDIRECTS } from "./redirects"
 import { getPages, loadAllPages, pagePath, parseFileName, similarity, validatePages, wordCount, type SitePage } from "./pages"
 
 /** Routes outside the registry that pages may link to. */
-const STATIC_PATHS = ["/", "/pricing", "/verify", "/docs", "/blog", "/about", "/contact", "/changelog", "/tools", "/compare"]
+// "/docs" left the list when it became a redirect to the Help Center
+// (DOCS_REDIRECTS): a link to it would cost every reader a hop. Was:
+// const STATIC_PATHS = ["/", "/pricing", "/verify", "/docs", "/blog", "/about", "/contact", "/changelog", "/tools", "/compare"]
+const STATIC_PATHS = ["/", "/pricing", "/verify", "/blog", "/about", "/contact", "/changelog", "/tools", "/compare", HELP_PATH, HELP_VIDEOS_PATH]
 // The template library's pages are linkable too (industry and team pages
 // point at their templates), including the category pages that exist: only
 // categories with enough templates get one (MIN_TEMPLATES_PER_CATEGORY_PAGE).
 const categoryPaths = () =>
   TEMPLATE_CATEGORIES.filter((c) => getTemplates().filter((t) => t.category === c).length >= MIN_TEMPLATES_PER_CATEGORY_PAGE).map(categoryPath)
 // Was: new Set([...STATIC_PATHS, TEMPLATES_PATH, ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`)])
-const knownPaths = () => new Set([...STATIC_PATHS, TEMPLATES_PATH, ...categoryPaths(), ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`)])
+// Then without the Help Center guides, which are linkable (and a redirect
+// destination) since /docs moved there.
+const knownPaths = () => new Set([...STATIC_PATHS, TEMPLATES_PATH, ...categoryPaths(), ...getTemplates().map((t) => t.path), ...getAllPosts().map((p) => `/blog/${p.slug}`), ...getHelpArticles().map((a) => helpArticlePath(a.slug))])
 
 describe("registry basics", () => {
   it("puts each kind at its URL", () => {
@@ -137,5 +144,12 @@ describe("redirects", () => {
 
   it("never shadow a real page", () => {
     for (const r of SEO_REDIRECTS) expect(getPages().some((p) => p.path === r.source), r.source).toBe(false)
+  })
+
+  // Every old /docs guide gets a guide of its own in the Help Center, not
+  // just the catch-all to the front page: a link to a guide keeps its topic.
+  it("send each old /docs guide to a Help Center guide", () => {
+    const sources = new Set(DOCS_REDIRECTS.map((r) => r.source))
+    for (const d of getDocs()) expect(sources.has(`/docs/${d.slug}`), `/docs/${d.slug}`).toBe(true)
   })
 })
