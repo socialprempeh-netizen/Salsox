@@ -2034,6 +2034,8 @@
       },
       "pickFieldType": "Choose a recipient and a field type, then tap the page to place it. Drag to move, pull the corner to resize.",
       "tapToPlace": "Now tap the page where the field should go.",
+      "placementDebugTitle": "Placement diagnostics",
+      "placementDebugHint": "One line per click while a field type is chosen. Take a screenshot of this box after a click that placed nothing.",
       "placeNoRecipient": "Add someone who signs or approves on the Recipients step first, then place their fields.",
       "required": "Required",
       "deselect": "Done",

@@ -84,3 +84,45 @@ for (const size of sizes) {
     await ctx.close()
   })
 }
+
+/**
+ * The live diagnostics (components/esign/placement-diagnostics.tsx), with
+ * ?placementDebug=1: a click that places a field is recorded as placed, and a
+ * click on a page that something else covers is recorded as "covered", naming
+ * the element on top. That is the record a sender can screenshot, and what
+ * goes to Sentry, when placement fails in the field.
+ */
+test("placement diagnostics name what happened to each click", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+  const page = await ctx.newPage()
+  await signUp(page)
+  await page.goto("/dashboard/documents/new")
+  await page.locator('input[type="file"]').setInputFiles({ name: "Contract.pdf", mimeType: "application/pdf", buffer: await samplePdf(1) })
+  await page.getByRole("button", { name: "Continue to recipients" }).click()
+  await page.waitForURL(/\/dashboard\/documents\/[^/]+\/edit/, { timeout: 30_000 })
+  await page.goto(page.url() + "?placementDebug=1")
+  await page.getByLabel("Name").fill("Kofi Boateng")
+  await page.getByLabel("Email").fill(freshEmail("diag"))
+  await page.getByRole("button", { name: "Next", exact: true }).click()
+
+  const panel = page.getByTestId("placement-debug")
+  await place(page, "Signature", 1, 0.5, 0.7)
+  await expect(panel.getByRole("listitem").first()).toContainText("placed SIGNATURE")
+
+  // Something laid over the page takes the next click.
+  await page.getByRole("button", { name: "Text", exact: true }).click()
+  const pageEl = page.locator("[data-page='1']")
+  const box = (await pageEl.boundingBox())!
+  await page.evaluate(({ x, y }) => {
+    const cover = document.createElement("div")
+    cover.id = "cover"
+    Object.assign(cover.style, { position: "fixed", left: `${x - 40}px`, top: `${y - 40}px`, width: "80px", height: "80px", zIndex: "50" })
+    document.body.appendChild(cover)
+  }, { x: box.x + box.width / 2, y: box.y + box.height * 0.3 })
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.3)
+  await expect(panel.getByRole("listitem").first()).toContainText("covered TEXT")
+  await expect(panel.getByRole("listitem").first()).toContainText("div#cover")
+  await expect(page.getByText("Now tap the page where the field should go.")).toBeVisible()
+  await expectNoHorizontalScroll(page, "editor with placement diagnostics")
+  await ctx.close()
+})
