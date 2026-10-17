@@ -37,7 +37,11 @@ about: |
   This template covers the terms labour laws commonly ask for: the parties, start date, job title and place of work, hours, pay and pay day, holidays, sick pay, probation, notice on both sides, and the confidentiality and property duties every role needs. It is written for permanent staff in a small business; fixed-term or zero-hours roles need different wording.
 
   Laws differ: check minimum holiday, notice and sick-pay rules where the employee works before you send it. Both sides sign, and the employee initials the page that holds the notice terms.
+
+  Plan the signing order, manager approval first and the candidate next, with [sequential vs parallel signing](/blog/sequential-vs-parallel-signing), and see [how long to keep signed documents](/blog/how-long-to-keep-signed-documents) for employment records.
 faq:
+  - q: "Can an employment contract be signed online?"
+    a: "In most countries, yes. Send this employee agreement template for e-signature; the new hire signs from a link, and the signed employment agreement PDF is kept with its audit trail."
   - q: "Does an employment contract have to be in writing?"
     a: "Many countries require employers to give employees written terms, often by their first day. Even where it is not required, a written contract prevents most disputes about what was agreed."
   - q: "What must a contract include by law?"
@@ -45,7 +49,7 @@ faq:
   - q: "Can both parties sign the contract electronically?"
     a: "In most countries, yes. Electronic signatures are widely accepted for employment contracts; a few documents, in a few places, still need a handwritten signature."
 published: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Employment Contract

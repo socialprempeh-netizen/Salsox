@@ -5,9 +5,9 @@ description: "Create a signature image for PDFs: draw it or type it in a handwri
 h1: "PDF signature generator"
 lede: "Make a clean signature image once and reuse it on any PDF: draw it or type it in a handwritten style, choose the ink colour, and download a transparent PNG."
 primaryKeyword: "signature generator"
-aliases: ["pdf signature generator", "electronic signature generator", "create signature online", "signature maker", "transparent signature png"]
+aliases: ["pdf signature generator", "electronic signature generator", "create signature online", "signature maker", "transparent signature png", "create electronic signature online", "make an electronic signature", "online signature maker", "draw signature online"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-16
 breadcrumb: "Signature generator"
 howItWorks:
   - title: "Draw or type"
@@ -26,6 +26,8 @@ benefits:
   - title: "Created on your device"
     body: "The signature is drawn and saved in your browser. Nothing is uploaded or kept."
 faq:
+  - q: "Is a signature I create online an electronic signature?"
+    a: "The image itself is a picture of your signature. It becomes an electronic signature when you place it on a document intending to sign it; for agreements with others, sign through a service that records who signed and when."
   - q: "Is a generated signature legally valid?"
     a: "An image of a signature is one way of showing intent, and many electronic signatures are images. What usually matters legally is that you intended to sign and that there is a record of it. For contracts with other people, a signing workflow records that evidence."
   - q: "Should I draw or type my signature?"
@@ -57,6 +59,10 @@ A **typed** signature renders your name in a handwriting typeface. It is consist
 ## Keeping your signature image safe
 
 Treat a signature image like a rubber stamp: useful, but not something to leave lying around. Store it somewhere private, do not post it publicly, and do not send it to people as an attachment. For documents where someone might later dispute who signed, do not rely on an image alone. Send the document through a signing workflow that records who opened and signed it; the page on [PDF signatures](/pdf-signature) explains why.
+
+## From a signature image to a signed document
+
+Creating an electronic signature online gives you an image to reuse; signing is what you do with it. Placed on a PDF you sign yourself, it is enough for many forms. For agreements with someone else, send the document through a service that records consent, time and identity: our guide to [what an electronic signature is](/blog/what-is-an-electronic-signature) explains the difference, and [are electronic signatures secure?](/blog/are-electronic-signatures-secure) covers how to keep a reusable signature image safe.
 
 ## Next steps
 

@@ -8,7 +8,7 @@ cover: "/blog/covers/electronic-signature-vs-wet-signature.png"
 coverAlt: "Electronic signature vs wet signature: a document with a teal electronic signature line beside an ink line"
 coverTitle: "Electronic signature vs wet signature"
 coverLabel: "Ink"
-related: ["/blog/what-is-an-electronic-signature", "/blog/legally-binding-electronic-signature", "/blog/are-electronic-signatures-legal", "/pricing"]
+related: ["/blog/what-is-an-electronic-signature", "/blog/legally-binding-electronic-signature", "/blog/are-electronic-signatures-legal", "/blog/e-signatures-by-industry", "/pricing"]
 faq:
   - q: "What does wet signature mean?"
     a: "A wet signature, or wet ink signature, is a handwritten signature made with a pen on paper. The name comes from the ink being wet when it is applied."

@@ -7,12 +7,12 @@ primaryKeyword: "pandadoc"
 # "pandadoc alternative" moved to the alternatives roundup (/alternatives/pandadoc), which now owns that intent.
 aliases: ["salsox vs pandadoc", "pandadoc vs salsox", "pandadoc comparison"]
 published: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-16
 breadcrumb: "vs PandaDoc"
 competitor:
   name: "PandaDoc"
   url: "https://www.pandadoc.com"
-checked: 2026-10-06
+checked: 2026-10-16
 sources:
   - label: "PandaDoc pricing"
     url: "https://www.pandadoc.com/pricing/"
@@ -20,7 +20,7 @@ faq:
   - q: "Is PandaDoc an e-signature tool?"
     a: "It includes legally binding e-signatures, but PandaDoc describes itself as a document automation platform: creating proposals, quotes and contracts from templates and a content library, tracking them, and connecting them to CRMs."
   - q: "How is PandaDoc priced compared to {site}?"
-    a: "PandaDoc's paid plans are priced per seat; on 6 October 2026 its pricing page listed Starter at $19 and Business at $49 per seat per month billed annually, alongside a free eSign plan. {site} is priced per account: $9 or $19 a month, with no envelope count."
+    a: "PandaDoc's paid plans are priced per seat; on 16 October 2026 its pricing page listed Starter at $19 and Business at $49 per seat per month billed annually, alongside a free plan that creates 5 documents a month. {site} is priced per account: $9 or $19 a month, with no envelope count."
   - q: "Can {site} create proposals and quotes like PandaDoc?"
     a: "No. {site} signs PDFs you have already written. It has no document editor, content library, pricing tables or CRM integration."
   - q: "Can both collect payment?"
@@ -42,7 +42,7 @@ PandaDoc's figures were taken from its pricing page on **6 October 2026**, in US
 
 | | {site} | PandaDoc |
 |---|---|---|
-| Free option | 3 documents a month, plus free PDF tools | A free eSign plan with a document limit |
+| Free option | 3 documents a month, plus free PDF tools | Free plan: 5 documents a month |
 | Paid plans | Personal $9/month, Business $19/month (or yearly) | Starter $19 and Business $49 per seat per month, billed annually |
 | Pricing basis | Per account | Per seat |
 | Document creation | No (PDF in, signed PDF out) | Templates, content library, document editor |

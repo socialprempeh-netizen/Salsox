@@ -2,8 +2,14 @@
 title: "Electronic vs digital signatures in PDFs: the difference"
 description: "Electronic and digital signatures are not the same thing. What each one is, how PDF readers treat them, why some show as untrusted, and which you need."
 date: 2026-10-06
+updated: 2026-10-16
 category: Guides
-related: ["/pdf-signature", "/pdf-signature-generator", "/blog/how-electronic-signatures-work", "/business-esignature"]
+keyword: "digital signature vs electronic signature"
+cover: "/blog/covers/electronic-vs-digital-signatures.png"
+coverAlt: "Digital signature vs electronic signature: a signed document with a teal signature line and a seal, tagged PDF"
+coverTitle: "Digital signature vs electronic signature"
+coverLabel: "Seal"
+related: ["/pdf-signature", "/blog/how-to-verify-a-signed-pdf", "/blog/are-electronic-signatures-secure", "/blog/how-electronic-signatures-work", "/business-esignature"]
 faq:
   - q: "Is a digital signature more legally valid than an electronic one?"
     a: "Not automatically. In most legal systems both can be valid; what matters is intent and attribution. Some regulated documents require a qualified certificate-based signature, which is a specific kind of digital signature."
@@ -53,6 +59,10 @@ Most e-signature workflows use both:
 2. When everyone has signed, the system can apply a **digital seal** over the final PDF, so any later change is detectable by any PDF reader.
 
 {site} works this way. Every document gets electronic signatures, an append-only audit trail and a recorded SHA-256 fingerprint, plus a verification code anyone can check. On the Business plan, a certificate page with the audit trail is appended to the PDF and a certificate-based digital seal can be applied over the whole file.
+
+## Checking which one a PDF has
+
+The digital signature meaning in practice is "a seal a PDF reader can check". Open the file's signature panel and you will see whether it was changed after sealing; an e-signature vs digital signature question often comes down to that. For a step-by-step check, including verification codes and file fingerprints, see [how to verify a signed PDF](/blog/how-to-verify-a-signed-pdf). How both kinds of protection fit together is covered in [are electronic signatures secure?](/blog/are-electronic-signatures-secure)
 
 ## Which do you need?
 
