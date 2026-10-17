@@ -173,10 +173,20 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
 
   // ── Fields ───────────────────────────────────────────────────────────────
   function placeAt(page: number, e: React.PointerEvent<HTMLDivElement>) {
-    if (!armed || !currentRecipient) return
-    const el = pageEls.current.get(page)
-    if (!el) return
-    const { x, y } = clientToPercent(e.clientX, e.clientY, el.getBoundingClientRect())
+    // Was a silent return in both cases below, which left the "tap the page"
+    // prompt up with nothing placed. Now nothing fails without saying so.
+    // if (!armed || !currentRecipient) return
+    // const el = pageEls.current.get(page)
+    // if (!el) return
+    if (!armed) return
+    if (!currentRecipient) {
+      toast.error(t("placeNoRecipient"))
+      return
+    }
+    // Measured from the overlay that was clicked, which covers the page
+    // exactly, rather than from the page refs: the click itself always has
+    // its box, a ref lookup can come back empty.
+    const { x, y } = clientToPercent(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect())
     const size = DEFAULT_SIZE[armed]
     const field: EditorField = {
       id: localId("f"),

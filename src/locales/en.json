@@ -2034,6 +2034,7 @@
       },
       "pickFieldType": "Choose a recipient and a field type, then tap the page to place it. Drag to move, pull the corner to resize.",
       "tapToPlace": "Now tap the page where the field should go.",
+      "placeNoRecipient": "Add someone who signs or approves on the Recipients step first, then place their fields.",
       "required": "Required",
       "deselect": "Done",
       "pageCount": "{count, plural, one {# page} other {# pages}}",
