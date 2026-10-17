@@ -144,7 +144,9 @@ test("blog screenshots, batch 2", async ({ browser }) => {
   const card = (heading: string) =>
     sender.getByRole("heading", { name: heading }).locator("xpath=ancestor::*[.//button[contains(., 'Share')]][1]")
 
-  // The editor: two signers in order, with an approver first.
+  // The editor: an approver first, then two clients signing at the same
+  // step, then the sender countersigning. (Was three people, one per step,
+  // before recipients could share a step.)
   await sender.goto("/dashboard/documents/new")
   await sender.locator('input[type="file"]').setInputFiles({ name: "Supply agreement.pdf", mimeType: "application/pdf", buffer: await samplePdf() })
   await sender.getByRole("button", { name: "Continue to recipients" }).click()
@@ -152,6 +154,7 @@ test("blog screenshots, batch 2", async ({ browser }) => {
   const people = [
     ["Efua Mensah", "efua.mensah@example.com", "APPROVER"],
     ["Kofi Boateng", SIGNER, "SIGNER"],
+    ["Yaw Boateng", "yaw.boateng@example.com", "SIGNER"],
     ["Ama Mensah", SENDER, "SIGNER"],
   ] as const
   for (let i = 0; i < people.length; i++) {
@@ -161,6 +164,8 @@ test("blog screenshots, batch 2", async ({ browser }) => {
     await sender.getByLabel("Role").nth(i).selectOption(people[i][2])
   }
   await sender.getByLabel("Sign in order (one after another)").check()
+  await sender.getByLabel("Sign at the same time as step 2").check()
+  await expect(sender.getByRole("list", { name: "Signing steps" }).getByRole("listitem")).toHaveCount(3)
   await hideDevBadge(sender)
   // The dashboard's sticky top bar would land mid-image in a scrolled capture.
   const hideTopBar = await sender.addStyleTag({ content: "header{position:static!important}" })

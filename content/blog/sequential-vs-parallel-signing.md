@@ -2,6 +2,7 @@
 title: "Sequential vs parallel signing: which order to use"
 description: "Sequential vs parallel signing explained: how signing order works, when one-after-another matters, where approvers fit, and common orders for contracts, offers and quotes."
 date: 2026-10-16
+updated: 2026-10-17
 category: Workflows
 keyword: "sequential vs parallel signing"
 cover: "/blog/covers/sequential-vs-parallel-signing.png"
@@ -16,6 +17,8 @@ faq:
     a: "Parallel signing invites every signer at once, and they sign in any order. The document completes when the last one signs."
   - q: "Which is faster?"
     a: "Parallel, because nobody waits for anyone else. Use sequential only when the order matters, for example an approval before the client sees the document."
+  - q: "Can two people sign at the same step of a sequence?"
+    a: "Yes. In a sequential document, people can share a step: both are invited together, sign in either order, and the next step starts once both have signed."
   - q: "Who should sign a contract first?"
     a: "Usually the party receiving the offer, so the party who drafted it is not bound until the other side has agreed. The drafter countersigns last."
 ---
@@ -40,15 +43,23 @@ In **sequential** signing, also called signing order or routing order, the docum
 
 The cost is time: each person waits for the one before. A signer who is on holiday holds up everyone after them, so keep sequences short and set reminders.
 
+## Mixing the two: several people at one step
+
+Real documents are often a mix. Two business partners can sign at the same time, but only after a manager has approved the terms, and before your side countersigns. That is a sequence in which one step has two people in it.
+
+Each step starts only when everyone in the step before it has signed. Within a step, people sign in parallel: both are invited together and either can go first. So the sequence keeps its order where it matters, without making two equal parties wait for each other.
+
 ## Where approvers fit
 
 Not everyone who needs to agree to a document has to *sign* it. An **approver** confirms the document is right, often someone inside your own business, without being a party to it. Placing an approver first in a sequence means the client never receives a document that has not been checked.
 
-In Salsox you set this up in the editor's recipients step: give each person a role (signs, approves, views or gets a copy), put them in order with the arrows, and tick **Sign in order (one after another)**:
+In Salsox you set this up in the editor's recipients step: give each person a role (signs, approves, views or gets a copy), tick **Sign in order (one after another)**, and put people in order with the arrows. Each person is labelled with their step. To have someone sign alongside the person above them, tick **Sign at the same time as step N** on their card. A preview under the list shows the finished order:
 
-[![The Salsox editor with signing order on: Efua Mensah approves first, then Kofi Boateng signs second and Ama Mensah signs third](/blog/screens/editor-signing-order.png)](/blog/screens/editor-signing-order.png)
+[![The Salsox editor with signing order on: Efua Mensah approves at step 1, Kofi Boateng and Yaw Boateng sign together at step 2, and Ama Mensah signs at step 3](/blog/screens/editor-signing-order.png)](/blog/screens/editor-signing-order.png)
 
-Here Efua, a colleague, approves the supply agreement first; then Kofi, the client, signs; then Ama, who drafted it, countersigns. Signing order and the approver role are on Salsox's Business plan; without it, everyone is invited at once.
+Here Efua, a colleague, approves the supply agreement first. Then Kofi and Yaw, the client's two partners, sign at the same step, in whichever order suits them. Ama, who drafted it, countersigns once both have signed. Signing order and the approver role are on Salsox's Business plan; without it, everyone is invited at once.
+
+Once the document is sent, its page shows the same order with each step marked done, current or waiting, and names who is next to sign.
 
 Viewers and people who only get a copy are never part of the order: viewers can read the document, and copy recipients get the signed PDF at the end.
 
@@ -59,7 +70,7 @@ Viewers and people who only get a copy are never part of the order: viewers can 
 | Client contract or quote | Parallel if only the client signs; otherwise client first, you countersign |
 | Contract needing internal sign-off | Approver, then client, then you |
 | Employment offer | Hiring manager approves, candidate signs, HR or a director countersigns |
-| Lease with two tenants | Both tenants in parallel, landlord last |
+| Lease with two tenants | Both tenants at the same step, landlord last |
 | Sales agreement with a deposit | Buyer first (paying the deposit at signing), seller countersigns |
 | Consent or acknowledgement form | Parallel: each person signs their own copy |
 
@@ -75,6 +86,7 @@ In many legal systems, a signed contract is an offer and acceptance in writing. 
 
 - **Keep sequences short.** Every step adds waiting time; only order the people who truly need it.
 - **Tell people they are in a sequence.** A line in the message such as "Efua will review this first, then you'll receive your link" prevents confusion.
+- **Group equals together.** Co-signers on the same side, such as two tenants or two partners, can share a step rather than wait for each other.
 - **Watch the status page.** The document's page shows who has signed and who is next; reminders go out automatically every three days.
 - **Fix mistakes without restarting.** A wrong email address can be corrected in place; the old link stops working.
 
@@ -97,6 +109,10 @@ Parallel signing invites every signer at once, and they sign in any order. The d
 ### Which is faster?
 
 Parallel, because nobody waits for anyone else. Use sequential only when the order matters, for example an approval before the client sees the document.
+
+### Can two people sign at the same step of a sequence?
+
+Yes. In a sequential document, people can share a step: both are invited together, sign in either order, and the next step starts once both have signed.
 
 ### Who should sign a contract first?
 

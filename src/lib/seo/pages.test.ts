@@ -119,7 +119,9 @@ describe("the real content", () => {
       }
     }
     expect(problems, problems.join("\n")).toEqual([])
-  })
+    // Every post against every page: past the 5s default under a full
+    // parallel run once the blog passed thirty posts, though ~1s alone.
+  }, 30_000)
 })
 
 describe("redirects", () => {
