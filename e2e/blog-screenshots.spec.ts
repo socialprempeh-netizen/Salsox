@@ -121,3 +121,125 @@ test("blog screenshots of the signing flow", async ({ browser }) => {
     .png()
     .toFile(path.join(OUT, "phone-signing-flow.png"))
 })
+
+/**
+ * Batch 2 (October 2026): the screens the second set of posts needs, taken
+ * fresh: the Share menu with WhatsApp and SMS, the editor with signing order
+ * and an approver, correcting a recipient, a signer declining with a reason,
+ * the declined document as the sender sees it, and the public verification
+ * result. Same fictional people and documentation IPs as above. Crops stay
+ * inside the relevant card or dialog, so the local "email isn't configured"
+ * notice (a test run sends no email) never appears.
+ */
+test("blog screenshots, batch 2", async ({ browser }) => {
+  test.setTimeout(300_000)
+  fs.mkdirSync(OUT, { recursive: true })
+  await removeSender()
+  const senderCtx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.7" } })
+  const sender = await senderCtx.newPage()
+  await giveBusinessPlan(await signUp(sender, SENDER))
+  // The Recipients card: the nearest container holding its heading and the
+  // recipient's buttons. Measured while nothing is open: an open menu hides
+  // the rest of the page from the accessibility tree.
+  const card = (heading: string) =>
+    sender.getByRole("heading", { name: heading }).locator("xpath=ancestor::*[.//button[contains(., 'Share')]][1]")
+
+  // The editor: two signers in order, with an approver first.
+  await sender.goto("/dashboard/documents/new")
+  await sender.locator('input[type="file"]').setInputFiles({ name: "Supply agreement.pdf", mimeType: "application/pdf", buffer: await samplePdf() })
+  await sender.getByRole("button", { name: "Continue to recipients" }).click()
+  await sender.waitForURL(/\/dashboard\/documents\/[^/]+\/edit/, { timeout: 30_000 })
+  const people = [
+    ["Efua Mensah", "efua.mensah@example.com", "APPROVER"],
+    ["Kofi Boateng", SIGNER, "SIGNER"],
+    ["Ama Mensah", SENDER, "SIGNER"],
+  ] as const
+  for (let i = 0; i < people.length; i++) {
+    if (i > 0) await sender.getByRole("button", { name: "Add recipient" }).click()
+    await sender.getByLabel("Name").nth(i).fill(people[i][0])
+    await sender.getByLabel("Email").nth(i).fill(people[i][1])
+    await sender.getByLabel("Role").nth(i).selectOption(people[i][2])
+  }
+  await sender.getByLabel("Sign in order (one after another)").check()
+  await hideDevBadge(sender)
+  // The dashboard's sticky top bar would land mid-image in a scrolled capture.
+  const hideTopBar = await sender.addStyleTag({ content: "header{position:static!important}" })
+  await sender.waitForTimeout(500)
+  await sender.locator("main").screenshot({ path: path.join(OUT, "editor-signing-order.png") })
+  await hideTopBar.evaluate((el) => (el as Element).remove())
+
+  // A Quick Send document to share, correct and have declined.
+  const documentId = await quickSend(sender, [SIGNER], "Kitchen refit quote")
+  // A test run sends no email, so the invitation is recorded as delivered,
+  // the state a production send leaves, and the page shows its real status
+  // instead of the local "share the link manually" notice.
+  await db().recipient.updateMany({ where: { documentId }, data: { sentAt: new Date() } })
+  await sender.reload()
+  await hideDevBadge(sender)
+  const recipients = card("Recipients")
+
+  // The Share menu: WhatsApp, SMS and copy, beside the recipient.
+  const cardBox = (await recipients.boundingBox())!
+  await sender.getByRole("button", { name: "Share" }).first().click()
+  await sender.getByRole("menuitem", { name: /WhatsApp/ }).waitFor()
+  const menuBox = (await sender.getByRole("menu").boundingBox())!
+  const left = Math.min(menuBox.x, cardBox.x) - 8, right = Math.max(menuBox.x + menuBox.width, cardBox.x + cardBox.width)
+  const top = Math.min(menuBox.y, cardBox.y), bottom = Math.max(menuBox.y + menuBox.height, cardBox.y + cardBox.height) + 8
+  await sender.screenshot({ path: path.join(OUT, "share-link-menu.png"), clip: { x: left, y: top, width: right - left, height: bottom - top } })
+  await sender.keyboard.press("Escape")
+
+  // Correcting a recipient: the edit dialog.
+  await sender.getByRole("button", { name: "Edit" }).click()
+  await sender.getByLabel("Email").fill("kofi@boatengstudio.example")
+  await sender.waitForTimeout(400)
+  await sender.getByRole("dialog").screenshot({ path: path.join(OUT, "edit-recipient.png") })
+  await sender.keyboard.press("Escape")
+
+  // The signer declines, with a reason, on a phone.
+  const signerCtx = await browser.newContext(phone)
+  const signer = await signerCtx.newPage()
+  await signer.goto(`/sign/${await tokenFor(documentId, SIGNER)}`)
+  await hideDevBadge(signer)
+  await signer.getByRole("button", { name: "Decline to sign" }).or(signer.getByRole("link", { name: "Decline to sign" })).first().click()
+  await signer.getByPlaceholder("Reason (optional)").fill("The start date should be 3 November, not 27 October.")
+  await signer.waitForTimeout(400)
+  await signer.screenshot({ path: path.join(OUT, "phone-decline.png") })
+  await signer.getByRole("button", { name: "Decline", exact: true }).click()
+  await signer.waitForTimeout(800)
+
+  // What the sender sees afterwards.
+  await sender.reload()
+  await hideDevBadge(sender)
+  await expect(sender.getByText(/Declined/).first()).toBeVisible({ timeout: 30_000 })
+  await sender
+    .getByRole("heading", { name: "Recipients" })
+    .locator("xpath=ancestor::*[.//*[contains(text(), 'Declined')]][1]")
+    .screenshot({ path: path.join(OUT, "recipient-declined.png") })
+
+  // A completed document, then its public verification page on a phone.
+  const signedId = await quickSend(sender, [SIGNER], "Logo design agreement")
+  await signer.goto(`/sign/${await tokenFor(signedId, SIGNER)}`)
+  await signer.getByRole("checkbox").check()
+  await signer.getByRole("button", { name: "Review and sign" }).click()
+  await signer.getByRole("button", { name: "Start" }).click()
+  await signer.getByRole("tab", { name: "Type" }).click()
+  await signer.getByRole("button", { name: "Adopt and sign" }).click()
+  await signer.getByRole("button", { name: /Next field/ }).click()
+  await signer.getByRole("button", { name: "Save" }).click()
+  await signer.getByRole("button", { name: "Finish signing" }).click()
+  await expect(signer.getByRole("heading", { name: "You've signed" })).toBeVisible({ timeout: 30_000 })
+  let code: string | null = null
+  for (let i = 0; i < 30 && !code; i++) {
+    code = (await db().document.findUniqueOrThrow({ where: { id: signedId } })).verificationCode
+    if (!code) await signer.waitForTimeout(1000)
+  }
+  await signer.goto(`/verify?code=${code}`)
+  await expect(signer.getByRole("heading", { name: "Genuine signed document" })).toBeVisible()
+  await hideDevBadge(signer)
+  await signer.waitForTimeout(400)
+  await signer.locator("main").screenshot({ path: path.join(OUT, "phone-verify.png") })
+
+  await signerCtx.close()
+  await senderCtx.close()
+  await removeSender()
+})

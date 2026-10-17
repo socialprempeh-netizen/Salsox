@@ -32,7 +32,11 @@ about: |
   This template keeps the essentials and the clauses that matter when they are tested: a precise description of the services, measurable service levels, fees with a rate for extra work, payment terms, an initial term that then continues, a cap on liability tied to fees, data protection for any personal data the provider handles, and termination with notice or immediately for serious breach.
 
   Service levels are what distinguish a good service agreement from a vague one. Write them as response and fix times the client can check. Both parties sign through {site}; each initials the liability clause.
+
+  If a client is slow to sign, [what to do when someone won't sign](/blog/what-to-do-when-someone-wont-sign) has a follow-up plan, and [how to ask a client for a deposit](/blog/how-to-ask-a-client-for-a-deposit) covers payment upfront.
 faq:
+  - q: "Is a service agreement the same as a service contract?"
+    a: "Yes. Service agreement, service contract and client agreement template are used for the same document: the terms on which you provide professional services to a client."
   - q: "What is the difference between a service agreement and a statement of work?"
     a: "A service agreement sets the overall terms of an ongoing relationship. A statement of work describes one project under it. Ongoing services often need only the agreement."
   - q: "What are service levels?"
@@ -40,7 +44,7 @@ faq:
   - q: "Why limit liability?"
     a: "Without a cap, a provider could owe far more than the contract is worth after a single incident. A cap tied to fees is common and usually considered fair."
 published: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Service Agreement

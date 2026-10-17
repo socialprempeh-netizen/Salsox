@@ -4,9 +4,9 @@ description: "What an e-signature audit trail records: every view, signature and
 h1: "E-signature audit trails: the record behind every signed document"
 lede: "A signature is only as strong as the evidence of who made it and when. Every document sent with {site} carries an audit trail of what happened to it, from creation to the last signature."
 primaryKeyword: "esignature audit trail"
-aliases: ["audit trail", "signing records", "signature audit log", "e-signature evidence", "electronic signature audit trail"]
+aliases: ["audit trail", "signing records", "signature audit log", "e-signature evidence", "electronic signature audit trail", "document audit trail", "e-signature audit log", "electronic signing records", "proof of electronic signature"]
 published: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 breadcrumb: "Audit trail"
 benefits:
   - title: "Every event, timed"
@@ -16,6 +16,8 @@ benefits:
   - title: "Checkable later"
     body: "A verification code lets anyone confirm a signed PDF has not changed, on the public verify page."
 faq:
+  - q: "Is an audit trail proof of an electronic signature?"
+    a: "It is the main evidence: it shows the signer's consent, the link sent to their own address, and the time and IP address of each step. Together with the sealed document, it is what you would rely on if a signature were disputed."
   - q: "Is the audit trail included on the free plan?"
     a: "Yes. Every document on every plan records its audit trail, and you can export documents and trails at any time. The Business plan adds a sealed PDF with a certificate page."
   - q: "What is the certificate page?"
@@ -60,6 +62,10 @@ Your records are yours. On any plan you can export every document, original and 
 ## Checking a record yourself
 
 Open any completed document from your documents list and its audit trail is listed beneath it, oldest event first. Read it the way a reviewer would: was the document sent to the address you expected, when was it first opened, and do the signing times make sense for the people involved? A signer who opened a contract at 9:02 and signed every field by 9:05 has a trail that tells its own story. If something looks wrong, the trail is where you start, and it is the same record anyone you share it with will see.
+
+## Keeping and checking the record
+
+An audit trail is only useful if you still have it when it is needed. [How long to keep signed documents](/blog/how-long-to-keep-signed-documents) covers retention, and [how to verify a signed PDF](/blog/how-to-verify-a-signed-pdf) shows how anyone holding the document can check it. For how the trail fits with the other protections, see [are electronic signatures secure?](/blog/are-electronic-signatures-secure)
 
 ## What it is not
 

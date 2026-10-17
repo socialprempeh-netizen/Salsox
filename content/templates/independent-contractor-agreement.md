@@ -32,7 +32,11 @@ about: |
   The contractor controls their own methods and hours, uses their own equipment, may work for other clients, invoices on a regular cycle, and handles their own tax. The business gets what it needs in return: clear services and dates, ownership of everything made for it, confidentiality, and the right to end the engagement on short notice.
 
   A contract alone does not decide status; how the relationship works in practice does. If the contractor ends up working like an employee, take advice.
+
+  For the evidence behind an e-signed agreement, see [how to create a legally binding electronic signature](/blog/legally-binding-electronic-signature), and for record keeping, [how long to keep signed documents](/blog/how-long-to-keep-signed-documents).
 faq:
+  - q: "Can a contractor agreement be signed electronically?"
+    a: "Yes, in most countries. Send this contractor contract template for electronic contract signing; the contractor signs from a link and both sides keep the signed PDF."
   - q: "What is the difference between a contractor and an employee?"
     a: "An employee works under the business's control and receives employment rights; a contractor runs their own business, controls how they work and invoices for services. Authorities judge by the reality of the relationship, not only the contract."
   - q: "Who owns the work a contractor creates?"
@@ -40,7 +44,7 @@ faq:
   - q: "Does the contractor need their own insurance?"
     a: "For most professional work it is sensible, and for construction or healthcare it may be required. Add a clause naming the cover you need."
 published: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Independent Contractor Agreement

@@ -4,7 +4,7 @@ description: "PandaDoc alternatives for proposals and e-signatures: GetAccept, D
 h1: "PandaDoc alternatives, compared on what each one publishes"
 lede: "People leave PandaDoc for two different reasons: they need a cheaper or simpler way to get documents signed, or they need a different kind of sales document tool. The right alternative depends on which. Here are six, with their published prices and what each does best."
 primaryKeyword: "pandadoc alternatives"
-aliases: ["pandadoc alternative", "best pandadoc alternatives", "cheaper than pandadoc", "alternative to pandadoc"]
+aliases: ["pandadoc alternative", "best pandadoc alternatives", "cheaper than pandadoc", "alternative to pandadoc", "pandadoc competitors", "pandadoc pricing alternatives", "proposal software with e-signatures"]
 published: 2026-10-15
 updated: 2026-10-16
 breadcrumb: "PandaDoc alternatives"
@@ -29,7 +29,7 @@ related: ["/vs/pandadoc", "/vs/getaccept", "/vs/signwell", "/vs/jotform-sign", "
 
 ## First, why are you leaving?
 
-PandaDoc is a document automation suite: you build proposals, quotes and contracts from templates and a content library, add pricing tables, track how buyers engage, connect it to a CRM, and collect an e-signature at the end. It is priced per seat: its pricing page listed Starter at $19 and Business at $49 per seat a month, billed annually, with a free eSign plan, when we checked on 6 October 2026.
+PandaDoc is a document automation suite: you build proposals, quotes and contracts from templates and a content library, add pricing tables, track how buyers engage, connect it to a CRM, and collect an e-signature at the end. It is priced per seat: its pricing page listed Starter at $19 and Business at $49 per seat a month, billed annually, with a free plan that creates 5 documents a month, when we checked on 16 October 2026.
 
 If you are leaving because you only use it to get PDFs signed, a simpler and cheaper e-signature tool will do. If you are leaving but still need proposal building and sales features, you need a tool in the same category. The six below split along that line.
 

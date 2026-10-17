@@ -8,7 +8,7 @@ cover: "/blog/covers/what-is-an-electronic-signature.png"
 coverAlt: "What is an electronic signature: a signed document with a teal signature line, tagged e-sign"
 coverTitle: "What is an electronic signature?"
 coverLabel: "e-sign"
-related: ["/blog/electronic-signature-vs-wet-signature", "/blog/legally-binding-electronic-signature", "/blog/electronic-vs-digital-signatures", "/pricing"]
+related: ["/blog/electronic-signature-vs-wet-signature", "/blog/legally-binding-electronic-signature", "/blog/electronic-vs-digital-signatures", "/blog/e-signatures-by-industry", "/pricing"]
 faq:
   - q: "What is the simplest definition of an electronic signature?"
     a: "Any electronic mark or action a person uses to show they agree to a document, such as typing their name, drawing it on a screen or clicking an \"I agree\" button, linked to that document."
@@ -76,7 +76,7 @@ Most everyday business documents, from contracts to offer letters and quotes, ar
 - A customer clicks "I accept" on a quote and pays a deposit in the same step.
 - A delivery driver's handheld captures your signature on its screen.
 
-Each one is an electronic signature. Whether each is *enough* depends on what is being signed and what evidence is kept.
+Each one is an electronic signature. Whether each is *enough* depends on what is being signed and what evidence is kept. For the documents each sector signs, and the risks to watch in each, see [e-signatures by industry](/blog/e-signatures-by-industry).
 
 ## What makes one hold up
 

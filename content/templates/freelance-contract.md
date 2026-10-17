@@ -38,7 +38,11 @@ about: |
   Scope is a list of deliverables, not a description of effort, and anything outside it is quoted separately. Revisions have a number and a rate beyond it. The deposit is due on signing and work starts when it lands; the balance follows delivery on fixed terms, with interest if it is late. Ownership passes to the client when they have paid in full, which protects you without making the client feel exposed, and you keep the right to show the work in your portfolio.
 
   Sent through {site}, the client can sign and pay the deposit in the same step, so the project is confirmed and funded at once.
+
+  For what to ask upfront, see [how to ask a client for a deposit](/blog/how-to-ask-a-client-for-a-deposit), and for who signs first, [sequential vs parallel signing](/blog/sequential-vs-parallel-signing).
 faq:
+  - q: "Can I sign a freelance contract online?"
+    a: "Yes. Send this freelancer agreement template for e-signature and the client signs from a link on any device; with Sign & Pay they can pay the deposit in the same step."
   - q: "Should I take a deposit before starting?"
     a: "Many freelancers ask for 25 to 50 percent upfront, especially with new clients. With {site}'s Sign & Pay the client can pay the deposit as part of signing."
   - q: "Who owns the work under a freelance contract?"
@@ -46,7 +50,7 @@ faq:
   - q: "What if the client keeps asking for changes?"
     a: "Set a number of revision rounds and a rate for extra work. It turns a difficult conversation into a reference to what both sides signed."
 published: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Freelance Services Agreement
