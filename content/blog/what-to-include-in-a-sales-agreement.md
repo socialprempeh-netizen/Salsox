@@ -83,7 +83,7 @@ Both parties sign. Signing electronically is fine for ordinary sales of goods in
 
 With Salsox, you fill in the template, send it, and the buyer signs from a link on their phone. You can see when they have opened and signed it:
 
-[![The Salsox editor with recipients in signing order: an approver first, then two signers, each with a name, email, optional phone number and role](/blog/screens/editor-signing-order.png)](/blog/screens/editor-signing-order.png)
+[![The Salsox editor with recipients in signing order: an approver at step 1, two signers together at step 2 and a countersigner at step 3, each with a name, email, optional phone number and role](/blog/screens/editor-signing-order.png)](/blog/screens/editor-signing-order.png)
 
 If your business needs someone to approve the terms before the buyer sees them, add them as an approver and turn on signing order, as above. On the Business plan the buyer can also pay the deposit as part of signing, by card or, through Paystack, mobile money. [Sequential vs parallel signing](/blog/sequential-vs-parallel-signing) explains when signing order helps, and [how to sign a contract online](/blog/how-to-sign-a-contract-online) walks through the whole process.
 
