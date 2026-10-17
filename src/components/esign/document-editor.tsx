@@ -34,6 +34,8 @@ import { cn } from "@/lib/utils"
 import { PdfPages } from "./pdf-pages"
 import { PlanLock, useActionErrorToast } from "./plan-upsell"
 import { SigningStepList } from "./signing-step-list"
+import { PlacementDebugPanel, usePlacementDiagnostics } from "./placement-diagnostics"
+import * as Sentry from "@sentry/nextjs"
 import { track } from "@/lib/analytics"
 
 type FieldType = DocumentSetup["fields"][number]["type"]
@@ -144,6 +146,19 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
   const steps = signingSteps(recipients.map((r, i) => ({ ...r, order: orders[i], signingStatus: "NOT_SIGNED" as const })), "SEQUENTIAL")
   const stepOf = new Map(steps.flatMap((s) => s.recipients.map((r) => [r.key, s.number] as const)))
   const displayName = (r: EditorRecipient) => r.name.trim() || r.email.trim() || tSteps("unnamed")
+  // Field-placement diagnostics (placement-diagnostics.tsx): reports a click
+  // that should have placed a field and did not. Facts only, no names.
+  const placement = usePlacementDiagnostics({
+    armed,
+    fieldCount: fields.length,
+    recipientFacts: () => ({
+      recipients: recipients.length,
+      actionable: actionable.length,
+      activeFound: actionable.some((r) => r.key === activeRecipient),
+      hasCurrent: !!currentRecipient,
+      step,
+    }),
+  })
 
   // ── Recipients ───────────────────────────────────────────────────────────
   function updateRecipient(key: string, patch: Partial<EditorRecipient>) {
@@ -173,10 +188,22 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
 
   // ── Fields ───────────────────────────────────────────────────────────────
   function placeAt(page: number, e: React.PointerEvent<HTMLDivElement>) {
-    if (!armed || !currentRecipient) return
-    const el = pageEls.current.get(page)
-    if (!el) return
-    const { x, y } = clientToPercent(e.clientX, e.clientY, el.getBoundingClientRect())
+    // Was a silent return in both cases below, which left the "tap the page"
+    // prompt up with nothing placed. Now nothing fails without saying so.
+    // if (!armed || !currentRecipient) return
+    // const el = pageEls.current.get(page)
+    // if (!el) return
+    if (!armed) return void placement.handlerRan("not armed")
+    if (!currentRecipient) {
+      placement.handlerRan("no recipient")
+      toast.error(t("placeNoRecipient"))
+      return
+    }
+    placement.handlerRan(`placing ${armed} on page ${page}`)
+    // Measured from the overlay that was clicked, which covers the page
+    // exactly, rather than from the page refs: the click itself always has
+    // its box, a ref lookup can come back empty.
+    const { x, y } = clientToPercent(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect())
     const size = DEFAULT_SIZE[armed]
     const field: EditorField = {
       id: localId("f"),
@@ -255,6 +282,21 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
   function submit(send: boolean) {
     const missing = actionable.filter((r) => r.role === "SIGNER" && !fields.some((f) => f.recipientKey === r.key))
     if (send && missing.length > 0) {
+      // What the editor held when it refused: tells "nothing was ever placed"
+      // from "fields exist, but under another recipient's key".
+      Sentry.captureMessage("Send blocked: signer has no fields", {
+        level: "warning",
+        tags: { area: "editor" },
+        contexts: {
+          placement: {
+            fields: fields.length,
+            fieldsForKnownRecipients: fields.filter((f) => recipients.some((r) => r.key === f.recipientKey)).length,
+            signersMissing: missing.length,
+            signers: actionable.filter((r) => r.role === "SIGNER").length,
+            recipients: recipients.length,
+          },
+        },
+      })
       toast.error(t("signerNeedsField", { name: missing[0].name || missing[0].email }))
       setStep(1)
       return
@@ -454,6 +496,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
               ))}
             </div>
             <p className="text-xs text-muted-foreground">{armed ? t("tapToPlace") : t("pickFieldType")}</p>
+            {placement.debug && <PlacementDebugPanel entries={placement.entries} />}
             {selectedField && (
               <div className="flex flex-wrap items-center gap-2 border-t pt-2 text-sm">
                 <span className="font-medium">{t(`fieldTypes.${selectedField.type}`)}</span>
@@ -478,6 +521,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
             onPageRef={(page, el) => (el ? pageEls.current.set(page, el) : pageEls.current.delete(page))}
             renderOverlay={(page) => (
               <div
+                data-field-overlay=""
                 className={cn("absolute inset-0", armed && "cursor-crosshair")}
                 onPointerDown={(e) => (armed ? placeAt(page, e) : setSelected(null))}
               >
@@ -486,6 +530,7 @@ export function DocumentEditor({ documentId, fileUrl, pageCount, initial, readyP
                   .map((f) => (
                     <div
                       key={f.id}
+                      data-field-id={f.id}
                       role="button"
                       tabIndex={0}
                       aria-label={t(`fieldTypes.${f.type}`)}
