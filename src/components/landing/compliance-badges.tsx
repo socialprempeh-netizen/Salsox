@@ -15,6 +15,9 @@
  *
  * Each seal settles in like a stamp as the strip scrolls into view
  * (framer-motion); with reduced motion the strip simply fades in.
+ *
+ * Homepage redesign: a muted band with the seals in the brand accent, as a
+ * trust bar under the hero. Was a plain bordered strip with primary seals.
  */
 import { motion, useReducedMotion } from "framer-motion"
 import { FileClock, Globe2, Landmark, type LucideIcon } from "lucide-react"
@@ -26,7 +29,7 @@ const ICONS: Record<ComplianceBadge["icon"], LucideIcon> = { esign: Landmark, ei
 export function ComplianceBadges({ label, badges, note }: { label: string; badges: ComplianceBadge[]; note: string }) {
   const reduceMotion = useReducedMotion()
   return (
-    <section aria-label={label} className="border-y border-border bg-background">
+    <section aria-label={label} className="border-y border-border bg-muted/50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-12">
         <ul className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {badges.map((badge, i) => {
@@ -42,7 +45,7 @@ export function ComplianceBadges({ label, badges, note }: { label: string; badge
               >
                 <motion.span
                   aria-hidden
-                  className="flex h-10 w-10 shrink-0 items-center justify-center border border-primary/30 bg-primary/10 text-primary"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center border border-brand-accent/25 bg-brand-accent/10 text-brand-accent-text"
                   initial={reduceMotion ? false : { scale: 1.35, rotate: -8, opacity: 0 }}
                   whileInView={{ scale: 1, rotate: 0, opacity: 1 }}
                   viewport={{ once: true, margin: "-40px" }}

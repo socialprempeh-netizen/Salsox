@@ -238,6 +238,12 @@
   --color-ring: var(--ring);
   --color-primary-2: var(--primary-2);
   --color-primary-hover: var(--primary-hover);
+  /* The second brand colour (src/config/brand.ts, NEXT_PUBLIC_BRAND_ACCENT):
+     a surface colour, and a text shade of it that stays readable in dark mode. */
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-text: var(--brand-accent-text);
+  /* The homepage's serif headlines (src/app/layout.tsx loads Source Serif 4). */
+  --font-display: var(--font-serif-display), Georgia, "Times New Roman", serif;
   /* Inter stands in for PandaDoc's Graphik (see the note above :root). */
   /* --font-sans: var(--font-geist-sans); */
   --font-sans: var(--font-inter);
@@ -455,4 +461,17 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* The brand accent's defaults. With no accent configured it is the primary,
+   so nothing turns purple on a deployment that did not ask for it; the
+   override in layout.tsx sets --brand-accent when one is. The text shade is
+   the accent itself on light backgrounds and a lightened mix of it on dark
+   ones, where the deep violet would be too dark to read. */
+:root {
+  --brand-accent: var(--primary);
+  --brand-accent-text: var(--brand-accent);
+}
+.dark {
+  --brand-accent-text: color-mix(in srgb, var(--brand-accent) 35%, #ffffff);
 }

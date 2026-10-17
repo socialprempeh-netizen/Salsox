@@ -1,0 +1,301 @@
+/**
+ * Replaced by the two-column hero in hero.tsx (homepage redesign): headline
+ * and email row on the left, a floating dashboard card on the right, serif
+ * headline. This centred version, with the full app-shell mock-up under the
+ * headline, is kept for reference and is no longer rendered anywhere.
+ */
+import Link from "next/link"
+import {
+  // ArrowRight moved into HeroCta (session-aware.tsx).
+  // ArrowRight,
+  Sparkles,
+  LayoutGrid,
+  FileSignature,
+  CreditCard,
+  Settings,
+  type LucideIcon,
+} from "lucide-react"
+import { useTranslations } from "next-intl"
+import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/logo"
+import { siteConfig } from "@/config/site"
+import { heroSecondaryCta } from "@/lib/landing-cta"
+import { HeroCta } from "@/components/landing/session-aware"
+import { EmailCapture } from "@/components/landing/email-capture"
+
+/**
+ * The hero copy lives in the message files, under two parallel namespaces:
+ * `hero.product` is the placeholder your clone ships with, `hero.kit` is the
+ * kit's own site (KIT_SITE="true"). Editing either one is a translation file,
+ * not a component.
+ *
+ * `headlineHead` / `headlineAccent` override how the H1 is split: the plain
+ * part and the gradient part, rendered on two lines. Leave them empty and the
+ * H1 follows `tagline` from src/config/site.ts, accenting the last word, so
+ * rebranding from env still reshapes the headline for you.
+ */
+
+// The fake dashboard behind the headline. Labels are keys like everywhere
+// else: it is a picture of a product, but the words in it are still read.
+const mockNav: { key: string; icon: LucideIcon; active?: boolean }[] = [
+  { key: "navDashboard", icon: LayoutGrid, active: true },
+  { key: "navDocuments", icon: FileSignature },
+  { key: "navBilling", icon: CreditCard },
+  { key: "navSettings", icon: Settings },
+]
+
+// Replaced: the values did not match their labels ("Sent this month: Pro",
+// "Collected: Jul 24"), left over from the kit's billing mock-up.
+// const mockStats = [
+//   { key: "statPlan", value: "Pro" },
+//   { key: "statStatus", valueKey: "statStatusValue", badge: true },
+//   { key: "statBilling", value: "Jul 24" },
+// ]
+const mockStats = [
+  { key: "statPlan", valueKey: "statSentValue" },
+  { key: "statStatus", valueKey: "statStatusValue", badge: true },
+  { key: "statBilling", valueKey: "statCollectedValue" },
+]
+
+// Decorative revenue bars (% heights) for the mock chart
+const mockBars = [38, 52, 45, 63, 58, 74, 69, 85, 78, 92, 88, 100]
+
+/**
+ * Was `ctaHref`, decided by the page from the server session, which made the
+ * page dynamic. The page now passes both destinations (heroCtaHref in
+ * src/lib/landing-cta.ts, once per state) and HeroCta picks in the browser.
+ */
+// export function Hero({ ctaHref }: { ctaHref: string }) {
+export function HeroClassic({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: string } }) {
+  const t = useTranslations("hero")
+  const tm = useTranslations("hero.mock")
+  const secondary = heroSecondaryCta(siteConfig.links.demo)
+  const mockHost = new URL(siteConfig.url).host
+  // Explicit split when the message provides one, otherwise derive it from
+  // the tagline with the last word gradient-accented.
+  const words = siteConfig.tagline.split(" ")
+  const taglineLast = words.pop() ?? ""
+  const headline = t("headlineHead")
+    ? { head: t("headlineHead"), accent: t("headlineAccent") }
+    : { head: words.join(" "), accent: taglineLast }
+
+  return (
+    <section className="relative overflow-hidden pb-24 pt-16 md:pb-32 md:pt-24">
+      {/* Decorative background layers */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grid" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[600px] bg-glow" />
+
+      <div className="mx-auto max-w-5xl px-6 lg:px-12 text-center">
+        {/* Every block below used to enter with `animate-fade-in-up`, staggered
+            by animationDelay 60/120/180/240/320ms. The animation starts at
+            opacity 0, so on a phone the headline (the page's largest paint)
+            stayed invisible until it ran. The hero is the first thing anyone
+            sees: it now paints as it is. */}
+        {/* Announcement pill: the current version, then what is new in it.
+            The badge reads `version` from src/config/site.ts, so it moves with
+            your releases; swap the sentence for whatever you are shipping. */}
+        <div className="mb-7 inline-flex items-center gap-2  border border-border bg-card/70 py-1.5 pl-2 pr-4 text-sm font-medium shadow-soft backdrop-blur">
+          <span className="inline-flex items-center gap-1  bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary-hover">
+            <Sparkles className="h-3 w-3" /> v{siteConfig.version}
+          </span>
+          <span className="text-muted-foreground">{t("pill")}</span>
+        </div>
+
+        <h1
+          className="text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl md:text-7xl lg:text-8xl"
+        >
+          {headline.head}
+          <br />
+          <span className="text-gradient-brand">{headline.accent}</span>
+        </h1>
+
+        <p
+          className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl"
+        >
+          {t("subtitle")}
+        </p>
+
+        {/* The email row (email-capture.tsx) when the call to action is
+            signup, as on every clone; the kit's own site points at its
+            pricing section instead and keeps the two buttons below. */}
+        {ctaHrefs.signedOut.startsWith("/signup") ? (
+          <div className="mt-10">
+            <EmailCapture signupHref={ctaHrefs.signedOut} signedInHref={ctaHrefs.signedIn} location="hero:/" showNote={false} />
+            <p className="mt-5 text-sm text-muted-foreground">
+              {t("trust")}
+              {" "}
+              <Link href={secondary.href} className="font-medium text-foreground underline-offset-4 hover:underline">
+                {t(secondary.label === "liveDemo" ? "liveDemo" : "howItWorks")}
+              </Link>
+            </p>
+          </div>
+        ) : (
+        <div
+          className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+        >
+          {/* Replaced: always `<a href="#pricing">`, which scrolled "Send your
+              first document" down to billing instead of starting anything.
+          <Button asChild variant="gradient" size="xl">
+            <a href="#pricing">
+              {t("cta")} <ArrowRight className="h-5 w-5" />
+            </a>
+          </Button> */}
+          {/* Replaced by <HeroCta>, which reads the session in the browser:
+          <Button asChild variant="gradient" size="xl">
+            <Link href={ctaHref}>
+              {t("cta")} <ArrowRight className="h-5 w-5" />
+            </Link>
+          </Button> */}
+          <HeroCta signedOutHref={ctaHrefs.signedOut} signedInHref={ctaHrefs.signedIn}>
+            {t("cta")}
+          </HeroCta>
+          {/* Was "Live demo" → /login whenever no demo deployment was set,
+              which opened a sign-in form (see heroSecondaryCta). */}
+          <Button asChild variant="outline" size="xl">
+            <Link href={secondary.href}>{t(secondary.label === "liveDemo" ? "liveDemo" : "howItWorks")}</Link>
+          </Button>
+        </div>
+        )}
+
+        {!ctaHrefs.signedOut.startsWith("/signup") && (
+          <p
+            className="mt-5 text-sm text-muted-foreground"
+          >
+            {t("trust")}
+          </p>
+        )}
+
+        {/* Dashboard mockup — mirrors the real app shell.
+
+            Hidden from assistive technology, and that is the accurate
+            description of it rather than a way to quiet the audit: this is a
+            picture of the product, drawn in markup instead of exported as an
+            image. A screen reader was reading out "Welcome back, Alex, Current
+            Plan Pro, Next Billing Jul 24" in the middle of the home page,
+            which tells nobody anything. The same markup also accounted for 23
+            of the page's contrast findings, because a deliberately faint
+            illustration was being measured as if it were text to read. The
+            headline above already says what the product is. */}
+        <div
+          aria-hidden="true"
+          className="mx-auto mt-16 max-w-4xl text-left"
+        >
+          <div className="overflow-hidden border border-border bg-background shadow-[var(--shadow-soft-lg)] ring-1 ring-white/10 md:animate-float">
+            {/* Browser chrome */}
+            <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3">
+              <span className="h-3 w-3 rounded-full bg-red-400" />
+              <span className="h-3 w-3 rounded-full bg-yellow-400" />
+              <span className="h-3 w-3 rounded-full bg-green-400" />
+              {/* Was "dashboard.yoursaas.com": this is a picture of this
+                  product, so it shows this product's own address. */}
+              <span className="mx-auto bg-background px-3 py-0.5 text-xs text-muted-foreground ring-1 ring-border">
+                {mockHost}/dashboard
+              </span>
+            </div>
+
+            {/* App shell: sidebar + main */}
+            <div className="flex">
+              {/* Sidebar */}
+              <aside className="hidden w-52 flex-col border-r border-border bg-background sm:flex">
+                <div className="flex h-14 items-center border-b border-border px-4 text-sm font-bold tracking-tight">
+                  {/* Was `<Logo generic />`, for when this mock-up showed a
+                      customer's own product built on the kit. It shows
+                      Salsox now, so it carries the real logo. */}
+                  <Logo markClassName="h-6 w-6" />
+                </div>
+                <nav className="flex-1 space-y-1 p-3">
+                  {mockNav.map(({ key, icon: Icon, active }) => (
+                    <div
+                      key={key}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium ${
+                        active ? "bg-primary/10 text-primary-hover" : "text-muted-foreground"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {tm(key)}
+                    </div>
+                  ))}
+                </nav>
+                <div className="flex items-center gap-2.5 border-t border-border p-3">
+                  {/* Was "Alex Rivera, alex@acme.io": a made-up person at a
+                      made-up company. The sender is the same Ama the
+                      greeting addresses, shown with her plan rather than an
+                      invented email address. */}
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-2 text-xs font-semibold text-primary-foreground">
+                    {tm("userInitials")}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">{tm("userName")}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{tm("userPlan")}</p>
+                  </div>
+                </div>
+              </aside>
+
+              {/* Main column */}
+              <div className="flex-1 bg-muted/20">
+                {/* Top bar */}
+                <div className="flex h-14 items-center justify-end gap-4 border-b border-border bg-background px-5 text-xs text-muted-foreground">
+                  <span>{tm("topDocs")}</span>
+                  <span>{tm("topSignOut")}</span>
+                </div>
+
+                {/* Content */}
+                <div className="space-y-4 p-5">
+                  <div>
+                    <p className="text-base font-bold text-foreground">{tm("greeting")}</p>
+                    <p className="text-xs text-muted-foreground">{tm("greetingBody")}</p>
+                  </div>
+
+                  {/* Stat cards */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {mockStats.map(({ key, valueKey, badge }: { key: string; valueKey?: string; badge?: boolean; value?: string }) => (
+                      <div key={key} className="border border-border bg-card p-3">
+                        <p className="text-[11px] text-muted-foreground">{tm(key)}</p>
+                        {badge ? (
+                          <span className="mt-1.5 inline-flex items-center gap-1  bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            {valueKey ? tm(valueKey) : null}
+                          </span>
+                        ) : (
+                          <p className="mt-1 text-sm font-bold text-foreground sm:text-lg">{valueKey ? tm(valueKey) : null}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Revenue chart card */}
+                  <div className="border border-border bg-card p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-foreground">{tm("chartTitle")}</p>
+                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">+12.5%</span>
+                    </div>
+                    <div className="mt-3 flex h-20 items-end gap-1.5">
+                      {mockBars.map((h, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 bg-gradient-to-t from-primary/40 to-primary-2"
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Documents row */}
+                  <div className="flex items-center justify-between border border-border bg-card p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{tm("docsTitle")}</p>
+                      <p className="text-xs text-muted-foreground">{tm("docsBody")}</p>
+                    </div>
+                    <span className="border border-border px-3 py-1.5 text-xs font-medium text-foreground">
+                      {tm("viewAll")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

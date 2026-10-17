@@ -48,20 +48,24 @@ const IMAGES: Record<Exclude<SocialNetwork, "x">, string> = {
 
 export const SOCIAL_ORDER: SocialNetwork[] = ["youtube", "instagram", "tiktok", "facebook", "linkedin", "pinterest", "x"]
 
-const TILE = "flex h-[26px] w-[26px] items-center justify-center"
+// Was 26px (the reference footer's size): too small to read as the brands'
+// icons at a glance, so the homepage redesign drew them at 36px. The 78px
+// artwork still covers 2x screens.
+// const TILE = "flex h-[26px] w-[26px] items-center justify-center"
+const TILE = "flex h-9 w-9 items-center justify-center"
 
 function Mark({ network }: { network: SocialNetwork }) {
   if (network === "x") {
     return (
-      <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-black ring-1 ring-white/25">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="#ffffff" aria-hidden="true">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black ring-1 ring-white/25">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="#ffffff" aria-hidden="true">
           <path d={siX.path} />
         </svg>
       </span>
     )
   }
   // eslint-disable-next-line @next/next/no-img-element -- small static brand artwork, already sized
-  return <img src={IMAGES[network]} alt="" width={26} height={26} className="h-[26px] w-[26px]" />
+  return <img src={IMAGES[network]} alt="" width={36} height={36} className="h-9 w-9" />
 }
 
 export function FooterSocial({
@@ -76,7 +80,7 @@ export function FooterSocial({
   soonLabel: (name: string) => string
 }) {
   return (
-    <ul className="flex flex-wrap items-center gap-2.5">
+    <ul className="flex flex-wrap items-center gap-3">
       {SOCIAL_ORDER.map((network) => {
         const href = links[network]
         return (

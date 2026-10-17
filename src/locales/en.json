@@ -1284,7 +1284,7 @@
       "topSignOut": "Sign out",
       "statBilling": "Collected",
       "navDocuments": "Documents",
-      "greeting": "Welcome back, Ama 👋",
+      "greeting": "Welcome back, Ama",
       "greetingBody": "3 documents are waiting on others.",
       "chartTitle": "Signed per week",
       "docsTitle": "Service agreement",
@@ -1497,6 +1497,8 @@
   },
   "faq": {
     "title": "Frequently asked questions",
+    "more": "Something we haven't answered here? Ask us directly.",
+    "moreCta": "Ask a question",
     "$product": {
       "items": [
         {
@@ -1588,6 +1590,8 @@
     }
   },
   "planPricing": {
+    "highlight": "Sign & Pay included",
+    "yearlyNote": "2 months free",
     "$product": {
       "title": "Simple, transparent pricing",
       "subtitleDemo": "These are example plans, rendered live from the database with monthly and yearly tiers. Sign in to the demo to see the full billing flow, including a one-time lifetime purchase.",
@@ -2550,7 +2554,7 @@
     "subtitle": "Guides to e-signatures, free tools that run in your browser, and honest comparisons with the alternatives.",
     "solutions": "E-signatures",
     "tools": "Free PDF tools",
-    "toolsAll": "All free tools",
+    "toolsAll": "All free tools", "toolsBadge": "Free, no account needed", "audiencesAll": "Who it's for: {count} industries and teams",
     "compare": "Compare",
     "compareAll": "All comparisons",
     "toolsBody": "{count, plural, one {# free tool} other {# free tools}} that sign, fill and add signatures to PDFs in your browser, with no account and no upload.",

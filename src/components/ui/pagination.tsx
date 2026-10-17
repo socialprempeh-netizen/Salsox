@@ -16,6 +16,10 @@ import { cn } from "@/lib/utils"
  * `aria-current`, because a link to where you already are is noise for anyone
  * navigating by keyboard or screen reader.
  */
+// The disabled Previous/Next ends were text-muted-foreground/40: 1.8:1 on the
+// page, under the 4.5:1 an accessibility audit asks even of a disabled
+// control's text. Now full muted text, marked disabled by the cursor and the
+// missing border instead.
 export function Pagination({
   page,
   totalPages,
@@ -47,7 +51,7 @@ export function Pagination({
           {labels.previous}
         </Link>
       ) : (
-        <span className={cn(base, "border-transparent text-muted-foreground/40")} aria-hidden="true">
+        <span className={cn(base, "cursor-not-allowed border-transparent text-muted-foreground")} aria-hidden="true">
           <ChevronLeft className="h-4 w-4" />
           {labels.previous}
         </span>
@@ -89,7 +93,7 @@ export function Pagination({
           <ChevronRight className="h-4 w-4" />
         </Link>
       ) : (
-        <span className={cn(base, "border-transparent text-muted-foreground/40")} aria-hidden="true">
+        <span className={cn(base, "cursor-not-allowed border-transparent text-muted-foreground")} aria-hidden="true">
           {labels.next}
           <ChevronRight className="h-4 w-4" />
         </span>
