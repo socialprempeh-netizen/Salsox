@@ -37,6 +37,8 @@ export async function getSiteNav(): Promise<SiteNav> {
       resources: t("menu.resources"),
       templates: t("menu.templates"),
       templatesBlurb: t("menu.templatesBlurb"),
+      helpCenter: t("menu.helpCenter"),
+      helpCenterBlurb: t("menu.helpCenterBlurb"),
       blog: t("blog"),
       blogBlurb: t("menu.blogBlurb"),
       docs: t("menu.docs"),

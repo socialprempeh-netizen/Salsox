@@ -9,6 +9,7 @@ import { isKitSite } from "@/config/kit"
 import { getPages, type SitePage } from "@/lib/seo/pages"
 import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
+import { getHelpArticles, HELP_PATH, HELP_VIDEOS_PATH, helpArticlePath } from "@/lib/help"
 
 /**
  * Sitemap built from the real public routes plus the blog content on disk,
@@ -157,5 +158,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       ]
     : []
 
-  return [...staticRoutes, ...registry, ...hubs, ...templateRoutes, ...docs, ...posts, ...categories]
+  // The Help Center (src/lib/help.ts): its front page, the video tutorials
+  // and every guide. English only; guides carry no dates, so none is given.
+  const helpRoutes: MetadataRoute.Sitemap = [
+    { url: `${siteConfig.url}${HELP_PATH}`, changeFrequency: "weekly" as const, priority: 0.7 },
+    { url: `${siteConfig.url}${HELP_VIDEOS_PATH}`, changeFrequency: "monthly" as const, priority: 0.4 },
+    ...getHelpArticles().map((a) => ({ url: `${siteConfig.url}${helpArticlePath(a.slug)}`, changeFrequency: "monthly" as const, priority: 0.5 })),
+  ]
+
+  // Was: return [...staticRoutes, ...registry, ...hubs, ...templateRoutes, ...docs, ...posts, ...categories]
+  return [...staticRoutes, ...registry, ...hubs, ...templateRoutes, ...helpRoutes, ...docs, ...posts, ...categories]
 }

@@ -52,6 +52,8 @@ export type NavText = {
   resources: string
   templates: string
   templatesBlurb: string
+  helpCenter: string
+  helpCenterBlurb: string
   blog: string
   blogBlurb: string
   docs: string
@@ -135,6 +137,9 @@ export function buildSiteNav({
           // The free document templates (src/lib/templates.ts) lead: they are
           // the resource most visitors come for.
           { href: "/templates", label: text.templates, description: text.templatesBlurb },
+          // Step-by-step guides to the product (src/lib/help.ts), next to
+          // the templates as the other thing people come here to use.
+          { href: "/resources/help", label: text.helpCenter, description: text.helpCenterBlurb },
           // An empty blog gets no link (hasPosts()).
           ...(showBlog ? [{ href: "/blog", label: text.blog, description: text.blogBlurb }] : []),
           { href: "/docs", label: text.docs, description: text.docsBlurb },

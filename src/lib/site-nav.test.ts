@@ -26,6 +26,8 @@ const text: NavText = {
   resources: "Resources",
   templates: "Templates",
   templatesBlurb: "x",
+  helpCenter: "Help Center",
+  helpCenterBlurb: "x",
   blog: "Blog",
   blogBlurb: "x",
   docs: "Docs",

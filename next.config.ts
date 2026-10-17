@@ -64,8 +64,12 @@ const nextConfig: NextConfig = {
     "/[locale]/privacy": ["./content/legal/**"],
     "/[locale]/terms": ["./content/legal/**"],
     "/[locale]/cookies": ["./content/legal/**"],
-    // Not localized: these two live outside `[locale]`.
-    "/sitemap.xml": ["./content/blog/**"],
+    // The Help Center reads content/help/ the same way (src/lib/help.ts).
+    "/[locale]/resources/help": ["./content/help/**"],
+    "/[locale]/resources/help/**": ["./content/help/**"],
+    // Not localized: these two live outside `[locale]`. The sitemap lists the
+    // Help Center's guides too. Was: "/sitemap.xml": ["./content/blog/**"],
+    "/sitemap.xml": ["./content/blog/**", "./content/help/**"],
     "/llms.txt": ["./content/blog/**"],
   },
   experimental: {

@@ -72,6 +72,10 @@ for (const width of WIDTHS) {
       "/esignature-for",
       "/blog/how-to-sign-a-pdf",
       "/docs/getting-started",
+      // The Help Center: its front page, a guide with a table, and the videos.
+      "/resources/help",
+      "/resources/help/plans-and-what-they-include",
+      "/resources/help/videos",
     ]) {
       await check(path, path.slice(1).replaceAll("/", "-"))
     }

@@ -456,3 +456,37 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Help Center steps (src/components/help/help-markdown.tsx): a numbered list
+   in a guide is a list of steps, so each item gets a square brand-coloured
+   number instead of "1.". The counter starts where the Markdown list starts
+   (help-markdown sets counter-reset from `start`), so a list that continues
+   after a heading keeps counting. Un-layered, like the rules above, so it
+   beats the typography plugin's own list styles. */
+.prose .help-steps {
+  list-style: none;
+  padding-left: 0;
+}
+.prose .help-steps > li {
+  counter-increment: help-step;
+  position: relative;
+  padding-left: 2.75rem;
+  margin-top: 0.875rem;
+  margin-bottom: 0.875rem;
+}
+.prose .help-steps > li::before {
+  content: counter(help-step);
+  position: absolute;
+  left: 0;
+  top: 0.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
