@@ -133,7 +133,8 @@ export async function PlanPricing({
       )}
       <div className="mx-auto max-w-6xl px-6 lg:px-12">
         <Reveal className="mb-16 text-center">
-          <Heading className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          {/* Serif since the homepage redesign (was text-3xl font-bold … sm:text-4xl). */}
+          <Heading className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-[2.75rem]">
             {t("title")}
           </Heading>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -167,7 +168,8 @@ export async function PlanPricing({
                 ("Enterprise, Custom") that took the place where Lifetime
                 belongs. Removed from the public page; the billing page
                 still shows it. */}
-            <PlanCards plans={plans} ctaHref="/login" />
+            {/* Business is raised (homepage redesign): the tier with Sign & Pay. */}
+            <PlanCards plans={plans} ctaHref="/login" highlight={{ tierKey: "pro", label: t("highlight") }} yearlyNote={t("yearlyNote")} />
           </div>
         </Reveal>
       </div>

@@ -70,7 +70,8 @@ function FeatureList({ features }: { features: string[] }) {
     <ul className="space-y-2.5">
       {features.map((feature) => (
         <li key={feature} className="flex items-start gap-2.5 text-sm">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-hover">
+          {/* Squared in the homepage redesign (was rounded-full). */}
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center bg-primary/10 text-primary">
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
           <span className="text-foreground">{feature}</span>
@@ -129,6 +130,8 @@ export function PlanCards({
   disabledNote,
   ctaHref,
   contactCard,
+  highlight,
+  yearlyNote,
 }: {
   plans: PlanCardData[]
   currentPlanId?: string | null
@@ -140,6 +143,14 @@ export function PlanCards({
   // pages (demo landing) where the visitor has no session yet.
   ctaHref?: string
   contactCard?: ContactCardData
+  /**
+   * One tier to raise above the others (the homepage's pricing section):
+   * its key is the slug without -monthly/-yearly, and its label tags the
+   * card. Left out on the billing page, where every card is equal.
+   */
+  highlight?: { tierKey: string; label: string }
+  /** A short tag beside the Yearly toggle, such as "2 months free". */
+  yearlyNote?: string
 }) {
   const t = useTranslations("billing.plans")
   const recurring = plans.filter((p) => p.interval !== "ONE_TIME")
@@ -176,7 +187,9 @@ export function PlanCards({
           aria-label={t("interval")}
           // Centred under the centred heading (was inline-flex at the left
           // edge), and squared per the site-wide rule (was rounded).
-          className="mx-auto flex h-10 w-fit items-center justify-center bg-muted p-1 text-muted-foreground"
+          // The active side is filled with the brand colour since the homepage
+          // redesign (was bg-background text-foreground shadow-soft).
+          className="mx-auto flex h-11 w-fit items-center justify-center border border-border bg-muted p-1 text-muted-foreground"
         >
           {(["MONTH", "YEAR"] as const).map((value) => (
             <button
@@ -185,11 +198,14 @@ export function PlanCards({
               aria-pressed={interval === value}
               onClick={() => setInterval(value)}
               className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap px-4 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                interval === value && "bg-background text-foreground shadow-soft"
+                "inline-flex h-full items-center justify-center gap-2 whitespace-nowrap px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                interval === value ? "bg-primary text-primary-foreground" : "hover:text-foreground"
               )}
             >
               {value === "MONTH" ? t("monthly") : t("yearly")}
+              {value === "YEAR" && yearlyNote && (
+                <span className={cn("px-1.5 py-0.5 text-[11px] font-semibold", interval === value ? "bg-white/20 text-white" : "bg-brand-accent text-white")}>{yearlyNote}</span>
+              )}
             </button>
           ))}
         </div>
@@ -208,8 +224,12 @@ export function PlanCards({
             (tier.monthly?.id === currentPlanId || tier.yearly?.id === currentPlanId)
           // Yearly prices are shown as their monthly equivalent.
           const monthlyPrice = active.interval === "YEAR" ? Math.round(active.price / 12) : active.price
+          const raised = highlight?.tierKey === tier.key
           return (
-            <Card key={tier.key} className={CARD}>
+            <Card key={tier.key} className={cn(CARD, raised && "relative border-2 border-brand-accent shadow-[var(--shadow-soft-lg)]")}>
+              {raised && (
+                <span className="absolute -top-3 left-6 bg-brand-accent px-2.5 py-1 text-xs font-semibold text-white">{highlight.label}</span>
+              )}
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-lg">{base.name}</CardTitle>

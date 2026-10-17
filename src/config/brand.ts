@@ -11,6 +11,14 @@ const primary = process.env.NEXT_PUBLIC_BRAND_PRIMARY?.trim() || null
 const primary2 = process.env.NEXT_PUBLIC_BRAND_PRIMARY_2?.trim() || null
 const gradient = process.env.NEXT_PUBLIC_BRAND_GRADIENT?.trim() || null
 /**
+ * A second brand colour beside the primary: Salsox's deep violet, used by the
+ * homepage for its feature band, highlighted cards and small accents
+ * (`bg-brand-accent`, `text-brand-accent-text`). Set NEXT_PUBLIC_BRAND_ACCENT
+ * to change it; the kit's own site has none, so it falls back to the primary
+ * there (globals.css).
+ */
+const accent = process.env.NEXT_PUBLIC_BRAND_ACCENT?.trim() || (isKitSite ? null : "#4c1d95")
+/**
  * The deployment's own mark: a path under public/ (or an absolute URL) to a
  * square image, e.g. "/brand/mark.png". Set, it replaces the neutral socket
  * head everywhere the mark appears: the logo in the page, the favicon, the
@@ -62,8 +70,9 @@ const KIT_CSS = [
 
 export const brand = {
   /** True when a brand override is configured for this deployment. */
-  isCustom: Boolean(primary || gradient),
+  isCustom: Boolean(primary || gradient || accent),
   primary,
+  accent,
   primary2,
   // Solid unless a gradient is set explicitly: the visual system is flat
   // (src/app/globals.css). It used to blend primary into primary-2:
@@ -88,6 +97,7 @@ export function brandOverrideCss(): string {
     brand.primary && `--ring:${brand.primary}!important`,
     brand.primary2 && `--primary-2:${brand.primary2}!important`,
     brand.gradient && `--gradient-brand:${brand.gradient}!important`,
+    brand.accent && `--brand-accent:${brand.accent}!important`,
   ].filter(Boolean)
   return decls.length ? `${base}:root{${decls.join(";")}}` : base
 }

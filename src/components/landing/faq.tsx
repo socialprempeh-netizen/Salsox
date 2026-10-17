@@ -1,3 +1,5 @@
+import Link from "next/link"
+import { ArrowRight, MessageCircle } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { siteConfig } from "@/config/site"
 import {
@@ -52,19 +54,30 @@ export function FAQ({ withJsonLd = false }: { withJsonLd?: boolean }) {
     })),
   }
 
+  // Homepage redesign: two columns from lg, the serif heading and a way to
+  // ask a question of our own on the left (sticky), the questions on the
+  // right; an open question gets the brand accent down its edge. Was one
+  // centred column; its classes are noted where they changed.
   return (
-    <section id="faq" className="py-24">
+    <section id="faq" className="py-20 sm:py-24">
       {withJsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }}
         />
       )}
-      <div className="mx-auto max-w-3xl px-6 lg:px-12">
-        <Reveal className="mb-16 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+      {/* Was: mx-auto max-w-3xl, heading centred above (mb-16 text-center). */}
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16 lg:px-12">
+        <Reveal className="lg:sticky lg:top-28 lg:self-start">
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-[2.75rem]">
             {t("title")}
           </h2>
+          <p className="mt-4 text-muted-foreground">{t("more")}</p>
+          <Link href="/contact" className="group mt-5 inline-flex items-center gap-2 border border-border bg-card px-4 py-2.5 text-sm font-medium transition-colors hover:border-primary hover:text-primary">
+            <MessageCircle className="h-4 w-4 text-brand-accent-text" aria-hidden="true" />
+            {t("moreCta")}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          </Link>
         </Reveal>
 
         <Reveal>
@@ -73,7 +86,8 @@ export function FAQ({ withJsonLd = false }: { withJsonLd?: boolean }) {
               <AccordionItem
                 key={i}
                 value={`item-${i}`}
-                className="border border-border bg-card px-5 shadow-soft transition-shadow data-[state=open]:shadow-[var(--shadow-soft-lg)]"
+                // Was: border bg-card px-5 shadow-soft, a larger shadow when open.
+                className="border border-l-4 border-border border-l-transparent bg-card px-5 transition-colors data-[state=open]:border-l-brand-accent data-[state=open]:shadow-[var(--shadow-soft-lg)]"
               >
                 <AccordionTrigger className="text-base">{faq.question}</AccordionTrigger>
                 <AccordionContent>{faq.answer}</AccordionContent>
