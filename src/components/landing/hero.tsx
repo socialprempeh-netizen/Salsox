@@ -21,9 +21,9 @@ import { HeroDashboard } from "@/components/landing/hero-dashboard"
  * accented one, and when empty the split follows `tagline` in
  * src/config/site.ts, accenting its last word.
  *
- * The background is a wash from mint into the cream page, with a trace of
- * the purple accent at the far end (landingPalette in src/config/brand.ts);
- * it was primary into brand accent. Faint enough that text keeps its
+ * The background is the reference build's (docs/reference/
+ * salsox-homepage-live.html): a mint to lavender wash with two soft glows at
+ * its edges (see the layers below). Faint enough that text keeps its
  * contrast. Nothing here starts hidden: the headline is the page's largest
  * paint.
  */
@@ -41,13 +41,31 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
   const signupFlow = ctaHrefs.signedOut.startsWith("/signup")
 
   return (
-    <section className="relative overflow-hidden">
+    // isolate: the background layers below sit at -z-10, and without a
+    // stacking context of its own here they paint behind the public layout's
+    // cream background (.brand-landing), which hid the wash entirely.
+    // Was: <section className="relative overflow-hidden">
+    <section className="relative isolate overflow-hidden">
+      {/* The reference build's background (docs/reference/
+          salsox-homepage-live.html), its values as written: a wash to the
+          bottom right from #DFF5F3 through #E8F6F4 to #E9E5FF, and the two
+          glows that give its edges their colour, #C8EDE9 at 40% (600px,
+          blurred 80px) off the top right and #E9E5FF at 60% (500px, 90px)
+          off the left. The glows stay round: blurred that far they are light,
+          not a box with corners. Dark mode keeps the theme's own wash, these
+          colours being built for a light page; the grid texture is gone, the
+          reference has none.
+          Was a 120deg wash, mint to cream with a trace of purple:
+          bg-[linear-gradient(120deg,var(--brand-mint)_0%,var(--brand-mint)_18%,var(--brand-cream)_68%,color-mix(in_srgb,var(--brand-accent)_7%,var(--brand-cream))_100%)]
+          and before that: bg-[linear-gradient(120deg,color-mix(in_srgb,var(--primary)_12%,transparent)_0%,transparent_45%,color-mix(in_srgb,var(--brand-accent)_14%,transparent)_100%)]
+          with <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grid opacity-60" /> over it. */}
       <div
         aria-hidden
-        // Was: bg-[linear-gradient(120deg,color-mix(in_srgb,var(--primary)_12%,transparent)_0%,transparent_45%,color-mix(in_srgb,var(--brand-accent)_14%,transparent)_100%)]
-        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(120deg,var(--brand-mint)_0%,var(--brand-mint)_18%,var(--brand-cream)_68%,color-mix(in_srgb,var(--brand-accent)_7%,var(--brand-cream))_100%)]"
-      />
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grid opacity-60" />
+        className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-br from-[#DFF5F3] via-[#E8F6F4] to-[#E9E5FF] dark:from-[var(--brand-mint)] dark:via-[var(--background)] dark:to-[color-mix(in_srgb,var(--brand-accent)_18%,var(--background))]"
+      >
+        <div className="absolute -top-[20%] right-[10%] h-[600px] w-[600px] rounded-full bg-[#C8EDE9]/40 blur-[80px] dark:opacity-0" />
+        <div className="absolute left-[-10%] top-[30%] h-[500px] w-[500px] rounded-full bg-[#E9E5FF]/60 blur-[90px] dark:opacity-0" />
+      </div>
 
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-14 px-6 pb-20 pt-12 md:pt-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:px-12 lg:pb-24 lg:pt-20">
         <div>
@@ -105,18 +123,25 @@ export function Hero({ ctaHrefs }: { ctaHrefs: { signedOut: string; signedIn: st
         <HeroDashboard
           text={{
             host: new URL(siteConfig.url).host,
-            greeting: tm("greeting"),
-            greetingBody: tm("greetingBody"),
-            sentLabel: tm("statPlan"),
-            sentValue: tm("statSentValue"),
-            collectedLabel: tm("statBilling"),
-            collectedValue: tm("statCollectedValue"),
+            // The card rebuilt from the reference build (hero-dashboard.tsx).
+            // The earlier card took greeting, greetingBody, statPlan,
+            // statBilling, docsTitle, docsBody, viewAll, statStatus and
+            // statStatusValue (hero-dashboard-compact.tsx).
+            welcome: tm("welcome"),
+            name: tm("name"),
+            today: tm("today"),
+            export: tm("export"),
+            activeLabel: tm("activeLabel"),
+            activeValue: tm("statSentValue"),
+            activeDelta: tm("activeDelta"),
+            paidLabel: tm("paidLabel"),
+            paidValue: tm("statCollectedValue"),
+            paidStatus: tm("paidStatus"),
             chartTitle: tm("chartTitle"),
-            docTitle: tm("docsTitle"),
-            docBody: tm("docsBody"),
-            open: tm("viewAll"),
-            weekLabel: tm("statStatus"),
-            weekValue: tm("statStatusValue"),
+            chartMeta: tm("chartMeta"),
+            days: tm("days").split(","),
+            chipTitle: tm("chipTitle"),
+            chipBody: tm("chipBody"),
           }}
         />
       </div>

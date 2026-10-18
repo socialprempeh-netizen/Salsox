@@ -231,7 +231,11 @@ export function PlanCards({
             // The raised card's outline is the bright teal accent (was the purple
             // brand accent); its tag stays purple, in the badge type: 10px
             // bold capitals (was text-xs font-semibold).
-            <Card key={tier.key} className={cn(CARD, raised && "relative border-2 border-brand-teal shadow-[var(--shadow-soft-lg)]")}>
+            // Its background is the reference build's #F8FFFE (docs/reference/
+            // salsox-homepage-live.html), the pale mint that sets it apart
+            // from the white cards beside it; dark mode keeps the card
+            // colour. Was the card's own white.
+            <Card key={tier.key} className={cn(CARD, raised && "relative border-2 border-brand-teal bg-[#F8FFFE] shadow-[var(--shadow-soft-lg)] dark:bg-card")}>
               {raised && (
                 <span className="absolute -top-3 left-6 bg-brand-accent px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{highlight.label}</span>
               )}
