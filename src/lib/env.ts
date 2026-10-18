@@ -123,6 +123,11 @@ export const envSchema = z
     GOOGLE_SITE_VERIFICATION: optional,
     BING_SITE_VERIFICATION: optional,
     NEXT_PUBLIC_GA_MEASUREMENT_ID: blankAsUnset(z.string().regex(/^G-[A-Z0-9]{4,20}$/, "a GA4 measurement id starts with G-").optional()),
+    // The admin Traffic page's read access to GA (src/lib/admin/ga-data.ts).
+    // Optional: without them the page explains how to connect GA. The key is
+    // a service account's JSON key file, base64-encoded; server only.
+    GA_SERVICE_ACCOUNT_KEY_BASE64: optional,
+    GA4_PROPERTY_ID: blankAsUnset(z.string().regex(/^(properties\/)?\d{5,15}$/, "the GA4 property's number, not the G- measurement id").optional()),
     // PostHog product analytics (src/lib/posthog-config.ts). Optional: the
     // project API key turns it on, cookieless; the host picks the US (default)
     // or EU cloud. A value that does not fit leaves PostHog off, so it is
