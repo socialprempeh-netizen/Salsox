@@ -115,31 +115,72 @@ test("long pages: jumping to the end leaves no section invisible", async ({ page
   }
 })
 
-test("footer: grouped like the top menu, with a Company column", async ({ page }) => {
+// The footer rebuilt from the reference build (docs/reference/
+// salsox-homepage-live.html): a brand column and four link columns in one
+// row from lg, compact, with the store badges stacked and the "coming soon"
+// note under them. Replaced the test of the six-group footer, kept below.
+test("footer: the reference layout, four compact columns beside the brand", async ({ page }) => {
   await page.goto("/tools", { waitUntil: "networkidle" })
   const footer = page.locator("footer")
-  for (const heading of ["Product", "Free tools", "Compare", "Resources", "Company"]) {
+  const headings = ["Product", "Why Salsox", "Free tools", "Resources & company"]
+  for (const heading of headings) {
     await expect(footer.getByRole("heading", { name: heading, exact: true })).toBeVisible()
   }
   await expect(footer.getByRole("link", { name: "All free tools" })).toHaveAttribute("href", "/tools")
-  // Was "Help and docs" to /docs, replaced by the Help Center.
+  await expect(footer.getByRole("link", { name: "All comparisons" })).toHaveAttribute("href", "/compare")
+  // The industry and team pages are one click away, through their hub.
+  await expect(footer.getByRole("link", { name: "All use cases" })).toHaveAttribute("href", "/esignature-for")
   await expect(footer.getByRole("link", { name: "Help Center" })).toHaveAttribute("href", "/resources/help")
   await expect(footer.getByRole("link", { name: "Help and docs" })).toHaveCount(0)
-  await expect(footer.getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "/terms")
+  // Short names on the one legal row (were "Terms of Service" and so on).
+  await expect(footer.getByRole("link", { name: "Terms", exact: true })).toHaveAttribute("href", "/terms")
 
-  // The "Why" group is two lists under their own subheadings, side by side
-  // even on a phone: what the product does, and who it is for.
-  const what = footer.getByRole("heading", { name: "What you can do", exact: true })
-  const who = footer.getByRole("heading", { name: "Who it's for", exact: true })
-  await expect(what).toBeVisible()
-  await expect(who).toBeVisible()
-  await expect(what.locator("xpath=following-sibling::ul").getByRole("link", { name: "Sign and pay" })).toHaveAttribute("href", "/sign-and-pay")
-  await expect(who.locator("xpath=following-sibling::ul").getByRole("link", { name: "Clinics" })).toHaveAttribute("href", "/esignature-for/clinics")
-  await expect(who.locator("xpath=following-sibling::ul").getByRole("link", { name: "All use cases" })).toHaveAttribute("href", "/esignature-for")
-  for (const width of [360, 390, 1280]) {
+  // Badges at full strength, stacked, with the note under them.
+  const badges = footer.locator("img[src*=badge]")
+  await expect(badges).toHaveCount(2)
+  for (const i of [0, 1]) expect(await badges.nth(i).evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe("1")
+  const [apple, google] = [await badges.nth(0).boundingBox(), await badges.nth(1).boundingBox()]
+  expect(google!.y, "Google Play under the App Store badge").toBeGreaterThan(apple!.y + apple!.height - 1)
+  const soon = footer.getByText("Mobile apps coming soon")
+  if (await soon.count()) expect((await soon.boundingBox())!.y, "note under the badges").toBeGreaterThan(google!.y + google!.height - 1)
+
+  // One row of columns on a laptop, and compact: the reference footer is
+  // 511px tall at 1440px.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const tops = await Promise.all(headings.map(async (h) => (await footer.getByRole("heading", { name: h, exact: true }).boundingBox())!.y))
+  expect(Math.max(...tops) - Math.min(...tops), "column headings on one line @1440").toBeLessThan(2)
+  expect((await footer.boundingBox())!.height, "footer height @1440").toBeLessThan(640)
+  for (const width of [360, 390]) {
     await page.setViewportSize({ width, height: 900 })
-    const [a, b] = [await what.boundingBox(), await who.boundingBox()]
-    expect(Math.abs((a?.y ?? 0) - (b?.y ?? 1)), `subheadings side by side @${width}`).toBeLessThan(2)
     await expectNoHorizontalScroll(page, `footer @${width}`)
   }
 })
+
+// test("footer: grouped like the top menu, with a Company column", async ({ page }) => {
+//   await page.goto("/tools", { waitUntil: "networkidle" })
+//   const footer = page.locator("footer")
+//   for (const heading of ["Product", "Free tools", "Compare", "Resources", "Company"]) {
+//     await expect(footer.getByRole("heading", { name: heading, exact: true })).toBeVisible()
+//   }
+//   await expect(footer.getByRole("link", { name: "All free tools" })).toHaveAttribute("href", "/tools")
+//   // Was "Help and docs" to /docs, replaced by the Help Center.
+//   await expect(footer.getByRole("link", { name: "Help Center" })).toHaveAttribute("href", "/resources/help")
+//   await expect(footer.getByRole("link", { name: "Help and docs" })).toHaveCount(0)
+//   await expect(footer.getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "/terms")
+//
+//   // The "Why" group is two lists under their own subheadings, side by side
+//   // even on a phone: what the product does, and who it is for.
+//   const what = footer.getByRole("heading", { name: "What you can do", exact: true })
+//   const who = footer.getByRole("heading", { name: "Who it's for", exact: true })
+//   await expect(what).toBeVisible()
+//   await expect(who).toBeVisible()
+//   await expect(what.locator("xpath=following-sibling::ul").getByRole("link", { name: "Sign and pay" })).toHaveAttribute("href", "/sign-and-pay")
+//   await expect(who.locator("xpath=following-sibling::ul").getByRole("link", { name: "Clinics" })).toHaveAttribute("href", "/esignature-for/clinics")
+//   await expect(who.locator("xpath=following-sibling::ul").getByRole("link", { name: "All use cases" })).toHaveAttribute("href", "/esignature-for")
+//   for (const width of [360, 390, 1280]) {
+//     await page.setViewportSize({ width, height: 900 })
+//     const [a, b] = [await what.boundingBox(), await who.boundingBox()]
+//     expect(Math.abs((a?.y ?? 0) - (b?.y ?? 1)), `subheadings side by side @${width}`).toBeLessThan(2)
+//     await expectNoHorizontalScroll(page, `footer @${width}`)
+//   }
+// })

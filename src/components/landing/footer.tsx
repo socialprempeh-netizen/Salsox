@@ -16,7 +16,9 @@ import { isKitSite } from "@/config/kit"
 import { landingPalette } from "@/config/brand"
 // Both moved into getSiteNav(), which the navbar shares.
 // import { hasPosts } from "@/lib/blog"
-import { footerTryLink } from "@/lib/landing-cta"
+// The "Try it free" link left with the rebuild from the reference (no
+// Product-column CTA there); the old footer, commented below, still names it.
+// import { footerTryLink } from "@/lib/landing-cta"
 // import { getPages } from "@/lib/seo/pages"
 import { getSiteNav } from "@/components/landing/site-nav-data"
 import { cn } from "@/lib/utils"
@@ -56,76 +58,96 @@ const KIT_FOOTER_COLORS = {
   "--footer-accent": "#00aaf9",
   "--footer-bar": "#00aaf9",
   "--footer-bar-text": "#000000",
+  "--footer-link-hover": "#00aaf9",
+  "--footer-bar-border": "transparent",
 } as React.CSSProperties
+// Then from the reference build (docs/reference/salsox-homepage-live.html),
+// read from its CSS: background #0F0F1A, links and notes in 60% white and
+// white on hover, the bottom bar #4C1D95 with 60% white text under a 10%
+// white rule. One departure: its headings are 40% white, about 3.8:1 on
+// that black, under the 4.5:1 small text needs (e2e/accessibility.spec.ts
+// fails it), so they are 50% white here (5.3:1). Was, from the palette audit:
+//   "--footer-bg": landingPalette.ink,
+//   "--footer-heading" and "--footer-muted": 65% white mixed into the ink,
+//   "--footer-link": white, "--footer-accent": landingPalette.teal,
+//   "--footer-bar": landingPalette.purple, "--footer-bar-text": white.
 const FOOTER_COLORS = (landingPalette
   ? {
-      "--footer-bg": landingPalette.ink,
-      "--footer-heading": `color-mix(in srgb, ${landingPalette.white} 65%, ${landingPalette.ink})`,
-      "--footer-link": landingPalette.white,
-      "--footer-muted": `color-mix(in srgb, ${landingPalette.white} 65%, ${landingPalette.ink})`,
+      "--footer-bg": "#0F0F1A",
+      "--footer-heading": "rgb(255 255 255 / 0.5)",
+      "--footer-link": "rgb(255 255 255 / 0.6)",
+      "--footer-link-hover": "#FFFFFF",
+      "--footer-muted": "rgb(255 255 255 / 0.6)",
       "--footer-accent": landingPalette.teal,
       "--footer-bar": landingPalette.purple,
-      "--footer-bar-text": landingPalette.white,
+      "--footer-bar-text": "rgb(255 255 255 / 0.6)",
+      "--footer-bar-border": "rgb(255 255 255 / 0.1)",
     }
   : KIT_FOOTER_COLORS) as React.CSSProperties
 
 // Type scale raised (was text-sm headings and links, space-y-2) to the size
 // the established e-signature sites use in their footers: the footer is a
 // map of the site, and at 14px it read as fine print.
+// Then the reference build's: an 11px bold heading with 0.1em tracking, the
+// list 16px under it, rows 24px tall and 10px apart. Was mb-3, tracking-wider,
+// space-y-2 and 13px on the list.
 function FooterColumn({ heading, children, className }: { heading: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("min-w-0", className)}>
-      {/* Was mb-4, space-y-2.5, foreground and muted-foreground colours.
-          Uppercase like the reference's headings, with its letter-spacing,
-          which measured "normal" (no added tracking). */}
-      <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{heading}</h4>
-      <ul className="space-y-2 text-[13px] text-[var(--footer-link)]">{children}</ul>
+      <h4 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--footer-heading)]">{heading}</h4>
+      <ul className="mt-4 space-y-2.5">{children}</ul>
     </div>
   )
 }
 
-/**
- * The "Why" group in two side-by-side lists under one heading, each with its
- * own subheading: what the product does (the solution pages) and who it is
- * for (the industry, team and audience pages). As one column it ran to more
- * than thirty links.
- *
- * "Who it's for" has twenty pages, so from sm up it is itself two balanced
- * columns (CSS columns, alphabetical order kept, 11 and 10 with the hub
- * link) under its one subheading; as one list it towered over every other
- * column. The group spans three grid tracks from sm (what you can do, then
- * who it's for over two). On a phone it spans the full two-track row and
- * "Who it's for" is a single list beside "What you can do": three lists in
- * 312px would leave each too narrow to read.
- */
-function SplitFooterColumn({ heading, parts, footer }: { heading: string; parts: { heading: string; links: { href: string; label: string }[] }[]; footer: { href: string; label: string } }) {
-  return (
-    // Was col-span-2 at every width, its two lists in grid-cols-2.
-    <div className="col-span-2 min-w-0 sm:col-span-3">
-      <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{heading}</h4>
-      <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3">
-        {parts.map((part, i) => (
-          <div key={part.heading} className={cn("min-w-0", i === parts.length - 1 && "sm:col-span-2")}>
-            <h5 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{part.heading}</h5>
-            <ul className={cn("space-y-2 text-[13px] text-[var(--footer-link)]", i === parts.length - 1 && "sm:columns-2 sm:gap-x-5")}>
-              {part.links.map((link) => (
-                <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
-              ))}
-              {/* The hub link closes the second list, as it closes every group. */}
-              {i === parts.length - 1 && <FooterLink href={footer.href}>{footer.label}</FooterLink>}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+/** A footer link: 13px, 60% white, white on hover (the reference's values). */
+const FOOTER_LINK = "text-[13px] text-[var(--footer-link)] transition-colors hover:text-[var(--footer-link-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-accent)]"
+
+// Unused since the rebuild from the reference (Footer below): the "Why"
+// group is one Product column now. Was:
+// /**
+//  * The "Why" group in two side-by-side lists under one heading, each with its
+//  * own subheading: what the product does (the solution pages) and who it is
+//  * for (the industry, team and audience pages). As one column it ran to more
+//  * than thirty links.
+//  *
+//  * "Who it's for" has twenty pages, so from sm up it is itself two balanced
+//  * columns (CSS columns, alphabetical order kept, 11 and 10 with the hub
+//  * link) under its one subheading; as one list it towered over every other
+//  * column. The group spans three grid tracks from sm (what you can do, then
+//  * who it's for over two). On a phone it spans the full two-track row and
+//  * "Who it's for" is a single list beside "What you can do": three lists in
+//  * 312px would leave each too narrow to read.
+//  */
+// function SplitFooterColumn({ heading, parts, footer }: { heading: string; parts: { heading: string; links: { href: string; label: string }[] }[]; footer: { href: string; label: string } }) {
+//   return (
+//     // Was col-span-2 at every width, its two lists in grid-cols-2.
+//     <div className="col-span-2 min-w-0 sm:col-span-3">
+//       <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{heading}</h4>
+//       <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3">
+//         {parts.map((part, i) => (
+//           <div key={part.heading} className={cn("min-w-0", i === parts.length - 1 && "sm:col-span-2")}>
+//             <h5 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{part.heading}</h5>
+//             <ul className={cn("space-y-2 text-[13px] text-[var(--footer-link)]", i === parts.length - 1 && "sm:columns-2 sm:gap-x-5")}>
+//               {part.links.map((link) => (
+//                 <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+//               ))}
+//               {/* The hub link closes the second list, as it closes every group. */}
+//               {i === parts.length - 1 && <FooterLink href={footer.href}>{footer.label}</FooterLink>}
+//             </ul>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   )
+// }
 
 function FooterLink({ href, external, children }: { href: string; external?: boolean; children: React.ReactNode }) {
-  // Was hover:text-foreground; white links turn the bar's cyan on hover.
-  const className = "transition-colors hover:text-[var(--footer-accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-accent)]"
+  // Was hover:text-foreground, then the bar's accent on hover; now
+  // FOOTER_LINK, and a 24px row as in the reference.
+  const className = FOOTER_LINK
   return (
-    <li className="break-inside-avoid">
+    <li className="break-inside-avoid leading-6">
       {external ? (
         <a href={href} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>
       ) : (
@@ -134,6 +156,31 @@ function FooterLink({ href, external, children }: { href: string; external?: boo
     </li>
   )
 }
+
+/**
+ * The footer, rebuilt from the reference build (docs/reference/
+ * salsox-homepage-live.html), every value read from that file's own CSS at
+ * 1440px:
+ *
+ * - one row of five tracks from lg, `1.2fr 0.8fr 0.8fr 0.8fr 1fr`, 40px gaps:
+ *   the brand column, then Product, Why us, Free tools, and Resources and
+ *   company; two columns on a phone, the brand spanning both;
+ * - 80px top and bottom padding from lg (64px below), 1280px wide with 32px
+ *   sides (24px on a phone);
+ * - headings 11px bold capitals, 0.1em tracking; links 13px in 60% white,
+ *   white on hover, 10px apart on 24px rows, 16px under the heading;
+ * - in the brand column: the logo, a 13px line in 60% white (max 260px), the
+ *   store badges stacked 12px apart, then the social icons 32px below;
+ * - the bottom bar in the brand purple under a 10% white rule, 16px padding,
+ *   12px text in 60% white.
+ *
+ * Each column lists six links and closes with its hub, about the reference's
+ * seven rows, so the footer keeps its compact height; the hubs list the rest
+ * (every industry page is one click away under "All use cases").
+ *
+ * Square corners, per the site-wide rule, where the reference rounds them.
+ */
+const LINKS_PER_COLUMN = 6
 
 export async function Footer() {
   const [t, nav] = await Promise.all([getTranslations("footer"), getSiteNav()])
@@ -147,139 +194,100 @@ export async function Footer() {
     x: t("social.x"),
   }
   const orgUrl = siteConfig.links.githubOrg ?? siteConfig.links.github
-  const tryLink = footerTryLink(siteConfig.links.demo)
-  return (
-    // Was border-t border-border bg-muted/30 py-12: the theme's surface. Now
-    // the reference footer's black, top padding tighter than its 60px, and
-    // the bottom padding moved into the cyan bar below.
-    <footer style={FOOTER_COLORS} className="bg-[var(--footer-bg)] pt-10 text-[var(--footer-link)]">
-      {/* Wider (was max-w-6xl), like the header, for seven columns of
-          larger type. */}
-      {/* 90rem (was max-w-7xl): eight tracks now, the Why group taking three. */}
-      <div className="mx-auto max-w-[90rem] px-6 lg:px-12">
-        {/* Grouped the way the top menu is (src/lib/site-nav.ts), from the
-            same data, so the two cannot list different pages: Product, Why,
-            Free tools, Compare, Resources, Company. Was Product (with docs,
-            blog, changelog and verify mixed in), About and Legal; About and
-            Legal are now one Company column, and the help material has a
-            Resources column of its own. The old columns are kept at the
-            bottom of this file. Brand on its own row, then two columns of
-            links on a phone, three on a tablet, six on a desktop. */}
-        {/* Brand on the left; the social icons and store badges beside it
-            from lg, under it on smaller screens. */}
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-xs">
-          <LogoLink className="flex items-center gap-2">
-            <Logo markClassName="h-9 w-9" wordmarkClassName="text-xl font-bold text-[var(--footer-link)]" />
-          </LogoLink>
-          <p className="mt-3 text-[13px] text-[var(--footer-muted)]">
-            {isKitSite ? t("blurb", { tagline: siteConfig.tagline }) : siteConfig.description}
-          </p>
-          {/* The kit's own site keeps its GitHub icon here; the product's
-              social icons are FooterSocial, beside this block. */}
-          <div className="mt-4 flex items-center gap-2 empty:hidden">
-            {orgUrl && (
-              <a
-                href={orgUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t("github")}
-                className="flex h-9 w-9 items-center justify-center bg-white text-black transition-opacity hover:opacity-85"
-              >
-                <GithubIcon />
-              </a>
-            )}
-            {/* X and LinkedIn moved into FooterSocial with the other networks.
-                Were links here only when set, in the theme's colours, as
-                <XIcon /> and <LinkedinIcon /> inside bordered squares. */}
-          </div>
-        </div>
-        <div className="flex flex-col gap-4 lg:items-end">
-          <FooterSocial
-            links={{
-              youtube: siteConfig.links.youtube,
-              instagram: siteConfig.links.instagram,
-              tiktok: siteConfig.links.tiktok,
-              facebook: siteConfig.links.facebook,
-              linkedin: siteConfig.links.linkedin,
-              pinterest: siteConfig.links.pinterest,
-              x: siteConfig.links.x,
-            }}
-            labels={social}
-            soonLabel={(name) => t("socialSoon", { name })}
-          />
-          <StoreBadges
-            appStore={siteConfig.links.appStore}
-            playStore={siteConfig.links.playStore}
-            labels={{ appStore: t("appStoreBadge"), playStore: t("playStoreBadge"), comingSoon: t("appsComingSoon") }}
-          />
-        </div>
-        </div>
+  const group = (id: string) => nav.groups.find((g) => g.id === id)
+  const links = (id: string, column?: number) => {
+    const g = group(id)
+    const all = column === undefined ? (g?.columns.flatMap((c) => c.links) ?? []) : (g?.columns[column]?.links ?? [])
+    // Home-page anchors (/#features, /#faq) are not pages to list here.
+    return all.filter((link) => !link.href.startsWith("/#")).slice(0, LINKS_PER_COLUMN)
+  }
+  const why = group("why")
+  const tools = group("tools")
+  const compare = group("compare")
+  const resources = group("resources")
 
-        {/* Was grid-cols-2 sm:grid-cols-3 lg:grid-cols-6, one column per
-            group. The "Why" group now spans two (SplitFooterColumn), so
-            seven tracks on a wide screen, four on a laptop, three on a
-            tablet, two on a phone; dense flow fills the cell its span leaves
-            beside Product on a phone. */}
-        {/* Gaps tighter than the reference's 40px: 20px between columns,
-            28px between rows (were gap-x-6 gap-y-10, mt-10). */}
-        {/* Was xl:grid-cols-7, when the Why group took two tracks. */}
-        <div className="mt-8 grid grid-flow-row-dense grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+  return (
+    <footer style={FOOTER_COLORS} className="bg-[var(--footer-bg)] text-[var(--footer-link)]">
+      <div className="mx-auto max-w-[1280px] px-6 py-16 lg:px-8 lg:py-20">
+        <div className="grid grid-cols-2 gap-10 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1fr]">
+          <div className="col-span-2 lg:col-span-1">
+            <LogoLink className="flex items-center gap-2">
+              <Logo markClassName="h-8 w-8" wordmarkClassName="text-[22px] font-bold text-white" />
+            </LogoLink>
+            <p className="mt-4 max-w-[260px] text-[13px] leading-relaxed text-[var(--footer-muted)]">
+              {isKitSite ? t("blurb", { tagline: siteConfig.tagline }) : siteConfig.description}
+            </p>
+            {/* The badges stacked, then "coming soon" under them (it was
+                above), then the social icons. */}
+            <div className="mt-6">
+              <StoreBadges
+                appStore={siteConfig.links.appStore}
+                playStore={siteConfig.links.playStore}
+                labels={{ appStore: t("appStoreBadge"), playStore: t("playStoreBadge"), comingSoon: t("appsComingSoon") }}
+              />
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              {/* The kit's own site keeps its GitHub link, beside the icons. */}
+              {isKitSite && orgUrl && (
+                <a
+                  href={orgUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t("github")}
+                  className="flex h-8 w-8 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/15"
+                >
+                  <GithubIcon />
+                </a>
+              )}
+              <FooterSocial
+                links={{
+                  youtube: siteConfig.links.youtube,
+                  instagram: siteConfig.links.instagram,
+                  tiktok: siteConfig.links.tiktok,
+                  facebook: siteConfig.links.facebook,
+                  linkedin: siteConfig.links.linkedin,
+                  pinterest: siteConfig.links.pinterest,
+                  x: siteConfig.links.x,
+                }}
+                labels={social}
+                soonLabel={(name) => t("socialSoon", { name })}
+              />
+            </div>
+          </div>
+
+          {/* What the product does: the solution pages, then the use-case
+              hub, which lists the industry and team pages. */}
           <FooterColumn heading={t("product")}>
-            {/* `/#` instead of bare `#`: the footer renders on every public
-                page, but the sections only exist on the home page. */}
-            <FooterLink href="/#features">{t("features")}</FooterLink>
-            {/* The pricing page (was the home page's /#pricing section). */}
-            <FooterLink href={nav.pricing.href}>{t("pricing")}</FooterLink>
-            {/* Was a literal "Demo" → /login when no demo deployment was
-                set; see footerTryLink. */}
-            <FooterLink href={tryLink.href}>{t(tryLink.label === "demo" ? "demo" : "tryFree")}</FooterLink>
-            {isKitSite && orgUrl && <FooterLink href={orgUrl} external>{t("openSource")}</FooterLink>}
+            {links("why", 0).map((link) => <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>)}
+            {why && <FooterLink href={why.footer.href}>{why.footer.label}</FooterLink>}
           </FooterColumn>
 
-          {/* Every public page links to the solution, use-case, tool and
-              comparison pages from here: the internal links that make them
-              findable (src/lib/seo/pages.ts lists them). */}
-          {nav.groups.map((group) =>
-            group.id === "why" ? (
-              <SplitFooterColumn
-                key={group.id}
-                heading={group.label}
-                // The group's two columns in the shared navigation data
-                // (src/lib/site-nav.ts): solution pages, then the use-case
-                // pages. Headed here by what the links are; the menu's "By
-                // industry" fits only the twelve industries among them.
-                parts={[
-                  { heading: t("whatYouCanDo"), links: group.columns[0]?.links ?? [] },
-                  { heading: t("whoItsFor"), links: (group.columns[1]?.links ?? []).filter((link) => link.href !== "/#features") },
-                ]}
-                footer={group.footer}
-              />
-            ) : (
-            <FooterColumn key={group.id} heading={group.label}>
-              {group.columns
-                .flatMap((column) => column.links)
-                // Features is already the Product column's first link.
-                .filter((link) => link.href !== "/#features")
-                .map((link) => (
-                  <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
-                ))}
-              <FooterLink href={group.footer.href}>{group.footer.label}</FooterLink>
-            </FooterColumn>
-            )
-          )}
+          {/* Why choose it: the comparisons, then pricing and their hub. */}
+          <FooterColumn heading={why?.label ?? t("compare")}>
+            {links("compare").slice(0, LINKS_PER_COLUMN - 1).map((link) => <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>)}
+            <FooterLink href={nav.pricing.href}>{t("pricing")}</FooterLink>
+            {compare && <FooterLink href={compare.footer.href}>{compare.footer.label}</FooterLink>}
+          </FooterColumn>
 
-          <FooterColumn heading={t("company")}>
+          <FooterColumn heading={tools?.label ?? t("freeTools")}>
+            {links("tools").map((link) => <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>)}
+            {tools && <FooterLink href={tools.footer.href}>{tools.footer.label}</FooterLink>}
+          </FooterColumn>
+
+          {/* Resources, then the company pages, the legal pages sharing one
+              row as in the reference. */}
+          <FooterColumn heading={t("resourcesCompany")}>
+            {(resources?.columns.flatMap((c) => c.links) ?? []).filter((link) => !link.href.startsWith("/#")).map((link) => (
+              <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+            ))}
             <FooterLink href="/about">{t("aboutLink")}</FooterLink>
-            {/* The kit's own site collects nothing through the site: its
-                contact is the copyable-email dialog, as it was before the
-                contact form existed, so the waitlist stays the only data
-                the privacy policy has to cover. Your app links the form. */}
+            {/* The kit's own site has the copyable-email dialog instead of
+                the contact form (see the earlier footer below). */}
             {isKitSite ? (
-              <li>
+              <li className="leading-6">
                 <ContactDialog
                   trigger={
-                    <button type="button" className="transition-colors hover:text-[var(--footer-accent)]">
+                    <button type="button" className={FOOTER_LINK}>
                       {t("contact")}
                     </button>
                   }
@@ -288,40 +296,37 @@ export async function Footer() {
             ) : (
               <FooterLink href="/contact">{t("contact")}</FooterLink>
             )}
-            <FooterLink href="/privacy">{t("privacy")}</FooterLink>
-            {/* The kit's own site sells nothing and has no accounts, so no
-                terms; its cookie disclosure is a section of the (real)
-                privacy policy. Your app keeps the dedicated pages. */}
-            {!isKitSite && <FooterLink href="/terms">{t("terms")}</FooterLink>}
-            <FooterLink href={isKitSite ? "/privacy#cookies" : "/cookies"}>{t("cookies")}</FooterLink>
-            {isKitSite && (
-              <FooterLink
-                href={siteConfig.links.github ? `${siteConfig.links.github}/blob/main/LICENSE` : "https://opensource.org/license/mit"}
-                external
-              >
-                License
-              </FooterLink>
-            )}
+            <li className="leading-6">
+              {/* Short names, so the three share one row like the
+                  reference's "Privacy • Terms"; the full names wrapped. */}
+              <Link href="/privacy" className={FOOTER_LINK}>{t("privacyShort")}</Link>
+              {!isKitSite && (
+                <>
+                  <span aria-hidden="true" className="text-[13px] text-[var(--footer-link)]"> · </span>
+                  <Link href="/terms" className={FOOTER_LINK}>{t("termsShort")}</Link>
+                </>
+              )}
+              <span aria-hidden="true" className="text-[13px] text-[var(--footer-link)]"> · </span>
+              <Link href={isKitSite ? "/privacy#cookies" : "/cookies"} className={FOOTER_LINK}>{t("cookiesShort")}</Link>
+            </li>
           </FooterColumn>
         </div>
-
       </div>
 
-      {/* The bottom bar, full width in the reference's cyan, much shorter
-          than its 139px. Was a border-t row (mt-12 pt-8) with the
-          PoweredBy badge centred under it (mt-8). */}
-      {/* Was bg-[var(--footer-accent)] text-black, text-[15px]. */}
-      <div className="mt-8 bg-[var(--footer-bar)] text-[var(--footer-bar-text)]">
-        <div className="mx-auto flex max-w-[90rem] flex-col items-center justify-between gap-3 px-6 py-4 text-[12px] md:flex-row lg:px-12">
+      <div className="border-t border-[var(--footer-bar-border)] bg-[var(--footer-bar)]">
+        <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-2 px-6 py-4 text-[12px] text-[var(--footer-bar-text)] sm:flex-row lg:px-8">
           <p>{t("copyright", { year: new Date().getFullYear(), site: siteConfig.name })}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <PoweredBy />
-            <p>
-              <Link href="/changelog" className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-bar-text)]">
-                v{siteConfig.version}
-              </Link>
-              {isKitSite && ` · ${t("license")}`}
-            </p>
+            <Link href="/changelog" className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+              v{siteConfig.version}
+            </Link>
+            {isKitSite && (
+              <>
+                <span aria-hidden="true" className="h-3 w-px bg-white/20" />
+                <span>{t("license")}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -488,3 +493,200 @@ export async function Footer() {
 //             </ul>
 //           </div>
 //         </div>
+
+// Replaced by the Footer above (rebuilt from docs/reference/salsox-homepage-live.html).
+// The version it replaced: a brand row with the social icons and badges
+// beside it, then up to eight columns from the shared navigation data.
+// export async function Footer() {
+//   const [t, nav] = await Promise.all([getTranslations("footer"), getSiteNav()])
+//   const social = {
+//     youtube: t("social.youtube"),
+//     instagram: t("social.instagram"),
+//     tiktok: t("social.tiktok"),
+//     facebook: t("social.facebook"),
+//     pinterest: t("social.pinterest"),
+//     linkedin: t("linkedin"),
+//     x: t("social.x"),
+//   }
+//   const orgUrl = siteConfig.links.githubOrg ?? siteConfig.links.github
+//   const tryLink = footerTryLink(siteConfig.links.demo)
+//   return (
+//     // Was border-t border-border bg-muted/30 py-12: the theme's surface. Now
+//     // the reference footer's black, top padding tighter than its 60px, and
+//     // the bottom padding moved into the cyan bar below.
+//     <footer style={FOOTER_COLORS} className="bg-[var(--footer-bg)] pt-10 text-[var(--footer-link)]">
+//       {/* Wider (was max-w-6xl), like the header, for seven columns of
+//           larger type. */}
+//       {/* 90rem (was max-w-7xl): eight tracks now, the Why group taking three. */}
+//       <div className="mx-auto max-w-[90rem] px-6 lg:px-12">
+//         {/* Grouped the way the top menu is (src/lib/site-nav.ts), from the
+//             same data, so the two cannot list different pages: Product, Why,
+//             Free tools, Compare, Resources, Company. Was Product (with docs,
+//             blog, changelog and verify mixed in), About and Legal; About and
+//             Legal are now one Company column, and the help material has a
+//             Resources column of its own. The old columns are kept at the
+//             bottom of this file. Brand on its own row, then two columns of
+//             links on a phone, three on a tablet, six on a desktop. */}
+//         {/* Brand on the left; the social icons and store badges beside it
+//             from lg, under it on smaller screens. */}
+//         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+//         <div className="max-w-xs">
+//           <LogoLink className="flex items-center gap-2">
+//             <Logo markClassName="h-9 w-9" wordmarkClassName="text-xl font-bold text-[var(--footer-link)]" />
+//           </LogoLink>
+//           <p className="mt-3 text-[13px] text-[var(--footer-muted)]">
+//             {isKitSite ? t("blurb", { tagline: siteConfig.tagline }) : siteConfig.description}
+//           </p>
+//           {/* The kit's own site keeps its GitHub icon here; the product's
+//               social icons are FooterSocial, beside this block. */}
+//           <div className="mt-4 flex items-center gap-2 empty:hidden">
+//             {orgUrl && (
+//               <a
+//                 href={orgUrl}
+//                 target="_blank"
+//                 rel="noopener noreferrer"
+//                 aria-label={t("github")}
+//                 className="flex h-9 w-9 items-center justify-center bg-white text-black transition-opacity hover:opacity-85"
+//               >
+//                 <GithubIcon />
+//               </a>
+//             )}
+//             {/* X and LinkedIn moved into FooterSocial with the other networks.
+//                 Were links here only when set, in the theme's colours, as
+//                 <XIcon /> and <LinkedinIcon /> inside bordered squares. */}
+//           </div>
+//         </div>
+//         <div className="flex flex-col gap-4 lg:items-end">
+//           <FooterSocial
+//             links={{
+//               youtube: siteConfig.links.youtube,
+//               instagram: siteConfig.links.instagram,
+//               tiktok: siteConfig.links.tiktok,
+//               facebook: siteConfig.links.facebook,
+//               linkedin: siteConfig.links.linkedin,
+//               pinterest: siteConfig.links.pinterest,
+//               x: siteConfig.links.x,
+//             }}
+//             labels={social}
+//             soonLabel={(name) => t("socialSoon", { name })}
+//           />
+//           <StoreBadges
+//             appStore={siteConfig.links.appStore}
+//             playStore={siteConfig.links.playStore}
+//             labels={{ appStore: t("appStoreBadge"), playStore: t("playStoreBadge"), comingSoon: t("appsComingSoon") }}
+//           />
+//         </div>
+//         </div>
+//
+//         {/* Was grid-cols-2 sm:grid-cols-3 lg:grid-cols-6, one column per
+//             group. The "Why" group now spans two (SplitFooterColumn), so
+//             seven tracks on a wide screen, four on a laptop, three on a
+//             tablet, two on a phone; dense flow fills the cell its span leaves
+//             beside Product on a phone. */}
+//         {/* Gaps tighter than the reference's 40px: 20px between columns,
+//             28px between rows (were gap-x-6 gap-y-10, mt-10). */}
+//         {/* Was xl:grid-cols-7, when the Why group took two tracks. */}
+//         <div className="mt-8 grid grid-flow-row-dense grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+//           <FooterColumn heading={t("product")}>
+//             {/* `/#` instead of bare `#`: the footer renders on every public
+//                 page, but the sections only exist on the home page. */}
+//             <FooterLink href="/#features">{t("features")}</FooterLink>
+//             {/* The pricing page (was the home page's /#pricing section). */}
+//             <FooterLink href={nav.pricing.href}>{t("pricing")}</FooterLink>
+//             {/* Was a literal "Demo" → /login when no demo deployment was
+//                 set; see footerTryLink. */}
+//             <FooterLink href={tryLink.href}>{t(tryLink.label === "demo" ? "demo" : "tryFree")}</FooterLink>
+//             {isKitSite && orgUrl && <FooterLink href={orgUrl} external>{t("openSource")}</FooterLink>}
+//           </FooterColumn>
+//
+//           {/* Every public page links to the solution, use-case, tool and
+//               comparison pages from here: the internal links that make them
+//               findable (src/lib/seo/pages.ts lists them). */}
+//           {nav.groups.map((group) =>
+//             group.id === "why" ? (
+//               <SplitFooterColumn
+//                 key={group.id}
+//                 heading={group.label}
+//                 // The group's two columns in the shared navigation data
+//                 // (src/lib/site-nav.ts): solution pages, then the use-case
+//                 // pages. Headed here by what the links are; the menu's "By
+//                 // industry" fits only the twelve industries among them.
+//                 parts={[
+//                   { heading: t("whatYouCanDo"), links: group.columns[0]?.links ?? [] },
+//                   { heading: t("whoItsFor"), links: (group.columns[1]?.links ?? []).filter((link) => link.href !== "/#features") },
+//                 ]}
+//                 footer={group.footer}
+//               />
+//             ) : (
+//             <FooterColumn key={group.id} heading={group.label}>
+//               {group.columns
+//                 .flatMap((column) => column.links)
+//                 // Features is already the Product column's first link.
+//                 .filter((link) => link.href !== "/#features")
+//                 .map((link) => (
+//                   <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+//                 ))}
+//               <FooterLink href={group.footer.href}>{group.footer.label}</FooterLink>
+//             </FooterColumn>
+//             )
+//           )}
+//
+//           <FooterColumn heading={t("company")}>
+//             <FooterLink href="/about">{t("aboutLink")}</FooterLink>
+//             {/* The kit's own site collects nothing through the site: its
+//                 contact is the copyable-email dialog, as it was before the
+//                 contact form existed, so the waitlist stays the only data
+//                 the privacy policy has to cover. Your app links the form. */}
+//             {isKitSite ? (
+//               <li>
+//                 <ContactDialog
+//                   trigger={
+//                     <button type="button" className="transition-colors hover:text-[var(--footer-accent)]">
+//                       {t("contact")}
+//                     </button>
+//                   }
+//                 />
+//               </li>
+//             ) : (
+//               <FooterLink href="/contact">{t("contact")}</FooterLink>
+//             )}
+//             <FooterLink href="/privacy">{t("privacy")}</FooterLink>
+//             {/* The kit's own site sells nothing and has no accounts, so no
+//                 terms; its cookie disclosure is a section of the (real)
+//                 privacy policy. Your app keeps the dedicated pages. */}
+//             {!isKitSite && <FooterLink href="/terms">{t("terms")}</FooterLink>}
+//             <FooterLink href={isKitSite ? "/privacy#cookies" : "/cookies"}>{t("cookies")}</FooterLink>
+//             {isKitSite && (
+//               <FooterLink
+//                 href={siteConfig.links.github ? `${siteConfig.links.github}/blob/main/LICENSE` : "https://opensource.org/license/mit"}
+//                 external
+//               >
+//                 License
+//               </FooterLink>
+//             )}
+//           </FooterColumn>
+//         </div>
+//
+//       </div>
+//
+//       {/* The bottom bar, full width in the reference's cyan, much shorter
+//           than its 139px. Was a border-t row (mt-12 pt-8) with the
+//           PoweredBy badge centred under it (mt-8). */}
+//       {/* Was bg-[var(--footer-accent)] text-black, text-[15px]. */}
+//       <div className="mt-8 bg-[var(--footer-bar)] text-[var(--footer-bar-text)]">
+//         <div className="mx-auto flex max-w-[90rem] flex-col items-center justify-between gap-3 px-6 py-4 text-[12px] md:flex-row lg:px-12">
+//           <p>{t("copyright", { year: new Date().getFullYear(), site: siteConfig.name })}</p>
+//           <div className="flex flex-wrap items-center justify-center gap-4">
+//             <PoweredBy />
+//             <p>
+//               <Link href="/changelog" className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-bar-text)]">
+//                 v{siteConfig.version}
+//               </Link>
+//               {isKitSite && ` · ${t("license")}`}
+//             </p>
+//           </div>
+//         </div>
+//       </div>
+//     </footer>
+//   )
+// }

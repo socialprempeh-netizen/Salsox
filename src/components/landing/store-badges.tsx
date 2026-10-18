@@ -53,18 +53,22 @@ export function StoreBadges({
   // App Store was the cut 3D render (/brand/web/badge-app-store.png, 127x36);
   // back to Apple's official SVG.
   // { key: "app-store", ..., src: "/brand/web/badge-app-store.png", width: 127, height: 36, box: "h-9 w-[127px]", className: "h-9 w-[127px]" },
+  // 44px tall since the rebuild from docs/reference/salsox-homepage-live.html,
+  // whose badge boxes are 148x44: 132x44 and 147x44 here (were 108x36 and
+  // 120x36). Apple's is a vector; Google's PNG is 108px tall, 2.5x this.
+  // { key: "app-store", ..., width: 108, height: 36, box: "h-9 w-[108px]", className: "h-9 w-[108px]" },
+  // { key: "google-play", ..., width: 120, height: 36, box: "h-9 w-[120px]", className: "h-9 w-[120px]" },
   const badges = [
-    { key: "app-store", href: appStore, alt: labels.appStore, src: "/badges/app-store-badge.svg", width: 108, height: 36, box: "h-9 w-[108px]", className: "h-9 w-[108px]" },
-    { key: "google-play", href: playStore, alt: labels.playStore, src: "/brand/web/badge-google-play.png", width: 120, height: 36, box: "h-9 w-[120px]", className: "h-9 w-[120px]" },
+    { key: "app-store", href: appStore, alt: labels.appStore, src: "/badges/app-store-badge.svg", width: 132, height: 44, box: "h-11 w-[132px]", className: "h-11 w-[132px]" },
+    { key: "google-play", href: playStore, alt: labels.playStore, src: "/brand/web/badge-google-play.png", width: 147, height: 44, box: "h-11 w-[147px]", className: "h-11 w-[147px]" },
   ]
   const anyInert = badges.some((b) => !b.href)
 
   return (
-    // One unit: the label, then the badges, vertically centred on one line
-    // (the label wraps above them on a narrow phone).
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      {anyInert && <p className="text-sm font-medium text-[var(--footer-muted)]">{labels.comingSoon}</p>}
-      <ul className="flex items-center gap-2">
+    // The badges stacked 12px apart as in the reference, then the "coming
+    // soon" note under them (it was a label before them, on one line).
+    <div>
+      <ul className="flex flex-col items-start gap-3">
         {badges.map((b) => {
           // An inert badge says so in its alt text, not only in the note below.
           // eslint-disable-next-line @next/next/no-img-element -- static brand artwork, served as is
@@ -81,8 +85,10 @@ export function StoreBadges({
                   {img}
                 </a>
               ) : (
-                // Inert: no link, and the alt text says it is not available yet.
-                <span className="flex opacity-70">
+                // Inert: no link, and the alt text says it is not available
+                // yet. Full strength, solid black (was opacity-70): the note
+                // under the badges already says they are not live.
+                <span className="flex">
                   {img}
                 </span>
               )}
@@ -90,6 +96,7 @@ export function StoreBadges({
           )
         })}
       </ul>
+      {anyInert && <p className="mt-3 text-[13px] text-[var(--footer-muted)]">{labels.comingSoon}</p>}
     </div>
   )
 }
