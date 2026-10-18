@@ -45,6 +45,8 @@ export const ADMIN_NAV: AdminSection[] = [
     href: "/admin/analytics",
     tabs: [
       { href: "/admin/analytics", key: "growth" },
+      // Google Analytics traffic (src/lib/admin/ga-data.ts).
+      { href: "/admin/analytics/traffic", key: "traffic" },
       { href: "/admin/seo", key: "seo" },
       { href: "/admin/seo/inventory", key: "seoInventory" },
       { href: "/admin/outreach", key: "outreach" },

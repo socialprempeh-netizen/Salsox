@@ -24,6 +24,7 @@ const PAGES: [string, RegExp][] = [
   ["/admin/users/waitlist", /./],
   ["/admin/documents", /^Documents$/],
   ["/admin/analytics", /^Analytics$/],
+  ["/admin/analytics/traffic", /^Traffic$/],
   ["/admin/seo", /./],
   ["/admin/seo/inventory", /^SEO inventory$/],
   ["/admin/outreach", /^Outreach$/],
