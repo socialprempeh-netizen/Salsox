@@ -13,6 +13,7 @@ import { siteConfig } from "@/config/site"
 // import { useTranslations } from "next-intl"
 import { getTranslations } from "next-intl/server"
 import { isKitSite } from "@/config/kit"
+import { landingPalette } from "@/config/brand"
 // Both moved into getSiteNav(), which the navbar shares.
 // import { hasPosts } from "@/lib/blog"
 import { footerTryLink } from "@/lib/landing-cta"
@@ -41,13 +42,32 @@ import { cn } from "@/lib/utils"
  * 40px column and row gaps, 19px under headings, 12px between links, a
  * 139px bar): 40px, 20px and 28px, 12px, 8px and a 64px bar here.
  */
-const FOOTER_COLORS = {
+// Replaced on the product's site by the palette audit (landingPalette in
+// src/config/brand.ts): black #0F0F19 behind, white links, headings and
+// notes in a 65% white (grey #6B7280 is under 4:1 on the black), bright teal
+// for hover and focus, and the bottom bar deep purple with white text. The
+// bar has its own variable now, since the purple is far too dark to be the
+// hover colour as the cyan was. The kit's site keeps the values above.
+const KIT_FOOTER_COLORS = {
   "--footer-bg": "#000000",
   "--footer-heading": "#b2b2b2",
   "--footer-link": "#ffffff",
   "--footer-muted": "#b2b2b2",
   "--footer-accent": "#00aaf9",
+  "--footer-bar": "#00aaf9",
+  "--footer-bar-text": "#000000",
 } as React.CSSProperties
+const FOOTER_COLORS = (landingPalette
+  ? {
+      "--footer-bg": landingPalette.ink,
+      "--footer-heading": `color-mix(in srgb, ${landingPalette.white} 65%, ${landingPalette.ink})`,
+      "--footer-link": landingPalette.white,
+      "--footer-muted": `color-mix(in srgb, ${landingPalette.white} 65%, ${landingPalette.ink})`,
+      "--footer-accent": landingPalette.teal,
+      "--footer-bar": landingPalette.purple,
+      "--footer-bar-text": landingPalette.white,
+    }
+  : KIT_FOOTER_COLORS) as React.CSSProperties
 
 // Type scale raised (was text-sm headings and links, space-y-2) to the size
 // the established e-signature sites use in their footers: the footer is a
@@ -58,8 +78,8 @@ function FooterColumn({ heading, children, className }: { heading: string; child
       {/* Was mb-4, space-y-2.5, foreground and muted-foreground colours.
           Uppercase like the reference's headings, with its letter-spacing,
           which measured "normal" (no added tracking). */}
-      <h4 className="mb-3 text-base font-semibold uppercase text-[var(--footer-heading)]">{heading}</h4>
-      <ul className="space-y-2 text-[15px] text-[var(--footer-link)] sm:text-base">{children}</ul>
+      <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{heading}</h4>
+      <ul className="space-y-2 text-[13px] text-[var(--footer-link)]">{children}</ul>
     </div>
   )
 }
@@ -82,12 +102,12 @@ function SplitFooterColumn({ heading, parts, footer }: { heading: string; parts:
   return (
     // Was col-span-2 at every width, its two lists in grid-cols-2.
     <div className="col-span-2 min-w-0 sm:col-span-3">
-      <h4 className="mb-3 text-base font-semibold uppercase text-[var(--footer-heading)]">{heading}</h4>
+      <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{heading}</h4>
       <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3">
         {parts.map((part, i) => (
           <div key={part.heading} className={cn("min-w-0", i === parts.length - 1 && "sm:col-span-2")}>
-            <h5 className="mb-2 text-sm font-semibold uppercase text-[var(--footer-heading)]">{part.heading}</h5>
-            <ul className={cn("space-y-2 text-[15px] text-[var(--footer-link)] sm:text-base", i === parts.length - 1 && "sm:columns-2 sm:gap-x-5")}>
+            <h5 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--footer-heading)]">{part.heading}</h5>
+            <ul className={cn("space-y-2 text-[13px] text-[var(--footer-link)]", i === parts.length - 1 && "sm:columns-2 sm:gap-x-5")}>
               {part.links.map((link) => (
                 <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
               ))}
@@ -152,7 +172,7 @@ export async function Footer() {
           <LogoLink className="flex items-center gap-2">
             <Logo markClassName="h-9 w-9" wordmarkClassName="text-xl font-bold text-[var(--footer-link)]" />
           </LogoLink>
-          <p className="mt-3 text-[15px] text-[var(--footer-muted)] sm:text-base">
+          <p className="mt-3 text-[13px] text-[var(--footer-muted)]">
             {isKitSite ? t("blurb", { tagline: siteConfig.tagline }) : siteConfig.description}
           </p>
           {/* The kit's own site keeps its GitHub icon here; the product's
@@ -290,13 +310,14 @@ export async function Footer() {
       {/* The bottom bar, full width in the reference's cyan, much shorter
           than its 139px. Was a border-t row (mt-12 pt-8) with the
           PoweredBy badge centred under it (mt-8). */}
-      <div className="mt-8 bg-[var(--footer-accent)] text-black">
-        <div className="mx-auto flex max-w-[90rem] flex-col items-center justify-between gap-3 px-6 py-4 text-[15px] md:flex-row lg:px-12">
+      {/* Was bg-[var(--footer-accent)] text-black, text-[15px]. */}
+      <div className="mt-8 bg-[var(--footer-bar)] text-[var(--footer-bar-text)]">
+        <div className="mx-auto flex max-w-[90rem] flex-col items-center justify-between gap-3 px-6 py-4 text-[12px] md:flex-row lg:px-12">
           <p>{t("copyright", { year: new Date().getFullYear(), site: siteConfig.name })}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <PoweredBy />
             <p>
-              <Link href="/changelog" className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
+              <Link href="/changelog" className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--footer-bar-text)]">
                 v{siteConfig.version}
               </Link>
               {isKitSite && ` · ${t("license")}`}

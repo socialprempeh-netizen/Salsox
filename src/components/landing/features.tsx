@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Reveal } from "@/components/landing/reveal"
+import { FeatureCardHover } from "@/components/landing/feature-card-hover"
 import { TechStack } from "@/components/landing/tech-stack"
 import { useTranslations } from "next-intl"
 import { isKitSite } from "@/config/kit"
@@ -75,10 +76,11 @@ export function Features() {
       <div className="mx-auto max-w-6xl px-6 lg:px-12">
         <Reveal className={isKitSite ? "mb-10 text-center" : "mb-14 text-center"}>
           {/* Was: text-3xl font-bold … text-foreground, and a muted subtitle. */}
-          <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-[2.75rem]">
+          {/* 32px to 40px (was text-3xl sm:text-[2.75rem]). */}
+          <h2 className="font-display text-[32px] font-semibold leading-tight tracking-tight sm:text-[40px]">
             {t("title")}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">{t("subtitle")}</p>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-white/80 sm:text-lg">{t("subtitle")}</p>
         </Reveal>
 
         {/* The "built with" logo strip belongs to the kit's own site, where the
@@ -92,19 +94,29 @@ export function Features() {
             return (
               <Reveal key={feature.key} delay={(i % 3) * 80}>
                 {/* Was: Card with hover:border-primary/30 and a gradient icon tile. */}
+                {/* Then: a CSS lift (hover:-translate-y-1) on a white card in
+                    neutral greys, primary icon tile. Now the lift and a deeper
+                    shadow come from FeatureCardHover (framer-motion), and the
+                    card takes the palette: dark teal title 14px semibold, grey
+                    12px description, bright teal icon tile. Was:
                 <Card className="group h-full border-white/10 bg-white text-neutral-900 transition-transform duration-300 hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-                  <CardHeader>
-                    <div className="mb-3 inline-flex h-12 w-12 items-center justify-center bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100">
-                      <Icon className="h-6 w-6" strokeWidth={1.75} />
-                    </div>
-                    <CardTitle className="text-base">{t(`${feature.key}.title`)}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-sm leading-relaxed text-neutral-600">
-                      {t(`${feature.key}.description`, { free: FREE_DOCUMENTS_PER_MONTH })}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
+                  … bg-primary/10 text-primary icon tile, CardTitle text-base,
+                  CardDescription text-sm leading-relaxed text-neutral-600 … */}
+                <FeatureCardHover>
+                  <Card className="group h-full border-white/10 bg-card text-card-foreground shadow-none">
+                    <CardHeader>
+                      <div className="mb-3 inline-flex h-11 w-11 items-center justify-center bg-brand-teal/10 text-brand-teal transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100">
+                        <Icon className="h-5 w-5" strokeWidth={1.75} />
+                      </div>
+                      <CardTitle className="text-[14px] font-semibold">{t(`${feature.key}.title`)}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-[12px] leading-relaxed text-muted-foreground">
+                        {t(`${feature.key}.description`, { free: FREE_DOCUMENTS_PER_MONTH })}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </FeatureCardHover>
               </Reveal>
             )
           })}

@@ -134,7 +134,7 @@ export async function PlanPricing({
       <div className="mx-auto max-w-6xl px-6 lg:px-12">
         <Reveal className="mb-16 text-center">
           {/* Serif since the homepage redesign (was text-3xl font-bold … sm:text-4xl). */}
-          <Heading className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-[2.75rem]">
+          <Heading className="font-display text-[32px] font-semibold leading-tight tracking-tight text-foreground sm:text-[40px]">
             {t("title")}
           </Heading>
           <p className="mt-4 text-lg text-muted-foreground">

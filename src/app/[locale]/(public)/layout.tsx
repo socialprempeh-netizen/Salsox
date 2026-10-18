@@ -5,6 +5,8 @@ import { BackToTop } from "@/components/landing/back-to-top"
 import { DemoBanner } from "@/components/landing/demo-banner"
 import { StickyHeader } from "@/components/landing/sticky-header"
 import { FirstTouch } from "@/components/analytics/first-touch"
+import { landingPalette } from "@/config/brand"
+import { cn } from "@/lib/utils"
 
 /**
  * The public pages' frame: header, footer, back-to-top.
@@ -20,7 +22,11 @@ export default async function PublicLayout({ children, params }: { children: Rea
   // makes the page dynamic (next-intl's static rendering setup).
   setRequestLocale((await params).locale)
   return (
-    <div className="flex min-h-screen flex-col">
+    // .brand-landing switches the public pages to their own palette
+    // (landingPalette in src/config/brand.ts); the background is set here
+    // because <body> paints with the app's tokens, outside the scope.
+    // Was: <div className="flex min-h-screen flex-col">
+    <div className={cn("flex min-h-screen flex-col", landingPalette && "brand-landing bg-background text-foreground")}>
       <StickyHeader>
         <DemoBanner />
         <Navbar />
