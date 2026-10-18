@@ -6,6 +6,8 @@ import { FooterSocial } from "@/components/landing/footer-social"
 import { StoreBadges } from "@/components/landing/store-badges"
 import { PoweredBy } from "@/components/powered-by"
 import { ContactDialog } from "@/components/landing/contact-dialog"
+import { ConsentSettingsButton } from "@/components/analytics/consent-banner"
+import { gaMeasurementId } from "@/components/analytics/google-analytics"
 import { Logo } from "@/components/logo"
 import { LogoLink } from "@/components/landing/logo-link"
 import { siteConfig } from "@/config/site"
@@ -309,6 +311,13 @@ export async function Footer() {
               <span aria-hidden="true" className="text-[13px] text-[var(--footer-link)]"> · </span>
               <Link href={isKitSite ? "/privacy#cookies" : "/cookies"} className={FOOTER_LINK}>{t("cookiesShort")}</Link>
             </li>
+            {/* Where a visitor changes their analytics choice; only on a
+                deployment that runs GA, the one thing that asks. */}
+            {gaMeasurementId() && (
+              <li className="leading-6">
+                <ConsentSettingsButton className={FOOTER_LINK} />
+              </li>
+            )}
           </FooterColumn>
         </div>
       </div>

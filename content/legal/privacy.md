@@ -1,7 +1,7 @@
 ---
 title: "Privacy Policy"
 description: "What personal data Salsox collects, why, who processes it, how long it is kept, and your rights."
-updated: "2026-10-15"
+updated: "2026-10-18"
 reviewed: false
 ---
 
@@ -41,7 +41,7 @@ We play two different roles:
 
 **When you contact us or join our newsletter:** your email address, your message, and, for the newsletter, when you confirmed your subscription.
 
-**Automatically:** our hosting provider records technical logs (such as IP addresses and the pages requested) to keep the service running and secure. We use privacy-friendly analytics that count page views and a few product events (such as a document being sent) without cookies and without building a profile of you.
+**Automatically:** our hosting provider records technical logs (such as IP addresses and the pages requested) to keep the service running and secure. We use privacy-friendly analytics that count page views and a few product events (such as a document being sent) without cookies and without building a profile of you. If you accept analytics cookies on our website, Google Analytics also measures your visits with cookies; if you decline, it stores nothing on your device.
 
 ## Why we use it
 
@@ -62,6 +62,7 @@ We use these service providers to run Salsox, each bound to use the data only to
 
 - **Vercel**, for hosting, file storage (your documents) and cookie-free analytics.
 - **PostHog**, for cookie-free product analytics: page views, campaign tags and a few events, never document content.
+- **Google**, for Google Analytics on our website: page views and a few events, with cookies only if you accept them. Never on signing pages, and never document content.
 - **Our database provider**, which stores account and document records.
 - **Resend**, to send email.
 - **Stripe** and **Paystack**, to process payments for plans and for Sign & Pay.

@@ -27,8 +27,10 @@
  */
 
 // `errorBoundary`: the app's error boundary (src/app/error.tsx) renders in the
-// root layout, under this set, wherever the error happened.
-const SHELL = ["common", "theme", "loading", "notFound", "related", "errorBoundary"] as const
+// root layout, under this set, wherever the error happened. `consent`: the
+// analytics consent banner (src/components/analytics/consent-banner.tsx),
+// also mounted by the root layout, on deployments that run GA.
+const SHELL = ["common", "theme", "loading", "notFound", "related", "errorBoundary", "consent"] as const
 
 export const CLIENT_MESSAGES = {
   shell: [...SHELL],

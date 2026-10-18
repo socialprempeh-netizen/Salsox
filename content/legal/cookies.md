@@ -1,7 +1,7 @@
 ---
 title: "Cookie Policy"
-description: "The cookies and browser storage Salsox uses, and why. No advertising or tracking cookies."
-updated: "2026-10-15"
+description: "The cookies and browser storage Salsox uses, and why. No advertising cookies, and analytics cookies only if you accept them."
+updated: "2026-10-18"
 reviewed: false
 ---
 
@@ -32,12 +32,22 @@ These cookies are strictly necessary for the service to work, so they do not nee
 |---|---|
 | `theme` (local storage) | Remembers whether you chose the light or dark theme. |
 | `sidebar-collapsed` (local storage) | Remembers whether you collapsed the dashboard sidebar. |
+| `sx_analytics_consent` (local storage) | Remembers whether you accepted or declined analytics cookies, so we ask again only after about a year. |
 
 This stays in your browser and is never sent to us.
 
 ## Analytics
 
 We count page views with Vercel Analytics and PostHog, both set up to work without cookies and without identifying you. PostHog also receives a few events, such as a document being sent, and the campaign tags in a link (`utm_source` and similar). Neither receives the content of your documents, and neither runs on signing pages.
+
+We also use Google Analytics to see which pages help people most, and it uses cookies, so it asks first. Until you accept, it stores nothing on your device. If you accept, Google sets these cookies:
+
+| Cookie | What it is for | How long it lasts |
+|---|---|---|
+| `_ga` | Tells your visits apart from other people's, without identifying you to us. | 2 years |
+| `_ga_<id>` | Keeps track of the current visit. | 2 years |
+
+Google Analytics receives the pages you view, with any sign-in or signing codes removed from the address, and a few events such as a free tool being used. It never runs on signing pages, and it does not run at all when your browser sends Global Privacy Control or Do Not Track. You can change your choice at any time with "Cookie settings" at the bottom of our website.
 
 When you first arrive on our website, one first-party cookie, `sx_src`, records which page you landed on, the site that linked you and any campaign tags, for 30 days. If you then create an account, we store that with it, so we know which channels bring people to Salsox. It is not sent to anyone else, and it is not set when your browser sends Global Privacy Control or Do Not Track.
 
