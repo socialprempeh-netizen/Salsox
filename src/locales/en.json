@@ -1727,6 +1727,14 @@
     "admin": "Loading admin…",
     "workspace": "Loading your workspace…"
   },
+  "consent": {
+    "title": "Analytics cookies",
+    "body": "We'd like to use Google Analytics cookies to see which pages help people most. Nothing is stored unless you accept, and you can change your mind any time.",
+    "policy": "Cookie policy",
+    "accept": "Accept",
+    "decline": "Decline",
+    "settings": "Cookie settings"
+  },
   "common": {
     "close": "Close",
     "starOnGitHub": "Star on GitHub"

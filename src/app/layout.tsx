@@ -104,6 +104,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             adds its own set, and the localized layout the public one. */}
         <ClientMessagesProvider area="shell" locale={locale}>
           {children}
+          {/* GA4, only when NEXT_PUBLIC_GA_MEASUREMENT_ID is set; loads when
+              idle. Inside the provider since it brings a consent banner,
+              which reads the `consent` messages. Was mounted after
+              <Analytics /> below, outside it. */}
+          <GoogleAnalytics />
         </ClientMessagesProvider>
         <Toaster />
         {/* Vercel Analytics, unless this deployment says otherwise. It ships
@@ -111,8 +116,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             turned off without editing the layout: a kit that sends data from
             someone else's product should at least let them decline. */}
         {process.env.NEXT_PUBLIC_DISABLE_ANALYTICS !== "true" && <Analytics />}
-        {/* GA4, only when NEXT_PUBLIC_GA_MEASUREMENT_ID is set; loads when idle. */}
-        <GoogleAnalytics />
+        {/* <GoogleAnalytics /> */}
         {/* PostHog, only when NEXT_PUBLIC_POSTHOG_KEY is set: cookieless, loads when idle. */}
         <PostHogSlot />
       </body>
