@@ -49,6 +49,8 @@ export const ADMIN_NAV: AdminSection[] = [
       { href: "/admin/analytics/traffic", key: "traffic" },
       { href: "/admin/seo", key: "seo" },
       { href: "/admin/seo/inventory", key: "seoInventory" },
+      // The daily SEO content agent (src/lib/seo-agent).
+      { href: "/admin/seo/agent", key: "seoAgent" },
       { href: "/admin/outreach", key: "outreach" },
     ],
   },

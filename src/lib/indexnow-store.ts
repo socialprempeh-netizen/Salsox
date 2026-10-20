@@ -108,7 +108,7 @@ export async function syncIndexNow(trigger: IndexNowTrigger): Promise<SyncResult
   const skipped = skipReason()
   if (skipped) return { status: "skipped", reason: skipped }
   const known = await prisma.indexNowUrl.findMany({ select: { url: true, lastModified: true } })
-  const pending = pendingUrls(sitemap(), new Map(known.map((k) => [k.url, k.lastModified])))
+  const pending = pendingUrls(await sitemap(), new Map(known.map((k) => [k.url, k.lastModified])))
   return submitAndRecord(trigger, pending)
 }
 

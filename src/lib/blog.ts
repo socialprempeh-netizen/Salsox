@@ -196,8 +196,17 @@ export function getPost(slug: string): Post | undefined {
 }
 
 export function getCategories(): Category[] {
+  return categoriesOf(getAllPosts())
+}
+
+/**
+ * The categories of a list of posts, biggest first. Split out of
+ * getCategories so the blog including the SEO agent's articles
+ * (src/lib/seo-agent/blog-posts.ts) counts them the same way.
+ */
+export function categoriesOf(posts: Post[]): Category[] {
   const map = new Map<string, Category>()
-  for (const post of getAllPosts()) {
+  for (const post of posts) {
     const slug = categorySlug(post.category)
     const existing = map.get(slug)
     if (existing) existing.count++

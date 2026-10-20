@@ -1,5 +1,8 @@
 import type { MetadataRoute } from "next"
-import { getAllPosts, getCategories, categorySlug, hasPosts } from "@/lib/blog"
+// Was getAllPosts and getCategories: the blog includes the SEO agent's
+// published articles (src/lib/seo-agent/blog-posts.ts), so the sitemap does.
+import { categorySlug } from "@/lib/blog"
+import { getBlogCategories, getBlogPosts } from "@/lib/seo-agent/blog-posts"
 import { getChangelog } from "@/lib/changelog"
 // Unused since /docs redirects to the Help Center (see the docs list below).
 // import { getDocs, translatedLocales } from "@/lib/docs"
@@ -45,7 +48,11 @@ function newest(dates: (string | null | undefined)[]): { lastModified: Date } | 
   return latest ? { lastModified: new Date(`${latest}T00:00:00Z`) } : {}
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Async since the blog reads the SEO agent's articles from the database.
+// Rebuilt at most hourly, and on every publish (the agent revalidates).
+export const revalidate = 3600
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // A demo deployment is `noindex` (see the root layout): handing search
   // engines a list of URLs we ask them to ignore only creates noise.
   if (process.env.DEMO_MODE === "true") return []
@@ -54,7 +61,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // post, a category on its newest post, the changelog on its latest dated
   // release. Real dates here are also what the IndexNow cron
   // (src/app/api/indexnow/route.ts) reads to know what was just published.
-  const allPosts = getAllPosts()
+  const allPosts = await getBlogPosts()
   const postDate = (p: (typeof allPosts)[number]) => p.updated ?? p.date
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -66,7 +73,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ...localized("/docs", routing.locales, { changeFrequency: "weekly", priority: 0.8 }),
     // The blog index only once there is something in it: while empty it is
     // noindex, and listing it here would contradict that.
-    ...(hasPosts()
+    ...(allPosts.length > 0
       ? [{ url: `${siteConfig.url}/blog`, changeFrequency: "weekly" as const, priority: 0.8, ...newest(allPosts.map(postDate)) }]
       : []),
     {
@@ -116,7 +123,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }))
 
-  const categories: MetadataRoute.Sitemap = getCategories().map((c) => ({
+  const categories: MetadataRoute.Sitemap = (await getBlogCategories()).map((c) => ({
     url: `${siteConfig.url}/blog/category/${c.slug}`,
     changeFrequency: "weekly",
     priority: 0.4,

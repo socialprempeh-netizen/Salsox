@@ -15,6 +15,8 @@ import type { SitePage } from "@/lib/seo/pages"
 import { templateCards, templatesFor, TEMPLATES_PATH } from "@/lib/templates"
 import { TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
 import { TemplateCardGrid } from "@/components/templates/template-card"
+import { injectLinks } from "@/lib/seo-agent/links"
+import { linksFrom } from "@/lib/seo-agent/store"
 
 /**
  * One template for every page in the SEO registry (src/lib/seo/pages.ts):
@@ -37,6 +39,9 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
   const t = await getTranslations("seoPages")
   const format = await getFormatter()
   const longDate = (iso: string) => format.dateTime(new Date(`${iso}T00:00:00Z`), { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })
+  // Links the SEO agent added to this page when it published an article
+  // (src/lib/seo-agent/links.ts), spliced in here; the page's file is untouched.
+  const body = injectLinks(page.body, await linksFrom(page.path))
   const trail = pageTrail(page, { home: t("breadcrumbHome"), tools: t("breadcrumbTools"), compare: t("breadcrumbCompare"), useCases: t("breadcrumbUseCases") })
   const related = resolveLinks(page.related, await fixedLinkLabels())
   const isTool = page.kind === "tool"
@@ -147,7 +152,7 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
           </Reveal>
         )}
 
-        <MarkdownBody source={page.body} />
+        <MarkdownBody source={body} />
 
         {pageTemplates.length > 0 && (
           <Reveal as="section">

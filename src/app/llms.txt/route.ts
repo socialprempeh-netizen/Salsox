@@ -1,9 +1,32 @@
 import { siteConfig } from "@/config/site"
-import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
-import { isKitSite } from "@/config/kit"
+// Was FREE_DOCUMENTS_PER_MONTH and isKitSite, for the product paragraph that
+// moved to src/lib/product-summary.ts (the SEO agent's writer reads it too).
+// import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
+// import { isKitSite } from "@/config/kit"
 // Was getDocs from "@/lib/docs": /docs now redirects to the Help Center.
 import { getHelpArticles, helpArticlePath } from "@/lib/help"
-import { getAllPosts, getCategories, hasPosts } from "@/lib/blog"
+// Was getAllPosts, getCategories and hasPosts from "@/lib/blog": the blog now
+// includes the SEO agent's published articles.
+import { getBlogCategories, getBlogPosts } from "@/lib/seo-agent/blog-posts"
+import { productSummary } from "@/lib/product-summary"
+import { getPages, type PageKind } from "@/lib/seo/pages"
+import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
+
+// Rebuilt at most daily, and whenever the SEO agent publishes.
+export const revalidate = 86400
+
+/**
+ * The landing, tool, comparison and use-case pages, one plain-language
+ * section per kind, so an assistant reading this file knows what each part
+ * of the site is for before it opens a link.
+ */
+const PAGE_SECTIONS: { kind: PageKind; heading: string; intro: string }[] = [
+  { kind: "tool", heading: "Free tools", intro: "Free PDF tools that run in the browser, with no account needed." },
+  { kind: "solution", heading: "Features", intro: "What the product does, one capability per page." },
+  { kind: "use-case", heading: "Use cases", intro: "How the product is used in particular industries and teams." },
+  { kind: "comparison", heading: "Comparisons", intro: "Side-by-side comparisons with other e-signature services, with the date their facts were checked." },
+  { kind: "alternative", heading: "Alternatives", intro: "Options for people looking to switch from another e-signature service." },
+]
 
 /**
  * llms.txt: a Markdown map of the site for large language models, following
@@ -12,7 +35,7 @@ import { getAllPosts, getCategories, hasPosts } from "@/lib/blog"
  * the sitemap, so the two never drift and it works on any deployment domain.
  * Served at /llms.txt.
  */
-export function GET(): Response {
+export async function GET(): Promise<Response> {
   const base = siteConfig.url
   const repo = siteConfig.links.github
 
@@ -24,11 +47,12 @@ export function GET(): Response {
     (a) => `- [${a.title}](${base}${helpArticlePath(a.slug)}): ${a.description}`,
   ).join("\n")
 
-  const categories = getCategories()
+  const categories = (await getBlogCategories())
     .map((c) => `- [${c.name}](${base}/blog/category/${c.slug}): ${c.count} post${c.count === 1 ? "" : "s"}.`)
     .join("\n")
 
-  const posts = getAllPosts()
+  const allPosts = await getBlogPosts()
+  const posts = allPosts
     .map((p) => `- [${p.title}](${base}/blog/${p.slug}): ${p.description}`)
     .join("\n")
 
@@ -39,18 +63,28 @@ export function GET(): Response {
 ${siteConfig.llmsSummary}
 ` : ""
 
+  const pageSections = PAGE_SECTIONS.map(({ kind, heading, intro }) => {
+    const pages = getPages({ kind })
+    if (pages.length === 0) return ""
+    const lines = pages.map((p) => `- [${p.h1}](${base}${p.path}): ${p.description}`).join("\n")
+    return `## ${heading}\n${intro}\n\n${lines}\n`
+  }).filter(Boolean).join("\n")
+
+  const templates = getTemplates()
+  const templateSection = templates.length
+    ? `## Templates
+Ready-to-sign document templates (agreements, letters, forms), each one free to read and download.
+
+- [All templates](${base}${TEMPLATES_PATH}): The full library, by category.
+${templates.map((t) => `- [${t.h1}](${base}${t.path}): ${t.description}`).join("\n")}
+`
+    : ""
+
   const body = `# ${siteConfig.name}
 
 > ${siteConfig.description} ${siteConfig.tagline}.
 ${summary}
-${
-    isKitSite
-      ? `${siteConfig.name} is an open-source, production-ready SaaS starter kit. It ships with authentication, Stripe billing, a Postgres database via Prisma, a file-based blog and docs, transactional email and a full dashboard, so you can launch a real product without wiring the plumbing yourself.`
-      : // Was the kit's placeholder ("${siteConfig.name} is a SaaS product... Replace
-        // this paragraph with a short description of what you do"), served
-        // as-is to every assistant that read this file.
-        `${siteConfig.name} is an e-signature service built for phones. Senders upload any PDF, choose who signs, and send it by email, WhatsApp or SMS; signers need no account or app and sign one field at a time in their browser. Documents can collect a payment as part of signing (Sign & Pay, by card or mobile money through Stripe or Paystack), go to signers in a set order, and finish as a sealed PDF with an audit certificate. Free accounts send ${FREE_DOCUMENTS_PER_MONTH} documents a month; paid plans send unlimited documents.`
-  }
+${productSummary()}
 
 ## Documentation
 ${docs}
@@ -62,7 +96,9 @@ ${docs}
 - [About](${base}/about): What ${siteConfig.name} is for and the thinking behind it.
 - [Contact](${base}/contact): How to reach the team.${repo ? `\n- [Source code](${repo}): The public source repository.` : ""}
 
-${hasPosts() ? `## Blog
+${pageSections}
+${templateSection}
+${allPosts.length > 0 ? `## Blog
 - [Blog](${base}/blog): Articles and product updates.
 ${categories}
 ` : ""}

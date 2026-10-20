@@ -58,8 +58,26 @@ const nextConfig: NextConfig = {
     "/[locale]/docs/[slug]": ["./docs/**"],
     // Same story for the blog: posts and cover art are read from content/ at
     // request time. Without this they never reach the serverless bundle.
-    "/[locale]/blog": ["./content/blog/**"],
-    "/[locale]/blog/**": ["./content/blog/**"],
+    // Was ["./content/blog/**"] for both. The SEO agent (src/lib/seo-agent)
+    // revalidates blog pages when it publishes, so they re-render at request
+    // time, and a post's "related" cards resolve registry pages too.
+    // "/[locale]/blog": ["./content/blog/**"],
+    // "/[locale]/blog/**": ["./content/blog/**"],
+    "/[locale]/blog": ["./content/blog/**", "./content/pages/**"],
+    "/[locale]/blog/**": ["./content/blog/**", "./content/pages/**"],
+    // The landing, tool, comparison and use-case pages were only rendered at
+    // build. The SEO agent adds links to them and revalidates them, so they
+    // re-render at request time and need their files (and the posts their
+    // related cards resolve) in the bundle.
+    "/[locale]/[page]": ["./content/pages/**", "./content/blog/**"],
+    "/[locale]/vs/[slug]": ["./content/pages/**", "./content/blog/**"],
+    "/[locale]/alternatives/[slug]": ["./content/pages/**", "./content/blog/**"],
+    "/[locale]/esignature-for/[slug]": ["./content/pages/**", "./content/blog/**"],
+    // The agent's cron and its admin tab read every kind of content to know
+    // what already exists, and crawl the sitemap.
+    "/api/cron/seo-agent": ["./content/**"],
+    "/api/cron/seo-agent/orphans": ["./content/**"],
+    "/admin/seo/agent": ["./content/**"],
     // The legal pages read content/legal/ the same way (src/lib/legal.ts).
     "/[locale]/privacy": ["./content/legal/**"],
     "/[locale]/terms": ["./content/legal/**"],
@@ -69,8 +87,12 @@ const nextConfig: NextConfig = {
     "/[locale]/resources/help/**": ["./content/help/**"],
     // Not localized: these two live outside `[locale]`. The sitemap lists the
     // Help Center's guides too. Was: "/sitemap.xml": ["./content/blog/**"],
-    "/sitemap.xml": ["./content/blog/**", "./content/help/**"],
-    "/llms.txt": ["./content/blog/**"],
+    // Both now also re-render on a schedule and when the SEO agent publishes,
+    // so they need everything they list, not only the blog.
+    // Was: "/sitemap.xml": ["./content/blog/**", "./content/help/**"],
+    // Was: "/llms.txt": ["./content/blog/**"],
+    "/sitemap.xml": ["./content/**"],
+    "/llms.txt": ["./content/**"],
   },
   experimental: {
     serverActions: {

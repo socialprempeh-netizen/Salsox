@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og"
-import { getPost, formatPostDate } from "@/lib/blog"
+import { formatPostDate } from "@/lib/blog"
+// Was getPost: the SEO agent's articles get a card too.
+import { getBlogPost } from "@/lib/seo-agent/blog-posts"
 import { siteConfig } from "@/config/site"
 import { ogBrand } from "@/config/brand"
 
@@ -13,7 +15,7 @@ export const contentType = "image/png"
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = (await getBlogPost(slug))?.post
   const title = post?.title ?? "Blog"
 
   return new ImageResponse(

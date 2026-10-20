@@ -89,7 +89,7 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
   ]
 
   // ── Sitemap ───────────────────────────────────────────────────────────────
-  const entries = sitemap()
+  const entries = await sitemap()
   const paths = entries.map((e) => new URL(e.url).pathname)
   const bySection = SECTIONS.map((s) => ({ key: s.key, count: paths.filter(s.test).length }))
   const other = paths.length - bySection.reduce((a, b) => a + b.count, 0)

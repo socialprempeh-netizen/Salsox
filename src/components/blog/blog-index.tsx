@@ -1,6 +1,9 @@
-import { useTranslations } from "next-intl"
+import { getTranslations } from "next-intl/server"
 import Link from "next/link"
-import { getAllPosts, getCategories, paginate } from "@/lib/blog"
+// Was getAllPosts and getCategories: the index lists the SEO agent's
+// published articles with the files (src/lib/seo-agent/blog-posts.ts).
+import { paginate } from "@/lib/blog"
+import { getBlogCategories, getBlogPosts } from "@/lib/seo-agent/blog-posts"
 import { Badge } from "@/components/ui/badge"
 import { PostCard } from "@/components/blog/post-card"
 import { Pagination } from "@/components/ui/pagination"
@@ -12,10 +15,10 @@ import { Pagination } from "@/components/ui/pagination"
  * /blog on purpose, because a canonical archive should not have two URLs for
  * the same list.
  */
-export function BlogIndex({ page }: { page: number }) {
-  const t = useTranslations("blog")
-  const { posts, page: current, totalPages } = paginate(getAllPosts(), page)
-  const categories = getCategories()
+export async function BlogIndex({ page }: { page: number }) {
+  const t = await getTranslations("blog")
+  const { posts, page: current, totalPages } = paginate(await getBlogPosts(), page)
+  const categories = await getBlogCategories()
 
   return (
     <section className="py-24">

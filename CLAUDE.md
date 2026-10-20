@@ -58,7 +58,12 @@ was made.
 
 ## Security: temporary production credential files
 Whenever you create a local file to hold a production secret pulled from
-Neon or elsewhere (e.g. .env.production.local) for a one-off command like
-a migration, DELETE the file immediately after the command finishes
-(Remove-Item). Never leave it sitting on disk. This applies to Claude Code
-and to manual terminal steps alike.
+Neon or elsewhere for a one-off command, DELETE the file immediately after
+the command finishes (Remove-Item). Never leave it sitting on disk. This
+applies to Claude Code and to manual terminal steps alike.
+
+**Exception: `.env.production.local` is kept on purpose. Do not delete it.**
+It holds the production DATABASE_URL (Neon, direct connection) for running
+`npx prisma migrate deploy` against production. It is git-ignored; never
+commit it, and never print its contents or the connection string. Pass the
+value to the command through the environment and redact it from output.

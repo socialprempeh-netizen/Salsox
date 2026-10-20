@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { getTranslations } from "next-intl/server"
-import { getCategories, getPostsByCategory, paginate } from "@/lib/blog"
+import { getCategories, paginate } from "@/lib/blog"
+// Was getPostsByCategory: a category lists the SEO agent's articles in it too.
+import { getBlogPostsByCategory } from "@/lib/seo-agent/blog-posts"
 import { PostCard } from "@/components/blog/post-card"
 import { Pagination } from "@/components/ui/pagination"
 import { breadcrumbJsonLd, type Crumb } from "@/lib/breadcrumb"
@@ -18,7 +20,7 @@ export async function CategoryIndex({ category, page }: { category: string; page
   const t = await getTranslations("blog")
   const match = getCategories().find((c) => c.slug === category)
   if (!match) notFound()
-  const { posts, page: current, totalPages } = paginate(getPostsByCategory(category), page)
+  const { posts, page: current, totalPages } = paginate(await getBlogPostsByCategory(category), page)
 
   const trail: Crumb[] = [
     { name: t("breadcrumbHome"), href: "/" },

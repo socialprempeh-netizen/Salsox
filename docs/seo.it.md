@@ -98,6 +98,19 @@ Ogni link che pubblichi tu porta i tag `utm_*`, così ogni canale compare separa
 
 Aggiungi `utm_campaign` per l'iniziativa a cui appartiene (`launch`, `pricing-post`). Esempio: `https://salsox.com/?utm_source=reddit&utm_medium=social&utm_campaign=launch`. La prima visita con tag è quella a cui viene attribuita un'iscrizione.
 
+## Agente SEO
+
+Un job giornaliero (`/api/cron/seo-agent`, alle 05:00 UTC) che scrive un articolo del blog per una ricerca in cui il sito compare già ma non riceve clic. Il codice è un modulo autonomo in `src/lib/seo-agent`; solo `site.ts` e `blog-posts.ts` toccano il resto dell'app. La scheda è `/admin/seo/agent`, sotto Analytics.
+
+1. **Trova le opportunità.** Legge query e pagine della proprietà Search Console degli ultimi 90 giorni (fino a tre giorni fa, dove finiscono i dati definitivi). Una query è valida con almeno `SEO_AGENT_MIN_IMPRESSIONS` impressioni (50 di default), una posizione media da 11 a 50, al massimo un clic, e se non è una ricerca del marchio. Le query sono ordinate per clic mancati: impressioni moltiplicate per quanto il CTR resta sotto quello che la loro posizione ottiene di solito.
+2. **Salta ciò che è già coperto.** Una query viene saltata quando un articolo del blog, una pagina landing, strumento o confronto, un modello o un obiettivo precedente la copre già (stesse parole, o quasi). Ogni query scelta viene salvata in `seo_agent_targets` e non viene mai scelta di nuovo.
+3. **Scrive l'articolo.** Claude (`SEO_AGENT_MODEL`, di default Claude Opus 5.5) riceve il riassunto del prodotto, le categorie esistenti, le pagine a cui può collegarsi e uno o due articoli esistenti come riferimento di stile. Restituisce prima una risposta diretta, poi sezioni formulate come domande, una FAQ e due o tre pagine correlate. Una bozza che non supera i controlli di `article.ts` (lunghezza, titoli, link sconosciuti) ha un secondo tentativo, poi l'esecuzione è segnata come fallita. Ogni articolo porta i dati strutturati Article, FAQPage e SoftwareApplication, costruiti dai suoi stessi campi.
+4. **Bozza o pubblicazione.** I primi tre articoli sono sempre bozze: leggine una con "Read draft", poi Publish o Discard. Dal quarto in poi gli articoli si pubblicano da soli e restano nel registro, a meno che nella scheda non sia scelto "Review every article". Gli articoli vivono nel database e compaiono ovunque compaia un articolo su file: il blog, le categorie, il feed, la sitemap e `/llms.txt`. Unpublish riporta un articolo in bozza.
+5. **Lo collega.** Alla pubblicazione, una frase con un link all'articolo viene aggiunta a due o tre delle pagine più visitate (visualizzazioni di Google Analytics su 30 giorni; clic da Search Console quando GA non è collegato) che sono articoli del blog o pagine del registro e non lo collegano già. Claude scrive la frase e sceglie il paragrafo; la frase viene salvata e inserita quando la pagina viene renderizzata, quindi il file della pagina non viene mai modificato.
+6. **Trova le pagine orfane.** Una scansione settimanale (`/api/cron/seo-agent/orphans`, il lunedì) scarica ogni pagina della sitemap ed elenca quelle a cui nessun'altra pagina punta. Vengono solo elencate, perché una persona le sistemi e le segni come riviste.
+
+Configurazione: `GA_SERVICE_ACCOUNT_KEY_BASE64` (la stessa chiave della scheda Traffic) con quel service account aggiunto come utente della proprietà Search Console, `ANTHROPIC_API_KEY` e `CRON_SECRET`. `SEARCH_CONSOLE_SITE_URL` indica la proprietà se non è l'URL del sito con la barra finale (una proprietà di dominio è `sc-domain:example.com`). Applica la migrazione (`npx prisma migrate deploy`) prima della prima esecuzione. Entrambi i job si possono avviare anche dalla scheda.
+
 ## Test
 
 - `npm test` copre le regole sui contenuti, i dati strutturati, i redirect, i dati della sitemap, l'attribuzione e le regole di audit.

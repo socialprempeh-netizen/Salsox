@@ -137,6 +137,25 @@ async function fetchTraffic(propertyId: string, range: TrafficRange): Promise<Tr
   }
 }
 
+/**
+ * The most viewed page paths over the last `days` days, busiest first. Used by
+ * the SEO agent (src/lib/seo-agent/site.ts) to choose which pages link to a
+ * new article. Throws when GA is not configured, so the caller can fall back.
+ */
+export async function topPagePaths(days: number, limit: number): Promise<string[]> {
+  const propertyId = normalizePropertyId(process.env.GA4_PROPERTY_ID)
+  const key = parseServiceAccountKey(process.env.GA_SERVICE_ACCOUNT_KEY_BASE64)
+  if (!propertyId || !key) throw new Error("Google Analytics is not configured (GA4_PROPERTY_ID and GA_SERVICE_ACCOUNT_KEY_BASE64)")
+  const report = await callGa<GaReport>(`properties/${propertyId}:runReport`, await accessToken(key), {
+    dateRanges: [{ startDate: `${days}daysAgo`, endDate: "today" }],
+    dimensions: dims("pagePath"),
+    metrics: metrics("screenPageViews"),
+    orderBys: byMetric("screenPageViews"),
+    limit,
+  })
+  return pageRows(report, limit).map((p) => p.path)
+}
+
 /** The cached fetch: keyed by its arguments, kept CACHE_SECONDS. */
 const cachedTraffic = unstable_cache(fetchTraffic, ["admin-ga-traffic"], { revalidate: CACHE_SECONDS, tags: ["admin-ga-traffic"] })
 

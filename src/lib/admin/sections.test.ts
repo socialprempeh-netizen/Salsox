@@ -31,7 +31,10 @@ describe("the admin console map", () => {
 
   it("puts every admin page on disk in a section, so none is unreachable", () => {
     const tabs = new Set(ADMIN_NAV.flatMap((s) => s.tabs.map((t) => t.href)))
-    for (const page of adminPages()) expect(tabs.has(page), page).toBe(true)
+    // A detail page (a dynamic segment, like /admin/seo/agent/[id]) is not a
+    // tab of its own: it is reached from the tab it sits under, which must be one.
+    const reachable = (page: string) => tabs.has(page) || (/\[[^\]]+\]/.test(page) && tabs.has(page.replace(/\/\[[^\]]+\].*$/, "")))
+    for (const page of adminPages()) expect(reachable(page), page).toBe(true)
   })
 
   it("keeps the pages that existed before the reorganisation", () => {

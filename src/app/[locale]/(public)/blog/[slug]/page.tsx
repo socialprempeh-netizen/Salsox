@@ -7,7 +7,12 @@ import { MDXRemote } from "next-mdx-remote/rsc"
 import remarkGfm from "remark-gfm"
 import { rehypeShikiPlugin } from "@/lib/shiki"
 import { CodeBlock } from "@/components/blog/code-block"
-import { getAllPosts, getPost, categorySlug, formatPostDate } from "@/lib/blog"
+// Was getAllPosts and getPost: posts now include the SEO agent's published
+// articles, which live in the database (src/lib/seo-agent/blog-posts.ts).
+import { categorySlug, formatPostDate } from "@/lib/blog"
+import { getBlogPost, getBlogPosts } from "@/lib/seo-agent/blog-posts"
+import { linksFrom } from "@/lib/seo-agent/store"
+import { injectLinks } from "@/lib/seo-agent/links"
 import { extractToc, slugify, nodeText } from "@/lib/toc"
 import { breadcrumbJsonLd, type Crumb } from "@/lib/breadcrumb"
 import { BreadcrumbTrail } from "@/components/ui/breadcrumb"
@@ -21,18 +26,22 @@ import { resolveLinks } from "@/lib/seo/links"
 import { fixedLinkLabels } from "@/components/seo/fixed-links"
 import { ArrowRight } from "lucide-react"
 
-// Posts are files, so every valid address is known at build time. Anything
-// else is a 404 without rendering: with no posts at all, an on-demand render
-// of an unknown slug used to hit the navbar's session read and answer 500.
-export const dynamicParams = false
+// Was `dynamicParams = false`: posts were files, so every valid address was
+// known at build time, and an unknown slug was a 404 without rendering (with
+// no posts at all, an on-demand render used to hit the navbar's session read
+// and answer 500; the navbar no longer reads the session). The SEO agent
+// publishes articles between deploys, so a slug not built ahead is now
+// rendered on its first request, cached, and a 404 when nothing has it.
+// export const dynamicParams = false
+export const dynamicParams = true
 
-export function generateStaticParams() {
-  return getAllPosts().map((post) => ({ slug: post.slug }))
+export async function generateStaticParams() {
+  return (await getBlogPosts()).map((post) => ({ slug: post.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = (await getBlogPost(slug))?.post
   if (!post) return {}
   const url = `${siteConfig.url}/blog/${post.slug}`
   return {
@@ -144,9 +153,13 @@ const mdxComponents = {
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const t = await getTranslations("blog")
-  const post = getPost(slug)
+  const found = await getBlogPost(slug)
+  const post = found?.post
   const toc = post ? extractToc(post.content) : []
   if (!post) notFound()
+  // Links to the SEO agent's articles, added to this post after it was
+  // written (src/lib/seo-agent/links.ts). The file itself is untouched.
+  const source = injectLinks(post.content, await linksFrom(`/blog/${post.slug}`))
   const tSeo = await getTranslations("seoPages")
   const related = resolveLinks(post.related, await fixedLinkLabels())
 
@@ -154,7 +167,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   // `faq:` in its frontmatter. The rule that makes the second one safe, and
   // it is Google's own: every answer declared here must be readable on the
   // page, so the frontmatter mirrors an FAQ section written in the body.
-  const jsonLd: object[] = [
+  // An agent article brings its own: Article, FAQPage and SoftwareApplication,
+  // templated from the same fields the page renders (src/lib/seo-agent/article.ts).
+  const jsonLd: object[] = found?.source === "agent" ? [...found.jsonLd] : [
     {
       "@context": "https://schema.org",
       "@type": "Article",
@@ -178,7 +193,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   ]
   jsonLd.push(breadcrumbJsonLd(trail))
 
-  if (post.faq?.length) {
+  if (found?.source !== "agent" && post.faq?.length) {
     jsonLd.push({
       "@context": "https://schema.org",
       "@type": "FAQPage",
@@ -239,7 +254,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         <article className="prose mt-10 min-w-0 max-w-none prose-headings:scroll-mt-24 prose-headings:tracking-tight prose-code:before:content-none prose-code:after:content-none">
           <MDXRemote
-            source={post.content}
+            source={source}
             components={mdxComponents}
             options={{ mdxOptions: { remarkPlugins: [remarkGfm], rehypePlugins: [rehypeShikiPlugin] } }}
           />

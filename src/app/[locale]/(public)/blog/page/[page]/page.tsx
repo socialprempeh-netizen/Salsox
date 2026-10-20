@@ -2,7 +2,9 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { BlogIndex } from "@/components/blog/blog-index"
-import { getAllPosts, paginate } from "@/lib/blog"
+import { paginate } from "@/lib/blog"
+// Was getAllPosts: the archive counts the SEO agent's articles too.
+import { getBlogPosts } from "@/lib/seo-agent/blog-posts"
 import { siteConfig } from "@/config/site"
 import { pageMetadata } from "@/lib/metadata"
 
@@ -17,10 +19,18 @@ import { pageMetadata } from "@/lib/metadata"
 // Posts are files, so every valid address is known at build time. Anything
 // else is a 404 without rendering: with no posts at all, an on-demand render
 // of an unknown slug used to hit the navbar's session read and answer 500.
-export const dynamicParams = false
+// Was `dynamicParams = false` with the note below. The SEO agent publishes
+// articles between deploys, which can add a page to the archive: a page not
+// built ahead renders on its first request, and a number past the end is
+// still a 404 (checked in the page).
+//   Posts are files, so every valid address is known at build time. Anything
+//   else is a 404 without rendering: with no posts at all, an on-demand render
+//   of an unknown slug used to hit the navbar's session read and answer 500.
+// export const dynamicParams = false
+export const dynamicParams = true
 
-export function generateStaticParams() {
-  const { totalPages } = paginate(getAllPosts(), 1)
+export async function generateStaticParams() {
+  const { totalPages } = paginate(await getBlogPosts(), 1)
   return Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => ({
     page: String(i + 2),
   }))
@@ -46,7 +56,7 @@ export default async function BlogPagedIndexPage({
 }) {
   const { page } = await params
   const n = Number(page)
-  const { totalPages } = paginate(getAllPosts(), 1)
+  const { totalPages } = paginate(await getBlogPosts(), 1)
 
   if (!Number.isInteger(n) || n < 2 || n > totalPages) notFound()
 
