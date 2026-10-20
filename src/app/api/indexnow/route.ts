@@ -87,6 +87,6 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Send { "urls": [...] } or { "all": true }.' }, { status: 400 })
   }
-  const entries = "all" in parsed.data ? sitemap() : parsed.data.urls.map((url) => ({ url, lastModified: undefined }))
+  const entries = "all" in parsed.data ? await sitemap() : parsed.data.urls.map((url) => ({ url, lastModified: undefined }))
   return respond(await submitAndRecord("manual", entries.map((e) => ({ url: e.url, lastModified: e.lastModified ? new Date(e.lastModified) : null }))))
 }

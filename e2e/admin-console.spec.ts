@@ -27,6 +27,7 @@ const PAGES: [string, RegExp][] = [
   ["/admin/analytics/traffic", /^Traffic$/],
   ["/admin/seo", /./],
   ["/admin/seo/inventory", /^SEO inventory$/],
+  ["/admin/seo/agent", /^SEO agent$/],
   ["/admin/outreach", /^Outreach$/],
   ["/admin/revenue", /^Revenue & Payments$/],
   ["/admin/revenue/reconciliation", /^Reconciliation$/],

@@ -1,4 +1,5 @@
-import { getAllPosts } from "@/lib/blog"
+// Was getAllPosts: the feed carries the SEO agent's published articles too.
+import { getBlogPosts } from "@/lib/seo-agent/blog-posts"
 import { siteConfig } from "@/config/site"
 
 /**
@@ -15,8 +16,8 @@ function escapeXml(value: string): string {
     .replace(/'/g, "&apos;")
 }
 
-export function GET() {
-  const posts = getAllPosts()
+export async function GET() {
+  const posts = await getBlogPosts()
   const items = posts
     .map((post) => {
       const url = `${siteConfig.url}/blog/${post.slug}`

@@ -576,3 +576,130 @@ model IndexNowDeploy {
   id        String   @id
   createdAt DateTime @default(now())
 }
+
+// ─── SEO agent ───────────────────────────────────────────────────────────────
+// The daily content agent (src/lib/seo-agent): which search queries it chose
+// to write for, the articles it wrote, the links it added to other pages, its
+// run log, the orphan pages its weekly crawl found and its one setting.
+// Tables are snake_case, unlike the rest of the schema, because the module is
+// kept self-contained enough to move to a product of its own.
+
+// Where a target stands. The target carries the one status for its article
+// too, so the two cannot disagree.
+enum SeoAgentTargetStatus {
+  WRITING
+  DRAFT
+  PUBLISHED
+  DISCARDED
+  FAILED
+}
+
+// A query picked from Search Console. `keyword` is unique: once a phrase has
+// been chosen it is never chosen again, whatever became of its article.
+model SeoAgentTarget {
+  id            String               @id @default(cuid())
+  keyword       String               @unique
+  status        SeoAgentTargetStatus @default(WRITING)
+  publishedSlug String?              @map("published_slug")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+  // What Search Console showed when it was picked (90 days, all pages).
+  impressions   Int
+  clicks        Int
+  position      Float
+  score         Float
+  // The page that already ranked for it, if any.
+  page          String?
+  error         String?
+  // A FAILED target is tried once more on a later run (a timeout should not
+  // cost the best query for good), then left alone.
+  attempts      Int                  @default(1)
+  article       SeoAgentArticle?
+
+  @@index([status])
+  @@map("seo_agent_targets")
+}
+
+// The article written for a target: Markdown body without its FAQ section,
+// which is rendered from `faq` so the visible answers and the FAQPage schema
+// come from one value.
+model SeoAgentArticle {
+  id           String           @id @default(cuid())
+  targetId     String           @unique @map("target_id")
+  target       SeoAgentTarget   @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  slug         String           @unique
+  title        String
+  description  String
+  category     String
+  keyword      String
+  body         String
+  faq          Json
+  related      String[]
+  model        String
+  // Published without review, under the auto-publish rule.
+  autoPublished Boolean         @default(false) @map("auto_published")
+  publishedAt  DateTime?        @map("published_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  links        SeoAgentLink[]
+
+  @@map("seo_agent_articles")
+}
+
+// One contextual link to an article, added to another page at render time
+// (the page's own file is never edited): after which paragraph, and the
+// sentence carrying the link.
+model SeoAgentLink {
+  id             String          @id @default(cuid())
+  articleId      String          @map("article_id")
+  article        SeoAgentArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  sourcePath     String          @map("source_path")
+  afterParagraph Int             @map("after_paragraph")
+  sentence       String
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  @@unique([articleId, sourcePath])
+  @@index([sourcePath])
+  @@map("seo_agent_links")
+}
+
+// One run of the agent: the daily article run or the weekly orphan crawl.
+model SeoAgentRun {
+  id         String    @id @default(cuid())
+  // daily | orphans
+  kind       String
+  // cron | manual
+  trigger    String
+  // running | ok | skipped | failed
+  status     String
+  message    String?
+  candidates Int       @default(0)
+  targetId   String?   @map("target_id")
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  @@index([kind, startedAt])
+  @@map("seo_agent_runs")
+}
+
+// A page the weekly crawl found with no internal link pointing to it, kept
+// for a person to look at. Nothing is edited automatically.
+model SeoAgentOrphan {
+  path        String   @id
+  // OPEN | REVIEWED
+  status      String   @default("OPEN")
+  firstSeenAt DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime @map("last_seen_at")
+
+  @@map("seo_agent_orphans")
+}
+
+// The agent's one setting, a single row (id 1). `draftFirst` forces review of
+// every article; off, articles after the first three publish themselves.
+model SeoAgentSettings {
+  id         Int      @id @default(1)
+  draftFirst Boolean  @default(false) @map("draft_first")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("seo_agent_settings")
+}

@@ -44,7 +44,7 @@ export default async function SeoInventoryPage() {
 
   const templates = getTemplates()
   const { rows, conflicts } = buildInventory({
-    sitemapPaths: sitemap().map((e) => new URL(e.url).pathname),
+    sitemapPaths: (await sitemap()).map((e) => new URL(e.url).pathname),
     registry: loadAllPages().filter((p) => p.locale === routing.defaultLocale),
     templates,
     // Only the categories that get a page (enough templates to not be thin).

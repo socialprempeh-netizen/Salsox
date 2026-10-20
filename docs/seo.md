@@ -96,6 +96,19 @@ Every link you post yourself carries `utm_*` tags, so each channel shows up sepa
 
 Add `utm_campaign` for the push it belongs to (`launch`, `pricing-post`). Example: `https://salsox.com/?utm_source=reddit&utm_medium=social&utm_campaign=launch`. The first tagged visit is the one a signup is attributed to.
 
+## SEO agent
+
+A daily job (`/api/cron/seo-agent`, 05:00 UTC) that writes one blog article for a search query the site already appears for but does not get clicks on. The code is a self-contained module in `src/lib/seo-agent`; only `site.ts` and `blog-posts.ts` touch the rest of the app. The tab is `/admin/seo/agent`, under Analytics.
+
+1. **Finds opportunities.** It reads the Search Console property's queries and pages for the last 90 days (ending three days ago, where final data ends). A query qualifies with at least `SEO_AGENT_MIN_IMPRESSIONS` impressions (default 50), an average position from 11 to 50, at most one click, and not a search for the brand. Queries are ranked by missed clicks: impressions times how far their click-through rate falls below what their position normally earns.
+2. **Skips what is covered.** A query is skipped when a blog post, landing, tool or comparison page, template, or an earlier target already covers it (same words, or nearly). Every picked query is stored in `seo_agent_targets` and never picked again.
+3. **Writes the article.** Claude (`SEO_AGENT_MODEL`, default Claude Opus 5.5) gets the product summary, the existing categories, the pages it may link to and one or two existing posts as style references. It returns a direct answer first, question-style sections, an FAQ and two or three related pages. A draft that fails the checks in `article.ts` (length, headings, unknown links) gets one retry, then the run is marked failed. Each article carries Article, FAQPage and SoftwareApplication structured data built from its own fields.
+4. **Draft or publish.** The first three articles are always drafts: read one with "Read draft", then Publish or Discard. From the fourth on, articles publish themselves and are still logged, unless "Review every article" is chosen in the tab. Articles live in the database and appear everywhere a file post does: the blog, categories, the feed, the sitemap and `/llms.txt`. Unpublish takes one back to draft.
+5. **Links to it.** On publish, one sentence linking to the article is added to two or three of the busiest pages (Google Analytics page views for 30 days; Search Console clicks when GA is not connected) that are blog posts or registry pages and do not already link to it. Claude writes the sentence and picks the paragraph; the sentence is stored and spliced in when the page renders, so the page's file is never edited.
+6. **Finds orphan pages.** A weekly crawl (`/api/cron/seo-agent/orphans`, Mondays) fetches every sitemap page and lists the ones no other page links to. They are only listed, for a person to fix and mark reviewed.
+
+Setup: `GA_SERVICE_ACCOUNT_KEY_BASE64` (the same key as the Traffic tab) with that service account added as a user on the Search Console property, `ANTHROPIC_API_KEY`, and `CRON_SECRET`. `SEARCH_CONSOLE_SITE_URL` names the property if it is not the site's own URL with a trailing slash (a domain property is `sc-domain:example.com`). Apply the migration (`npx prisma migrate deploy`) before the first run. Both jobs can also be started from the tab.
+
 ## Testing
 
 - `npm test` covers the content rules, structured data, redirects, sitemap inputs, attribution and the audit rules.
