@@ -14,6 +14,23 @@
 Next.js (App Router), Tailwind CSS v4, shadcn/ui, Prisma, Better Auth, Stripe
 and Paystack. Animation libraries: framer-motion and gsap, both installed.
 
+**Default UI stack, for every build.** Use these unless a task says otherwise:
+
+- Next.js + TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Lucide React for icons
+- Framer Motion (gsap stays available for timelines and scroll sequences,
+  see the animation rule below)
+- Magic UI and Aceternity UI, as patterns to recreate with the packages
+  above. They are not packages to install (see "Rebuild, do not copy").
+- Recharts for charts
+- React Hook Form + Zod for forms and validation
+- Playwright for end-to-end and responsive checks
+
+If one of these packages is not installed yet, install it without asking
+first.
+
 ## Design rules
 
 - **Load the `frontend-design` skill before building or editing any UI.** If
@@ -28,13 +45,17 @@ and Paystack. Animation libraries: framer-motion and gsap, both installed.
   those widths; add new pages to it).
 - **Polished on the first pass.** Modern SaaS-quality UI from the start, not a
   basic version to refine later.
+- **Full build from the first pass.** Build every new feature or page as the
+  complete, modern, polished version, using the default UI stack above. Never
+  ship a basic or unstyled skeleton to polish later.
 - **Animate every new UI component** with framer-motion or gsap: framer-motion
   for component-level transitions (enter, exit, layout, hover), gsap for
   timelines and scroll-driven sequences. Both run in client components only,
   and both must respect `prefers-reduced-motion`.
-- **Rebuild, do not copy.** When a Magic UI or 21st.dev style component is the
-  reference, recreate the pattern with what is installed here (shadcn/ui,
-  framer-motion, gsap). Never paste external component code.
+- **Rebuild, do not copy.** When a Magic UI, Aceternity UI or 21st.dev style
+  component is the reference, recreate the pattern with what is installed here
+  (shadcn/ui, framer-motion, gsap). Never paste external component code, and
+  never install those libraries as packages.
 
 ## Engineering rules
 
@@ -55,6 +76,14 @@ and Paystack. Animation libraries: framer-motion and gsap, both installed.
 
 Use judgment, pick the option that fits the rules above, and say which choice
 was made.
+
+## Security: never print secrets
+
+Never print passwords, connection strings, API keys, tokens or other secrets in
+output, logs or messages. This includes values read from `.env*` files, the
+environment, or a provider dashboard. Report success or failure in plain words
+instead ("the production database URL is set", "the key was rejected"). When a
+command's output could echo a secret, redact it before showing it.
 
 ## Security: temporary production credential files
 Whenever you create a local file to hold a production secret pulled from
