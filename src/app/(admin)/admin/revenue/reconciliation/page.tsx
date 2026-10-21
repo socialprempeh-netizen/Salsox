@@ -19,6 +19,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { daysAgo, parseWindow, WINDOWS } from "@/lib/admin/analytics"
 import { loadRevenue } from "@/lib/admin/revenue-data"
 import { reconcile, reconcileSubscriptions, type ReconIssue } from "@/lib/admin/revenue"
+import { CalendarRange, CircleCheckBig, CloudOff, GitCompareArrows, Scale, ShieldCheck, TriangleAlert } from "lucide-react"
 import { AdminPageHeader, Chip, Empty, money, Panel, ScrollTable, StatGrid, StatTile, WindowPicker } from "@/components/admin/admin-ui"
 
 /** One disagreement, ready to print. */
@@ -93,15 +94,15 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })}>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })} icon={Scale}>
         <WindowPicker path="/admin/revenue/reconciliation" current={days} windows={WINDOWS} label={tc("period")} format={(d) => tc("days", { days: d })} />
       </AdminPageHeader>
 
       <StatGrid>
-        <StatTile label={t("matched")} value={totalMatched} tone="good" />
-        <StatTile label={t("issuesLabel")} value={totalIssues} tone={totalIssues === 0 ? "good" : "bad"} />
-        <StatTile label={t("unavailable")} value={unavailable} tone={unavailable > 0 ? "warn" : "default"} />
-        <StatTile label={t("periodLabel")} value={tc("days", { days })} />
+        <StatTile label={t("matched")} value={totalMatched} tone="good" icon={CircleCheckBig} meter={totalMatched + totalIssues ? totalMatched / (totalMatched + totalIssues) : null} />
+        <StatTile label={t("issuesLabel")} value={totalIssues} tone={totalIssues === 0 ? "good" : "bad"} icon={TriangleAlert} />
+        <StatTile label={t("unavailable")} value={unavailable} tone={unavailable > 0 ? "warn" : "default"} icon={CloudOff} />
+        <StatTile label={t("periodLabel")} value={tc("days", { days })} icon={CalendarRange} />
       </StatGrid>
 
       {comparisons.map((c, i) => (
@@ -112,11 +113,13 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
           action={c.available ? <Chip tone={c.rows.length === 0 ? "good" : "bad"}>{c.rows.length === 0 ? t("agrees") : t("disagrees", { count: c.rows.length })}</Chip> : <Chip tone="warn">{t("skipped")}</Chip>}
           flush
           index={i + 2}
+          icon={GitCompareArrows}
+          iconTone={!c.available ? "warn" : c.rows.length === 0 ? "good" : "bad"}
         >
           {!c.available ? (
-            <Empty>{c.reason}</Empty>
+            <Empty icon={CloudOff}>{c.reason}</Empty>
           ) : c.rows.length === 0 ? (
-            <Empty>{t("noIssues")}</Empty>
+            <Empty icon={ShieldCheck}>{t("noIssues")}</Empty>
           ) : (
             <ScrollTable minWidth="40rem">
               <thead>

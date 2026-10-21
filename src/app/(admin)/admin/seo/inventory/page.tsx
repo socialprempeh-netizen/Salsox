@@ -30,7 +30,9 @@ import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES, TEMPLATE_INDUSTRIES, TEMPLATE_TEAMS } from "@/lib/templates-taxonomy"
 import { indexNowKeyFilePath, resolveIndexNowKey } from "@/lib/indexnow"
 import { indexNowLog, skipReason } from "@/lib/indexnow-store"
+import { Boxes } from "lucide-react"
 import { AdminReveal } from "@/components/admin/admin-reveal"
+import { AdminPageHeader } from "@/components/admin/admin-ui"
 import { IndexNowLog } from "@/components/admin/indexnow-log"
 import { SeoInventory } from "@/components/admin/seo-inventory"
 
@@ -72,10 +74,7 @@ export default async function SeoInventoryPage() {
 
   return (
     <div className="space-y-6">
-      <AdminReveal>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="mt-1 max-w-2xl text-muted-foreground">{t("subtitle")}</p>
-      </AdminReveal>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={Boxes} />
       <AdminReveal index={1}>
         <SeoInventory rows={rows} conflicts={conflicts} origin={siteConfig.url} />
       </AdminReveal>

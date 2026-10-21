@@ -7,9 +7,10 @@
  * around them is a server component that loads the data; these only call the
  * server actions (src/app/actions/seo-agent.ts) and refresh.
  *
- * - Publishing mode: two choices with an indicator that slides between them,
- *   and three square slots that fill as the first three articles are
- *   written, which is the review period before auto-publishing starts.
+ * - Publishing mode: two choices, each a row with a square check, and a tint
+ *   that slides to the chosen one; under them three square slots that fill as
+ *   the first three articles are written, which is the review period before
+ *   auto-publishing starts.
  * - Articles: one card per run's target, newest first, single column at
  *   every width so a phone never scrolls sideways. A destructive action
  *   (Discard, Unpublish) asks for a second tap.
@@ -24,9 +25,10 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useFormatter, useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { ExternalLink, FileText, Play, Radar } from "lucide-react"
+import { Check, ExternalLink, FilePlus2, FileText, Play, Radar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { crawlNow, discardDraft, publishDraft, runAgentNow, setOrphanReview, setReviewEveryArticle, unpublish, type SeoAgentResult } from "@/app/actions/seo-agent"
+import { Chip, Empty, type Tone } from "@/components/admin/admin-ui"
 import { cn } from "@/lib/utils"
 
 export type TargetStatus = "WRITING" | "DRAFT" | "PUBLISHED" | "DISCARDED" | "FAILED"
@@ -46,12 +48,14 @@ export type ArticleRow = {
 
 export type OrphanRow = { path: string; status: "OPEN" | "REVIEWED" }
 
-const STATUS_TONE: Record<TargetStatus, string> = {
-  WRITING: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  DRAFT: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  PUBLISHED: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  DISCARDED: "border-border bg-muted/40 text-muted-foreground",
-  FAILED: "border-destructive/40 bg-destructive/10 text-destructive",
+// The console's shared Chip tones. Was its own class strings, with sky blue
+// for WRITING; that is the brand teal (info) now.
+const STATUS_TONE: Record<TargetStatus, Tone> = {
+  WRITING: "info",
+  DRAFT: "warn",
+  PUBLISHED: "good",
+  DISCARDED: "default",
+  FAILED: "bad",
 }
 
 /** Runs an action, toasts its outcome, refreshes the page on success. */
@@ -120,8 +124,10 @@ export function PublishingMode({ reviewEvery, written, reviewFirst }: { reviewEv
 
   return (
     <div className="space-y-4">
-      <div role="radiogroup" aria-label={t("modeLabel")} className="grid grid-cols-1 border border-border sm:grid-cols-2">
-        {options.map((option, i) => {
+      {/* Was a two-cell switch filled solid teal on the chosen side; now rows
+          with a square check, the chosen one tinted and outlined. */}
+      <div role="radiogroup" aria-label={t("modeLabel")} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {options.map((option) => {
           const active = option.on === value
           return (
             <button
@@ -132,26 +138,34 @@ export function PublishingMode({ reviewEvery, written, reviewFirst }: { reviewEv
               disabled={pending}
               onClick={() => choose(option.on)}
               className={cn(
-                "relative min-h-11 px-4 py-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary disabled:opacity-60",
-                i > 0 && "border-t border-border sm:border-l sm:border-t-0",
-                active ? "text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                "relative flex min-h-14 items-center gap-3 border px-4 py-3 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60",
+                active ? "border-primary/50 text-foreground" : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground"
               )}
             >
               {active && (
                 <motion.span
                   layoutId="seo-agent-mode"
                   aria-hidden
-                  className="absolute inset-0 bg-primary"
+                  className="absolute inset-0 bg-primary/[0.07]"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", bounce: 0.12, duration: 0.35 }}
                 />
               )}
+              <span aria-hidden className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center border transition-colors", active ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card")}>
+                <AnimatePresence initial={false}>
+                  {active && (
+                    <motion.span key="check" initial={reduceMotion ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.4, opacity: 0 }} transition={{ duration: 0.15 }}>
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </span>
               <span className="relative">{option.label}</span>
             </button>
           )
         })}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex gap-1" aria-hidden>
           {Array.from({ length: reviewFirst }, (_, i) => (
             <motion.span
@@ -177,7 +191,7 @@ export function ArticleList({ rows }: { rows: ArticleRow[] }) {
   // The row whose destructive action is armed by a first tap.
   const [armed, setArmed] = useState<string | null>(null)
 
-  if (rows.length === 0) return <p className="p-6 text-center text-sm text-muted-foreground">{t("noArticles")}</p>
+  if (rows.length === 0) return <Empty icon={FilePlus2}>{t("noArticles")}</Empty>
 
   const confirmThen = (key: string, go: () => void) => {
     if (armed === key) {
@@ -199,20 +213,20 @@ export function ArticleList({ rows }: { rows: ArticleRow[] }) {
               initial={reduceMotion ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: busyHere ? 0.6 : 1, y: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="min-w-0 p-4"
+              className="min-w-0 p-4 sm:px-5"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <motion.span key={row.status} initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={cn("inline-flex border px-1.5 py-0.5 text-xs font-medium", STATUS_TONE[row.status])}>
-                  {t(`status.${row.status}`)}
+                <motion.span key={row.status} initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="inline-flex">
+                  <Chip tone={STATUS_TONE[row.status]}>{t(`status.${row.status}`)}</Chip>
                 </motion.span>
                 {a?.autoPublished && row.status === "PUBLISHED" && <span className="text-xs text-muted-foreground">{t("auto")}</span>}
                 <span className="ml-auto text-xs text-muted-foreground">{format.dateTime(new Date(row.createdAt), { dateStyle: "medium" })}</span>
               </div>
 
-              <h3 className="mt-2 break-words font-semibold">{a?.title ?? row.keyword}</h3>
+              <h3 className="mt-2.5 break-words font-semibold tracking-tight">{a?.title ?? row.keyword}</h3>
               <p className="mt-0.5 break-words text-sm text-muted-foreground">{t("query", { keyword: row.keyword })}</p>
 
-              <dl className="mt-3 grid grid-cols-3 gap-2 text-sm sm:max-w-sm">
+              <dl className="mt-3 grid grid-cols-3 divide-x divide-border border border-border bg-muted/25 text-sm sm:max-w-sm [&>div]:px-3 [&>div]:py-2">
                 <div>
                   <dt className="text-xs text-muted-foreground">{t("impressions")}</dt>
                   <dd className="font-semibold tabular-nums">{format.number(row.impressions)}</dd>
@@ -329,14 +343,12 @@ export function OrphanList({ rows }: { rows: OrphanRow[] }) {
     <ul className="divide-y divide-border">
       <AnimatePresence initial={false}>
         {rows.map((row) => (
-          <motion.li key={row.path} layout={!reduceMotion} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
+          <motion.li key={row.path} layout={!reduceMotion} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:px-5">
             {/* Its own line on a phone, so a long path is not squeezed into a sliver beside the buttons. */}
             <a href={row.path} target="_blank" rel="noopener noreferrer" className="min-w-0 basis-full break-all font-mono text-xs text-foreground underline-offset-4 hover:underline sm:basis-0 sm:flex-1">
               {row.path}
             </a>
-            <span className={cn("border px-1.5 py-0.5 text-xs font-medium", row.status === "OPEN" ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400" : "border-border bg-muted/40 text-muted-foreground")}>
-              {t(`orphanStatus.${row.status}`)}
-            </span>
+            <Chip tone={row.status === "OPEN" ? "warn" : "default"}>{t(`orphanStatus.${row.status}`)}</Chip>
             <Button
               size="sm"
               variant="ghost"

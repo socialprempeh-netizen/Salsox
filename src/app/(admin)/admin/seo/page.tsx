@@ -22,7 +22,7 @@ import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { getFormatter, getTranslations } from "next-intl/server"
-import { CheckCircle2, CircleAlert, ExternalLink, XCircle } from "lucide-react"
+import { CheckCircle2, CircleAlert, ExternalLink, FileWarning, Map, Radar, SearchCheck, Settings2, UserPlus, XCircle } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { siteConfig } from "@/config/site"
 import sitemap from "@/app/sitemap"
@@ -32,7 +32,7 @@ import { getPages, loadAllPages, validatePages } from "@/lib/seo/pages"
 import { crawlSite } from "@/lib/seo/crawl"
 import { signupSummary } from "@/lib/seo/attribution-store"
 import { GA_ID_PATTERN } from "@/components/analytics/google-analytics"
-import { AdminReveal } from "@/components/admin/admin-reveal"
+import { AdminPageHeader, Panel as AdminPanel, StatusBanner } from "@/components/admin/admin-ui"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -46,15 +46,26 @@ function StatusIcon({ status }: { status: Status }) {
   return <XCircle className="h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
 }
 
-function Panel({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+// Was a page-local section (border, title, description, body inside one
+// AdminReveal). Now the console's shared Panel, so this tab gains the same
+// header and icon as the others; the signature stays so the calls below read
+// as they did.
+// function Panel({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+//   return (
+//     <AdminReveal>
+//       <section className="border border-border bg-card p-4 sm:p-6">
+//         <h2 className="text-lg font-semibold">{title}</h2>
+//         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+//         <div className="mt-4">{children}</div>
+//       </section>
+//     </AdminReveal>
+//   )
+// }
+function Panel({ title, description, icon, index, children }: { title: string; description?: string; icon: React.ComponentProps<typeof AdminPanel>["icon"]; index: number; children: React.ReactNode }) {
   return (
-    <AdminReveal>
-      <section className="border border-border bg-card p-4 sm:p-6">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
-        <div className="mt-4">{children}</div>
-      </section>
-    </AdminReveal>
+    <AdminPanel title={title} hint={description} icon={icon} index={index}>
+      {children}
+    </AdminPanel>
   )
 }
 
@@ -111,14 +122,22 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
   const errors = crawl?.issues.filter((i) => i.severity === "error") ?? []
   const warnings = crawl?.issues.filter((i) => i.severity === "warning") ?? []
 
+  const setupErrors = setup.filter((row) => row.status === "error").length
+  const setupWarnings = setup.filter((row) => row.status === "warn").length
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="mt-1 max-w-2xl text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={SearchCheck} />
 
-      <Panel title={t("setup.title")} description={t("setup.description")}>
+      {setupErrors > 0 ? (
+        <StatusBanner tone="bad" title={t("summary.errors", { count: setupErrors })}>{t("summary.errorsBody")}</StatusBanner>
+      ) : setupWarnings > 0 ? (
+        <StatusBanner tone="warn" title={t("summary.warnings", { count: setupWarnings })}>{t("summary.warningsBody")}</StatusBanner>
+      ) : (
+        <StatusBanner tone="good" title={t("summary.ok")}>{t("summary.okBody")}</StatusBanner>
+      )}
+
+      <Panel title={t("setup.title")} description={t("setup.description")} icon={Settings2} index={2}>
         <ul className="divide-y divide-border border border-border">
           {setup.map((row) => (
             <li key={row.label} className="flex flex-col gap-1 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
@@ -136,12 +155,12 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
         <p className="mt-3 text-xs text-muted-foreground">{t("setup.queries")}</p>
       </Panel>
 
-      <Panel title={t("sitemap.title")} description={t("sitemap.description", { count: entries.length })}>
+      <Panel title={t("sitemap.title")} description={t("sitemap.description", { count: entries.length })} icon={Map} index={3}>
         <div className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
           {[...bySection, { key: "other", count: other }].map((s) => (
-            <div key={s.key} className="bg-background p-3">
-              <p className="text-2xl font-bold tabular-nums">{s.count}</p>
-              <p className="text-xs text-muted-foreground">{t(`sections.${s.key}`)}</p>
+            <div key={s.key} className="bg-card p-3 sm:p-4">
+              <p className="text-2xl font-semibold tracking-tight tabular-nums">{s.count}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t(`sections.${s.key}`)}</p>
             </div>
           ))}
         </div>
@@ -150,7 +169,7 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
         </p>
       </Panel>
 
-      <Panel title={t("content.title")} description={t("content.description", { count: getPages().length })}>
+      <Panel title={t("content.title")} description={t("content.description", { count: getPages().length })} icon={FileWarning} index={4}>
         {contentProblems.length === 0 ? (
           <p className="flex items-center gap-2 text-sm"><StatusIcon status="ok" /> {t("content.ok")}</p>
         ) : (
@@ -162,7 +181,7 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
         )}
       </Panel>
 
-      <Panel title={t("signups.title")} description={t("signups.description", { days: signups.days, total: signups.total })}>
+      <Panel title={t("signups.title")} description={t("signups.description", { days: signups.days, total: signups.total })} icon={UserPlus} index={5}>
         <div className="grid gap-6 lg:grid-cols-2">
           <ul className="divide-y divide-border border border-border text-sm">
             {signups.byChannel.map((c) => (
@@ -190,9 +209,10 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
         </div>
       </Panel>
 
-      <Panel title={t("crawl.title")} description={t("crawl.description")}>
+      <Panel title={t("crawl.title")} description={t("crawl.description")} icon={Radar} index={6}>
         {!crawl ? (
-          <Link href="/admin/seo?audit=1" className="inline-flex h-11 items-center justify-center bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90">
+          <Link href="/admin/seo?audit=1" className="inline-flex h-11 items-center justify-center gap-2 bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover">
+            <Radar aria-hidden className="h-4 w-4" />
             {t("crawl.run", { count: entries.length })}
           </Link>
         ) : (
@@ -204,8 +224,8 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
                 { label: t("crawl.errors"), value: errors.length },
                 { label: t("crawl.warnings"), value: warnings.length },
               ].map((s) => (
-                <div key={s.label} className="bg-background p-3">
-                  <p className="text-2xl font-bold tabular-nums">{s.value}</p>
+                <div key={s.label} className="bg-card p-3 sm:p-4">
+                  <p className="text-2xl font-semibold tracking-tight tabular-nums">{s.value}</p>
                   <p className="text-xs text-muted-foreground">{s.label}</p>
                 </div>
               ))}

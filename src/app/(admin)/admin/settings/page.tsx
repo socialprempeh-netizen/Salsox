@@ -10,14 +10,16 @@
  * keys, whether it is a live or a test key. Granting admin rights is done
  * from Users; role changes are not written to a log yet, which the page says.
  */
-import Link from "next/link"
+// The roles link is a TextLink now.
+// import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getFormatter, getTranslations } from "next-intl/server"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { smsConfigured } from "@/lib/esign/sms"
 import { providerConfig } from "@/lib/admin/health-data"
-import { AdminPageHeader, Chip, Empty, Panel, ScrollTable, StatGrid, StatTile } from "@/components/admin/admin-ui"
+import { History, KeyRound, LogIn, MonitorSmartphone, Plug, ShieldCheck, ShieldHalf, UserCog, Zap } from "lucide-react"
+import { AdminPageHeader, Chip, Empty, Panel, ScrollTable, StatGrid, StatTile, TextLink } from "@/components/admin/admin-ui"
 
 /** "live", "test" or null from an API key's prefix; the key itself never leaves this function. */
 function keyMode(key: string | undefined): "live" | "test" | null {
@@ -86,17 +88,17 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} />
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={KeyRound} />
 
       <StatGrid>
-        <StatTile label={t("admins")} value={admins.length} href="/admin/users" />
-        <StatTile label={t("withoutTwoFactor")} value={withoutTwoFactor} tone={withoutTwoFactor > 0 ? "warn" : "good"} hint={t("twoFactorHint")} />
-        <StatTile label={t("openSessions")} value={openSessions} hint={t("openSessionsHint")} />
-        <StatTile label={t("liveKeys")} value={connections.filter((c) => c.mode === "live").length} hint={t("liveKeysHint")} />
+        <StatTile label={t("admins")} value={admins.length} href="/admin/users" icon={UserCog} />
+        <StatTile label={t("withoutTwoFactor")} value={withoutTwoFactor} tone={withoutTwoFactor > 0 ? "warn" : "good"} hint={t("twoFactorHint")} icon={ShieldHalf} meter={admins.length ? (admins.length - withoutTwoFactor) / admins.length : null} />
+        <StatTile label={t("openSessions")} value={openSessions} hint={t("openSessionsHint")} icon={MonitorSmartphone} />
+        <StatTile label={t("liveKeys")} value={connections.filter((c) => c.mode === "live").length} hint={t("liveKeysHint")} tone="info" icon={Zap} />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title={t("permissionsTitle")} hint={t("permissionsHint")} flush action={<Link href="/admin/users" className="text-sm font-medium text-primary underline-offset-4 hover:underline">{t("manageRoles")}</Link>}>
+        <Panel title={t("permissionsTitle")} hint={t("permissionsHint")} flush icon={ShieldCheck} action={<TextLink href="/admin/users">{t("manageRoles")}</TextLink>}>
           <ul className="divide-y divide-border">
             {admins.map((a) => (
               <li key={a.id} className="flex items-start justify-between gap-3 p-4 text-sm">
@@ -110,7 +112,7 @@ export default async function AdminSettingsPage() {
           </ul>
         </Panel>
 
-        <Panel title={t("connectionsTitle")} hint={t("connectionsHint")} flush index={3}>
+        <Panel title={t("connectionsTitle")} hint={t("connectionsHint")} flush index={3} icon={Plug}>
           <ul className="divide-y divide-border">
             {connections.map((c) => (
               <li key={c.key} className="flex items-start justify-between gap-3 p-4 text-sm">
@@ -127,9 +129,9 @@ export default async function AdminSettingsPage() {
         </Panel>
       </div>
 
-      <Panel title={t("signInsTitle")} hint={t("signInsHint")} flush index={4}>
+      <Panel title={t("signInsTitle")} hint={t("signInsHint")} flush index={4} icon={LogIn}>
         {adminSessions.length === 0 ? (
-          <Empty>{t("noSignIns")}</Empty>
+          <Empty icon={LogIn}>{t("noSignIns")}</Empty>
         ) : (
           <ScrollTable minWidth="36rem">
             <thead>
@@ -158,9 +160,9 @@ export default async function AdminSettingsPage() {
         )}
       </Panel>
 
-      <Panel title={t("auditTitle")} hint={t("auditHint")} flush index={5}>
+      <Panel title={t("auditTitle")} hint={t("auditHint")} flush index={5} icon={History}>
         {auditEvents.length === 0 ? (
-          <Empty>{t("noAudit")}</Empty>
+          <Empty icon={History}>{t("noAudit")}</Empty>
         ) : (
           <ScrollTable minWidth="36rem">
             <thead>

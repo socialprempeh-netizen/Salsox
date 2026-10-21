@@ -12,17 +12,18 @@
  * Application errors themselves go to Sentry when it is configured; this page
  * says whether it is, rather than copying them.
  */
-import Link from "next/link"
+// The moderation link is a TextLink now.
+// import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getFormatter, getTranslations } from "next-intl/server"
-import { CheckCircle2, CircleAlert, CircleMinus } from "lucide-react"
+import { Activity, CheckCircle2, CircleAlert, CircleMinus, CreditCard, Gavel, Hourglass, LifeBuoy, MailWarning, MailX, MessageSquareWarning, ShieldCheck, TriangleAlert } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { checkDatabase } from "@/lib/health"
 import { getSchemaStatus } from "@/lib/schema-status"
 import { loadHealthCounts, loadHealthLists, providerConfig } from "@/lib/admin/health-data"
-import { AdminPageHeader, Empty, money, Panel, StatGrid, StatTile } from "@/components/admin/admin-ui"
+import { AdminPageHeader, Chip, Empty, money, Panel, StatGrid, StatTile, StatusBanner, TextLink } from "@/components/admin/admin-ui"
 
 type Check = { key: string; state: "ok" | "off" | "bad"; detail?: string }
 
@@ -57,6 +58,10 @@ export default async function AdminHealthPage() {
   ]
   const icon = { ok: CheckCircle2, off: CircleMinus, bad: CircleAlert }
   const tone = { ok: "text-emerald-600 dark:text-emerald-400", off: "text-muted-foreground", bad: "text-destructive" }
+  const chipTone = { ok: "good", off: "default", bad: "bad" } as const
+  const failing = checks.filter((c) => c.state === "bad").length
+  const passing = checks.filter((c) => c.state === "ok").length
+  const open = counts.stuckPayments + counts.failedPayments7d + counts.undeliveredInvites + counts.disputes30d
 
   const failedAmount = (data: unknown) => {
     const d = data as { amount?: number; currency?: string; reason?: string } | null
@@ -65,36 +70,52 @@ export default async function AdminHealthPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { version: siteConfig.version })} />
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { version: siteConfig.version })} icon={LifeBuoy} />
 
-      <StatGrid>
-        <StatTile label={t("stuck")} value={counts.stuckPayments} tone={counts.stuckPayments > 0 ? "bad" : "good"} hint={t("stuckHint")} />
-        <StatTile label={t("failed")} value={counts.failedPayments7d} tone={counts.failedPayments7d > 0 ? "warn" : "default"} hint={t("failedHint")} href="/admin/revenue" />
-        <StatTile label={t("undelivered")} value={counts.undeliveredInvites} tone={counts.undeliveredInvites > 0 ? "warn" : "default"} hint={t("undeliveredHint")} />
-        <StatTile label={t("disputes")} value={counts.disputes30d} tone={counts.disputes30d > 0 ? "bad" : "default"} hint={t("disputesHint")} href="/admin/moderation" />
+      {/* The verdict first: green when every check passes and nothing is open. */}
+      {failing > 0 ? (
+        <StatusBanner tone="bad" title={t("bannerFailing", { count: failing })}>
+          {t("bannerFailingBody")}
+        </StatusBanner>
+      ) : open > 0 ? (
+        <StatusBanner tone="warn" title={t("bannerOpen", { count: open })}>
+          {t("bannerOpenBody")}
+        </StatusBanner>
+      ) : (
+        <StatusBanner tone="good" icon={ShieldCheck} title={t("bannerOk")}>
+          {t("bannerOkBody")}
+        </StatusBanner>
+      )}
+
+      <StatGrid index={2}>
+        <StatTile label={t("stuck")} value={counts.stuckPayments} tone={counts.stuckPayments > 0 ? "bad" : "good"} hint={t("stuckHint")} icon={Hourglass} />
+        <StatTile label={t("failed")} value={counts.failedPayments7d} tone={counts.failedPayments7d > 0 ? "warn" : "default"} hint={t("failedHint")} href="/admin/revenue" icon={CreditCard} />
+        <StatTile label={t("undelivered")} value={counts.undeliveredInvites} tone={counts.undeliveredInvites > 0 ? "warn" : "default"} hint={t("undeliveredHint")} icon={MailX} />
+        <StatTile label={t("disputes")} value={counts.disputes30d} tone={counts.disputes30d > 0 ? "bad" : "default"} hint={t("disputesHint")} href="/admin/moderation" icon={Gavel} />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title={t("checksTitle")} hint={t("checksHint")} flush>
+        <Panel title={t("checksTitle")} hint={t("checksHint")} flush index={3} icon={Activity} iconTone={failing > 0 ? "bad" : "good"} badge={<Chip tone={failing > 0 ? "bad" : "good"}>{passing}/{checks.length}</Chip>}>
           <ul className="divide-y divide-border">
             {checks.map((c) => {
               const Icon = icon[c.state]
               return (
-                <li key={c.key} className="flex items-start gap-3 p-4 text-sm">
+                <li key={c.key} className="flex items-start gap-3 p-4 text-sm sm:px-5">
                   <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${tone[c.state]}`} aria-hidden="true" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{t(`check.${c.key}.label`)}</p>
                     <p className="text-muted-foreground">{t(`check.${c.key}.${c.state}`)}{c.detail ? ` ${c.detail}` : ""}</p>
                   </div>
+                  <Chip tone={chipTone[c.state]}>{t(`state.${c.state}`)}</Chip>
                 </li>
               )
             })}
           </ul>
         </Panel>
 
-        <Panel title={t("issuesTitle")} hint={t("issuesHint", { email: siteConfig.contactEmail })} flush index={3} action={<Link href="/admin/moderation" className="text-sm font-medium text-primary underline-offset-4 hover:underline">{t("openModeration")}</Link>}>
+        <Panel title={t("issuesTitle")} hint={t("issuesHint", { email: siteConfig.contactEmail })} flush index={4} icon={MessageSquareWarning} action={<TextLink href="/admin/moderation">{t("openModeration")}</TextLink>}>
           {declines.length === 0 ? (
-            <Empty>{t("noIssues")}</Empty>
+            <Empty icon={ShieldCheck}>{t("noIssues")}</Empty>
           ) : (
             <ul className="divide-y divide-border">
               {declines.map((r) => (
@@ -109,9 +130,9 @@ export default async function AdminHealthPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title={t("paymentsTitle")} hint={t("paymentsHint")} flush index={4}>
+        <Panel title={t("paymentsTitle")} hint={t("paymentsHint")} flush index={5} icon={TriangleAlert} iconTone={lists.stuck.length + lists.failed.length > 0 ? "warn" : "default"}>
           {lists.stuck.length + lists.failed.length === 0 ? (
-            <Empty>{t("noPaymentFailures")}</Empty>
+            <Empty icon={ShieldCheck}>{t("noPaymentFailures")}</Empty>
           ) : (
             <ul className="divide-y divide-border">
               {lists.stuck.map((p) => (
@@ -130,9 +151,9 @@ export default async function AdminHealthPage() {
           )}
         </Panel>
 
-        <Panel title={t("emailTitle")} hint={t("emailHint")} flush index={5}>
+        <Panel title={t("emailTitle")} hint={t("emailHint")} flush index={6} icon={MailWarning}>
           {lists.undelivered.length === 0 ? (
-            <Empty>{config.email ? t("noUndelivered") : t("emailOff")}</Empty>
+            <Empty icon={config.email ? ShieldCheck : MailX}>{config.email ? t("noUndelivered") : t("emailOff")}</Empty>
           ) : (
             <ul className="divide-y divide-border">
               {lists.undelivered.map((r) => (

@@ -936,7 +936,18 @@
       "emailHint": "Signers whose invitation never went out, on documents still waiting for them.",
       "noUndelivered": "Every invitation was delivered to the email provider.",
       "emailOff": "Email is not configured, so invitations are shared by hand.",
-      "footnote": "Delivery is counted when the email provider accepts a message; bounces after that show in the provider's own dashboard."
+      "footnote": "Delivery is counted when the email provider accepts a message; bounces after that show in the provider's own dashboard.",
+      "bannerOk": "All systems running",
+      "bannerOkBody": "Every configured check passed, and no payment, invitation or dispute is waiting on you.",
+      "bannerFailing": "{count, plural, one {# system check is failing} other {# system checks are failing}}",
+      "bannerFailingBody": "Fix the checks marked in red below first: payments or email may not be going through.",
+      "bannerOpen": "{count, plural, one {# issue needs a look} other {# issues need a look}}",
+      "bannerOpenBody": "The systems are up. The figures below show which payments, invitations or disputes are waiting.",
+      "state": {
+        "ok": "Running",
+        "off": "Off",
+        "bad": "Failing"
+      }
     },
     "settings": {
       "title": "Settings & Security",
@@ -1196,7 +1207,20 @@
       "back": "Back to the SEO agent",
       "draftBanner": "Draft: not on the site. Publishing puts it at {path} and links to it from up to three of the busiest pages.",
       "publishedBanner": "Live at {path}.",
-      "discardedBanner": "Discarded: this article will not be published, and its query will not be picked again."
+      "discardedBanner": "Discarded: this article will not be published, and its query will not be picked again.",
+      "statusLast": "Last run: {kind}, {status}, {time}",
+      "statusNever": "The agent has not run yet",
+      "statWritten": "Articles written",
+      "statWrittenHint": "The first {count} wait for your review",
+      "statPublished": "Published",
+      "statRecentHint": "Of the last {count} queries",
+      "statDrafts": "Drafts to review",
+      "statDraftsHint": "Not on the site until published",
+      "statOrphans": "Orphan pages open",
+      "statNeverCrawled": "Not crawled yet",
+      "articlesCount": "{count, plural, one {# article} other {# articles}}",
+      "runsCount": "{count, plural, one {# run} other {# runs}}",
+      "orphansOpen": "{count} open"
     },
     "outreach": {
       "title": "Outreach",
@@ -2725,6 +2749,14 @@
   "adminSeo": {
     "title": "SEO health",
     "subtitle": "Whether this deployment is set up to be found by search engines, and whether anything on the public site is broken for them.",
+    "summary": {
+      "ok": "Ready to be indexed",
+      "okBody": "Every setup check below passed. Run the crawl to check the pages themselves.",
+      "warnings": "{count, plural, one {# optional setup step left} other {# optional setup steps left}}",
+      "warningsBody": "Pages can be indexed. The items marked amber below help search engines find them sooner.",
+      "errors": "{count, plural, one {# setup problem stops indexing} other {# setup problems stop indexing}}",
+      "errorsBody": "Search engines cannot index this deployment until the items marked red below are fixed."
+    },
     "setup": {
       "title": "Setup",
       "description": "Configuration search engines depend on. Warnings are optional extras; errors stop pages being indexed.",

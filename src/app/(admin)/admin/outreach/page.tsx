@@ -16,7 +16,9 @@ import { getTranslations } from "next-intl/server"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { toDay, type OutreachRow } from "@/lib/outreach"
+import { Handshake } from "lucide-react"
 import { AdminReveal } from "@/components/admin/admin-reveal"
+import { AdminPageHeader } from "@/components/admin/admin-ui"
 import { OutreachTracker } from "@/components/admin/outreach-tracker"
 
 export default async function AdminOutreachPage() {
@@ -37,10 +39,7 @@ export default async function AdminOutreachPage() {
 
   return (
     <div className="space-y-6">
-      <AdminReveal>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
-      </AdminReveal>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={Handshake} />
       <AdminReveal index={1}>
         <OutreachTracker rows={rows} today={toDay(new Date())} />
       </AdminReveal>

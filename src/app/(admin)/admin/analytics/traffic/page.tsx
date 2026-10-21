@@ -14,12 +14,13 @@
  */
 import { redirect } from "next/navigation"
 import { getFormatter, getTranslations } from "next-intl/server"
-import { Info } from "lucide-react"
+import { Eye, Globe2, LineChart, MonitorSmartphone, MousePointerClick, Settings2, ShieldAlert, TriangleAlert, UserPlus, Users } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { CACHE_SECONDS, trafficReport } from "@/lib/admin/ga-data"
 import { isoDay, resolveRange, TRAFFIC_PRESETS } from "@/lib/admin/traffic"
-import { AdminReveal } from "@/components/admin/admin-reveal"
-import { AdminPageHeader, Empty, Panel, ScrollTable, StatGrid, StatTile } from "@/components/admin/admin-ui"
+// The consent caveat is a StatusBanner now (was an AdminReveal block).
+// import { AdminReveal } from "@/components/admin/admin-reveal"
+import { AdminPageHeader, Empty, Panel, ScrollTable, StatGrid, StatTile, StatusBanner } from "@/components/admin/admin-ui"
 import { ShareBars } from "@/components/admin/share-bars"
 import { TrafficChart } from "@/components/admin/traffic-chart"
 import { TrafficRangePicker } from "@/components/admin/traffic-range-picker"
@@ -42,7 +43,7 @@ export default async function AdminTrafficPage({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { start: day(range.start), end: day(range.end) })}>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { start: day(range.start), end: day(range.end) })} icon={Globe2}>
         <TrafficRangePicker
           key={`${range.start}-${range.end}`}
           path={PATH}
@@ -63,15 +64,12 @@ export default async function AdminTrafficPage({ searchParams }: { searchParams:
       </AdminPageHeader>
 
       {/* The consent caveat, before any figure. */}
-      <AdminReveal index={1} className="flex gap-3 border border-border border-l-2 border-l-amber-500 bg-amber-500/5 p-3 text-sm">
-        <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
-        <p>
-          <span className="font-semibold">{t("consentTitle")}</span> <span className="text-muted-foreground">{t("consentBody")}</span>
-        </p>
-      </AdminReveal>
+      <StatusBanner tone="warn" icon={ShieldAlert} title={t("consentTitle")}>
+        {t("consentBody")}
+      </StatusBanner>
 
       {report.state === "notConfigured" && (
-        <Panel title={t("setupTitle")} hint={t("setupHint")}>
+        <Panel title={t("setupTitle")} hint={t("setupHint")} icon={Settings2} iconTone="warn">
           <ol className="list-decimal space-y-2 pl-5 text-sm">
             {report.missing.includes("key") && <li>{t("setupKey")}</li>}
             {report.missing.includes("key") && <li>{t("setupAccess")}</li>}
@@ -82,7 +80,7 @@ export default async function AdminTrafficPage({ searchParams }: { searchParams:
       )}
 
       {report.state === "error" && (
-        <Panel title={t("errorTitle")} hint={t("errorHint")}>
+        <Panel title={t("errorTitle")} hint={t("errorHint")} icon={TriangleAlert} iconTone="bad">
           <p className="break-words font-mono text-xs text-destructive">{report.message}</p>
         </Panel>
       )}
@@ -90,22 +88,24 @@ export default async function AdminTrafficPage({ searchParams }: { searchParams:
       {report.state === "ok" && (
         <>
           <StatGrid index={2}>
-            <StatTile label={t("visitors")} value={num(report.totals.visitors)} hint={t("visitorsHint")} />
-            <StatTile label={t("sessions")} value={num(report.totals.sessions)} hint={t("engagement", { rate: pct(report.totals.engagementRate) })} />
-            <StatTile label={t("pageViews")} value={num(report.totals.pageViews)} hint={report.totals.sessions ? t("perSession", { n: (report.totals.pageViews / report.totals.sessions).toFixed(1) }) : undefined} />
+            <StatTile label={t("visitors")} value={num(report.totals.visitors)} hint={t("visitorsHint")} icon={Users} />
+            <StatTile label={t("sessions")} value={num(report.totals.sessions)} hint={t("engagement", { rate: pct(report.totals.engagementRate) })} icon={MousePointerClick} meter={report.totals.engagementRate} />
+            <StatTile label={t("pageViews")} value={num(report.totals.pageViews)} hint={report.totals.sessions ? t("perSession", { n: (report.totals.pageViews / report.totals.sessions).toFixed(1) }) : undefined} icon={Eye} />
             <StatTile
               label={t("signups")}
               value={num(report.events.sign_up)}
               hint={report.events.sign_up || report.events.document_sent ? t("documentsSent", { count: report.events.document_sent }) : t("noEvents")}
+              tone="accent"
+              icon={UserPlus}
             />
           </StatGrid>
 
           <div className="grid gap-6 lg:grid-cols-5">
-            <Panel title={t("chartTitle")} hint={t("chartHint")} className="lg:col-span-3" index={3}>
+            <Panel title={t("chartTitle")} hint={t("chartHint")} className="lg:col-span-3" index={3} icon={LineChart}>
               <TrafficChart data={report.series} labels={{ visitors: t("visitorsLower"), sessions: t("sessionsLower"), date: t("date") }} />
             </Panel>
 
-            <Panel title={t("devicesTitle")} hint={t("devicesHint")} className="lg:col-span-2" index={4}>
+            <Panel title={t("devicesTitle")} hint={t("devicesHint")} className="lg:col-span-2" index={4} icon={MonitorSmartphone}>
               {report.devices.length === 0 ? (
                 <Empty>{t("noData")}</Empty>
               ) : (
@@ -122,7 +122,7 @@ export default async function AdminTrafficPage({ searchParams }: { searchParams:
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Panel title={t("pagesTitle")} hint={t("pagesHint")} flush index={5}>
+            <Panel title={t("pagesTitle")} hint={t("pagesHint")} flush index={5} icon={Eye}>
               {report.pages.length === 0 ? (
                 <Empty>{t("noData")}</Empty>
               ) : (
@@ -147,7 +147,7 @@ export default async function AdminTrafficPage({ searchParams }: { searchParams:
               )}
             </Panel>
 
-            <Panel title={t("sourcesTitle")} hint={t("sourcesHint")} flush index={6}>
+            <Panel title={t("sourcesTitle")} hint={t("sourcesHint")} flush index={6} icon={Globe2}>
               {report.sources.length === 0 ? (
                 <Empty>{t("noData")}</Empty>
               ) : (

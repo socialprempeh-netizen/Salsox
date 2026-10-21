@@ -17,6 +17,7 @@ import { monthlyEquivalent } from "@/lib/metrics"
 import { PLAN_CURRENCY } from "@/lib/stripe-plan-prices"
 import { classifyPlanChange, daysAgo, parseWindow, WINDOWS } from "@/lib/admin/analytics"
 import { stripePlanChanges } from "@/lib/admin/provider-reports"
+import { ArrowUpDown, BellRing, CircleSlash, Layers, Repeat, ShieldCheck, Sparkles, TrendingUp } from "lucide-react"
 import { AdminPageHeader, Chip, Empty, money, Panel, ScrollTable, StatGrid, StatTile, WindowPicker, type Tone } from "@/components/admin/admin-ui"
 
 const STATUS_TONE: Record<string, Tone> = { ACTIVE: "good", TRIALING: "default", PAST_DUE: "bad", UNPAID: "bad", CANCELED: "warn", INCOMPLETE: "warn" }
@@ -72,24 +73,25 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })}>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })} icon={Repeat}>
         <WindowPicker path="/admin/subscriptions" current={days} windows={WINDOWS} label={tc("period")} format={(d) => tc("days", { days: d })} />
       </AdminPageHeader>
 
       <StatGrid>
-        <StatTile label={ta("activeSubscriptions")} value={active.length} hint={t("trialing", { count: byStatus("TRIALING").length })} tone="good" />
-        <StatTile label={t("newLabel")} value={started.length} hint={t("oneTime", { count: purchases })} />
+        <StatTile label={ta("activeSubscriptions")} value={active.length} hint={t("trialing", { count: byStatus("TRIALING").length })} tone="good" icon={Repeat} />
+        <StatTile label={t("newLabel")} value={started.length} hint={t("oneTime", { count: purchases })} tone="accent" icon={Sparkles} />
         <StatTile
           label={t("upgradesLabel")}
           value={changes.state === "ok" ? `${upgrades} / ${downgrades}` : "—"}
           hint={changes.state === "ok" ? t("upgradesHint") : changes.state === "notConfigured" ? tc("notConfigured") : tc("unreachable")}
+          icon={ArrowUpDown}
         />
-        <StatTile label={t("cancellations")} value={canceled.length} hint={t("scheduled", { count: scheduled.length })} tone={canceled.length > 0 ? "warn" : "default"} />
+        <StatTile label={t("cancellations")} value={canceled.length} hint={t("scheduled", { count: scheduled.length })} tone={canceled.length > 0 ? "warn" : "default"} icon={CircleSlash} />
       </StatGrid>
 
-      <Panel title={t("plansTitle")} hint={t("plansHint")} flush>
+      <Panel title={t("plansTitle")} hint={t("plansHint")} flush icon={Layers}>
         {plans.length === 0 ? (
-          <Empty>{t("noPlans")}</Empty>
+          <Empty icon={Layers}>{t("noPlans")}</Empty>
         ) : (
           <ScrollTable minWidth="34rem">
             <thead>
@@ -119,9 +121,9 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
       </Panel>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title={t("movementTitle")} hint={t("movementHint")} flush index={3}>
+        <Panel title={t("movementTitle")} hint={t("movementHint")} flush index={3} icon={TrendingUp}>
           {movement.length === 0 ? (
-            <Empty>{t("noMovement")}</Empty>
+            <Empty icon={TrendingUp}>{t("noMovement")}</Empty>
           ) : (
             <ul className="divide-y divide-border">
               {movement.map((m) => (
@@ -140,9 +142,9 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
           )}
         </Panel>
 
-        <Panel title={t("attentionTitle")} hint={t("attentionHint")} flush index={4}>
+        <Panel title={t("attentionTitle")} hint={t("attentionHint")} flush index={4} icon={BellRing} iconTone="warn">
           {trouble.length + scheduled.length === 0 ? (
-            <Empty>{t("noAttention")}</Empty>
+            <Empty icon={ShieldCheck}>{t("noAttention")}</Empty>
           ) : (
             <ul className="divide-y divide-border">
               {[...trouble, ...scheduled].map((s) => (

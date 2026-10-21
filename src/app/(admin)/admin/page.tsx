@@ -14,7 +14,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
-import { AlertTriangle, ArrowRight, Info, OctagonAlert } from "lucide-react"
+import { AlertTriangle, ArrowRight, Banknote, BellRing, CircleCheckBig, FileSignature, Info, LayoutGrid, LineChart, OctagonAlert, ShieldCheck, Users, Wallet } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { mrrHistory, monthlyEquivalent } from "@/lib/metrics"
@@ -24,13 +24,13 @@ import { loadHealthCounts } from "@/lib/admin/health-data"
 import { daysAgo, rate } from "@/lib/admin/analytics"
 import { signAndPayVolume } from "@/lib/admin/revenue"
 import { RevenueChart } from "@/components/admin/revenue-chart"
-import { AdminPageHeader, CurrencyAmounts, money, Panel, StatGrid, StatTile } from "@/components/admin/admin-ui"
+import { AdminPageHeader, Chip, CurrencyAmounts, Empty, money, Panel, StatGrid, StatTile, TextLink } from "@/components/admin/admin-ui"
 import { cn } from "@/lib/utils"
 
 const SEVERITY: Record<AlertSeverity, { icon: typeof Info; className: string }> = {
-  critical: { icon: OctagonAlert, className: "border-destructive/40 bg-destructive/5 text-destructive" },
-  warning: { icon: AlertTriangle, className: "border-amber-500/40 bg-amber-500/5 text-amber-800 dark:text-amber-300" },
-  info: { icon: Info, className: "border-border bg-muted/30 text-foreground" },
+  critical: { icon: OctagonAlert, className: "border-destructive/30 border-l-destructive bg-destructive/[0.05] text-destructive" },
+  warning: { icon: AlertTriangle, className: "border-amber-500/35 border-l-amber-500 bg-amber-500/[0.06] text-amber-800 dark:text-amber-300" },
+  info: { icon: Info, className: "border-border border-l-primary bg-muted/30 text-foreground" },
 }
 
 export default async function AdminOverviewPage() {
@@ -61,26 +61,34 @@ export default async function AdminOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} />
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={LayoutGrid} />
 
       <StatGrid>
-        <StatTile label={t("totalUsers")} value={totalUsers} hint={to("newUsers", { count: newUsers })} href="/admin/users" />
-        <StatTile label={t("mrr")} value={money(mrr, PLAN_CURRENCY)} hint={to("activeSubscriptions", { count: active.length })} href="/admin/revenue" />
-        <StatTile label={to("documentsSent")} value={sent30} hint={to("completed", { count: completed30 })} href="/admin/documents" />
-        <StatTile label={to("completionRate")} value={completion === null ? "—" : `${Math.round(completion * 100)}%`} hint={to("last30")} href="/admin/analytics" />
+        <StatTile label={t("totalUsers")} value={totalUsers} hint={to("newUsers", { count: newUsers })} href="/admin/users" icon={Users} />
+        <StatTile label={t("mrr")} value={money(mrr, PLAN_CURRENCY)} hint={to("activeSubscriptions", { count: active.length })} href="/admin/revenue" icon={Banknote} />
+        <StatTile label={to("documentsSent")} value={sent30} hint={to("completed", { count: completed30 })} href="/admin/documents" icon={FileSignature} />
+        <StatTile label={to("completionRate")} value={completion === null ? "—" : `${Math.round(completion * 100)}%`} hint={to("last30")} href="/admin/analytics" icon={CircleCheckBig} meter={completion} />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        <Panel title={to("alertsTitle")} hint={to("alertsHint")} className="lg:col-span-3" flush>
+        <Panel
+          title={to("alertsTitle")}
+          hint={to("alertsHint")}
+          className="lg:col-span-3"
+          flush
+          icon={BellRing}
+          iconTone={alerts.some((a) => a.severity === "critical") ? "bad" : alerts.length > 0 ? "warn" : "good"}
+          badge={alerts.length > 0 ? <Chip tone={alerts.some((a) => a.severity === "critical") ? "bad" : "warn"}>{alerts.length}</Chip> : undefined}
+        >
           {alerts.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">{to("allClear")}</p>
+            <Empty icon={ShieldCheck}>{to("allClear")}</Empty>
           ) : (
-            <ul className="space-y-2 p-4">
+            <ul className="space-y-2 p-4 sm:p-5">
               {alerts.map((alert) => {
                 const { icon: Icon, className } = SEVERITY[alert.severity]
                 return (
                   <li key={alert.key}>
-                    <Link href={alert.href} className={cn("group flex items-start gap-3 border p-3 text-sm transition-colors hover:border-foreground/40", className)}>
+                    <Link href={alert.href} className={cn("group flex items-start gap-3 border border-l-[3px] p-3 text-sm transition-colors hover:bg-card", className)}>
                       <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium">{to(`alert.${alert.key}.title`, { count: alert.count })}</span>
@@ -95,8 +103,8 @@ export default async function AdminOverviewPage() {
           )}
         </Panel>
 
-        <Panel title={to("paymentsTitle")} hint={to("paymentsHint")} className="lg:col-span-2" index={3}>
-          <dl className="space-y-3 text-sm">
+        <Panel title={to("paymentsTitle")} hint={to("paymentsHint")} className="lg:col-span-2" index={3} icon={Wallet}>
+          <dl className="divide-y divide-border text-sm [&>div]:py-3 [&>div:first-child]:pt-0">
             <div className="flex items-start justify-between gap-4">
               <dt className="text-muted-foreground">{to("signAndPayVolume")}</dt>
               <dd className="text-right font-medium">
@@ -112,13 +120,13 @@ export default async function AdminOverviewPage() {
               <dd className="font-medium tabular-nums">{volume.byProvider.STRIPE.counts.FAILED + volume.byProvider.PAYSTACK.counts.FAILED}</dd>
             </div>
           </dl>
-          <Link href="/admin/revenue" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline">
-            {to("openRevenue")} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
+          <div className="mt-2 border-t border-border pt-4">
+            <TextLink href="/admin/revenue">{to("openRevenue")}</TextLink>
+          </div>
         </Panel>
       </div>
 
-      <Panel title={t("revenueTitle")} hint={t("revenueSubtitle")} index={4}>
+      <Panel title={t("revenueTitle")} hint={t("revenueSubtitle")} index={4} icon={LineChart}>
         <RevenueChart data={mrrHistory(subscriptions)} label={t("revenueTooltip")} />
       </Panel>
     </div>

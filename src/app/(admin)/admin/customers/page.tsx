@@ -24,7 +24,9 @@ import {
   type CustomerInput,
 } from "@/lib/admin-customers"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
+import { CircleCheckBig, Coins, Contact, CreditCard, FileSignature, Repeat, Search, Users } from "lucide-react"
 import { AdminReveal } from "@/components/admin/admin-reveal"
+import { AdminPageHeader, Empty, StatTile } from "@/components/admin/admin-ui"
 import { cn } from "@/lib/utils"
 
 const PER_PAGE = 25
@@ -115,36 +117,39 @@ export default async function AdminCustomersPage({
     `/admin/customers?sort=${next.sort ?? sort}${next.page && next.page > 1 ? `&page=${next.page}` : ""}`
 
   const summary = [
-    { label: t("customers"), value: String(totals.customers) },
-    { label: t("paying"), value: String(totals.payingCustomers) },
-    { label: t("monthlyRevenue"), value: formatMinorUnits(totals.monthlyRevenue, "USD") },
-    { label: t("documentsSent"), value: String(totals.documentsSent) },
-    { label: t("completionRate"), value: percent(totals.completionRate) },
+    { label: t("customers"), value: String(totals.customers), icon: Users },
+    { label: t("paying"), value: String(totals.payingCustomers), icon: CreditCard, tone: "good" as const, meter: totals.customers ? totals.payingCustomers / totals.customers : null },
+    { label: t("monthlyRevenue"), value: formatMinorUnits(totals.monthlyRevenue, "USD"), icon: Repeat, tone: "info" as const },
+    { label: t("documentsSent"), value: String(totals.documentsSent), icon: FileSignature },
+    { label: t("completionRate"), value: percent(totals.completionRate), icon: CircleCheckBig, tone: "good" as const, meter: totals.completionRate },
   ]
 
   return (
     <div className="space-y-6">
-      <AdminReveal>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
-      </AdminReveal>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={Contact} />
 
       <AdminReveal index={1} className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {summary.map((s) => (
-          <div key={s.label} className="border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{s.value}</p>
+        {/* Was hand-built tiles; now the console's StatTile. The fifth spans
+            both columns on a phone so the grid has no hole. */}
+        {summary.map((s, i) => (
+          <div key={s.label} className={cn("min-w-0", i === summary.length - 1 && "col-span-2 lg:col-span-1")}>
+            <StatTile label={s.label} value={s.value} icon={s.icon} tone={s.tone} meter={s.meter} />
           </div>
         ))}
-        <div className="col-span-2 border border-border bg-card p-4 lg:col-span-5">
-          <p className="text-xs text-muted-foreground">{t("volumeTotal")}</p>
-          <p className="mt-1 break-words font-semibold tabular-nums">{money(totals.collected)}</p>
+        <div className="col-span-2 flex items-start gap-3 border border-border bg-card p-4 sm:p-5 lg:col-span-5">
+          <span aria-hidden className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center border border-brand-accent/25 bg-brand-accent/10 text-brand-accent-text">
+            <Coins className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-muted-foreground sm:text-[0.8125rem]">{t("volumeTotal")}</p>
+            <p className="mt-1 break-words font-semibold tabular-nums">{money(totals.collected)}</p>
+          </div>
         </div>
       </AdminReveal>
 
       <AdminReveal index={2} className="border border-border bg-card">
-        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">{t("count", { count: all.length })}</p>
+        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-sm font-medium">{t("count", { count: all.length })}</p>
           <nav aria-label={t("sortLabel")} className="flex flex-wrap gap-1">
             {CUSTOMER_SORTS.map((s) => (
               <Link
@@ -153,7 +158,7 @@ export default async function AdminCustomersPage({
                 aria-current={s === sort ? "true" : undefined}
                 className={cn(
                   "border px-3 py-1.5 text-xs font-medium transition-colors",
-                  s === sort ? "border-primary bg-primary/10 text-primary-hover" : "border-border text-muted-foreground hover:bg-muted"
+                  s === sort ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-foreground/25 hover:text-foreground"
                 )}
               >
                 {t(`sort.${s}`)}
@@ -163,7 +168,7 @@ export default async function AdminCustomersPage({
         </div>
 
         {rows.length === 0 ? (
-          <p className="p-8 text-center text-muted-foreground">{t("empty")}</p>
+          <Empty icon={Search}>{t("empty")}</Empty>
         ) : (
           <>
             {/* Phones: one card per customer. */}
@@ -189,7 +194,7 @@ export default async function AdminCustomersPage({
             {/* From md: the full table. */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
-                <thead className="border-b border-border text-left text-xs text-muted-foreground">
+                <thead className="border-b border-border bg-muted/40 text-left text-xs text-muted-foreground">
                   <tr>
                     <th className="p-3 font-medium">{t("colCustomer")}</th>
                     <th className="p-3 font-medium">{t("colPlan")}</th>
@@ -203,7 +208,7 @@ export default async function AdminCustomersPage({
                 </thead>
                 <tbody className="divide-y divide-border">
                   {rows.map((r) => (
-                    <tr key={r.id} className="hover:bg-muted/40">
+                    <tr key={r.id} className="transition-colors hover:bg-muted/35">
                       <td className="max-w-[220px] p-3">
                         <p className="truncate font-medium">{r.name || r.email}</p>
                         <p className="truncate text-xs text-muted-foreground">{r.email}</p>

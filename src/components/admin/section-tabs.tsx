@@ -9,10 +9,14 @@
  * that predate the sections (customers, moderation, seo, outreach) gained
  * their tabs without being edited. Sections with a single page get no row.
  *
- * The underline under the current tab slides to the new one on navigation
- * (framer-motion `layoutId`); with prefers-reduced-motion it jumps. On a phone
- * the row scrolls inside itself, never the page.
+ * The current tab is a raised white tab joined to the page below it, with a
+ * teal rule along its top; the whole tab slides to the new one on navigation
+ * (framer-motion `layoutId`), and with prefers-reduced-motion it jumps. Was a
+ * plain underline under the current tab. On a phone the row scrolls inside
+ * itself, never the page, and is scrolled so the current tab is in view (the
+ * SEO agent tab sits past the edge of a 360px screen otherwise).
  */
+import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import { useTranslations } from "next-intl"
@@ -24,13 +28,24 @@ export function SectionTabs() {
   const t = useTranslations("dashboard.nav")
   const pathname = useRenderedPathname()
   const reduceMotion = useReducedMotion()
+  const navRef = useRef<HTMLElement>(null)
   const section = sectionFor(pathname)
+
+  // Horizontal only: scrollIntoView would also move the page vertically.
+  useEffect(() => {
+    const nav = navRef.current
+    const tab = nav?.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!nav || !tab) return
+    const left = tab.offsetLeft - (nav.clientWidth - tab.offsetWidth) / 2
+    nav.scrollTo({ left: Math.max(0, left), behavior: reduceMotion ? "auto" : "smooth" })
+  }, [pathname, reduceMotion])
+
   if (!section || section.tabs.length < 2) return null
   const current = activeTab(section, pathname)
 
   return (
-    <nav aria-label={t("sectionPages")} className="-mx-6 mb-6 overflow-x-auto border-b border-border px-6">
-      <ul className="flex w-max gap-1">
+    <nav ref={navRef} aria-label={t("sectionPages")} className="-mx-4 mb-6 overflow-x-auto border-b border-border px-4 sm:-mx-6 sm:px-6">
+      <ul className="flex w-max gap-0.5 pt-1">
         {section.tabs.map((tab) => {
           const active = tab.href === current?.href
           return (
@@ -39,17 +54,20 @@ export function SectionTabs() {
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-11 items-center px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
-                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                  "relative z-10 inline-flex h-11 items-center whitespace-nowrap px-3.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+                  active ? "text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 )}
               >
                 {t(tab.key)}
               </Link>
               {active && (
+                // Was an underline: absolute inset-x-2 -bottom-px h-0.5 bg-primary.
+                // Now the tab itself, covering the strip's bottom border so it
+                // reads as joined to the page.
                 <motion.span
                   layoutId="admin-section-tab"
                   aria-hidden
-                  className="absolute inset-x-2 -bottom-px h-0.5 bg-primary"
+                  className="absolute inset-x-0 -bottom-px top-0 border-x border-t border-border bg-background before:absolute before:inset-x-0 before:-top-px before:h-0.5 before:bg-primary"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", bounce: 0.15, duration: 0.35 }}
                 />
               )}

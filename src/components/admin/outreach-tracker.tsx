@@ -138,7 +138,8 @@ export function OutreachTracker({ rows: initial, today }: { rows: OutreachRow[];
   return (
     <div className="space-y-4">
       {/* Filters scroll inside their own strip on a phone, never the page. */}
-      <div className="-mx-6 overflow-x-auto px-6 md:mx-0 md:px-0">
+      {/* Bleeds to the page gutter: 16px on a phone, 24px from sm (was -mx-6 px-6 at every width, from when the admin page padding was p-6 throughout). */}
+      <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0">
         <div role="tablist" aria-label={t("filtersLabel")} className="flex w-max gap-1.5">
           {FILTERS.map((f) => {
             const count = f === "all" ? summary.total : f === "followUp" ? summary.followUp : summary[f]

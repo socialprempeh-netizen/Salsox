@@ -15,9 +15,10 @@ import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { daysAgo, parseWindow, rate, WINDOWS } from "@/lib/admin/analytics"
 import { loadHealthCounts } from "@/lib/admin/health-data"
+import { Ban, CircleCheckBig, Clock3, FilePen, FileSignature, FileX2, Hourglass, ListChecks, Send, TriangleAlert } from "lucide-react"
 import { AdminPageHeader, Chip, Empty, Panel, ScrollTable, StatGrid, StatTile, WindowPicker, type Tone } from "@/components/admin/admin-ui"
 
-const STATUS_TONE: Record<string, Tone> = { COMPLETED: "good", PENDING: "default", DRAFT: "default", REJECTED: "bad", EXPIRED: "warn", CANCELLED: "warn" }
+const STATUS_TONE: Record<string, Tone> = { COMPLETED: "good", PENDING: "info", DRAFT: "default", REJECTED: "bad", EXPIRED: "warn", CANCELLED: "warn" }
 
 export default async function AdminDocumentsPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   const user = await getCurrentUser()
@@ -56,27 +57,27 @@ export default async function AdminDocumentsPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })}>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })} icon={FileSignature}>
         <WindowPicker path="/admin/documents" current={days} windows={WINDOWS} label={tc("period")} format={(d) => tc("days", { days: d })} />
       </AdminPageHeader>
 
       <StatGrid>
-        <StatTile label={t("sent")} value={sent} hint={t("drafts", { count: drafts })} />
-        <StatTile label={t("signed")} value={count("COMPLETED")} tone="good" hint={completion === null ? undefined : t("completion", { percent: Math.round(completion * 100) })} />
-        <StatTile label={t("pending")} value={count("PENDING")} />
-        <StatTile label={t("failed")} value={counts.undeliveredInvites + failedPayments} tone={counts.undeliveredInvites + failedPayments > 0 ? "bad" : "default"} hint={t("failedHint", { invites: counts.undeliveredInvites, payments: failedPayments })} href="/admin/health" />
+        <StatTile label={t("sent")} value={sent} hint={t("drafts", { count: drafts })} icon={Send} />
+        <StatTile label={t("signed")} value={count("COMPLETED")} tone="good" hint={completion === null ? undefined : t("completion", { percent: Math.round(completion * 100) })} icon={CircleCheckBig} meter={completion} />
+        <StatTile label={t("pending")} value={count("PENDING")} tone="info" icon={Hourglass} meter={sent ? count("PENDING") / sent : null} />
+        <StatTile label={t("failed")} value={counts.undeliveredInvites + failedPayments} tone={counts.undeliveredInvites + failedPayments > 0 ? "bad" : "default"} hint={t("failedHint", { invites: counts.undeliveredInvites, payments: failedPayments })} href="/admin/health" icon={TriangleAlert} />
       </StatGrid>
 
       <StatGrid index={2}>
-        <StatTile label={t("declined")} value={count("REJECTED")} tone={count("REJECTED") > 0 ? "warn" : "default"} href="/admin/moderation" />
-        <StatTile label={t("expired")} value={count("EXPIRED")} />
-        <StatTile label={t("cancelled")} value={count("CANCELLED")} />
-        <StatTile label={t("draftsLabel")} value={drafts} />
+        <StatTile label={t("declined")} value={count("REJECTED")} tone={count("REJECTED") > 0 ? "warn" : "default"} href="/admin/moderation" icon={FileX2} />
+        <StatTile label={t("expired")} value={count("EXPIRED")} icon={Clock3} />
+        <StatTile label={t("cancelled")} value={count("CANCELLED")} icon={Ban} />
+        <StatTile label={t("draftsLabel")} value={drafts} icon={FilePen} />
       </StatGrid>
 
-      <Panel title={t("recentTitle")} hint={t("recentHint")} flush index={3}>
+      <Panel title={t("recentTitle")} hint={t("recentHint")} flush index={3} icon={ListChecks}>
         {recent.length === 0 ? (
-          <Empty>{t("empty")}</Empty>
+          <Empty icon={FileSignature}>{t("empty")}</Empty>
         ) : (
           <>
             {/* Phone: a card per document. */}
@@ -84,7 +85,7 @@ export default async function AdminDocumentsPage({ searchParams }: { searchParam
               {recent.map((d) => {
                 const signers = d.recipients.filter((r) => r.role !== "VIEWER")
                 return (
-                  <li key={d.id} className="space-y-1 p-4 text-sm">
+                  <li key={d.id} className="space-y-1.5 p-4 text-sm">
                     <div className="flex items-start justify-between gap-3">
                       <p className="min-w-0 truncate font-medium">{d.title}</p>
                       <Chip tone={STATUS_TONE[d.status]}>{tc(`docStatus.${d.status}`)}</Chip>

@@ -22,6 +22,7 @@ import { daysAgo, parseWindow, WINDOWS } from "@/lib/admin/analytics"
 import { loadRevenue } from "@/lib/admin/revenue-data"
 import { convertTotals, currenciesOf, reconcile, type CurrencyTotals } from "@/lib/admin/revenue"
 import type { ProviderReport } from "@/lib/admin/provider-reports"
+import { Banknote, CircleDollarSign, Coins, CreditCard, FileSignature, Landmark, ListOrdered, Repeat, Scale, TriangleAlert, Wallet } from "lucide-react"
 import { AdminPageHeader, Chip, CurrencyAmounts, Empty, money, Panel, ScrollTable, StatGrid, StatTile, WindowPicker } from "@/components/admin/admin-ui"
 
 export default async function AdminRevenuePage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
@@ -70,7 +71,7 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
     )
 
   const providerProblem = (report: ProviderReport<object>) =>
-    report.state === "notConfigured" ? <Empty>{t("providerNotConfigured")}</Empty> : report.state === "error" ? <Empty>{t("providerError", { message: report.message })}</Empty> : null
+    report.state === "notConfigured" ? <Empty icon={Landmark}>{t("providerNotConfigured")}</Empty> : report.state === "error" ? <Empty icon={TriangleAlert}>{t("providerError", { message: report.message })}</Empty> : null
 
   const row = (label: string, totals: CurrencyTotals, hint?: string) => (
     <tr key={label}>
@@ -118,7 +119,7 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })}>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days })} icon={Banknote}>
         <WindowPicker path="/admin/revenue" current={days} windows={WINDOWS} label={tc("period")} format={(d) => tc("days", { days: d })} />
       </AdminPageHeader>
 
@@ -128,20 +129,22 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
           value={<CurrencyAmounts totals={revenue.total} empty={money(0, data.mrr.currency)} className="text-xl" />}
           hint={converted ? t("convertedTotal", { amount: money(converted.amount, converted.currency), date: converted.asOf }) : data.revenueComplete ? t("perCurrency") : t("incomplete")}
           tone={data.revenueComplete ? "default" : "warn"}
+          icon={CircleDollarSign}
         />
-        <StatTile label={t("mrr")} value={money(data.mrr.amount, data.mrr.currency)} hint={t("mrrHint")} />
-        <StatTile label={t("signAndPayVolume")} value={<CurrencyAmounts totals={volume.paid} empty={none} className="text-xl" />} hint={t("volumeHint")} />
+        <StatTile label={t("mrr")} value={money(data.mrr.amount, data.mrr.currency)} hint={t("mrrHint")} tone="info" icon={Repeat} />
+        <StatTile label={t("signAndPayVolume")} value={<CurrencyAmounts totals={volume.paid} empty={none} className="text-xl" />} hint={t("volumeHint")} tone="accent" icon={FileSignature} />
         <StatTile
           label={t("reconciliation")}
           value={reconciled ? (issues === 0 ? t("reconciled") : t("issues", { count: issues })) : "—"}
           tone={!reconciled ? "default" : issues === 0 ? "good" : "bad"}
           hint={t("failedCount", { count: failedCount })}
           href="/admin/revenue/reconciliation"
+          icon={Scale}
         />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title={t("byKindTitle")} hint={t("byKindHint")} flush>
+        <Panel title={t("byKindTitle")} hint={t("byKindHint")} flush icon={Coins}>
           <ScrollTable minWidth="18rem">
             <tbody>
               {row(t("subscription"), revenue.subscription, t("subscriptionSource"))}
@@ -155,9 +158,9 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
           </p>
         </Panel>
 
-        <Panel title={t("currencyTitle")} hint={t("currencyHint")} flush index={3}>
+        <Panel title={t("currencyTitle")} hint={t("currencyHint")} flush index={3} icon={Landmark}>
           {currencies.length === 0 ? (
-            <Empty>{t("noMoney")}</Empty>
+            <Empty icon={Coins}>{t("noMoney")}</Empty>
           ) : (
             <ScrollTable minWidth="30rem">
               <thead>
@@ -186,7 +189,7 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title={t("stripeTitle")} hint={t("stripeHint")} action={providerState(stripe)} flush index={4}>
+        <Panel title={t("stripeTitle")} hint={t("stripeHint")} action={providerState(stripe)} flush index={4} icon={CreditCard}>
           {stripe.state === "ok" ? (
             <ScrollTable minWidth="18rem">
               <tbody>
@@ -204,7 +207,7 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
           )}
         </Panel>
 
-        <Panel title={t("paystackTitle")} hint={t("paystackHint")} action={providerState(paystack)} flush index={5}>
+        <Panel title={t("paystackTitle")} hint={t("paystackHint")} action={providerState(paystack)} flush index={5} icon={Wallet}>
           {paystack.state === "ok" ? (
             <ScrollTable minWidth="18rem">
               <tbody>
@@ -222,7 +225,7 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
         </Panel>
       </div>
 
-      <Panel title={t("failedTitle")} hint={t("failedHint")} flush index={6}>
+      <Panel title={t("failedTitle")} hint={t("failedHint")} flush index={6} icon={TriangleAlert} iconTone="warn">
         {failedCount === 0 ? (
           <Empty>{t("failedEmpty")}</Empty>
         ) : (
@@ -256,9 +259,9 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
         )}
       </Panel>
 
-      <Panel title={t("recentTitle")} hint={t("recentHint")} flush index={7}>
+      <Panel title={t("recentTitle")} hint={t("recentHint")} flush index={7} icon={ListOrdered}>
         {recent.length === 0 ? (
-          <Empty>{t("recentEmpty")}</Empty>
+          <Empty icon={ListOrdered}>{t("recentEmpty")}</Empty>
         ) : (
           <ScrollTable minWidth="44rem">
             <thead>

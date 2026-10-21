@@ -68,12 +68,15 @@ const menus = {
   ],
 } satisfies Record<string, { href: string; key: string; icon: unknown; exact?: boolean; section?: AdminSectionId }[]>
 
-function linkClass(active: boolean) {
+// `marked`: the admin console adds a teal rule down the current entry's left
+// edge, the marker its section tabs and stat tiles use too.
+function linkClass(active: boolean, marked = false) {
   return cn(
-    "flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors sidebar-collapsed:justify-center sidebar-collapsed:px-2",
+    "relative flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors sidebar-collapsed:justify-center sidebar-collapsed:px-2",
     active
       ? "bg-primary/10 text-primary-hover"
-      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+    active && marked && "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary"
   )
 }
 
@@ -121,7 +124,7 @@ export function SidebarNav({
             // purpose when the modal behaviour was settled, because this is
             // the release that goes through accessibility.
             aria-current={active ? "page" : undefined}
-            className={linkClass(active)}
+            className={linkClass(active, variant === "admin")}
           >
             <Icon className="h-4 w-4 shrink-0" />
             <NavLabel>{t(item.key)}</NavLabel>

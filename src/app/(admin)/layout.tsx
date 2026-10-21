@@ -26,7 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/" className="flex items-center gap-2 font-bold text-foreground">
             <Logo animated wordmarkClassName="sidebar-collapsed:hidden" />
           </Link>
-          <span className="ml-2 bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive sidebar-collapsed:hidden">{t("badge")}</span>
+          {/* Violet brand accent, the same tint the badge uses on the phone header
+              below (was the destructive red, which read as an error). */}
+          <span className="ml-2 border border-brand-accent/25 bg-brand-accent/10 px-1.5 py-0.5 text-xs font-semibold text-brand-accent-text sidebar-collapsed:hidden">{t("badge")}</span>
         </div>
         <SidebarNav variant="admin" />
         <div className="border-t border-border p-3">
@@ -42,12 +44,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           child (a table) inflates the whole column past the viewport instead of
           scrolling inside its own container. */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background px-4 md:px-6">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:px-6">
           <SidebarCollapseToggle />
           <div className="flex items-center gap-1 md:hidden">
             <MobileNav variant="admin" />
             <Logo animated wordmarkClassName="text-base font-bold text-foreground" />
-            <span className="ml-1 bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive">{t("badge")}</span>
+            <span className="ml-1 border border-brand-accent/25 bg-brand-accent/10 px-1.5 py-0.5 text-xs font-semibold text-brand-accent-text">{t("badge")}</span>
           </div>
           <div className="flex items-center gap-3 ml-auto">
             <ThemeToggle />
@@ -69,7 +71,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             cards, which gain from the air. Same sidebar, different content,
             different measure. */}
         {/* min-w-0 here too: the section tab row scrolls inside its own strip. */}
-        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 p-6">
+        {/* 16px gutter on a phone, 24px from sm (was p-6 at every width). */}
+        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-5 sm:p-6">
           <SectionTabs />
           {children}
         </main>

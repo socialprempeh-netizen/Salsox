@@ -19,8 +19,12 @@ import { AUDIT } from "@/lib/esign/audit"
 import { emailConfirmationRequired, dailyWindowStart } from "@/lib/esign/sending-limits"
 import { MODERATION, moderationSignals, rankFlagged, type SenderActivity } from "@/lib/esign/moderation"
 import { formatMinorUnits } from "@/lib/esign/payments/select"
-import { AdminReveal } from "@/components/admin/admin-reveal"
-import { cn } from "@/lib/utils"
+import { CreditCard, FileX2, ShieldAlert, ShieldCheck } from "lucide-react"
+// Panel brings its own entrance motion.
+// import { AdminReveal } from "@/components/admin/admin-reveal"
+import { AdminPageHeader, Chip, Empty, Panel } from "@/components/admin/admin-ui"
+// Signals use the shared Chip now.
+// import { cn } from "@/lib/utils"
 
 type RecipientCounts = { userId: string; total: bigint; rejected: bigint }
 type DisputeCounts = { userId: string; disputes: bigint }
@@ -113,22 +117,25 @@ export default async function AdminModerationPage() {
 
   return (
     <div className="space-y-6">
-      <AdminReveal>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="mt-1 text-muted-foreground">{t("subtitle", { days: MODERATION.windowDays })}</p>
-      </AdminReveal>
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle", { days: MODERATION.windowDays })} icon={ShieldAlert} />
 
-      <AdminReveal index={1} className="border border-border bg-card">
-        <div className="border-b border-border p-4">
-          <h2 className="font-semibold">{t("flaggedTitle")}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t("flaggedHint")}</p>
-        </div>
+      {/* The three blocks were hand-built (AdminReveal, a header div, a body);
+          now the console's Panel, with an icon and a count. */}
+      <Panel
+        title={t("flaggedTitle")}
+        hint={t("flaggedHint")}
+        icon={ShieldAlert}
+        iconTone={flagged.length > 0 ? "bad" : "good"}
+        badge={flagged.length > 0 ? <Chip tone="bad">{flagged.length}</Chip> : undefined}
+        index={1}
+        flush
+      >
         {flagged.length === 0 ? (
-          <p className="p-8 text-center text-muted-foreground">{t("flaggedEmpty")}</p>
+          <Empty icon={ShieldCheck}>{t("flaggedEmpty")}</Empty>
         ) : (
           <ul className="divide-y divide-border">
             {flagged.map((a) => (
-              <li key={a.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-start lg:justify-between">
+              <li key={a.id} className="flex flex-col gap-3 p-4 sm:px-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{a.name || a.email}</p>
                   <p className="truncate text-xs text-muted-foreground">
@@ -144,16 +151,8 @@ export default async function AdminModerationPage() {
                 </div>
                 <ul className="flex flex-wrap gap-1.5 lg:max-w-[55%] lg:justify-end">
                   {a.signals.map((s) => (
-                    <li
-                      key={s.kind}
-                      className={cn(
-                        "border px-2 py-1 text-xs font-medium",
-                        s.severity === "high"
-                          ? "border-destructive/40 bg-destructive/10 text-destructive"
-                          : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                      )}
-                    >
-                      {t(`signal.${s.kind}`, s.values)}
+                    <li key={s.kind}>
+                      <Chip tone={s.severity === "high" ? "bad" : "warn"}>{t(`signal.${s.kind}`, s.values)}</Chip>
                     </li>
                   ))}
                 </ul>
@@ -161,16 +160,12 @@ export default async function AdminModerationPage() {
             ))}
           </ul>
         )}
-      </AdminReveal>
+      </Panel>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <AdminReveal index={2} className="border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <h2 className="font-semibold">{t("rejectionsTitle")}</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">{t("rejectionsHint")}</p>
-          </div>
+        <Panel title={t("rejectionsTitle")} hint={t("rejectionsHint")} icon={FileX2} index={2} flush>
           {rejections.length === 0 ? (
-            <p className="p-8 text-center text-muted-foreground">{t("rejectionsEmpty")}</p>
+            <Empty icon={ShieldCheck}>{t("rejectionsEmpty")}</Empty>
           ) : (
             <ul className="divide-y divide-border">
               {rejections.map((r) => (
@@ -183,15 +178,11 @@ export default async function AdminModerationPage() {
               ))}
             </ul>
           )}
-        </AdminReveal>
+        </Panel>
 
-        <AdminReveal index={3} className="border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <h2 className="font-semibold">{t("paymentsTitle")}</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">{t("paymentsHint")}</p>
-          </div>
+        <Panel title={t("paymentsTitle")} hint={t("paymentsHint")} icon={CreditCard} index={3} flush>
           {paymentEvents.length === 0 ? (
-            <p className="p-8 text-center text-muted-foreground">{t("paymentsEmpty")}</p>
+            <Empty icon={ShieldCheck}>{t("paymentsEmpty")}</Empty>
           ) : (
             <ul className="divide-y divide-border">
               {paymentEvents.map((e) => (
@@ -206,7 +197,7 @@ export default async function AdminModerationPage() {
               ))}
             </ul>
           )}
-        </AdminReveal>
+        </Panel>
       </div>
     </div>
   )

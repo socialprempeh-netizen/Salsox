@@ -12,8 +12,10 @@ import { getCurrentUser } from "@/lib/auth"
 import { getFormatter, getTranslations } from "next-intl/server"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AdminPageHeader } from "@/components/admin/admin-ui"
+// The table sits in the shared Panel now, like every other admin page.
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Search, UserRound, Users } from "lucide-react"
+import { AdminPageHeader, Chip, Empty, Panel } from "@/components/admin/admin-ui"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PromoteUserButton } from "@/components/admin/promote-user-button"
@@ -116,34 +118,32 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={tc("title")} subtitle={tc("subtitle")} />
+      <AdminPageHeader title={tc("title")} subtitle={tc("subtitle")} icon={Users} />
 
-      {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>{t("usersTitle")}</CardTitle>
-              <CardDescription>{t("usersCount", { count: totalUsers })}</CardDescription>
-            </div>
-            <form className="flex gap-2">
-              <input
-                type="text"
-                name="search"
-                defaultValue={search}
-                placeholder={t("searchPlaceholder")}
-                className="h-9 w-full border border-border bg-secondary px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-64"
-              />
-              <button
-                type="submit"
-                className="h-9 bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                {t("search")}
-              </button>
-            </form>
-          </div>
-        </CardHeader>
-        <CardContent>
+      {/* Users Table. Was a shadcn Card with the search beside its title; the
+          search is now a bar of its own under the Panel header, full width on
+          a phone. */}
+      <Panel title={t("usersTitle")} hint={t("usersCount", { count: totalUsers })} icon={UserRound} badge={search ? <Chip tone="info">{search}</Chip> : undefined} flush>
+        <form role="search" className="flex gap-2 border-b border-border bg-muted/25 p-3 sm:px-5">
+          <label className="relative min-w-0 flex-1 sm:max-w-sm">
+            <span className="sr-only">{t("searchPlaceholder")}</span>
+            <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              name="search"
+              defaultValue={search}
+              placeholder={t("searchPlaceholder")}
+              className="h-10 w-full border border-input bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+            />
+          </label>
+          <button
+            type="submit"
+            className="h-10 shrink-0 bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            {t("search")}
+          </button>
+        </form>
+        <div className="p-4 sm:p-5">
           {/* Below `md` a 6-column table is unreadable: stack each user as a card. */}
           <div className="space-y-3 md:hidden">
             {users.map((user) => (
@@ -184,9 +184,7 @@ export default async function AdminUsersPage({
                 )}
               </div>
             ))}
-            {users.length === 0 && (
-              <p className="py-8 text-center text-muted-foreground">{t("noUsers")}</p>
-            )}
+            {users.length === 0 && <Empty icon={Search}>{t("noUsers")}</Empty>}
           </div>
 
           <div className="hidden md:block">
@@ -285,8 +283,8 @@ export default async function AdminUsersPage({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
 
     </div>
   )
