@@ -14,6 +14,14 @@
       "schedule": "0 4 * * 1"
     },
     {
+      "path": "/api/cron/outreach-agent",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/outreach-agent/hunt",
+      "schedule": "0 7 * * 1,4"
+    },
+    {
       "path": "/api/indexnow",
       "schedule": "30 6 * * *"
     }

@@ -29,6 +29,7 @@ const PAGES: [string, RegExp][] = [
   ["/admin/seo/inventory", /^SEO inventory$/],
   ["/admin/seo/agent", /^SEO agent$/],
   ["/admin/outreach", /^Outreach$/],
+  ["/admin/outreach/agent", /^Outreach agent$/],
   ["/admin/revenue", /^Revenue & Payments$/],
   ["/admin/revenue/reconciliation", /^Reconciliation$/],
   ["/admin/subscriptions", /^Subscriptions & Plans$/],
@@ -75,7 +76,9 @@ test("every admin section and tab opens and fits a phone", async ({ browser }) =
   await page.goto("/admin/analytics")
   const analyticsTabs = page.getByRole("navigation", { name: "Pages in this section" })
   await expect(analyticsTabs.getByRole("link", { name: "SEO health" })).toBeVisible()
-  await expect(analyticsTabs.getByRole("link", { name: "Outreach" })).toBeVisible()
+  // exact: "Outreach agent" sits beside it now.
+  await expect(analyticsTabs.getByRole("link", { name: "Outreach", exact: true })).toBeVisible()
+  await expect(analyticsTabs.getByRole("link", { name: "Outreach agent" })).toBeVisible()
   await analyticsTabs.getByRole("link", { name: "SEO inventory" }).click()
   await page.waitForURL("**/admin/seo/inventory")
 

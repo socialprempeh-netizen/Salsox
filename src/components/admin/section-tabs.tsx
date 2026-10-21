@@ -36,7 +36,11 @@ export function SectionTabs() {
     const nav = navRef.current
     const tab = nav?.querySelector<HTMLElement>('[aria-current="page"]')
     if (!nav || !tab) return
-    const left = tab.offsetLeft - (nav.clientWidth - tab.offsetWidth) / 2
+    // Measured against the strip, not with offsetLeft: each tab's <li> is
+    // `relative`, so offsetLeft was relative to the li and always about 0.
+    const navBox = nav.getBoundingClientRect()
+    const tabBox = tab.getBoundingClientRect()
+    const left = nav.scrollLeft + tabBox.left - navBox.left - (navBox.width - tabBox.width) / 2
     nav.scrollTo({ left: Math.max(0, left), behavior: reduceMotion ? "auto" : "smooth" })
   }, [pathname, reduceMotion])
 

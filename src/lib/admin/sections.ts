@@ -11,6 +11,9 @@
  *   /admin/seo         Analytics (search health)
  *   /admin/outreach    Analytics (founder outreach)
  *
+ * The Outreach agent (src/lib/outreach-agent) sits beside the tracker it
+ * feeds, at /admin/outreach/agent, as the SEO agent sits beside SEO health.
+ *
  * Kept free of icons and React so it can be tested; the nav components attach
  * an icon per section id.
  */
@@ -52,6 +55,8 @@ export const ADMIN_NAV: AdminSection[] = [
       // The daily SEO content agent (src/lib/seo-agent).
       { href: "/admin/seo/agent", key: "seoAgent" },
       { href: "/admin/outreach", key: "outreach" },
+      // The lead-gen, cold outreach and social agent (src/lib/outreach-agent).
+      { href: "/admin/outreach/agent", key: "outreachAgent" },
     ],
   },
   {

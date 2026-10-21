@@ -21,4 +21,5 @@ export const MIGRATIONS = [
   "20261015180000_saved_templates",
   "20261015204327_indexnow_log",
   "20261020120000_seo_agent",
+  "20261021121550_outreach_agent",
 ] as const

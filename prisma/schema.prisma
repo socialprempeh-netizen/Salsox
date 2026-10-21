@@ -703,3 +703,187 @@ model SeoAgentSettings {
 
   @@map("seo_agent_settings")
 }
+
+// ─── Outreach agent ──────────────────────────────────────────────────────────
+// The lead-gen, cold outreach and social agent (src/lib/outreach-agent):
+// leads found from public complaints about other e-signature tools, the
+// emails written to them and their follow-ups, the replies that came back,
+// addresses that asked not to be contacted, social posts, the run log and its
+// settings. Tables are snake_case, like the SEO agent's, because both modules
+// are kept self-contained enough to move into one product of their own.
+
+// Where a lead stands. NEEDS_CONTACT until an admin adds an address: review
+// sites and Reddit do not publish one, and the agent never guesses.
+enum OutreachLeadStatus {
+  NEEDS_CONTACT
+  READY
+  CONTACTED
+  REPLIED
+  SKIPPED
+  UNSUBSCRIBED
+}
+
+enum OutreachMessageKind {
+  INITIAL
+  FOLLOW_UP
+}
+
+enum OutreachMessageStatus {
+  DRAFT
+  SENT
+  DISCARDED
+  FAILED
+}
+
+// Leo's reading of a reply.
+enum OutreachReplyCategory {
+  INTERESTED
+  QUESTION
+  NOT_NOW
+  NOT_INTERESTED
+  UNSUBSCRIBE
+  OUT_OF_OFFICE
+  OTHER
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  LINKEDIN
+  X
+}
+
+enum SocialPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+  DISCARDED
+}
+
+// A public complaint that names a competitor. `sourceKey` (source plus the
+// review or thread id, or a hash of the quote) is unique, so the same
+// complaint is never stored or contacted twice.
+model OutreachLead {
+  id               String             @id @default(cuid())
+  sourceKey        String             @unique @map("source_key")
+  source           String
+  competitor       String
+  sourceUrl        String             @map("source_url")
+  rating           Int?
+  quote            String
+  complaint        String
+  reviewerName     String?            @map("reviewer_name")
+  reviewerRole     String?            @map("reviewer_role")
+  company          String?
+  email            String?
+  status           OutreachLeadStatus @default(NEEDS_CONTACT)
+  // The Outreach tracker row made by "Add to Customers"; never a user account.
+  trackerContactId String?            @map("tracker_contact_id")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  messages         OutreachMessage[]
+  replies          OutreachReply[]
+
+  @@index([status])
+  @@index([email])
+  @@map("outreach_leads")
+}
+
+// An email Marco (INITIAL) or Oscar (FOLLOW_UP) wrote. `fixId` names the
+// catalogue entry it was allowed to describe (src/lib/outreach-agent/fixes.ts).
+model OutreachMessage {
+  id         String                @id @default(cuid())
+  leadId     String                @map("lead_id")
+  lead       OutreachLead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  kind       OutreachMessageKind
+  status     OutreachMessageStatus @default(DRAFT)
+  subject    String
+  body       String
+  fixId      String                @map("fix_id")
+  model      String
+  autoSent   Boolean               @default(false) @map("auto_sent")
+  providerId String?               @map("provider_id")
+  error      String?
+  sentAt     DateTime?             @map("sent_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  @@index([leadId, kind])
+  @@index([status, sentAt])
+  @@map("outreach_messages")
+}
+
+// A reply, from the inbound webhook or pasted in by an admin, with Leo's label.
+model OutreachReply {
+  id         String                @id @default(cuid())
+  leadId     String                @map("lead_id")
+  lead       OutreachLead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromEmail  String                @map("from_email")
+  subject    String
+  text       String
+  category   OutreachReplyCategory
+  summary    String
+  // The provider's id for an inbound email, so a redelivered webhook is ignored.
+  providerId String?               @unique @map("provider_id")
+  source     String
+  receivedAt DateTime              @default(now()) @map("received_at")
+
+  @@index([leadId])
+  @@map("outreach_replies")
+}
+
+// Addresses that unsubscribed or asked not to be contacted: checked before
+// every send, whatever the lead's status says. Stored lowercased.
+model OutreachSuppression {
+  email     String   @id
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("outreach_suppressions")
+}
+
+// A post for one of the product's own social accounts, published only through
+// that platform's official API.
+model SocialPost {
+  id           String           @id @default(cuid())
+  platform     SocialPlatform
+  body         String
+  status       SocialPostStatus @default(DRAFT)
+  scheduledFor DateTime?        @map("scheduled_for")
+  publishedAt  DateTime?        @map("published_at")
+  externalId   String?          @map("external_id")
+  error        String?
+  model        String?
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  @@index([status, scheduledFor])
+  @@map("outreach_social_posts")
+}
+
+model OutreachAgentRun {
+  id         String    @id @default(cuid())
+  kind       String
+  trigger    String
+  status     String
+  message    String?
+  count      Int       @default(0)
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  @@index([kind, startedAt])
+  @@map("outreach_agent_runs")
+}
+
+// One row (id 1). `reviewEvery` puts every email back behind approval after
+// the first batch; `signature` is the "sent via" line for a standalone
+// release, off by default.
+model OutreachAgentSettings {
+  id          Int      @id @default(1)
+  reviewEvery Boolean  @default(false) @map("review_every")
+  paused      Boolean  @default(false)
+  dailyCap    Int      @default(20) @map("daily_cap")
+  signature   Boolean  @default(false)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("outreach_agent_settings")
+}

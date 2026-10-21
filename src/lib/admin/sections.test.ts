@@ -55,5 +55,9 @@ describe("the admin console map", () => {
     expect(activeTab(users, "/admin/users")?.key).toBe("accounts")
     const revenue = ADMIN_NAV.find((s) => s.id === "revenue")!
     expect(activeTab(revenue, "/admin/revenue/reconciliation")?.key).toBe("reconciliation")
+    const analytics = ADMIN_NAV.find((s) => s.id === "analytics")!
+    expect(sectionFor("/admin/outreach/agent")?.id).toBe("analytics")
+    expect(activeTab(analytics, "/admin/outreach/agent")?.key).toBe("outreachAgent")
+    expect(activeTab(analytics, "/admin/outreach")?.key).toBe("outreach")
   })
 })
