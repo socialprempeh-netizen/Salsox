@@ -22,7 +22,7 @@ import { daysAgo, parseWindow, WINDOWS } from "@/lib/admin/analytics"
 import { loadRevenue } from "@/lib/admin/revenue-data"
 import { convertTotals, currenciesOf, reconcile, type CurrencyTotals } from "@/lib/admin/revenue"
 import type { ProviderReport } from "@/lib/admin/provider-reports"
-import { Banknote, CircleDollarSign, Coins, CreditCard, FileSignature, Landmark, ListOrdered, Repeat, Scale, TriangleAlert, Wallet } from "lucide-react"
+import { Banknote, CircleDollarSign, ShieldCheck, Coins, CreditCard, FileSignature, Landmark, ListOrdered, Repeat, Scale, TriangleAlert, Wallet } from "lucide-react"
 import { AdminPageHeader, Chip, CurrencyAmounts, Empty, money, Panel, ScrollTable, StatGrid, StatTile, WindowPicker } from "@/components/admin/admin-ui"
 
 export default async function AdminRevenuePage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
@@ -116,6 +116,7 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
     .slice(0, 20)
 
   const currencies = currenciesOf(revenue.total, volume.byProvider.STRIPE.paid, volume.byProvider.PAYSTACK.paid, volume.refunded)
+  const stacked = (totals: CurrencyTotals) => (currenciesOf(totals).filter((c) => totals[c] !== 0).length > 1 ? "text-xl" : undefined)
 
   return (
     <div className="space-y-6">
@@ -126,13 +127,13 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
       <StatGrid>
         <StatTile
           label={t("totalRevenue")}
-          value={<CurrencyAmounts totals={revenue.total} empty={money(0, data.mrr.currency)} className="text-xl" />}
+          value={<CurrencyAmounts totals={revenue.total} empty={money(0, data.mrr.currency)} className={stacked(revenue.total)} />}
           hint={converted ? t("convertedTotal", { amount: money(converted.amount, converted.currency), date: converted.asOf }) : data.revenueComplete ? t("perCurrency") : t("incomplete")}
           tone={data.revenueComplete ? "default" : "warn"}
           icon={CircleDollarSign}
         />
         <StatTile label={t("mrr")} value={money(data.mrr.amount, data.mrr.currency)} hint={t("mrrHint")} tone="info" icon={Repeat} />
-        <StatTile label={t("signAndPayVolume")} value={<CurrencyAmounts totals={volume.paid} empty={none} className="text-xl" />} hint={t("volumeHint")} tone="accent" icon={FileSignature} />
+        <StatTile label={t("signAndPayVolume")} value={<CurrencyAmounts totals={volume.paid} empty={none} className={stacked(volume.paid)} />} hint={t("volumeHint")} tone="accent" icon={FileSignature} />
         <StatTile
           label={t("reconciliation")}
           value={reconciled ? (issues === 0 ? t("reconciled") : t("issues", { count: issues })) : "—"}
@@ -227,7 +228,7 @@ export default async function AdminRevenuePage({ searchParams }: { searchParams:
 
       <Panel title={t("failedTitle")} hint={t("failedHint")} flush index={6} icon={TriangleAlert} iconTone="warn">
         {failedCount === 0 ? (
-          <Empty>{t("failedEmpty")}</Empty>
+          <Empty icon={ShieldCheck}>{t("failedEmpty")}</Empty>
         ) : (
           <ScrollTable>
             <thead>

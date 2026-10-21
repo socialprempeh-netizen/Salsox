@@ -109,7 +109,7 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
         <Panel
           key={c.key}
           title={c.title}
-          hint={c.available ? t("summary", { matched: c.matched, issues: c.rows.length }) : c.reason}
+          hint={c.available ? t("summary", { matched: c.matched, issues: c.rows.length }) : undefined}
           action={c.available ? <Chip tone={c.rows.length === 0 ? "good" : "bad"}>{c.rows.length === 0 ? t("agrees") : t("disagrees", { count: c.rows.length })}</Chip> : <Chip tone="warn">{t("skipped")}</Chip>}
           flush
           index={i + 2}

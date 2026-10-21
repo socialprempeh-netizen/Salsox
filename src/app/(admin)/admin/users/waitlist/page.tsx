@@ -86,7 +86,8 @@ export default async function AdminWaitlistPage() {
               {waitlistRecent.length === 0 && <Empty icon={Inbox}>{t("noSubscribers")}</Empty>}
             </div>
 
-            <div className="hidden md:block">
+            {/* Sentence-case headers, as the console's other tables have. */}
+            <div className="hidden md:block [&_th]:normal-case [&_th]:tracking-normal">
               <Table>
                 <TableHeader>
                   <TableRow>

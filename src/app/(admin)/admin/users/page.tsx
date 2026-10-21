@@ -110,7 +110,7 @@ export default async function AdminUsersPage({
   const { totalUsers, users, totalPages } = await getAdminData(page, search)
   const lastSeen = (u: (typeof users)[number]) => (u.sessions[0] ? formatJoined(format, u.sessions[0].updatedAt) : tc("never"))
   const status = (u: (typeof users)[number]) => (
-    <span className="flex flex-wrap gap-1">
+    <span className="flex flex-wrap gap-1 [&>*]:whitespace-nowrap">
       <Badge variant={u.emailVerified ? "success" : "secondary"}>{u.emailVerified ? tc("verified") : tc("unverified")}</Badge>
       {u.twoFactorEnabled && <Badge variant="outline">{tc("twoFactor")}</Badge>}
     </span>
@@ -187,7 +187,8 @@ export default async function AdminUsersPage({
             {users.length === 0 && <Empty icon={Search}>{t("noUsers")}</Empty>}
           </div>
 
-          <div className="hidden md:block">
+          {/* Sentence-case headers, as the console's other tables have. */}
+          <div className="hidden md:block [&_th]:normal-case [&_th]:tracking-normal">
             <Table>
               <TableHeader>
                 <TableRow>

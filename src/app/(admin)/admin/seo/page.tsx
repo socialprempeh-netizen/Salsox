@@ -156,7 +156,8 @@ export default async function SeoHealthPage({ searchParams }: { searchParams: Pr
       </Panel>
 
       <Panel title={t("sitemap.title")} description={t("sitemap.description", { count: entries.length })} icon={Map} index={3}>
-        <div className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
+        {/* Seven figures (six sections and "other"): the last spans two columns, which closes the row at two columns and at four. */}
+        <div className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4 [&>*:last-child]:col-span-2">
           {[...bySection, { key: "other", count: other }].map((s) => (
             <div key={s.key} className="bg-card p-3 sm:p-4">
               <p className="text-2xl font-semibold tracking-tight tabular-nums">{s.count}</p>

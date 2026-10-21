@@ -132,7 +132,8 @@ export function StatTile({
       )}
     </>
   )
-  const frame = "group relative block min-w-0 overflow-hidden border border-border bg-card p-4 sm:p-5"
+  // h-full: level with its row when a neighbour is taller (a meter, a long hint).
+  const frame = "group relative block h-full min-w-0 overflow-hidden border border-border bg-card p-4 sm:p-5"
   return href ? (
     <Link href={href} className={cn(frame, "transition-colors hover:border-primary/40 hover:bg-primary/[0.02] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary")}>
       {body}
@@ -289,7 +290,7 @@ export function TextLink({ href, children }: { href: string; children: React.Rea
 }
 
 const NODE: Record<Tone, string> = {
-  default: "border-border bg-muted",
+  default: "border-muted-foreground/60 bg-card",
   info: "border-primary bg-primary",
   good: "border-emerald-500 bg-emerald-500",
   warn: "border-amber-500 bg-amber-500",
@@ -305,7 +306,8 @@ const NODE: Record<Tone, string> = {
 export function Timeline({ items }: { items: { key: string; tone: Tone; content: React.ReactNode }[] }) {
   return (
     <ol className="relative px-4 py-2 sm:px-5">
-      <span aria-hidden className="absolute bottom-6 left-[calc(1rem+4.5px)] top-6 w-px bg-border sm:left-[calc(1.25rem+4.5px)]" />
+      {/* foreground/15, not the border token: the border colour all but vanishes on a white card. */}
+      <span aria-hidden className="absolute bottom-6 left-[calc(1rem+4.5px)] top-6 w-px bg-foreground/15 sm:left-[calc(1.25rem+4.5px)]" />
       {items.map((item) => (
         <li key={item.key} className="relative grid min-w-0 grid-cols-[10px_minmax(0,1fr)] gap-x-3.5 py-3">
           <span aria-hidden className={cn("relative mt-[5px] h-2.5 w-2.5 border ring-4 ring-card", NODE[item.tone])} />
