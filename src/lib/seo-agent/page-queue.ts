@@ -22,7 +22,13 @@ import type { TemplateCategory, TemplateIndustry, TemplateTeam, TemplateType } f
 
 export type PageCandidateKind = "template" | "comparison" | "alternative" | "compliance"
 
-export type Source = { label: string; url: string }
+/**
+ * A page facts come from. `format` says how to read it when it is not an
+ * HTML page: some official statute texts are published only as a Word file
+ * (Ontario's e-Laws site renders its HTML in the browser; the Uniform Law
+ * Commission publishes UETA as a .docx).
+ */
+export type Source = { label: string; url: string; format?: "html" | "doc" | "docx" }
 
 export type TemplateCandidate = {
   kind: "template"
@@ -49,8 +55,15 @@ export type CompetitorCandidate = {
   angle: string
 }
 
-/** One statement of law, with where it comes from. The page may state only these. */
-export type LawFact = { id: string; cite: string; text: string; source: number }
+/**
+ * One statement of law, with where it comes from. The page may state only
+ * these. `quote` is a short passage copied word for word from the official
+ * text at `sources[source]`: before a page is written, the agent fetches that
+ * text and checks every quote is still in it (law-verify.ts), so a law that
+ * cannot be read, or has changed, stops the page instead of being restated
+ * from memory.
+ */
+export type LawFact = { id: string; cite: string; text: string; source: number; quote: string }
 
 export type ComplianceCandidate = {
   kind: "compliance"
@@ -61,8 +74,12 @@ export type ComplianceCandidate = {
   verified: string
   sources: Source[]
   facts: LawFact[]
-  /** Statute numbers the page may cite ("Act 772"); any other is a fabricated citation. */
-  acts: string[]
+  /**
+   * The statutes the page may name, with the short names people use for
+   * them. A page that names any other Act or Regulation is citing something
+   * nobody verified, and fails its gate (citationProblems, page-draft.ts).
+   */
+  statutes: string[]
   angle: string
 }
 
@@ -294,52 +311,150 @@ export const COMPETITOR_CANDIDATES: CompetitorCandidate[] = [
 ]
 
 // ─── E-signature law ─────────────────────────────────────────────────────────
+//
+// One page per target market: the United States, Canada, the United Kingdom
+// and Germany. (A Ghana page was planned here first and removed: Ghana is not
+// a target market.) Every fact below was read on 22 October 2026 against the
+// official text at its source, and its quote copied from that text; the
+// agent re-reads the sources and re-checks every quote before each page.
 
-/**
- * Ghana. Every fact below was read on 22 October 2026 against the text of
- * Act 772 as published (the Cyber Security Authority's copy), the amending
- * Act 838, and the commentary listed, and the section numbers checked. The
- * page may say nothing about the law beyond these.
- */
-export const GHANA: ComplianceCandidate = {
+const VERIFIED = "2026-10-22"
+
+export const UNITED_STATES: ComplianceCandidate = {
   kind: "compliance",
-  slug: "ghana",
-  keyword: "electronic signature law ghana",
-  country: "Ghana",
-  verified: "2026-10-22",
+  slug: "united-states",
+  keyword: "electronic signature law united states",
+  country: "United States",
+  verified: VERIFIED,
   sources: [
-    { label: "Electronic Transactions Act, 2008 (Act 772), Cyber Security Authority copy", url: "https://www.csa.gov.gh/resources/Electronic%20Transactions%20Act.pdf" },
-    { label: "Electronic Transactions Act, 2008 (Act 772), GhaLII consolidated text", url: "https://ghalii.org/akn/gh/act/2008/772" },
-    { label: "Electronic Transactions (Amendment) Act, 2012 (Act 838), DennisLaw", url: "https://www.dennislawgh.com/law-preview/electronic-transactions-(amendment)-act/160" },
-    { label: "Ghana's current legal framework and proposed reforms for e-signatures, Lex Africa, July 2026", url: "https://lexafrica.com/2026/07/ghanas-current-legal-framework-and-proposed-reforms-for-e-signatures/" },
-    { label: "The emergence of electronic conveyancing in Ghana, Afriwise", url: "https://insights.afriwise.com/blog/the-emergence-of-electronic-conveyancing-in-ghana" },
+    { label: "15 U.S.C. § 7001 (ESIGN Act, general rule of validity), Legal Information Institute", url: "https://www.law.cornell.edu/uscode/text/15/7001" },
+    { label: "15 U.S.C. § 7003 (ESIGN Act, specific exceptions), Legal Information Institute", url: "https://www.law.cornell.edu/uscode/text/15/7003" },
+    { label: "15 U.S.C. § 7006 (ESIGN Act, definitions), Legal Information Institute", url: "https://www.law.cornell.edu/uscode/text/15/7006" },
+    { label: "15 U.S.C. § 7002 (ESIGN Act, exemption to preemption), Legal Information Institute", url: "https://www.law.cornell.edu/uscode/text/15/7002" },
+    { label: "Uniform Electronic Transactions Act (1999), final act, Uniform Law Commission", url: "https://www.uniformlaws.org/HigherLogic/System/DownloadDocumentFile.ashx?DocumentFileKey=a19be858-11fd-b9d5-b444-76003a779652&forceDialog=0", format: "docx" },
   ],
-  acts: ["Act 772", "Act 838", "Act 1036", "Act 55", "Act 549", "Act 106", "Act 360"],
+  statutes: ["Electronic Signatures in Global and National Commerce Act", "ESIGN Act", "E-SIGN Act", "Uniform Electronic Transactions Act", "UETA", "Uniform Commercial Code", "UCC", "Uniform Computer Information Transactions Act"],
   facts: [
-    { id: "scope", cite: "Act 772, section 2", source: 0, text: "The Electronic Transactions Act, 2008 (Act 772), assented to on 18 December 2008, applies to electronic transactions and electronic records of every type." },
-    { id: "no-compulsion", cite: "Act 772, section 3(2)", source: 0, text: "The Act does not require anyone to use electronic form, and does not stop a person from setting their own requirements for how they will accept electronic records." },
-    { id: "writing", cite: "Act 772, section 5", source: 0, text: "Where a law requires information to be in writing, typewritten or printed, the requirement is satisfied if the information is in electronic form, accessible, and capable of being retained for later reference." },
-    { id: "original", cite: "Act 772, section 6", source: 0, text: "Where a law requires an original, an electronic record satisfies it if there is reliable assurance of the record's integrity (it has remained complete and unaltered) and it can be displayed to the person it is presented to." },
-    { id: "evidence", cite: "Act 772, section 7", source: 0, text: "An electronic record cannot be denied admissibility as evidence in legal proceedings except as the Act provides. Its weight depends on the reliability of how it was generated, stored and communicated, how its integrity was maintained, and how its originator was identified." },
-    { id: "retention", cite: "Act 772, section 8", source: 0, text: "A legal duty to keep a document is met by keeping it electronically if it is accessible, kept in its original format or one shown to represent it accurately, and kept so its origin, destination and the date and time it was sent or received can be identified. Records kept this way must be kept for at least six years." },
-    { id: "signature", cite: "Act 772, section 10(1)", source: 0, text: "Where a law requires a person's signature, the requirement is satisfied for an electronic record if a digital signature is used." },
-    { id: "definition", cite: "Act 772, section 144", source: 0, text: "The Act defines a 'digital signature' broadly, as data attached to, incorporated in or logically associated with other data and intended by the user to serve as a signature. It is not limited to certificate-based cryptographic signatures." },
-    { id: "authentic", cite: "Act 772, section 10(2)", source: 0, text: "A digital signature is deemed authentic if the means of creating it is linked to the signatory and no one else, was under the signatory's control at the time of signing without duress or undue influence, and any alteration after signing is detectable. Authenticity can also be proved in other ways." },
-    { id: "modes", cite: "Act 772, section 12", source: 0, text: "A person may sign an electronic record with a personal digital signature or any other recognised, secure and verifiable mode of signing agreed by the parties or recognised by the industry as safe, reliable and acceptable." },
-    { id: "reliance", cite: "Act 772, section 13", source: 0, text: "A person who relies on a digital signature bears the consequences of failing to take reasonable steps to verify that it is authentic, and, where a certificate supports it, to check the certificate is valid and respect its limits." },
-    { id: "seal", cite: "Act 772, sections 15 and 16(2)", source: 0, text: "A requirement to notarise, acknowledge or verify a document is met by the electronic signature of the person authorised to do so, and a requirement for a corporate seal is met by the corporate body's electronic signature applied under its rules for using the seal." },
-    { id: "attribution", cite: "Act 772, section 21", source: 0, text: "An electronic record is attributed to its originator if sent by them, by someone with authority to act for them, or by their automated system. A recipient may rely on attribution when it properly applied a procedure agreed with the originator to check it." },
-    { id: "contracts", cite: "Act 772, sections 23 and 24", source: 0, text: "An agreement is valid even if concluded partly or wholly through an electronic medium. Sections 5 to 23 apply only where the parties have not agreed otherwise on those matters." },
-    { id: "exclusions", cite: "Act 772, section 4", source: 0, text: "The Act does not apply to: negotiable instruments (Bills of Exchange Act, 1961, Act 55); the grant of a power of attorney (Powers of Attorney Act, 1998, Act 549); trusts (Trustees Incorporation Act, 1962, Act 106); wills (Wills Act, 1971, Act 360); contracts for the sale or conveyance of immovable property or an interest in it; and bills of lading." },
-    { id: "amendment", cite: "Act 838 (2012)", source: 2, text: "The Electronic Transactions (Amendment) Act, 2012 (Act 838) repealed paragraphs (g), (h) and (i) of section 4, which had excluded company, partnership and sole proprietorship registration documents, affidavits and statutory declarations before a Commissioner for Oaths or Notary Public, and classes of documents notified in the Gazette." },
-    { id: "land", cite: "Land Act, 2020 (Act 1036)", source: 4, text: "The Land Act, 2020 (Act 1036) introduced electronic conveyancing, with electronic signatures on conveyances that must comply with Act 772. Commentators read it as overriding the section 4 exclusion for land by implication, but the exclusion still appears in the consolidated text of Act 772, and implementing regulations were reported as not yet in place in 2023. Property transactions need local legal advice." },
-    { id: "certifying", cite: "Act 772, sections 28 to 45 and 34", source: 0, text: "The National Information Technology Agency (NITA) is the Agency under the Act: it licenses providers of authentication and certification services, keeps a register of licence holders and a repository of digital signature certificates, and may recognise foreign certifying agencies by notice in the Gazette." },
-    { id: "reform", cite: "Draft Electronic Transactions Bill, 2025", source: 3, text: "A draft Electronic Transactions Bill, 2025 would repeal Act 772 and introduce three tiers (digital, electronic and qualified electronic signatures), with qualified certificates issued after identity checks against the national ID database. It would remove most exclusions while keeping formalities such as the attestation of wills. As of July 2026 it was reported as still a draft, not law." },
+    { id: "esign-validity", cite: "15 U.S.C. § 7001(a)", source: 0, quote: "may not be denied legal effect, validity, or enforceability solely because it is in electronic form", text: "For any transaction in or affecting interstate or foreign commerce, a signature, contract or other record may not be denied legal effect, validity or enforceability solely because it is in electronic form, and a contract may not be denied legal effect solely because an electronic signature or electronic record was used in its formation." },
+    { id: "esign-consumer", cite: "15 U.S.C. § 7001(c)(1)", source: 0, quote: "the consumer has affirmatively consented to such use and has not withdrawn such consent", text: "Where a law requires information to be given to a consumer in writing, an electronic record satisfies it only if the consumer has affirmatively consented and not withdrawn consent, was first given a clear and conspicuous statement of their right to paper copies and to withdraw consent, was told the hardware and software needed, and consented electronically in a way that reasonably demonstrates they can access the information." },
+    { id: "esign-retention", cite: "15 U.S.C. § 7001(d)(1)", source: 0, quote: "accurately reflects the information set forth in the contract or other record", text: "A legal requirement to retain a contract or record is met by an electronic record that accurately reflects its information and remains accessible to everyone entitled to it, for the required period, in a form that can be accurately reproduced for later reference." },
+    { id: "esign-definition", cite: "15 U.S.C. § 7006(5)", source: 2, quote: "executed or adopted by a person with the intent to sign the record", text: "An electronic signature is an electronic sound, symbol or process attached to or logically associated with a contract or other record and executed or adopted by a person with the intent to sign the record." },
+    { id: "esign-exceptions-a", cite: "15 U.S.C. § 7003(a)", source: 1, quote: "the creation and execution of wills, codicils, or testamentary trusts", text: "ESIGN's general rule does not apply to records governed by the law of wills, codicils and testamentary trusts; by state law on adoption, divorce or other family law matters; or by the Uniform Commercial Code, other than sections 1-107 and 1-206 and Articles 2 and 2A." },
+    { id: "esign-exceptions-b", cite: "15 U.S.C. § 7003(b)", source: 1, quote: "court orders or notices, or official court documents", text: "It also does not apply to court orders, notices and official court documents; notices of cancellation of utility services; notices of default, acceleration, repossession, foreclosure or eviction on a primary residence; notices cancelling health or life insurance benefits; product recall notices for health or safety risks; and documents that must accompany hazardous materials." },
+    { id: "esign-states", cite: "15 U.S.C. § 7002(a)(1)", source: 3, quote: "Uniform Electronic Transactions Act as approved and recommended for enactment in all the States", text: "A state law may modify, limit or supersede ESIGN's general rule as to state law if it is an enactment of the Uniform Electronic Transactions Act as recommended in 1999 (with scope exceptions that conflict with ESIGN preempted), or sets out alternative procedures consistent with ESIGN." },
+    { id: "ueta-recognition", cite: "UETA section 7", source: 4, quote: "If a law requires a signature, an electronic signature satisfies the law", text: "Under UETA, a record or signature may not be denied legal effect or enforceability solely because it is electronic; a contract may not be denied effect because an electronic record was used to form it; an electronic record satisfies a law requiring writing; and an electronic signature satisfies a law requiring a signature." },
+    { id: "ueta-agreement", cite: "UETA section 5(b)", source: 4, quote: "applies only to transactions between parties each of which has agreed to conduct transactions by electronic means", text: "UETA applies only to transactions between parties who have each agreed to conduct transactions electronically, which is determined from the context and surrounding circumstances, including the parties' conduct; a party may refuse to conduct other transactions electronically (section 5(c))." },
+    { id: "ueta-attribution", cite: "UETA section 9(a)", source: 4, quote: "including a showing of the efficacy of any security procedure", text: "An electronic signature is attributable to a person if it was the act of that person, which may be shown in any manner, including by showing the efficacy of a security procedure used to determine who signed." },
+    { id: "ueta-retention", cite: "UETA section 12", source: 4, quote: "remains accessible for later reference", text: "A legal requirement to retain a record, or to keep an original, is satisfied by an electronic record that accurately reflects the information after it was first generated in final form and remains accessible for later reference." },
+    { id: "ueta-evidence", cite: "UETA section 13", source: 4, quote: "evidence of a record or signature may not be excluded solely because it is in electronic form", text: "In a proceeding, evidence of a record or signature may not be excluded solely because it is in electronic form." },
+    { id: "ueta-scope", cite: "UETA section 3(b)", source: 4, quote: "a law governing the creation and execution of wills, codicils, or testamentary trusts", text: "UETA does not apply to transactions governed by the law on wills, codicils or testamentary trusts, or by the Uniform Commercial Code other than sections 1-107 and 1-206 and Articles 2 and 2A; states may list further exclusions." },
   ],
-  angle: "A practical compliance page for businesses signing contracts in Ghana: what Act 772 actually requires section by section, which documents are excluded, what evidence makes an electronic signature hold up (sections 7, 10(2) and 21), and how to keep signed records for six years. Deeper and more specific than a multi-country overview.",
+  angle: "For businesses signing with US customers and staff: how the federal ESIGN Act and each state's UETA fit together, the consumer-consent steps ESIGN adds when a law requires written notice to a consumer, the records that are excluded, and what evidence of intent and attribution keeps an e-signature enforceable.",
 }
 
-export const COMPLIANCE_CANDIDATES: ComplianceCandidate[] = [GHANA]
+export const CANADA: ComplianceCandidate = {
+  kind: "compliance",
+  slug: "canada",
+  keyword: "electronic signature law canada",
+  country: "Canada",
+  verified: VERIFIED,
+  sources: [
+    { label: "Personal Information Protection and Electronic Documents Act (S.C. 2000, c. 5), Justice Laws Website", url: "https://laws-lois.justice.gc.ca/eng/acts/p-8.6/FullText.html" },
+    { label: "Electronic Commerce Act, 2000 (Ontario, S.O. 2000, c. 17), e-Laws", url: "https://www.ontario.ca/laws/docs/00e17_e.doc", format: "doc" },
+  ],
+  statutes: ["Personal Information Protection and Electronic Documents Act", "PIPEDA", "Electronic Commerce Act", "Electronic Commerce Act, 2000"],
+  facts: [
+    { id: "pipeda-purpose", cite: "PIPEDA, section 32", source: 0, quote: "provide for the use of electronic alternatives in the manner provided for in this Part where federal laws contemplate the use of paper", text: "Part 2 of PIPEDA provides electronic alternatives where federal laws contemplate the use of paper; it governs requirements under federal law, while provincial laws govern requirements under provincial law." },
+    { id: "pipeda-definitions", cite: "PIPEDA, subsection 31(1)", source: 0, quote: "symbols in digital form incorporated in, attached to or associated with an electronic document", text: "An electronic signature is one or more letters, characters, numbers or other symbols in digital form incorporated in, attached to or associated with an electronic document. A secure electronic signature is one that results from a technology or process prescribed by regulations under subsection 48(1)." },
+    { id: "pipeda-signature", cite: "PIPEDA, section 43", source: 0, quote: "a requirement under a provision of a federal law for a signature is satisfied by an electronic signature if", text: "A requirement under a provision of federal law for a signature is satisfied by an electronic signature if the federal law or provision is listed in Schedule 2 or 3 and the regulations for that provision are complied with." },
+    { id: "pipeda-secure", cite: "PIPEDA, subsection 48(2)", source: 0, quote: "the electronic signature resulting from the use by a person of the technology or process is unique to the person", text: "A technology or process may be prescribed for secure electronic signatures only if it can be proved that the signature is unique to the person, the process is under the person's sole control, it identifies the person, and it can show whether the document changed after signing." },
+    { id: "pipeda-witness", cite: "PIPEDA, section 46", source: 0, quote: "each signatory and each witness signs the electronic document with their secure electronic signature", text: "Where federal law requires a signature to be witnessed, an electronic document satisfies it if each signatory and each witness signs with a secure electronic signature, the provision is listed in Schedule 2 or 3, and the regulations are complied with." },
+    { id: "on-definition", cite: "Electronic Commerce Act, 2000 (Ontario), section 1", source: 1, quote: "electronic information that a person creates or adopts in order to sign a document", text: "In Ontario, an electronic signature is electronic information that a person creates or adopts in order to sign a document and that is in, attached to or associated with the document." },
+    { id: "on-recognition", cite: "Electronic Commerce Act, 2000 (Ontario), sections 4 and 5", source: 1, quote: "is not invalid or unenforceable by reason only of being in electronic form", text: "Information or a document is not invalid or unenforceable only because it is electronic, and a legal requirement that it be in writing is satisfied by an electronic document that is accessible so as to be usable for subsequent reference." },
+    { id: "on-signature", cite: "Electronic Commerce Act, 2000 (Ontario), section 11", source: 1, quote: "a legal requirement that a document be signed is satisfied by an electronic signature", text: "A legal requirement that a document be signed is satisfied by an electronic signature, subject to reliability and method requirements for prescribed documents (subsections 11(3) and (4)) and to the rules for public bodies (section 17)." },
+    { id: "on-retention", cite: "Electronic Commerce Act, 2000 (Ontario), section 12", source: 1, quote: "or in a format that accurately represents the information contained in the written document", text: "A legal requirement to retain a document is satisfied by an electronic document kept in its original format or one that accurately represents its information, and accessible for subsequent reference by anyone entitled to it." },
+    { id: "on-contracts", cite: "Electronic Commerce Act, 2000 (Ontario), section 19", source: 1, quote: "touching or clicking on an appropriate icon or other place on a computer screen", text: "An offer, an acceptance or anything material to forming or performing a contract may be expressed electronically, including by clicking on a screen, unless the parties agree otherwise, and a contract is not invalid only because it is electronic." },
+    { id: "on-exclusions", cite: "Electronic Commerce Act, 2000 (Ontario), section 31", source: 1, quote: "Trusts created by wills or codicils", text: "The Ontario Act does not apply to wills and codicils, trusts created by wills or codicils, powers of attorney for an individual's financial affairs or personal care, negotiable instruments, prescribed documents, or (except for contracts for the carriage of goods) documents of title." },
+  ],
+  angle: "For businesses signing with Canadian customers and staff: why PIPEDA Part 2 covers federal requirements while each province's own Act covers contracts under provincial law, using Ontario's Electronic Commerce Act, 2000 as the worked example, the documents it excludes, and when a federal requirement calls for a secure electronic signature.",
+}
+
+export const UNITED_KINGDOM: ComplianceCandidate = {
+  kind: "compliance",
+  slug: "united-kingdom",
+  keyword: "electronic signature law uk",
+  country: "United Kingdom",
+  verified: VERIFIED,
+  sources: [
+    { label: "Electronic Communications Act 2000, section 7, legislation.gov.uk", url: "https://www.legislation.gov.uk/ukpga/2000/7/section/7" },
+    { label: "UK eIDAS (Regulation (EU) No 910/2014 as it applies in the UK), Article 25, legislation.gov.uk", url: "https://www.legislation.gov.uk/eur/2014/910/article/25" },
+    { label: "UK eIDAS, Article 3 (definitions), legislation.gov.uk", url: "https://www.legislation.gov.uk/eur/2014/910/article/3" },
+    { label: "UK eIDAS, Article 26 (advanced electronic signatures), legislation.gov.uk", url: "https://www.legislation.gov.uk/eur/2014/910/article/26" },
+    { label: "Wills Act 1837, section 9, legislation.gov.uk", url: "https://www.legislation.gov.uk/ukpga/Will4and1Vict/7/26/section/9" },
+    { label: "Law of Property (Miscellaneous Provisions) Act 1989, section 1, legislation.gov.uk", url: "https://www.legislation.gov.uk/ukpga/1989/34/section/1" },
+  ],
+  statutes: ["Electronic Communications Act 2000", "Electronic Communications Act", "UK eIDAS", "eIDAS Regulation", "Regulation (EU) No 910/2014", "Wills Act 1837", "Wills Act", "Law of Property (Miscellaneous Provisions) Act 1989", "Electronic Identification and Trust Services for Electronic Transactions Regulations 2016", "Electronic Identification and Trust Services for Electronic Transactions (Amendment etc.) (EU Exit) Regulations 2019"],
+  facts: [
+    { id: "eca-admissible", cite: "Electronic Communications Act 2000, section 7(1)", source: 0, quote: "shall each be admissible in evidence in relation to any question as to the authenticity of the communication or data", text: "In any legal proceedings, an electronic signature incorporated into or logically associated with an electronic communication or data, and any certification of it, are admissible in evidence on the authenticity or integrity of that communication or data." },
+    { id: "eca-definition", cite: "Electronic Communications Act 2000, section 7(2)", source: 0, quote: "purports to be used by the individual creating it to sign", text: "For section 7, an electronic signature is anything in electronic form that is incorporated into or logically associated with an electronic communication or data and purports to be used by the individual creating it to sign." },
+    { id: "eca-certified", cite: "Electronic Communications Act 2000, section 7(3)", source: 0, quote: "either alone or in combination with other factors) a valid means of", text: "A signature is certified when a person has stated that the signature, a means of producing, communicating or verifying it, or a procedure applied to it is a valid means of signing." },
+    { id: "uk-eidas-effect", cite: "UK eIDAS, Article 25(1)", source: 1, quote: "shall not be denied legal effect and admissibility as evidence in legal proceedings solely on the grounds that it is in an electronic form", text: "An electronic signature shall not be denied legal effect and admissibility as evidence in legal proceedings solely because it is electronic or does not meet the requirements for qualified electronic signatures." },
+    { id: "uk-eidas-qes", cite: "UK eIDAS, Article 25(2)", source: 1, quote: "shall have the equivalent legal effect of a handwritten signature", text: "A qualified electronic signature has the equivalent legal effect of a handwritten signature. Article 25(3), on recognising qualified signatures across EU member states, was omitted for the UK from 31 December 2020 by S.I. 2019/89." },
+    { id: "uk-eidas-definitions", cite: "UK eIDAS, Article 3(10) to (12)", source: 2, quote: "which is attached to or logically associated with other data in electronic form", text: "An electronic signature is data in electronic form attached to or logically associated with other data in electronic form and used by the signatory to sign; an advanced electronic signature meets Article 26; a qualified one is an advanced signature created by a qualified signature creation device and based on a qualified certificate." },
+    { id: "uk-eidas-advanced", cite: "UK eIDAS, Article 26", source: 3, quote: "it is uniquely linked to the signatory", text: "An advanced electronic signature is uniquely linked to the signatory, capable of identifying them, created using data they can use under their sole control with a high level of confidence, and linked to the signed data so that any later change is detectable." },
+    { id: "uk-wills", cite: "Wills Act 1837, section 9", source: 4, quote: "the signature is made or acknowledged by the testator in the presence of two or more witnesses present at the same time", text: "A will in England and Wales is valid only if it is in writing, signed by the testator (or by someone in their presence and at their direction), and the signature is made or acknowledged in the presence of two or more witnesses present at the same time, each of whom attests and signs or acknowledges their signature." },
+    { id: "uk-deeds", cite: "Law of Property (Miscellaneous Provisions) Act 1989, section 1(3)", source: 5, quote: "in the presence of a witness who attests the signature", text: "An instrument is validly executed as a deed by an individual only if it is signed in the presence of a witness who attests the signature (or at their direction in the presence of two attesting witnesses) and is delivered as a deed." },
+  ],
+  angle: "For businesses signing with UK customers and staff: how section 7 of the Electronic Communications Act 2000 and Article 25 of UK eIDAS make simple electronic signatures admissible and effective, what a qualified signature adds, and where witnessing rules (wills, deeds) still shape how a document must be signed.",
+}
+
+export const GERMANY: ComplianceCandidate = {
+  kind: "compliance",
+  slug: "germany",
+  keyword: "electronic signature law germany",
+  country: "Germany",
+  verified: VERIFIED,
+  sources: [
+    { label: "Regulation (EU) No 910/2014 (eIDAS) as adopted, Article 25, legislation.gov.uk", url: "https://www.legislation.gov.uk/eur/2014/910/article/25/adopted" },
+    { label: "Regulation (EU) No 910/2014 (eIDAS) as adopted, Article 3, legislation.gov.uk", url: "https://www.legislation.gov.uk/eur/2014/910/article/3/adopted" },
+    { label: "Regulation (EU) No 910/2014 (eIDAS) as adopted, Article 26, legislation.gov.uk", url: "https://www.legislation.gov.uk/eur/2014/910/article/26/adopted" },
+    { label: "Vertrauensdienstegesetz (VDG), § 1, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/vdg/__1.html" },
+    { label: "Vertrauensdienstegesetz (VDG), § 2, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/vdg/__2.html" },
+    { label: "Bürgerliches Gesetzbuch (BGB), § 126, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/bgb/__126.html" },
+    { label: "BGB, § 126a, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/bgb/__126a.html" },
+    { label: "BGB, § 126b, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/bgb/__126b.html" },
+    { label: "BGB, § 623, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/bgb/__623.html" },
+    { label: "BGB, § 766, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/bgb/__766.html" },
+    { label: "BGB, § 780, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/bgb/__780.html" },
+    { label: "BGB, § 781, gesetze-im-internet.de", url: "https://www.gesetze-im-internet.de/bgb/__781.html" },
+  ],
+  statutes: ["eIDAS Regulation", "Regulation (EU) No 910/2014", "eIDAS", "Vertrauensdienstegesetz", "VDG", "Trust Services Act", "Bürgerliches Gesetzbuch", "BGB", "German Civil Code", "Civil Code", "BSI-Gesetz"],
+  facts: [
+    { id: "eidas-effect", cite: "eIDAS, Article 25(1)", source: 0, quote: "shall not be denied legal effect and admissibility as evidence in legal proceedings solely on the grounds that it is in an electronic form", text: "Across the EU, including Germany, an electronic signature shall not be denied legal effect and admissibility as evidence in legal proceedings solely because it is electronic or is not a qualified electronic signature." },
+    { id: "eidas-qes", cite: "eIDAS, Article 25(2) and (3)", source: 0, quote: "shall be recognised as a qualified electronic signature in all other Member States", text: "A qualified electronic signature has the equivalent legal effect of a handwritten signature, and one based on a qualified certificate issued in one member state is recognised as qualified in all others." },
+    { id: "eidas-definitions", cite: "eIDAS, Article 3(10) to (12)", source: 1, quote: "means an advanced electronic signature that is created by a qualified electronic signature creation device", text: "An electronic signature is data in electronic form attached to or logically associated with other data and used by the signatory to sign; an advanced signature meets Article 26; a qualified signature is an advanced one created by a qualified signature creation device and based on a qualified certificate." },
+    { id: "eidas-advanced", cite: "eIDAS, Article 26", source: 2, quote: "it is capable of identifying the signatory", text: "An advanced electronic signature is uniquely linked to the signatory, capable of identifying them, created using data under their sole control, and linked to the signed data so that any later change is detectable." },
+    { id: "vdg-scope", cite: "VDG, § 1(1)", source: 3, quote: "die wirksame Durchf", text: "The Vertrauensdienstegesetz (Trust Services Act) of 18 July 2017 governs the effective implementation in Germany of the eIDAS rules on trust services." },
+    { id: "vdg-supervision", cite: "VDG, § 2(1)", source: 4, quote: "Bundesnetzagentur", text: "The Bundesnetzagentur is the supervisory body under Article 17 of eIDAS for creating, verifying and validating electronic signatures, seals and time stamps, with the Federal Office for Information Security (BSI) responsible for website authentication certificates." },
+    { id: "bgb-written", cite: "§ 126(1) and (3) BGB", source: 5, quote: "Die schriftliche Form kann durch die elektronische Form ersetzt werden", text: "Where a statute prescribes written form (Schriftform), the document must be signed by hand by its issuer; written form can be replaced by electronic form unless the law provides otherwise." },
+    { id: "bgb-electronic", cite: "§ 126a BGB", source: 6, quote: "qualifizierten elektronischen Signatur versehen", text: "To replace statutory written form with electronic form, the issuer must add their name and sign the electronic document with a qualified electronic signature; for a contract, each party signs an identical document this way." },
+    { id: "bgb-text", cite: "§ 126b BGB", source: 7, quote: "Ist durch Gesetz Textform vorgeschrieben", text: "Where a statute prescribes text form (Textform), a readable declaration naming the person making it, on a durable medium, is enough; no signature is required." },
+    { id: "bgb-employment", cite: "§ 623 BGB", source: 8, quote: "die elektronische Form ist ausgeschlossen", text: "Ending an employment relationship by notice of termination or by a termination agreement requires written form to be effective; electronic form is excluded." },
+    { id: "bgb-surety", cite: "§ 766 BGB", source: 9, quote: "in elektronischer Form ist ausgeschlossen", text: "A contract of suretyship (Bürgschaft) requires the surety's declaration in written form; giving it in electronic form is excluded." },
+    { id: "bgb-promise", cite: "§ 780 BGB", source: 10, quote: "Die Erteilung des Versprechens in elektronischer Form ist ausgeschlossen", text: "An independent promise of performance (Schuldversprechen) requires the promise in written form, unless another form is prescribed; giving it in electronic form is excluded." },
+    { id: "bgb-acknowledgement", cite: "§ 781 BGB", source: 11, quote: "Die Erteilung der Anerkennungserkl", text: "An acknowledgement of debt (Schuldanerkenntnis) requires the declaration in written form; giving it in electronic form is excluded." },
+  ],
+  angle: "For businesses signing with German customers and staff: why most contracts can be signed with a simple or advanced e-signature under eIDAS, when German law's written form (§ 126 BGB) forces a qualified signature under § 126a, the documents where electronic form is excluded outright (§§ 623, 766, 780, 781 BGB), and who supervises trust services under the VDG.",
+}
+
+export const COMPLIANCE_CANDIDATES: ComplianceCandidate[] = [UNITED_STATES, UNITED_KINGDOM, CANADA, GERMANY]
+
+/**
+ * Pages about markets that are not targets. They stay on the blog, but a law
+ * page never links to them or treats them as its siblings, and the law hub
+ * does not list them.
+ */
+export const OFF_MARKET_PATHS = new Set(["/blog/electronic-signatures-ghana-nigeria-kenya"])
 
 export const ALL_CANDIDATES: PageCandidate[] = [...COMPLIANCE_CANDIDATES, ...TEMPLATE_CANDIDATES, ...COMPETITOR_CANDIDATES]
 

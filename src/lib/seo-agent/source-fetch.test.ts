@@ -27,3 +27,32 @@ describe("fetchSource", () => {
     expect(await fetchSource({ label: "P", url: "https://e.com" }, broken)).toMatchObject({ ok: false, reason: "network down" })
   })
 })
+
+describe("whole statute texts", () => {
+  it("reads a Word 97 file's text from its bytes, in either encoding", async () => {
+    const { docText } = await import("./source-fetch")
+    const eight = new Uint8Array(Buffer.from("\u0000\u0001binary 11 (1) A legal requirement that a document be signed is satisfied by an electronic signature.\u0000", "latin1"))
+    const wide = new Uint8Array(Buffer.from("\u0000\u0001Wills and codicils.", "utf16le"))
+    expect(docText(eight)).toContain("A legal requirement that a document be signed is satisfied by an electronic signature.")
+    expect(docText(wide)).toContain("Wills and codicils.")
+  })
+
+  it("reads a .docx file's main document text", async () => {
+    const { docxText } = await import("./source-fetch")
+    const { default: JSZip } = await import("jszip")
+    const zip = new JSZip()
+    zip.file("word/document.xml", `<w:document><w:body><w:p><w:r><w:t>SECTION 7. LEGAL RECOGNITION</w:t></w:r></w:p><w:p><w:r><w:t>(d) If a law requires a signature, an electronic signature satisfies the law.</w:t></w:r></w:p></w:body></w:document>`)
+    const text = await docxText(await zip.generateAsync({ type: "uint8array" }))
+    expect(text.split("\n").map((line) => line.trim())).toEqual(["SECTION 7. LEGAL RECOGNITION", "(d) If a law requires a signature, an electronic signature satisfies the law."])
+  })
+
+  it("keeps a short statute section whole, and reports an empty shell", async () => {
+    const { fetchFullText, MIN_LAW_WORDS } = await import("./source-fetch")
+    const words = (n: number) => Array.from({ length: n }, (_, i) => `w${i}`).join(" ")
+    const page = (body: string) => (async () => new Response(`<p>${body}</p>`, { status: 200 })) as unknown as typeof fetch
+    const ok = await fetchFullText({ url: "https://e.org/s" }, page(words(MIN_LAW_WORDS + 5)))
+    expect(ok).toMatchObject({ ok: true })
+    expect(ok.text.split(" ")).toHaveLength(MIN_LAW_WORDS + 5)
+    expect((await fetchFullText({ url: "https://e.org/s" }, page("Loading"))).ok).toBe(false)
+  })
+})

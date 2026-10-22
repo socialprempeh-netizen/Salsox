@@ -25,7 +25,7 @@ import type { LinkablePage, SiteAdapter } from "./agent"
 import { countWords } from "./article"
 import type { PageSite } from "./page-agent"
 import { registryPages, libraryTemplates } from "./published-pages"
-import { fetchSource } from "./source-fetch"
+import { fetchFullText, fetchSource } from "./source-fetch"
 import { PAGE_KINDS } from "@/lib/seo/pages"
 
 export function searchConsoleSite(env: Record<string, string | undefined> = process.env): string {
@@ -150,6 +150,8 @@ export const salsoxPageSite: PageSite = {
   },
 
   fetchSource: (source) => fetchSource(source),
+
+  readFullText: (source) => fetchFullText(source),
 
   // Everything a new page appears on: its own URL, its hub, the neighbours
   // whose related cards or sibling links now include it, the sitemap and

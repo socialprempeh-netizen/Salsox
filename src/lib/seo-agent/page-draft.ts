@@ -169,22 +169,81 @@ export function registryProblems(kind: PageKind, slug: string, stored: StoredPag
 }
 
 /**
- * A law page may cite only what it was given: every "Act NNN" must be one of
- * the candidate's statutes, every "section N" of Act 772 one of the sections
- * its facts cite, and it must cite at least five sections so it is a page
- * about the law and not about the topic. Returns the problems.
+ * The provision numbers a text refers to, lower case: "section 11(3)",
+ * "subsection 48(1)", "s. 7", "§ 126a", "§§ 780 and 781", "Article 25(2)",
+ * "Art. 3", "15 U.S.C. § 7001(a)". Lists ("sections 23 and 24", "§§ 780,
+ * 781") count each number. Sub-paragraphs in brackets are ignored: a page
+ * citing 7001(c) cites section 7001.
+ */
+export function provisionRefs(text: string): string[] {
+  const number = String.raw`(\d+[A-Za-z]?)(?:\([^)\s]*\))*`
+  const rest = String.raw`((?:\s*(?:,|and|or|to|-|–)\s*\d+[A-Za-z]?(?:\([^)\s]*\))*)*)`
+  const pattern = new RegExp(String.raw`(?:\b(?:[Ss]ub)?[Ss]ections?|\bss?\.|§§?|\bArticles?|\bArt\.)\s*` + number + rest, "g")
+  const out: string[] = []
+  for (const m of text.matchAll(pattern)) {
+    out.push(m[1])
+    for (const n of (m[2] ?? "").matchAll(/(\d+[A-Za-z]?)/g)) out.push(n[1])
+  }
+  return out.map((r) => r.toLowerCase())
+}
+
+/** Words that, right before "Act" or "Regulation", make it a reference back ("the Act", "the Ontario Act"), not a statute's name. */
+const GENERIC_BEFORE = new Set("the this that these each its an a which same such any other federal provincial state ontario canadian american german british english uk us eu".split(" "))
+
+const words = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/['’]s\b/g, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w && !/^\d+$/.test(w))
+
+/**
+ * Statutes a page names that it was not given. For every "Act" or
+ * "Regulation(s)" in the text, the words before it (within the sentence) must
+ * end in one of the candidate's statute names, so "the Electronic Commerce
+ * Act" passes and "the Privacy Act" or "the Data Protection Act" does not.
+ * A bare back-reference ("the Act", "this Regulation") passes.
+ */
+export function unknownStatutes(markdown: string, statutes: string[]): string[] {
+  const names = statutes.map((n) => words(n).join(" "))
+  const unknown = new Set<string>()
+  for (const m of markdown.matchAll(/\b(Act|Regulations?)\b/g)) {
+    const before = markdown.slice(Math.max(0, m.index! - 160), m.index!)
+    const sentence = before.split(/[.!?:;]\s|\n/).pop() ?? ""
+    const preceding = words(sentence).slice(-10)
+    const head = words(m[1])[0]
+    if (preceding.length === 0 || GENERIC_BEFORE.has(preceding[preceding.length - 1])) continue
+    // The longest run of words right before "Act" that ends some allowed name.
+    let matched = 0
+    for (let n = 1; n <= preceding.length; n++) {
+      const phrase = `${preceding.slice(-n).join(" ")} ${head}`
+      if (names.some((name) => name === phrase || name.endsWith(` ${phrase}`) || name.includes(` ${phrase} `) || name.startsWith(`${phrase} `))) matched = n
+    }
+    if (matched === 0) unknown.add(`${preceding.slice(-3).join(" ")} ${m[1]}`)
+  }
+  return [...unknown]
+}
+
+/**
+ * A law page may cite only what it was given: every statute it names must be
+ * one of the candidate's (unknownStatutes), every section, subsection,
+ * article or § it cites must appear in its verified facts, and it must cite
+ * at least five provisions so it is a page about the law and not about the
+ * topic. It must also say it is not legal advice. Returns the problems.
  */
 export function citationProblems(markdown: string, c: ComplianceCandidate): string[] {
   const problems: string[] = []
-  const allowedActs = new Set(c.acts.map((a) => a.toLowerCase().replace(/\s+/g, " ")))
-  const acts = [...markdown.matchAll(/\bAct\s+(\d{1,4})\b/g)].map((m) => `act ${m[1]}`)
-  const unknownActs = [...new Set(acts.filter((a) => !allowedActs.has(a)))]
-  if (unknownActs.length) problems.push(`cites statutes it was not given: ${unknownActs.join(", ")}`)
-  const allowedSections = new Set(c.facts.flatMap((f) => [...f.cite.matchAll(/\d+(?:\(\d+\))?/g)].map((m) => m[0].replace(/\(.*$/, ""))))
-  const sections = [...markdown.matchAll(/\b[Ss]ections?\s+(\d+)(?:\(\d+\))?(?:\s*(?:,|and|to)\s*(\d+))?/g)].flatMap((m) => [m[1], m[2]].filter(Boolean) as string[])
-  const unknownSections = [...new Set(sections.filter((s) => !allowedSections.has(s)))]
-  if (unknownSections.length) problems.push(`cites sections that are not in its verified facts: ${unknownSections.join(", ")}`)
-  if (new Set(sections).size < 5) problems.push(`cites ${new Set(sections).size} sections of the law, needs at least 5`)
+  // Was: Ghana's statutes by number ("Act 772"); law pages now name their
+  // statutes, and cite sections, articles and paragraphs (§) as each country does.
+  const unknownActs = unknownStatutes(markdown, c.statutes)
+  if (unknownActs.length) problems.push(`names statutes it was not given: ${unknownActs.join(", ")}`)
+  const allowed = new Set(c.facts.flatMap((f) => [...provisionRefs(f.cite), ...provisionRefs(f.text)]))
+  const cited = provisionRefs(markdown)
+  const unknownRefs = [...new Set(cited.filter((r) => !allowed.has(r)))]
+  if (unknownRefs.length) problems.push(`cites provisions that are not in its verified facts: ${unknownRefs.join(", ")}`)
+  const distinct = new Set(cited).size
+  if (distinct < 5) problems.push(`cites ${distinct} provisions of the law, needs at least 5`)
   if (!/not legal advice/i.test(markdown)) problems.push("does not say it is general information, not legal advice")
   return problems
 }

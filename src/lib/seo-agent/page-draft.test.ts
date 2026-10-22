@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { getPages } from "@/lib/seo/pages"
 import { getTemplates } from "@/lib/templates"
-import { citationProblems, introOf, registryData, registryProblems, storedPath, templateData, templateProblems, toSitePage, toTemplate, type PageDraft, type TemplateDraft } from "./page-draft"
-import { GHANA, TEMPLATE_CANDIDATES, type CompetitorCandidate } from "./page-queue"
+import { citationProblems, introOf, provisionRefs, unknownStatutes, registryData, registryProblems, storedPath, templateData, templateProblems, toSitePage, toTemplate, type PageDraft, type TemplateDraft } from "./page-draft"
+import { CANADA, GERMANY, TEMPLATE_CANDIDATES, UNITED_STATES, type CompetitorCandidate } from "./page-queue"
 
 const today = "2026-10-22"
 
@@ -83,23 +83,49 @@ describe("generated comparison pages", () => {
   })
 })
 
-describe("citationProblems (law pages)", () => {
-  const good = `*General information, not legal advice.*\n\nUnder section 5 and section 6 of the Electronic Transactions Act, 2008 (Act 772), electronic records count as writing. Section 7 covers evidence, section 8 retention, and section 10(2) authenticity. Section 4 lists exclusions; Act 838 repealed parts of it.`
-
-  it("passes a page that cites only verified statutes and sections", () => {
-    expect(citationProblems(good, GHANA)).toEqual([])
+describe("provisionRefs", () => {
+  it("reads sections, subsections, articles and paragraph signs, lists included", () => {
+    expect(provisionRefs("15 U.S.C. § 7001(c)(1) and subsection 48(1); sections 23 and 24; s. 7A; §§ 780 and 781 BGB; Article 25(2); Art. 3(10)")).toEqual(["7001", "48", "23", "24", "7a", "780", "781", "25", "3"])
   })
 
-  it("catches an invented section, an unknown statute and a missing disclaimer", () => {
-    const bad = `${good} Section 99 says more, and the Data Protection Act applies (Act 843).`.replace("not legal advice", "")
-    const problems = citationProblems(bad, GHANA).join(" | ")
-    expect(problems).toMatch(/Act 843|act 843/)
-    expect(problems).toMatch(/sections that are not in its verified facts: 99/)
+  it("does not read 'subsection' inside another word, or numbers with no provision word", () => {
+    expect(provisionRefs("In 2000 the Act came in; 3 documents a month.")).toEqual([])
+  })
+})
+
+describe("unknownStatutes", () => {
+  it("accepts the candidate's statutes, short names and back-references", () => {
+    const text = "Under the ESIGN Act and each state's Uniform Electronic Transactions Act, the Act applies. Ontario's Electronic Commerce Act, 2000 and the Ontario Act agree."
+    expect(unknownStatutes(text, [...UNITED_STATES.statutes, ...CANADA.statutes])).toEqual([])
+  })
+
+  it("catches a statute nobody verified, even one sharing words with a real one", () => {
+    expect(unknownStatutes("The Privacy Act and the Data Protection Act also apply.", CANADA.statutes)).toEqual(["the privacy Act", "the data protection Act"])
+  })
+})
+
+describe("citationProblems (law pages)", () => {
+  const good = `*General information, not legal advice.*\n\nUnder 15 U.S.C. § 7001(a) of the ESIGN Act, a contract is not denied effect because it is electronic, and § 7001(c) adds consumer consent. 15 U.S.C. § 7006(5) defines an electronic signature. UETA section 7 and section 9 of the Uniform Electronic Transactions Act cover recognition and attribution, and section 13 evidence.`
+
+  it("passes a page that cites only verified statutes and provisions", () => {
+    expect(citationProblems(good, UNITED_STATES)).toEqual([])
+  })
+
+  it("catches an invented section, an unverified statute and a missing disclaimer", () => {
+    const bad = `${good} Section 99 says more, and the Privacy Act applies.`.replace("not legal advice", "")
+    const problems = citationProblems(bad, UNITED_STATES).join(" | ")
+    expect(problems).toMatch(/names statutes it was not given: .*privacy Act/)
+    expect(problems).toMatch(/provisions that are not in its verified facts: 99/)
     expect(problems).toMatch(/not legal advice/)
   })
 
-  it("needs at least five sections cited", () => {
-    expect(citationProblems("Section 10 applies. Not legal advice.", GHANA).join(" ")).toMatch(/needs at least 5/)
+  it("holds a German page to its BGB and eIDAS provisions", () => {
+    const de = "*Not legal advice.* Article 25(1) and Article 26 of the eIDAS Regulation, § 126a BGB, § 623 BGB and § 2 VDG apply; § 125 BGB does not appear in the facts."
+    expect(citationProblems(de, GERMANY).join(" ")).toMatch(/not in its verified facts: 125/)
+  })
+
+  it("needs at least five provisions cited", () => {
+    expect(citationProblems("Section 10 applies. Not legal advice.", UNITED_STATES).join(" ")).toMatch(/needs at least 5/)
   })
 })
 

@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest"
+import { getAllPosts } from "@/lib/blog"
 import { getPages, pagePath } from "@/lib/seo/pages"
 import { getTemplates, roleSchema } from "@/lib/templates"
 import { INDUSTRY_IDS, TEAM_IDS, TEMPLATE_CATEGORIES, TEMPLATE_TYPES } from "@/lib/templates-taxonomy"
-import { ALL_CANDIDATES, candidatePath, candidateSubject, COMPETITOR_CANDIDATES, GHANA, MAX_PAGE_ATTEMPTS, pickCandidate, TEMPLATE_CANDIDATES, type PageCandidate } from "./page-queue"
+import { covers } from "./dedupe"
+import {
+  ALL_CANDIDATES,
+  candidatePath,
+  candidateSubject,
+  COMPETITOR_CANDIDATES,
+  COMPLIANCE_CANDIDATES,
+  GERMANY,
+  MAX_PAGE_ATTEMPTS,
+  OFF_MARKET_PATHS,
+  pickCandidate,
+  TEMPLATE_CANDIDATES,
+  UNITED_STATES,
+  type PageCandidate,
+} from "./page-queue"
 
 describe("the candidate queue", () => {
   it("has one candidate per path, none of them a page the site already has", () => {
@@ -13,7 +28,7 @@ describe("the candidate queue", () => {
   })
 
   it("puts each kind where its route serves it", () => {
-    expect(candidatePath(GHANA)).toBe(pagePath("compliance", "ghana"))
+    for (const c of COMPLIANCE_CANDIDATES) expect(candidatePath(c)).toBe(pagePath("compliance", c.slug))
     for (const c of COMPETITOR_CANDIDATES) expect(candidatePath(c)).toBe(pagePath(c.kind, c.slug))
   })
 
@@ -36,24 +51,41 @@ describe("the candidate queue", () => {
     }
   })
 
-  it("ties every Ghana fact to a listed source and cites only the statutes it allows", () => {
-    for (const f of GHANA.facts) {
-      expect(GHANA.sources[f.source], f.id).toBeDefined()
-      for (const m of `${f.cite} ${f.text}`.matchAll(/\bAct\s+(\d+)\b/g)) expect(GHANA.acts).toContain(`Act ${m[1]}`)
+  it("has one law page per target market, and none for Ghana", () => {
+    expect(COMPLIANCE_CANDIDATES.map((c) => c.slug)).toEqual(["united-states", "united-kingdom", "canada", "germany"])
+    expect(ALL_CANDIDATES.some((c) => /ghana/i.test(`${c.slug} ${c.keyword}`))).toBe(false)
+  })
+
+  it("ties every law fact to an official https source with a passage to verify", () => {
+    for (const c of COMPLIANCE_CANDIDATES) {
+      for (const f of c.facts) {
+        expect(c.sources[f.source], `${c.slug}/${f.id}`).toBeDefined()
+        expect(c.sources[f.source].url).toMatch(/^https:\/\//)
+        expect(f.quote.trim().length, `${c.slug}/${f.id} quote`).toBeGreaterThan(8)
+      }
+      expect(new Set(c.facts.map((f) => f.id)).size).toBe(c.facts.length)
+      expect(c.verified).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(c.statutes.length).toBeGreaterThan(0)
+      // Every source is used by at least one fact, so none is listed unread.
+      expect(new Set(c.facts.map((f) => f.source)).size, c.slug).toBe(c.sources.length)
     }
-    expect(new Set(GHANA.facts.map((f) => f.id)).size).toBe(GHANA.facts.length)
-    expect(GHANA.verified).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it("is not already covered by the blog, and keeps off-market guides real", () => {
+    const titles = getAllPosts().flatMap((p) => [p.title, ...(p.keyword ? [p.keyword] : [])])
+    for (const c of COMPLIANCE_CANDIDATES) expect(titles.filter((t) => covers(t, c.keyword)), c.slug).toEqual([])
+    for (const path of OFF_MARKET_PATHS) expect(getAllPosts().some((p) => `/blog/${p.slug}` === path), path).toBe(true)
   })
 
   it("names what each page is about, for the intro check", () => {
-    expect(candidateSubject(GHANA)).toEqual(["Ghana"])
+    expect(candidateSubject(GERMANY)).toEqual(["Germany"])
     expect(candidateSubject(COMPETITOR_CANDIDATES[0])[0]).toBe(COMPETITOR_CANDIDATES[0].competitor.name)
     expect(candidateSubject(TEMPLATE_CANDIDATES[0])[0]).toBe("loan agreement")
   })
 })
 
 describe("pickCandidate", () => {
-  const law = GHANA
+  const law = UNITED_STATES
   const tpl = TEMPLATE_CANDIDATES[0]
   const cmp = COMPETITOR_CANDIDATES[0]
   const list: PageCandidate[] = [tpl, cmp, law]
@@ -64,16 +96,16 @@ describe("pickCandidate", () => {
   })
 
   it("then alternates templates and competitor pages by how many of each exist", () => {
-    const lawDone = [{ kind: "compliance" as const, slug: "ghana", status: "PUBLISHED", attempts: 1 }]
+    const lawDone = [{ kind: "compliance" as const, slug: "united-states", status: "PUBLISHED", attempts: 1 }]
     expect(pickCandidate(list, lawDone, none)).toBe(tpl)
     const oneTemplate = [...lawDone, { kind: "template" as const, slug: "other", status: "DRAFT", attempts: 1 }]
     expect(pickCandidate(list, oneTemplate, none)).toBe(cmp)
   })
 
   it("retries a failure once, then sets it aside", () => {
-    const failedOnce = [{ kind: "compliance" as const, slug: "ghana", status: "FAILED", attempts: 1 }]
+    const failedOnce = [{ kind: "compliance" as const, slug: "united-states", status: "FAILED", attempts: 1 }]
     expect(pickCandidate(list, failedOnce, none)).toBe(law)
-    const failedTwice = [{ kind: "compliance" as const, slug: "ghana", status: "FAILED", attempts: MAX_PAGE_ATTEMPTS }]
+    const failedTwice = [{ kind: "compliance" as const, slug: "united-states", status: "FAILED", attempts: MAX_PAGE_ATTEMPTS }]
     expect(pickCandidate(list, failedTwice, none)).toBe(tpl)
   })
 

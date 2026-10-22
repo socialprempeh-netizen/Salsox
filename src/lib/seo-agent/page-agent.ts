@@ -42,11 +42,12 @@ import {
   type TemplateDraft,
 } from "./page-draft"
 import { complianceSystemPrompt, complianceUserPrompt, comparisonSystemPrompt, comparisonUserPrompt, templateSystemPrompt, templateUserPrompt } from "./page-prompt"
-import { ALL_CANDIDATES, candidatePath, candidateSubject, pickCandidate, type CompetitorCandidate, type ComplianceCandidate, type PageCandidate, type TemplateCandidate } from "./page-queue"
+import { ALL_CANDIDATES, OFF_MARKET_PATHS, candidatePath, candidateSubject, pickCandidate, type CompetitorCandidate, type ComplianceCandidate, type PageCandidate, type TemplateCandidate } from "./page-queue"
 import { shouldAutoPublish } from "./policy"
 import type { SitePath } from "./prompt"
 import { DUPLICATE_THRESHOLD, duplicateGate, failures, introGate, linksGate, requiredGate, verdict, type CorpusEntry, type Gate, type IntroInput, type QualityReport } from "./quality"
-import type { FetchedSource } from "./source-fetch"
+import { verifyLaw } from "./law-verify"
+import type { FetchedSource, FullText } from "./source-fetch"
 import * as store from "./store"
 import { writePageDraft } from "./writer"
 
@@ -67,6 +68,8 @@ export type PageSite = {
   /** Titles, headings and keywords of everything that exists, so a candidate the site covers is skipped. */
   coveredPhrases(): Promise<string[]>
   fetchSource(source: { label: string; url: string }): Promise<FetchedSource>
+  /** A source's whole text (HTML, .doc or .docx), for verifying a law page's facts against the statute. */
+  readFullText(source: { url: string; format?: "html" | "doc" | "docx" }): Promise<FullText>
   /** Refreshes the pages a newly published (or withdrawn) page appears on. */
   revalidateFor(kind: store.NewPage["kind"], path: string): void
   today(): string
@@ -167,8 +170,9 @@ const isLawPost = (p: BlogEntry) => /legal|law/i.test(p.category) || /\b(legal|l
 
 async function writeCompliancePage(site: PageSite, c: ComplianceCandidate, feedback?: string[]): Promise<Attempt> {
   const family = await site.registry(["compliance"])
-  const paths = await site.sitePaths()
-  const lawPosts = (await site.blogPosts()).filter(isLawPost)
+  // Pages about markets that are not targets are never offered as links.
+  const paths = (await site.sitePaths()).filter((p) => !OFF_MARKET_PATHS.has(p.path))
+  const lawPosts = (await site.blogPosts()).filter((p) => isLawPost(p) && !OFF_MARKET_PATHS.has(p.path))
   const { draft, model } = await writePageDraft({
     system: complianceSystemPrompt(),
     user: complianceUserPrompt({
@@ -236,8 +240,19 @@ async function attempt(site: PageSite, c: PageCandidate, fetched: FetchedSource[
   }
 }
 
-/** The candidate's facts that come from outside: a comparison's sources, fetched now. Throws MissingData when none can be read. */
+/**
+ * The candidate's facts that come from outside, checked now: a comparison's
+ * sources are fetched, and a law page's facts are verified against the
+ * official text of every statute they cite (law-verify.ts). Throws
+ * MissingData when a comparison has too few readable sources, or when any
+ * law cannot be verified, so the page is never written on unchecked facts.
+ */
 async function gatherFacts(site: PageSite, c: PageCandidate): Promise<FetchedSource[]> {
+  if (c.kind === "compliance") {
+    const problems = await verifyLaw(c, (source) => site.readFullText(source))
+    if (problems.length) throw new MissingData(`the source law could not be verified: ${problems.join("; ")}`)
+    return []
+  }
   if (c.kind !== "comparison" && c.kind !== "alternative") return []
   const fetched = await Promise.all(c.sources.map((s) => site.fetchSource(s)))
   const readable = fetched.filter((s) => s.ok)

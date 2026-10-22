@@ -15,7 +15,10 @@ import { siteConfig } from "@/config/site"
  * Until it lists at least one law page it is a list of blog links, which is
  * not worth indexing: it stays noindexed and out of the sitemap until then.
  */
-const LAW_GUIDES = ["are-electronic-signatures-legal", "legally-binding-electronic-signature", "electronic-signatures-ghana-nigeria-kenya", "electronic-vs-digital-signatures"]
+// Was: [..., "electronic-signatures-ghana-nigeria-kenya", ...]. The law pages
+// cover the target markets (US, Canada, UK, Germany); the Ghana, Nigeria and
+// Kenya guide stays on the blog but is not one of this hub's guides.
+const LAW_GUIDES = ["are-electronic-signatures-legal", "legally-binding-electronic-signature", "electronic-vs-digital-signatures"]
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("seoPages.hubs.law")
