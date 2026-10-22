@@ -13,6 +13,7 @@ import { resolveLinks } from "@/lib/seo/links"
 import { fixedLinkLabels } from "@/components/seo/fixed-links"
 import type { SitePage } from "@/lib/seo/pages"
 import { templateCards, templatesFor, TEMPLATES_PATH } from "@/lib/templates"
+import { generatedLinkLabels, libraryTemplates, siblingLinks } from "@/lib/seo-agent/published-pages"
 import { TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
 import { TemplateCardGrid } from "@/components/templates/template-card"
 import { injectLinks } from "@/lib/seo-agent/links"
@@ -21,6 +22,13 @@ import { linksFrom } from "@/lib/seo-agent/store"
 /**
  * One template for every page in the SEO registry (src/lib/seo/pages.ts):
  * solutions, free tools, comparisons, alternatives and use cases.
+ *
+ * Pages the SEO agent wrote (src/lib/seo-agent/page-agent.ts) render here
+ * exactly like the files. Comparison, alternative and law pages also link
+ * sideways to their neighbours in the hub (siblingLinks), so every page in
+ * a hub, a newly published one included, has links in from the pages
+ * beside it; a law page shows the statutes it was checked against the way a
+ * comparison shows its sources.
  *
  * Order on the page follows what a visitor came for. A tool page puts the
  * working tool (`tool`, a client component) straight under the H1, above the
@@ -42,11 +50,16 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
   // Links the SEO agent added to this page when it published an article
   // (src/lib/seo-agent/links.ts), spliced in here; the page's file is untouched.
   const body = injectLinks(page.body, await linksFrom(page.path))
-  const trail = pageTrail(page, { home: t("breadcrumbHome"), tools: t("breadcrumbTools"), compare: t("breadcrumbCompare"), useCases: t("breadcrumbUseCases") })
-  const related = resolveLinks(page.related, await fixedLinkLabels())
+  const trail = pageTrail(page, { home: t("breadcrumbHome"), tools: t("breadcrumbTools"), compare: t("breadcrumbCompare"), useCases: t("breadcrumbUseCases"), law: t("breadcrumbLaw") })
+  // Was resolveLinks(page.related, await fixedLinkLabels()): generated pages
+  // can be related too, so their labels join the fixed ones.
+  const related = resolveLinks(page.related, { ...(await fixedLinkLabels()), ...(await generatedLinkLabels()) })
+  const siblings = await siblingLinks(page)
   const isTool = page.kind === "tool"
+  const isLaw = page.kind === "compliance"
   // Industry and team pages show their templates from the library.
-  const pageTemplates = page.templates ? templatesFor(page.templates) : []
+  // Was templatesFor(page.templates): the library includes generated templates.
+  const pageTemplates = page.templates ? templatesFor(page.templates, await libraryTemplates()) : []
   const tx = await getTranslations("templates.taxonomy")
   const templateQuery = page.templates?.industry
     ? `?industry=${page.templates.industry}`
@@ -100,9 +113,12 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
             </div>
           )}
 
-          {page.kind === "comparison" && page.checked && (
+          {/* Was comparisons only; a law page cites its statutes the same way. */}
+          {(page.kind === "comparison" || page.kind === "compliance") && page.checked && (
             <div className="mt-6 border border-border bg-card p-4 text-sm">
-              <p className="text-muted-foreground">{t("checked", { competitor: page.competitor?.name ?? "", date: longDate(page.checked) })}</p>
+              <p className="text-muted-foreground">
+                {page.kind === "compliance" ? t("checkedLaw", { date: longDate(page.checked) }) : t("checked", { competitor: page.competitor?.name ?? "", date: longDate(page.checked) })}
+              </p>
               <ul className="mt-2 space-y-1">
                 {page.sources.map((source) => (
                   <li key={source.url}>
@@ -200,6 +216,28 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
                 </li>
               ))}
             </ul>
+          </Reveal>
+        )}
+
+        {siblings.length > 0 && (
+          <Reveal as="section">
+            <h2 className="text-2xl font-bold tracking-tight">{t(isLaw ? "siblingsLaw" : "siblingsCompare")}</h2>
+            <ul className="mt-5 divide-y divide-border border border-border">
+              {siblings.map((p) => (
+                <li key={p.path}>
+                  <Link href={p.path} className="group flex items-center justify-between gap-4 p-4 transition-colors hover:bg-primary/5">
+                    <span className="min-w-0">
+                      <span className="block font-semibold">{p.h1}</span>
+                      <span className="mt-0.5 block line-clamp-1 text-sm text-muted-foreground">{p.description}</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Link href={isLaw ? "/esignature-law" : "/compare"} className="mt-4 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline">
+              {t(isLaw ? "siblingsLawAll" : "siblingsCompareAll")}
+            </Link>
           </Reveal>
         )}
 

@@ -9,8 +9,10 @@ import { getHelpArticles, helpArticlePath } from "@/lib/help"
 // includes the SEO agent's published articles.
 import { getBlogCategories, getBlogPosts } from "@/lib/seo-agent/blog-posts"
 import { productSummary } from "@/lib/product-summary"
-import { getPages, type PageKind } from "@/lib/seo/pages"
-import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
+// Was getPages and getTemplates: the SEO agent's published pages are listed too.
+import type { PageKind } from "@/lib/seo/pages"
+import { TEMPLATES_PATH } from "@/lib/templates"
+import { libraryTemplates, registryPages } from "@/lib/seo-agent/published-pages"
 
 // Rebuilt at most daily, and whenever the SEO agent publishes.
 export const revalidate = 86400
@@ -26,6 +28,7 @@ const PAGE_SECTIONS: { kind: PageKind; heading: string; intro: string }[] = [
   { kind: "use-case", heading: "Use cases", intro: "How the product is used in particular industries and teams." },
   { kind: "comparison", heading: "Comparisons", intro: "Side-by-side comparisons with other e-signature services, with the date their facts were checked." },
   { kind: "alternative", heading: "Alternatives", intro: "Options for people looking to switch from another e-signature service." },
+  { kind: "compliance", heading: "E-signature law", intro: "What each country's law says about electronic signatures, section by section, with the date it was checked." },
 ]
 
 /**
@@ -63,14 +66,14 @@ export async function GET(): Promise<Response> {
 ${siteConfig.llmsSummary}
 ` : ""
 
-  const pageSections = PAGE_SECTIONS.map(({ kind, heading, intro }) => {
-    const pages = getPages({ kind })
+  const pageSections = (await Promise.all(PAGE_SECTIONS.map(async ({ kind, heading, intro }) => {
+    const pages = await registryPages([kind])
     if (pages.length === 0) return ""
     const lines = pages.map((p) => `- [${p.h1}](${base}${p.path}): ${p.description}`).join("\n")
     return `## ${heading}\n${intro}\n\n${lines}\n`
-  }).filter(Boolean).join("\n")
+  }))).filter(Boolean).join("\n")
 
-  const templates = getTemplates()
+  const templates = await libraryTemplates()
   const templateSection = templates.length
     ? `## Templates
 Ready-to-sign document templates (agreements, letters, forms), each one free to read and download.

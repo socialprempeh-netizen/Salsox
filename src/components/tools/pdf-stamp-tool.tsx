@@ -36,6 +36,7 @@ import { HANDOFF_KEY } from "./handoff"
 import { FormFieldInput } from "./form-field-input"
 import { SignaturePadDialog } from "./signature-pad-dialog"
 import { AnimatePresence, Appear, ToolMotion } from "./tool-motion"
+import { AfterToolCta } from "./after-tool-cta"
 
 export type StampToolConfig = {
   id: "sign-pdf" | "add-signature-to-pdf" | "fill-and-sign-pdf"
@@ -70,6 +71,8 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  // The signup prompt after a download; dismissing it hides it until the next one.
+  const [ctaDismissed, setCtaDismissed] = useState(false)
   const pageEls = useRef(new Map<number, HTMLDivElement>())
   const drag = useRef<{ id: string; mode: "move" | "resize"; startX: number; startY: number; orig: Placement } | null>(null)
 
@@ -220,6 +223,7 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
       setDone(true)
+      setCtaDismissed(false)
       track("tool_downloaded", { tool: config.id })
     } catch {
       setError(t("saveFailed"))
@@ -449,7 +453,12 @@ export function PdfStampTool({ config }: { config: StampToolConfig }) {
 
         <div className="sticky bottom-0 z-20 -mx-1 border-t border-border bg-background/95 px-1 py-3 backdrop-blur">
           {error && <p className="mb-2 text-sm text-destructive" role="alert">{error}</p>}
-          {done && !error && <p className="mb-2 text-sm text-emerald-700 dark:text-emerald-400" role="status">{t("downloaded")}</p>}
+          {/* Was the status line alone; the signup prompt for what comes next
+              now follows it, and replaces it until dismissed. */}
+          {done && !error && ctaDismissed && <p className="mb-2 text-sm text-emerald-700 dark:text-emerald-400" role="status">{t("downloaded")}</p>}
+          <div className={done && !error && !ctaDismissed ? "mb-3" : undefined}>
+            <AfterToolCta tool={config.id} show={done && !error && !ctaDismissed} onDismiss={() => setCtaDismissed(true)} />
+          </div>
           <button type="button" onClick={() => void download()} disabled={busy} className="inline-flex h-12 w-full items-center justify-center gap-2 bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60 sm:w-auto">
             <Download className="h-4 w-4" aria-hidden="true" /> {busy ? t("saving") : t("download")}
           </button>

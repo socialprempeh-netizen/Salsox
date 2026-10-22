@@ -1,5 +1,5 @@
 /**
- * The SEO agent's memory: every read and write of its six tables
+ * The SEO agent's memory: every read and write of its seven tables
  * (prisma/schema.prisma, "SEO agent"), and nothing else. Decisions are made
  * in the pure files beside this one; this only moves rows.
  *
@@ -8,11 +8,12 @@
  * or the migration has not run yet, the page renders without them and says
  * so in the server log, because a blog post must not fail over an extra.
  */
-import type { Prisma, SeoAgentTargetStatus } from "@prisma/client"
+import type { Prisma, SeoAgentPageKind, SeoAgentPageStatus, SeoAgentTargetStatus } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import type { Opportunity } from "./opportunities"
 
-export type RunKind = "daily" | "orphans"
+// "pages" is the page mode's daily run (page-agent.ts); "daily" the article mode it replaced.
+export type RunKind = "daily" | "orphans" | "pages"
 export type RunTrigger = "cron" | "manual"
 export type RunStatus = "running" | "ok" | "skipped" | "failed"
 
@@ -239,4 +240,88 @@ export async function listOrphans() {
 export async function setOrphanStatus(path: string, status: "OPEN" | "REVIEWED"): Promise<boolean> {
   const { count } = await prisma.seoAgentOrphan.updateMany({ where: { path }, data: { status } })
   return count > 0
+}
+
+// ── Generated pages (the page mode, page-agent.ts) ───────────────────────
+
+/** Every page row's kind, slug, status and attempts: what the candidate picker needs. */
+export async function pageStates() {
+  return prisma.seoAgentPage.findMany({ select: { kind: true, slug: true, status: true, attempts: true } })
+}
+
+/** Pages written, discarded and flagged included, failures not: the count the review rule runs on. */
+export async function countWrittenPages(): Promise<number> {
+  return prisma.seoAgentPage.count({ where: { status: { not: "FAILED" } } })
+}
+
+export type NewPage = {
+  kind: SeoAgentPageKind
+  slug: string
+  status: Extract<SeoAgentPageStatus, "DRAFT" | "FLAGGED">
+  title: string
+  data: Record<string, unknown>
+  body: string
+  report: unknown
+  similarity: number
+  similarTo: string | null
+  noindex: boolean
+  model: string
+}
+
+/** Saves a written page; a candidate that failed before is overwritten in place. */
+export async function savePage(p: NewPage): Promise<string> {
+  const fields = { ...p, data: p.data as Prisma.InputJsonValue, report: p.report as Prisma.InputJsonValue, error: null }
+  const row = await prisma.seoAgentPage.upsert({ where: { kind_slug: { kind: p.kind, slug: p.slug } }, create: fields, update: fields })
+  return row.id
+}
+
+/** Records a candidate that could not be generated, and why; a second failure sets it aside (MAX_PAGE_ATTEMPTS). */
+export async function recordPageFailure(f: { kind: SeoAgentPageKind; slug: string; title: string; error: string; report?: unknown }): Promise<void> {
+  const report = f.report === undefined ? undefined : (f.report as Prisma.InputJsonValue)
+  await prisma.seoAgentPage.upsert({
+    where: { kind_slug: { kind: f.kind, slug: f.slug } },
+    create: { kind: f.kind, slug: f.slug, title: f.title, status: "FAILED", error: f.error.slice(0, 2000), report },
+    update: { status: "FAILED", error: f.error.slice(0, 2000), report, attempts: { increment: 1 } },
+  })
+}
+
+export async function getGeneratedPage(id: string) {
+  return prisma.seoAgentPage.findUnique({ where: { id } })
+}
+
+/** Puts a page live. A flagged page published by a person stays noindexed. */
+export async function markPagePublished(id: string, { auto }: { auto: boolean }): Promise<void> {
+  const page = await prisma.seoAgentPage.findUniqueOrThrow({ where: { id } })
+  await prisma.seoAgentPage.update({ where: { id }, data: { status: "PUBLISHED", publishedAt: page.publishedAt ?? new Date(), autoPublished: auto, noindex: page.noindex || page.status === "FLAGGED" } })
+}
+
+/** Takes a page off the site, back to a draft (or back to flagged, if it was published noindexed). */
+export async function markPageUnpublished(id: string): Promise<boolean> {
+  const page = await prisma.seoAgentPage.findUnique({ where: { id } })
+  if (!page || page.status !== "PUBLISHED") return false
+  await prisma.seoAgentPage.update({ where: { id }, data: { status: page.noindex ? "FLAGGED" : "DRAFT", publishedAt: null, autoPublished: false } })
+  return true
+}
+
+export async function markPageDiscarded(id: string): Promise<boolean> {
+  const { count } = await prisma.seoAgentPage.updateMany({ where: { id, status: { in: ["DRAFT", "FLAGGED"] } }, data: { status: "DISCARDED" } })
+  return count > 0
+}
+
+/** The admin list: newest first. */
+export async function recentPages(limit = 60) {
+  return prisma.seoAgentPage.findMany({ orderBy: { updatedAt: "desc" }, take: limit, select: { id: true, kind: true, slug: true, status: true, title: true, report: true, similarity: true, similarTo: true, noindex: true, error: true, attempts: true, autoPublished: true, publishedAt: true, createdAt: true } })
+}
+
+export type PublishedPageRow = { kind: SeoAgentPageKind; slug: string; data: Prisma.JsonValue; body: string; noindex: boolean; updatedAt: Date }
+
+const PUBLISHED_PAGE = { kind: true, slug: true, data: true, body: true, noindex: true, updatedAt: true } as const
+
+/** Published generated pages of some kinds, for public pages. Never throws: a page renders without them. */
+export async function publishedPages(kinds: SeoAgentPageKind[]): Promise<PublishedPageRow[]> {
+  return quietly("reading generated pages", [], () => prisma.seoAgentPage.findMany({ where: { status: "PUBLISHED", kind: { in: kinds } }, orderBy: { publishedAt: "asc" }, select: PUBLISHED_PAGE }))
+}
+
+export async function publishedPage(kind: SeoAgentPageKind, slug: string): Promise<PublishedPageRow | null> {
+  return quietly("reading a generated page", null, () => prisma.seoAgentPage.findFirst({ where: { kind, slug, status: "PUBLISHED" }, select: PUBLISHED_PAGE }))
 }

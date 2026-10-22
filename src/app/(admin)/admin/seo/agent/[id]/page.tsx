@@ -3,6 +3,10 @@
  * the blog will show it (FAQ included), so a draft can be read before it is
  * published. Publish and Discard sit at the top. Admin only; drafts are not
  * reachable anywhere else.
+ *
+ * Since the page mode, the id can also be a template, comparison or law page
+ * the agent wrote; that one is shown by SeoAgentPagePreview, with its
+ * quality gates. Both kinds of id are cuids, so the article is tried first.
  */
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
@@ -10,7 +14,8 @@ import { getTranslations } from "next-intl/server"
 import { ArrowLeft } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { articleMarkdown } from "@/lib/seo-agent/article"
-import { getArticle } from "@/lib/seo-agent/store"
+import { getArticle, getGeneratedPage } from "@/lib/seo-agent/store"
+import { SeoAgentPagePreview } from "@/components/admin/seo-agent-page-preview"
 import { MarkdownBody } from "@/components/seo/markdown-body"
 import { AdminReveal } from "@/components/admin/admin-reveal"
 import { DraftActions } from "@/components/admin/seo-agent-console"
@@ -23,7 +28,12 @@ export default async function SeoAgentArticlePage({ params }: { params: Promise<
   if (!user || user.role !== "ADMIN") redirect("/dashboard")
   const { id } = await params
   const article = await getArticle(id).catch(() => null)
-  if (!article) notFound()
+  if (!article) {
+    // Was notFound() alone: a generated page is previewed here too.
+    const page = await getGeneratedPage(id).catch(() => null)
+    if (!page) notFound()
+    return <SeoAgentPagePreview row={page} />
+  }
   const t = await getTranslations("admin.seoAgent")
   const faq = Array.isArray(article.faq) ? (article.faq as { q: string; a: string }[]) : []
   const path = `/blog/${article.slug}`

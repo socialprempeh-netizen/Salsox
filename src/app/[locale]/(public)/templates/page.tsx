@@ -10,7 +10,8 @@ import { libraryProps } from "@/components/templates/library-props"
 import { pageMetadata } from "@/lib/metadata"
 import { jsonLdScript } from "@/lib/json-ld"
 import { breadcrumbJsonLd, itemListJsonLd, webPageJsonLd } from "@/lib/seo/jsonld"
-import { getTemplates, templateCards, TEMPLATES_PATH } from "@/lib/templates"
+import { templateCards, TEMPLATES_PATH } from "@/lib/templates"
+import { libraryTemplates } from "@/lib/seo-agent/published-pages"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
 import { siteConfig } from "@/config/site"
 
@@ -37,7 +38,8 @@ export default async function TemplatesHub({ params }: { params: Promise<{ local
   setRequestLocale((await params).locale)
   const t = await getTranslations("templates")
   const tx = await getTranslations("templates.taxonomy")
-  const templates = getTemplates()
+  // Was getTemplates(): the hub lists the agent's published templates too.
+  const templates = await libraryTemplates()
   const cards = templateCards(templates)
   const { options, labels } = await libraryProps()
   const trail = [

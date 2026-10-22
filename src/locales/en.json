@@ -1122,10 +1122,12 @@
     },
     "seoAgent": {
       "title": "SEO agent",
-      "subtitle": "Each day it finds a search query the site appears for but nobody clicks, writes an article for it, and logs what it did.",
+      "subtitle": "Each day it writes one template, comparison or e-signature law page, puts it through the quality gates, and logs what it did.",
+      "subtitleArticles": "Each day it finds a search query the site appears for but nobody clicks, writes an article for it, and logs what it did.",
+      "queue": "{count, plural, =0 {The queue is empty: add candidates in src/lib/seo-agent/page-queue.ts.} one {# page left in the queue.} other {# pages left in the queue.}} Every page must pass its gates (required data, a specific intro, links into its hub, no near-duplicate) before it is saved.",
       "property": "Reading Search Console property {site}, last 90 days. Queries qualify at position 11 to 50 with near-zero clicks.",
       "runNow": "Run now",
-      "running": "Writing an article…",
+      "running": "Writing…",
       "runDone": "Run finished",
       "crawlNow": "Crawl now",
       "crawling": "Crawling the site…",
@@ -1135,18 +1137,19 @@
       "setupHint": "The daily run is skipped until these environment variables are set on the deployment and it is redeployed.",
       "setupKey": "GA_SERVICE_ACCOUNT_KEY_BASE64: the Google service account key the Traffic tab uses. Add that service account to the Search Console property as a user (Settings, Users and permissions).",
       "setupAnthropic": "ANTHROPIC_API_KEY: an Anthropic API key, used to write the articles.",
+      "setupAnthropicPages": "ANTHROPIC_API_KEY: an Anthropic API key, used to write the pages.",
       "dbTitle": "The agent's tables are missing",
       "dbHint": "This deployment's database has not had the SEO agent migration applied.",
       "dbBody": "Run npx prisma migrate deploy against this database, then reload the page.",
       "modeTitle": "Publishing",
-      "modeHint": "The first {count} articles always wait for your review. After that, articles publish themselves unless you choose to review every one.",
+      "modeHint": "The first {count} pages always wait for your review. After that, a page that passes every gate publishes itself unless you choose to review every one. Flagged pages always wait.",
       "modeLabel": "Publishing mode",
       "modeAuto": "Auto-publish after the first {count}",
-      "modeReview": "Review every article",
+      "modeReview": "Review every page",
       "modeSaved": "Publishing mode saved",
-      "trialLeft": "{count, plural, one {# more article waits} other {# more articles wait}} for review before auto-publishing starts.",
-      "trialDone": "Review period over: new articles publish themselves and are logged here.",
-      "trialReview": "Every new article waits here as a draft until you publish it.",
+      "trialLeft": "{count, plural, one {# more page waits} other {# more pages wait}} for review before auto-publishing starts.",
+      "trialDone": "Review period over: new pages that pass every gate publish themselves and are logged here.",
+      "trialReview": "Every new page waits here as a draft until you publish it.",
       "articlesTitle": "Articles",
       "articlesHint": "One query and one article per run, newest first. Drafts are not on the site until you publish them.",
       "noArticles": "No articles yet. The first one is written on the next daily run, or press Run now.",
@@ -1180,6 +1183,7 @@
       "noRuns": "Nothing has run yet.",
       "kind": {
         "daily": "Daily article",
+        "pages": "Daily page",
         "orphans": "Weekly crawl"
       },
       "trigger": {
@@ -1211,7 +1215,9 @@
       "discardedBanner": "Discarded: this article will not be published, and its query will not be picked again.",
       "statusLast": "Last run: {kind}, {status}, {time}",
       "statusNever": "The agent has not run yet",
-      "statWritten": "Articles written",
+      "statWritten": "Pages written",
+      "statWrittenArticles": "Articles written",
+      "statFlaggedHint": "{count, plural, one {# flagged as a near-duplicate} other {# flagged as near-duplicates}}",
       "statWrittenHint": "The first {count} wait for your review",
       "statPublished": "Published",
       "statRecentHint": "Of the last {count} queries",
@@ -1221,7 +1227,58 @@
       "statNeverCrawled": "Not crawled yet",
       "articlesCount": "{count, plural, one {# article} other {# articles}}",
       "runsCount": "{count, plural, one {# run} other {# runs}}",
-      "orphansOpen": "{count} open"
+      "orphansOpen": "{count} open",
+      "pagesTitle": "Pages",
+      "pagesHint": "One page per run, newest first: templates, comparisons and e-signature law pages. Drafts and flagged pages are not on the site until you publish them.",
+      "pagesCount": "{count, plural, one {# page} other {# pages}}",
+      "noPages": "No pages yet. The first one is written on the next daily run, or press Run now.",
+      "pageKind": {
+        "TEMPLATE": "Template",
+        "COMPARISON": "Comparison",
+        "ALTERNATIVE": "Alternatives",
+        "COMPLIANCE": "E-signature law"
+      },
+      "pageStatus": {
+        "DRAFT": "Draft",
+        "FLAGGED": "Flagged",
+        "PUBLISHED": "Published",
+        "DISCARDED": "Discarded",
+        "FAILED": "Not generated"
+      },
+      "gatesLabel": "Quality gates",
+      "gates": {
+        "required": "Required data",
+        "intro": "Specific intro",
+        "duplicate": "Not a duplicate",
+        "links": "Linked into its hub",
+        "facts": "Verified law only"
+      },
+      "gatePassed": "passed",
+      "gateFailed": "failed",
+      "gateFlagged": "flagged",
+      "similarity": "Closest existing page: {path}, {value} alike (limit {limit}).",
+      "similarityNone": "Nothing on the site resembles it.",
+      "similarityAria": "{value} alike to the closest existing page; the limit is {limit}",
+      "noindex": "Noindexed",
+      "flaggedNote": "Too close to an existing page to publish on its own. If you publish it anyway, it goes live noindexed and stays out of the sitemap and hubs.",
+      "pageFailed": "Not generated after {attempts, plural, one {# attempt} other {# attempts}}: it is retried once on a later run, then set aside.",
+      "publishNoindex": "Publish noindexed",
+      "confirmPublishNoindex": "Tap again to publish noindexed",
+      "reportTitle": "Duplicate report",
+      "reportHint": "Pages that came out too close to an existing page. They are noindexed and held back; none is ever published automatically.",
+      "reportCount": "{count} flagged",
+      "reportEmpty": "No near-duplicates: every page so far is distinct from what the site already has.",
+      "reportPage": "Page",
+      "reportClosest": "Closest existing page",
+      "reportScore": "Alike",
+      "articlesEarlierTitle": "Earlier blog articles",
+      "articlesEarlierHint": "Written before the agent switched to templates, comparisons and law pages. Published ones stay live; the article mode is off unless SEO_AGENT_MODE=articles.",
+      "pageDraftBanner": "Draft: not on the site. Publishing puts it at {path}, lists it in its hub and links to it from its neighbours.",
+      "pageFlaggedBanner": "Flagged: {value}% alike to {closest}. Publishing puts it at {path} noindexed, out of the sitemap and hubs.",
+      "pageDiscardedBanner": "Discarded: this page will not be published, and its candidate will not be picked again.",
+      "pageFailedBanner": "Not generated: this page failed its quality gates or was missing data. The reasons are below.",
+      "previewInvalid": "This page no longer passes its schema, so it cannot be previewed or published.",
+      "previewNone": "Nothing was saved for this page."
     },
     "outreachAgent": {
       "title": "Outreach agent",
@@ -2785,7 +2842,8 @@
       "tool": "Free tool",
       "comparison": "Comparison",
       "alternative": "Alternative",
-      "use-case": "Use case"
+      "use-case": "Use case",
+      "compliance": "E-signature law"
     },
     "templatesTitle": "Templates to start from",
     "templatesHint": "Each opens in the editor with its signature fields already in place.",
@@ -2794,6 +2852,7 @@
     "breadcrumbTools": "Free tools",
     "breadcrumbCompare": "Compare",
     "breadcrumbUseCases": "Use cases",
+    "breadcrumbLaw": "E-signature law",
     "ctaPrimary": "Start free",
     "ctaSecondary": "See pricing",
     "heroNote": "Free to start, no card needed.",
@@ -2802,6 +2861,13 @@
     "faq": "Frequently asked questions",
     "related": "Keep exploring",
     "checked": "Facts about {competitor} were checked on {date} against:",
+    "checkedLaw": "The law on this page was checked on {date} against:",
+    "siblingsCompare": "More comparisons",
+    "siblingsCompareAll": "All comparisons and alternatives",
+    "siblingsLaw": "E-signature law in other countries",
+    "siblingsLawAll": "All e-signature law pages",
+    "hubEmpty": "Country pages are on their way. Until then, the guides below explain where electronic signatures are valid and what makes them hold up.",
+    "hubGuides": "Guides on e-signature law",
     "updated": "Last updated {date}",
     "toolPrivacy": "Runs in your browser. Your file is never uploaded.",
     "ctaTitle": "Send your first document for signature",
@@ -2837,6 +2903,14 @@
       "docs": {
         "name": "Help Center",
         "description": "Step-by-step guides to sending, signing, templates, Sign & Pay and billing."
+      },
+      "templates": {
+        "name": "Templates",
+        "description": "Free document templates with the signature fields in place: contracts, NDAs, proposals and forms."
+      },
+      "law": {
+        "name": "E-signature law",
+        "description": "What each country's law says about electronic signatures, section by section, with its sources."
       }
     },
     "hubs": {
@@ -2860,6 +2934,13 @@
         "breadcrumb": "Use cases",
         "h1": "E-signatures for your kind of work",
         "lede": "What you can sign and send, and the documents each line of work handles: what tends to go wrong, and how to set up signing so it doesn't."
+      },
+      "law": {
+        "metaTitle": "E-signature law by country: statutes and sections",
+        "metaDescription": "What the law says about electronic signatures, country by country: the statute, the sections that matter, excluded documents and the evidence that holds up.",
+        "breadcrumb": "E-signature law",
+        "h1": "E-signature law by country",
+        "lede": "What each country's law actually says about signing electronically, section by section: what it recognises, what it excludes, and what makes a signature hold up as evidence."
       }
     }
   },
@@ -2936,7 +3017,28 @@
     "pngPreview": "Preview (the checks show where the background is transparent)",
     "pngAlt": "Your signature as a transparent PNG",
     "downloadPng": "Download PNG",
-    "useOnPdf": "Use it to sign a PDF"
+    "useOnPdf": "Use it to sign a PDF",
+    "afterCta": {
+      "sign-pdf": {
+        "title": "Signed and downloaded. Does someone else need to sign it too?",
+        "body": "Send it for signature instead: each signer gets their own link, signs on their phone, and everyone receives the finished PDF with an audit trail. Free for {count} documents a month."
+      },
+      "add-signature-to-pdf": {
+        "title": "Signature added. Next time, have them sign it themselves",
+        "body": "Upload the PDF once, choose who signs, and track each signature with reminders and an audit trail instead of signing on their behalf. Free for {count} documents a month."
+      },
+      "fill-and-sign-pdf": {
+        "title": "Form filled and signed. Collecting forms like this from others?",
+        "body": "Send the form to clients or staff to fill in and sign on their phones, and get every completed copy back with an audit trail. Free for {count} documents a month."
+      },
+      "pdf-signature-generator": {
+        "title": "Your signature is ready. Use it on real documents",
+        "body": "With a free account you sign and send documents in one place, with reminders, an audit trail and a sealed PDF at the end. {count} documents a month, free."
+      },
+      "button": "Create a free account",
+      "buttonSignedIn": "Send a document for signature",
+      "dismiss": "Close"
+    }
   },
   "explore": {
     "title": "Everything about getting documents signed",

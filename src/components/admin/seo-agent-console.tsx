@@ -58,8 +58,8 @@ const STATUS_TONE: Record<TargetStatus, Tone> = {
   FAILED: "bad",
 }
 
-/** Runs an action, toasts its outcome, refreshes the page on success. */
-function useAction() {
+/** Runs an action, toasts its outcome, refreshes the page on success. Shared with seo-agent-pages.tsx. */
+export function useAction() {
   const t = useTranslations("admin.seoAgent")
   const router = useRouter()
   const [pending, startTransition] = useTransition()

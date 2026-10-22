@@ -72,12 +72,29 @@ const nextConfig: NextConfig = {
     "/[locale]/[page]": ["./content/pages/**", "./content/blog/**"],
     "/[locale]/vs/[slug]": ["./content/pages/**", "./content/blog/**"],
     "/[locale]/alternatives/[slug]": ["./content/pages/**", "./content/blog/**"],
-    "/[locale]/esignature-for/[slug]": ["./content/pages/**", "./content/blog/**"],
+    // Was ["./content/pages/**", "./content/blog/**"]: industry and team
+    // pages list templates, generated ones included, and re-render when the
+    // SEO agent publishes one.
+    "/[locale]/esignature-for/[slug]": ["./content/pages/**", "./content/blog/**", "./content/templates/**"],
     // The agent's cron and its admin tab read every kind of content to know
     // what already exists, and crawl the sitemap.
     "/api/cron/seo-agent": ["./content/**"],
     "/api/cron/seo-agent/orphans": ["./content/**"],
     "/admin/seo/agent": ["./content/**"],
+    "/admin/seo/agent/**": ["./content/**"],
+    // The page mode (src/lib/seo-agent/page-agent.ts) publishes templates,
+    // comparisons and law pages from the database and revalidates every page
+    // that lists or links to them, so these re-render at request time too and
+    // need the files they merge the database pages with. Without them a
+    // revalidated template page would find no templates and 404.
+    "/[locale]/templates": ["./content/templates/**", "./content/pages/**"],
+    "/[locale]/templates/**": ["./content/templates/**", "./content/pages/**"],
+    "/[locale]/compare": ["./content/pages/**", "./content/blog/**"],
+    "/[locale]/esignature-law": ["./content/pages/**", "./content/blog/**"],
+    "/[locale]/esignature-law/[slug]": ["./content/pages/**", "./content/blog/**"],
+    "/dashboard/templates": ["./content/templates/**"],
+    "/dashboard/templates/**": ["./content/templates/**"],
+    "/api/templates/[slug]/pdf": ["./content/templates/**"],
     // The legal pages read content/legal/ the same way (src/lib/legal.ts).
     "/[locale]/privacy": ["./content/legal/**"],
     "/[locale]/terms": ["./content/legal/**"],

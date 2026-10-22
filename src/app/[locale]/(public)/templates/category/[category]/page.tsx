@@ -10,7 +10,8 @@ import { TemplateCardGrid } from "@/components/templates/template-card"
 import { pageMetadata } from "@/lib/metadata"
 import { jsonLdScript } from "@/lib/json-ld"
 import { breadcrumbJsonLd, itemListJsonLd, webPageJsonLd } from "@/lib/seo/jsonld"
-import { getTemplates, templateCards, TEMPLATES_PATH } from "@/lib/templates"
+import { templateCards, TEMPLATES_PATH } from "@/lib/templates"
+import { libraryTemplates } from "@/lib/seo-agent/published-pages"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES, type TemplateCategory } from "@/lib/templates-taxonomy"
 import { SIGNUP_TO_FIRST_DOCUMENT_PATH } from "@/lib/landing-cta"
 import { siteConfig } from "@/config/site"
@@ -23,22 +24,26 @@ import { siteConfig } from "@/config/site"
  * templates; below that the page would be thin, so it is not generated and
  * the category is reachable through the library's filter instead.
  */
-export const dynamicParams = false
+// Was false. A category can reach the threshold when the SEO agent publishes
+// a template into it, after the build.
+// export const dynamicParams = false
+export const dynamicParams = true
 
 type Props = { params: Promise<{ locale: string; category: string }> }
 
-function pageCategories(): TemplateCategory[] {
-  const all = getTemplates()
+// Was synchronous over getTemplates(): the library includes generated templates.
+async function pageCategories(): Promise<TemplateCategory[]> {
+  const all = await libraryTemplates()
   return TEMPLATE_CATEGORIES.filter((c) => all.filter((t) => t.category === c).length >= MIN_TEMPLATES_PER_CATEGORY_PAGE)
 }
 
-export function generateStaticParams() {
-  return pageCategories().map((category) => ({ category }))
+export async function generateStaticParams() {
+  return (await pageCategories()).map((category) => ({ category }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category } = await params
-  if (!pageCategories().includes(category as TemplateCategory)) return {}
+  if (!(await pageCategories()).includes(category as TemplateCategory)) return {}
   const tx = await getTranslations("templates.taxonomy")
   return pageMetadata({ title: tx(`category.${category}.title`), description: tx(`category.${category}.description`, { site: siteConfig.name }), path: categoryPath(category as TemplateCategory) })
 }
@@ -46,12 +51,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TemplateCategoryPage({ params }: Props) {
   const { locale, category: raw } = await params
   setRequestLocale(locale)
-  if (!pageCategories().includes(raw as TemplateCategory)) notFound()
+  if (!(await pageCategories()).includes(raw as TemplateCategory)) notFound()
   const category = raw as TemplateCategory
 
   const t = await getTranslations("templates")
   const tx = await getTranslations("templates.taxonomy")
-  const templates = getTemplates().filter((tpl) => tpl.category === category)
+  const templates = (await libraryTemplates()).filter((tpl) => tpl.category === category)
   const path = categoryPath(category)
   const label = tx(`category.${category}.label`)
   const trail = [
@@ -64,7 +69,7 @@ export default async function TemplateCategoryPage({ params }: Props) {
     breadcrumbJsonLd(trail),
     itemListJsonLd(templates.map((tpl) => ({ name: tpl.h1, path: tpl.path }))),
   ]
-  const others = pageCategories().filter((c) => c !== category)
+  const others = (await pageCategories()).filter((c) => c !== category)
 
   return (
     <section className="relative pb-20">

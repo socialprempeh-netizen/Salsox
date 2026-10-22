@@ -8,7 +8,7 @@ import { getPages } from "./pages"
 import { pageGraph, pageTrail } from "./page-graph"
 import { validateJsonLd } from "./validate-jsonld"
 
-const labels = { home: "Home", tools: "Free tools", compare: "Compare", useCases: "Use cases" }
+const labels = { home: "Home", tools: "Free tools", compare: "Compare", useCases: "Use cases", law: "E-signature law" }
 const types = (graphs: object[]) => graphs.map((g) => (g as { "@type": string })["@type"])
 
 describe("pageTrail", () => {

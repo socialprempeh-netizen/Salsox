@@ -24,7 +24,7 @@ import sitemap from "@/app/sitemap"
 import { getAllPosts, getCategories } from "@/lib/blog"
 // Unused since /docs redirects to the Help Center (see docs below).
 // import { getDocs } from "@/lib/docs"
-import { loadAllPages } from "@/lib/seo/pages"
+import { loadAllPages, withoutLawPages } from "@/lib/seo/pages"
 import { buildInventory } from "@/lib/seo/inventory"
 import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES, TEMPLATE_INDUSTRIES, TEMPLATE_TEAMS } from "@/lib/templates-taxonomy"
@@ -47,7 +47,7 @@ export default async function SeoInventoryPage() {
   const templates = getTemplates()
   const { rows, conflicts } = buildInventory({
     sitemapPaths: (await sitemap()).map((e) => new URL(e.url).pathname),
-    registry: loadAllPages().filter((p) => p.locale === routing.defaultLocale),
+    registry: withoutLawPages(loadAllPages().filter((p) => p.locale === routing.defaultLocale)),
     templates,
     // Only the categories that get a page (enough templates to not be thin).
     categories: TEMPLATE_CATEGORIES.filter((c) => templates.filter((x) => x.category === c).length >= MIN_TEMPLATES_PER_CATEGORY_PAGE).map((c) => ({

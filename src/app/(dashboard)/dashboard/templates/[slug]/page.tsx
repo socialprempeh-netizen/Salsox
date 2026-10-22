@@ -14,7 +14,7 @@ import { notFound } from "next/navigation"
 import { getFormatter, getTranslations } from "next-intl/server"
 import { ArrowLeft, ExternalLink } from "lucide-react"
 import { requireUser } from "@/lib/auth"
-import { getTemplate } from "@/lib/templates"
+import { findLibraryTemplate } from "@/lib/seo-agent/published-pages"
 import { getSavedTemplate } from "@/lib/esign/templates"
 import { senderPlan } from "@/lib/esign/sender"
 import { FREE_DOCUMENTS_PER_MONTH, hasFeature } from "@/lib/esign/plans"
@@ -26,7 +26,8 @@ export default async function UseTemplatePage({ params, searchParams }: { params
   const user = await requireUser()
   const { slug } = await params
   const { saved: savedId } = await searchParams
-  const template = getTemplate(slug)
+  // Was getTemplate(slug), files only: a published generated template is usable too.
+  const template = (await findLibraryTemplate(slug))?.template
   if (!template) notFound()
 
   const t = await getTranslations("dashboard.templates")

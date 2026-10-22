@@ -1,6 +1,7 @@
 /**
- * The SEO agent's two calls to Claude: write an article for a keyword, and
- * write the sentences that link busy pages to it once it is published.
+ * The SEO agent's calls to Claude: write an article for a keyword, write the
+ * sentences that link busy pages to it once it is published, and (the page
+ * mode that replaced articles) write a template, comparison or law page.
  *
  * Both ask for JSON through structured outputs (a schema the response is
  * constrained to), stream the response so a long article never runs into an
@@ -84,4 +85,14 @@ export async function writeLinkSentences(input: { siteName: string; article: { t
     effort: "medium",
   })
   return data.links
+}
+
+/**
+ * One page for the page mode (page-agent.ts): any of its draft schemas
+ * (page-draft.ts), through the same structured, streamed, re-checked call
+ * the articles use.
+ */
+export async function writePageDraft<T extends z.ZodType>({ system, user, schema }: { system: string; user: string; schema: T }): Promise<{ draft: z.infer<T>; model: string }> {
+  const { data, model } = await structured({ system, user, schema, maxTokens: 32_000, effort: "high" })
+  return { draft: data, model }
 }

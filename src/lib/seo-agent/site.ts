@@ -1,5 +1,7 @@
 /**
- * This app's SiteAdapter for the SEO agent (agent.ts): where its pages,
+ * This app's adapters for the SEO agent: the SiteAdapter for the article
+ * mode (agent.ts) and the PageSite for the page mode (page-agent.ts) that
+ * replaced it. The SiteAdapter (agent.ts): where its pages,
  * blog, traffic and cache come from. The rest of src/lib/seo-agent is written
  * against the adapter type and knows nothing about the app, so moving the
  * agent to another site means writing another one of these.
@@ -21,6 +23,10 @@ import { getPages } from "@/lib/seo/pages"
 import { getTemplates } from "@/lib/templates"
 import type { LinkablePage, SiteAdapter } from "./agent"
 import { countWords } from "./article"
+import type { PageSite } from "./page-agent"
+import { registryPages, libraryTemplates } from "./published-pages"
+import { fetchSource } from "./source-fetch"
+import { PAGE_KINDS } from "@/lib/seo/pages"
 
 export function searchConsoleSite(env: Record<string, string | undefined> = process.env): string {
   return env.SEARCH_CONSOLE_SITE_URL?.trim() || `${siteConfig.url.replace(/\/$/, "")}/`
@@ -101,4 +107,76 @@ export const salsoxSite: SiteAdapter = {
       revalidatePath("/llms.txt")
     }
   },
+}
+
+/** Refreshes one public path the way the article mode does (under the [locale] segment). */
+function revalidatePublic(path: string) {
+  revalidatePath(`/${routing.defaultLocale}${path === "/" ? "" : path}`)
+}
+
+export const salsoxPageSite: PageSite = {
+  productSummary: productSummary(),
+
+  templates: () => libraryTemplates(),
+
+  registry: (kinds) => registryPages(kinds),
+
+  allRegistry: () => registryPages([...PAGE_KINDS]),
+
+  // File posts only: they are the ones a page's related links can resolve.
+  async blogPosts() {
+    return getAllPosts().map((p) => ({ path: `/blog/${p.slug}`, title: p.title, category: p.category, body: p.content }))
+  },
+
+  // The registry (files and generated), the blog's file posts and the fixed
+  // routes: exactly what src/lib/seo/links.ts and generatedLinkLabels resolve.
+  async sitePaths() {
+    const fixed = await fixedLinkLabels()
+    const pages = await registryPages([...PAGE_KINDS])
+    return [
+      ...pages.map((p) => ({ path: p.path, name: p.breadcrumb, description: p.description })),
+      ...getAllPosts().map((p) => ({ path: `/blog/${p.slug}`, name: p.title, description: p.description })),
+      ...Object.entries(fixed).map(([path, label]) => ({ path, ...label })),
+    ]
+  },
+
+  async coveredPhrases() {
+    const pages = await registryPages([...PAGE_KINDS])
+    return [
+      ...getAllPosts().flatMap((p) => [p.title, ...(p.keyword ? [p.keyword] : [])]),
+      ...pages.flatMap((p) => [p.title, p.h1, p.primaryKeyword, ...p.aliases]),
+      ...(await libraryTemplates()).flatMap((t) => [t.title, t.h1, t.keyword]),
+    ]
+  },
+
+  fetchSource: (source) => fetchSource(source),
+
+  // Everything a new page appears on: its own URL, its hub, the neighbours
+  // whose related cards or sibling links now include it, the sitemap and
+  // /llms.txt. Whole route families are refreshed by pattern, because every
+  // sibling's links change, not just one page's.
+  revalidateFor(kind, path) {
+    if (path.startsWith("/admin")) {
+      revalidatePath(path)
+      return
+    }
+    revalidatePath("/admin/seo/agent")
+    revalidatePublic(path)
+    if (kind === "TEMPLATE") {
+      revalidatePath("/[locale]/templates", "layout")
+      // Industry and team pages list their templates.
+      revalidatePath("/[locale]/esignature-for/[slug]", "page")
+      revalidatePath("/dashboard/templates", "layout")
+    } else if (kind === "COMPLIANCE") {
+      revalidatePath("/[locale]/esignature-law", "layout")
+    } else {
+      revalidatePublic("/compare")
+      revalidatePath("/[locale]/vs/[slug]", "page")
+      revalidatePath("/[locale]/alternatives/[slug]", "page")
+    }
+    revalidatePath("/sitemap.xml")
+    revalidatePath("/llms.txt")
+  },
+
+  today: () => new Date().toISOString().slice(0, 10),
 }

@@ -5,20 +5,28 @@ import { BreadcrumbTrail } from "@/components/ui/breadcrumb"
 import { Reveal } from "@/components/landing/reveal"
 import { jsonLdScript } from "@/lib/json-ld"
 import { breadcrumbJsonLd, itemListJsonLd, webPageJsonLd } from "@/lib/seo/jsonld"
-import { getPages, type PageKind } from "@/lib/seo/pages"
+// Was getPages: hubs list the SEO agent's published pages too.
+// import { getPages, type PageKind } from "@/lib/seo/pages"
+import type { PageKind } from "@/lib/seo/pages"
+import type { LinkCard } from "@/lib/seo/links"
+import { registryPages } from "@/lib/seo-agent/published-pages"
 import { siteConfig } from "@/config/site"
 
 /**
  * A hub page that lists the registry pages of one or more kinds: /tools,
- * /compare and /esignature-for. Hubs are what make the pages beneath them
+ * /compare, /esignature-for and /esignature-law, files and the pages the SEO
+ * agent published alike (src/lib/seo-agent/published-pages.ts). `guides`
+ * adds a second list of related articles under the pages (the law hub lists
+ * the blog's legal guides), and a hub with no pages yet says so. Hubs are what make the pages beneath them
  * one click from the navigation, and they give each page a parent in its
  * breadcrumb. Built from the registry, so a new page appears in its hub the
  * moment its file is added. Server-rendered and static, square corners,
  * single column on phones.
  */
-export async function HubPage({ hub, kinds, path }: { hub: "tools" | "compare" | "useCases"; kinds: PageKind[]; path: string }) {
+export async function HubPage({ hub, kinds, path, guides = [] }: { hub: "tools" | "compare" | "useCases" | "law"; kinds: PageKind[]; path: string; guides?: LinkCard[] }) {
   const t = await getTranslations("seoPages")
-  const pages = kinds.flatMap((kind) => getPages({ kind }))
+  // Was: kinds.flatMap((kind) => getPages({ kind }))
+  const pages = await registryPages(kinds)
   const trail = [
     { name: t("breadcrumbHome"), href: "/" },
     { name: t(`hubs.${hub}.breadcrumb`), href: path },
@@ -52,7 +60,26 @@ export async function HubPage({ hub, kinds, path }: { hub: "tools" | "compare" |
               </li>
             ))}
           </ul>
+          {pages.length === 0 && <p className="border border-dashed border-border p-5 text-sm text-muted-foreground">{t("hubEmpty")}</p>}
         </Reveal>
+        {guides.length > 0 && (
+          <Reveal as="div" className="mt-12">
+            <h2 className="text-xl font-bold tracking-tight">{t("hubGuides")}</h2>
+            <ul className="mt-4 divide-y divide-border border border-border">
+              {guides.map((g) => (
+                <li key={g.href}>
+                  <Link href={g.href} className="group flex items-start justify-between gap-4 p-4 transition-colors hover:bg-primary/5">
+                    <span className="min-w-0">
+                      <span className="block font-semibold">{g.name}</span>
+                      <span className="mt-1 block text-sm text-muted-foreground">{g.description}</span>
+                    </span>
+                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        )}
       </div>
     </section>
   )

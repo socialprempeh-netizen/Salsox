@@ -16,7 +16,6 @@ import { pageMetadata } from "@/lib/metadata"
 import { jsonLdScript } from "@/lib/json-ld"
 import { breadcrumbJsonLd, faqPageJsonLd, webPageJsonLd } from "@/lib/seo/jsonld"
 import {
-  getTemplate,
   getTemplates,
   relatedTemplates,
   templateCards,
@@ -27,6 +26,7 @@ import {
 } from "@/lib/templates"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES, TEMPLATE_INDUSTRIES, TEMPLATE_TEAMS } from "@/lib/templates-taxonomy"
 import { siteConfig } from "@/config/site"
+import { findLibraryTemplate, libraryTemplates, noindexRobots } from "@/lib/seo-agent/published-pages"
 
 /**
  * /templates/{slug}: one template from the library (src/lib/templates.ts),
@@ -42,9 +42,13 @@ import { siteConfig } from "@/config/site"
  * sent straight there by the proxy. Nothing on this page is gated.
  *
  * Breadcrumb and FAQ structured data come from the same values the page
- * prints. Static: every template is generated at build, an unknown slug 404s.
+ * prints. The file templates are generated at build; one the SEO agent
+ * published (src/lib/seo-agent) renders on its first request and is cached
+ * until the agent revalidates it. An unknown slug 404s.
  */
-export const dynamicParams = false
+// Was false: every template was a file known at build.
+// export const dynamicParams = false
+export const dynamicParams = true
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -53,21 +57,25 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const template = getTemplate((await params).slug)
-  return template ? pageMetadata({ title: template.title, description: template.description, path: template.path }) : {}
+  const found = await findLibraryTemplate((await params).slug)
+  return found ? { ...pageMetadata({ title: found.template.title, description: found.template.description, path: found.template.path }), ...noindexRobots(found.noindex) } : {}
 }
 
 export default async function TemplatePage({ params }: Props) {
   const { locale, slug } = await params
   // Stated per page for static rendering (see [page]/page.tsx).
   setRequestLocale(locale)
-  const template = getTemplate(slug)
-  if (!template) notFound()
+  // Was getTemplate(slug), files only.
+  const found = await findLibraryTemplate(slug)
+  if (!found) notFound()
+  const template = found.template
 
   const t = await getTranslations("templates")
   const tx = await getTranslations("templates.taxonomy")
   const format = await getFormatter()
-  const all = getTemplates()
+  // Was getTemplates(): related cards and the category count include the
+  // agent's published templates, so siblings link to a new one.
+  const all = await libraryTemplates()
   const categoryCount = all.filter((x) => x.category === template.category).length
   const categoryLabel = tx(`category.${template.category}.label`)
   const trail = [

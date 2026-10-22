@@ -2,25 +2,28 @@
  * GET /api/templates/{slug}/pdf: a free template as a PDF download
  * (src/lib/templates-pdf.ts), linked from each /templates/{slug} page.
  *
- * Public and static: the templates are files in the repo, so every PDF is
- * built once at build time and served from the cache after. Unknown slugs are
- * a 404. Kept out of search results with X-Robots-Tag: the page is the thing
+ * Public and static: the file templates' PDFs are built once at build time
+ * and served from the cache after; a template the SEO agent published is
+ * built on its first request. Unknown slugs are a 404. Kept out of search results with X-Robots-Tag: the page is the thing
  * to rank, not a second copy of its text.
  */
 import { siteConfig } from "@/config/site"
-import { fillVariables, getTemplate, getTemplates, templatePath } from "@/lib/templates"
+import { fillVariables, getTemplates, templatePath } from "@/lib/templates"
+import { findLibraryTemplate } from "@/lib/seo-agent/published-pages"
 import { renderTemplatePdf } from "@/lib/templates-pdf"
 import { getTranslations } from "next-intl/server"
 import { routing } from "@/i18n/routing"
 
-export const dynamicParams = false
+// Was false: every template was a file known at build.
+// export const dynamicParams = false
+export const dynamicParams = true
 
 export function generateStaticParams() {
   return getTemplates().map((t) => ({ slug: t.slug }))
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const template = getTemplate((await params).slug)
+  const template = (await findLibraryTemplate((await params).slug))?.template
   if (!template) return new Response("Not found", { status: 404 })
   const t = await getTranslations({ locale: routing.defaultLocale, namespace: "templates" })
   const host = siteConfig.url.replace(/^https?:\/\//, "")

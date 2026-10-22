@@ -25,6 +25,7 @@ import { track } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 import { HANDOFF_KEY } from "./handoff"
 import { Appear, ToolMotion } from "./tool-motion"
+import { AfterToolCta } from "./after-tool-cta"
 
 const caveat = Caveat({ subsets: ["latin"], weight: "600", preload: false, display: "swap" })
 const dancing = Dancing_Script({ subsets: ["latin"], weight: "600", preload: false, display: "swap" })
@@ -66,6 +67,8 @@ export function SignatureGeneratorTool() {
   const [fontId, setFontId] = useState<(typeof FONTS)[number]["id"]>("caveat")
   const [hasInk, setHasInk] = useState(false)
   const [png, setPng] = useState<string | null>(null)
+  // Shows the signup prompt once the PNG has downloaded.
+  const [downloaded, setDownloaded] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const strokes = useRef<Point[][]>([])
   const current = useRef<Point[] | null>(null)
@@ -137,6 +140,7 @@ export function SignatureGeneratorTool() {
     a.href = out
     a.download = "signature.png"
     a.click()
+    setDownloaded(true)
     track("tool_downloaded", { tool: "pdf-signature-generator" })
   }
 
@@ -238,6 +242,8 @@ export function SignatureGeneratorTool() {
             <FilePen className="h-4 w-4" aria-hidden="true" /> {t("useOnPdf")}
           </button>
         </div>
+
+        <AfterToolCta tool="pdf-signature-generator" show={downloaded} onDismiss={() => setDownloaded(false)} />
       </div>
     </ToolMotion>
   )

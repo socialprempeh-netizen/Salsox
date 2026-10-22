@@ -47,3 +47,18 @@ describe("the signup links' destination after signing up", () => {
     expect(safeNext(next)).toBe("/dashboard/documents/quick-send")
   })
 })
+
+describe("afterToolCtaHref", () => {
+  it("sends a visitor to sign up and then to Quick Send", async () => {
+    const { afterToolCtaHref, SIGNUP_TO_FIRST_DOCUMENT_PATH } = await import("./landing-cta")
+    expect(afterToolCtaHref(false)).toBe(SIGNUP_TO_FIRST_DOCUMENT_PATH)
+    // Unknown yet (the session check has not answered): the signup link, which
+    // the proxy forwards a signed-in visitor past anyway.
+    expect(afterToolCtaHref(null)).toBe(SIGNUP_TO_FIRST_DOCUMENT_PATH)
+  })
+
+  it("sends a signed-in visitor straight to Quick Send", async () => {
+    const { afterToolCtaHref, QUICK_SEND_PATH } = await import("./landing-cta")
+    expect(afterToolCtaHref(true)).toBe(QUICK_SEND_PATH)
+  })
+})

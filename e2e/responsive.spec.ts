@@ -70,6 +70,9 @@ for (const width of WIDTHS) {
       "/tools",
       "/compare",
       "/esignature-for",
+      // The e-signature law hub (the SEO agent's law pages are added from
+      // the database, so only the hub is here).
+      "/esignature-law",
       "/blog/how-to-sign-a-pdf",
       // Was "/docs/getting-started": now a redirect to a Help Center guide.
       // The Help Center: its front page, a guide with a table, and the videos.

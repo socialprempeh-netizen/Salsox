@@ -59,3 +59,14 @@ export function footerTryLink(demoUrl: string | null): { href: string; label: "d
   // Was { href: SIGNUP_PATH, ... }: see SIGNUP_TO_FIRST_DOCUMENT_PATH.
   return demoUrl ? { href: demoUrl, label: "demo" } : { href: SIGNUP_TO_FIRST_DOCUMENT_PATH, label: "tryFree" }
 }
+
+/**
+ * The signup call to action a free tool shows once the visitor has finished
+ * with it (downloaded a signed PDF, or a signature image): sign up and land
+ * on Quick Send, or, already signed in, go straight there. Tied to what they
+ * just did, because "you signed it yourself; now get someone else to" is the
+ * step a free tool leads to.
+ */
+export function afterToolCtaHref(signedIn: boolean | null): string {
+  return signedIn ? QUICK_SEND_PATH : SIGNUP_TO_FIRST_DOCUMENT_PATH
+}

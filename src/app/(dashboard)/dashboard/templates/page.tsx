@@ -11,7 +11,8 @@ import Link from "next/link"
 import { getFormatter, getTranslations } from "next-intl/server"
 import { ArrowRight } from "lucide-react"
 import { requireUser } from "@/lib/auth"
-import { getTemplate, getTemplates, templateCards } from "@/lib/templates"
+import { templateCards } from "@/lib/templates"
+import { libraryTemplates } from "@/lib/seo-agent/published-pages"
 import { listSavedTemplates } from "@/lib/esign/templates"
 import { TemplateLibrary } from "@/components/templates/template-library"
 import { TemplateCardGrid } from "@/components/templates/template-card"
@@ -22,7 +23,9 @@ export default async function DashboardTemplatesPage() {
   const t = await getTranslations("dashboard.templates")
   const format = await getFormatter()
   const [saved, { options, labels }] = await Promise.all([listSavedTemplates(user.id), libraryProps()])
-  const cards = templateCards(getTemplates())
+  // Was getTemplates(): templates the SEO agent published can be used too.
+  const library = await libraryTemplates()
+  const cards = templateCards(library)
 
   return (
     <div className="space-y-8">
@@ -36,7 +39,7 @@ export default async function DashboardTemplatesPage() {
           <h2 className="border-b border-border p-4 font-semibold">{t("mine")}</h2>
           <ul className="divide-y divide-border">
             {saved.map((s) => {
-              const base = getTemplate(s.templateSlug)
+              const base = library.find((x) => x.slug === s.templateSlug)
               if (!base) return null
               return (
                 <li key={s.id}>

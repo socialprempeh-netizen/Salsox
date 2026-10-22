@@ -15,7 +15,7 @@ import { getTranslations } from "next-intl/server"
 import { z } from "zod"
 import { getCurrentUser } from "@/lib/auth"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { getTemplate } from "@/lib/templates"
+import { findLibraryTemplate } from "@/lib/seo-agent/published-pages"
 import { BURST_LIMITS } from "@/lib/esign/sending-limits"
 import { createDraftFromTemplate, deleteSavedTemplate, saveTemplate, SAVED_NAME_MAX } from "@/lib/esign/templates"
 import { TITLE_MAX } from "@/lib/esign/schemas"
@@ -34,7 +34,8 @@ export async function createFromTemplateAction(input: { slug: string; title?: st
   if (!user) return fail("unauthorized")
   const parsed = z.object({ slug: z.string().max(80), title: z.string().max(TITLE_MAX).optional(), values: valuesSchema }).safeParse(input)
   if (!parsed.success) return fail("invalidInput")
-  const template = getTemplate(parsed.data.slug)
+  // Was getTemplate: templates the SEO agent published can be used too.
+  const template = (await findLibraryTemplate(parsed.data.slug))?.template
   if (!template) return fail("templateNotFound")
   const { max, windowMs } = BURST_LIMITS.upload
   if (!(await checkRateLimit(`esign:upload:${user.id}`, max, windowMs))) return fail("rateLimited")
@@ -58,7 +59,7 @@ export async function saveTemplateAction(input: { slug: string; name: string; va
     .object({ slug: z.string().max(80), name: z.string().trim().min(1).max(SAVED_NAME_MAX), values: valuesSchema, id: z.string().max(40).nullish() })
     .safeParse(input)
   if (!parsed.success) return fail("invalidInput")
-  const template = getTemplate(parsed.data.slug)
+  const template = (await findLibraryTemplate(parsed.data.slug))?.template
   if (!template) return fail("templateNotFound")
   const result = await saveTemplate({ userId: user.id, template, name: parsed.data.name, values: parsed.data.values, id: parsed.data.id })
   if (!result.ok) return fail(result.error)

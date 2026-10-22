@@ -8,7 +8,10 @@ import { getTranslations } from "next-intl/server"
 import type { FixedLabels } from "@/lib/seo/links"
 import { siteConfig } from "@/config/site"
 
-const FIXED = { pricing: "/pricing", verify: "/verify", blog: "/blog", tools: "/tools", compare: "/compare", useCases: "/esignature-for", docs: "/resources/help" } as const
+// templates and law joined with the SEO agent's page mode, whose template,
+// comparison and law pages link to those hubs.
+// Was: { pricing, verify, blog, tools, compare, useCases, docs }
+const FIXED = { pricing: "/pricing", verify: "/verify", blog: "/blog", tools: "/tools", compare: "/compare", useCases: "/esignature-for", docs: "/resources/help", templates: "/templates", law: "/esignature-law" } as const
 // docs was "/docs", which now redirects to the Help Center.
 
 export async function fixedLinkLabels(): Promise<FixedLabels> {

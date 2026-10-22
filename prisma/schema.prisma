@@ -704,6 +704,55 @@ model SeoAgentSettings {
   @@map("seo_agent_settings")
 }
 
+// What the SEO agent writes since it stopped writing blog articles from
+// Search Console gaps (src/lib/seo-agent/page-agent.ts): template pages,
+// comparison and alternative pages, and e-signature law pages. `data` is the
+// page's full frontmatter, re-validated with the same schema as the file
+// pages whenever it is read; `report` is what each quality gate found.
+enum SeoAgentPageKind {
+  TEMPLATE
+  COMPARISON
+  ALTERNATIVE
+  COMPLIANCE
+}
+
+// FLAGGED: too close to an existing page. Never published automatically; if
+// a person publishes it anyway it goes live noindexed, outside the sitemap.
+enum SeoAgentPageStatus {
+  DRAFT
+  FLAGGED
+  PUBLISHED
+  DISCARDED
+  FAILED
+}
+
+model SeoAgentPage {
+  id            String             @id @default(cuid())
+  kind          SeoAgentPageKind
+  slug          String
+  status        SeoAgentPageStatus @default(DRAFT)
+  title         String             @default("")
+  data          Json?
+  body          String             @default("")
+  report        Json?
+  // Highest body similarity to an existing page (0-1), and which page.
+  similarity    Float              @default(0)
+  similarTo     String?            @map("similar_to")
+  noindex       Boolean            @default(false)
+  model         String?
+  error         String?
+  // A FAILED page is tried once more on a later run, then left alone.
+  attempts      Int                @default(1)
+  autoPublished Boolean            @default(false) @map("auto_published")
+  publishedAt   DateTime?          @map("published_at")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@unique([kind, slug])
+  @@index([status])
+  @@map("seo_agent_pages")
+}
+
 // ─── Outreach agent ──────────────────────────────────────────────────────────
 // The lead-gen, cold outreach and social agent (src/lib/outreach-agent):
 // leads found from public complaints about other e-signature tools, the

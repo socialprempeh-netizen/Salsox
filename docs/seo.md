@@ -98,7 +98,21 @@ Add `utm_campaign` for the push it belongs to (`launch`, `pricing-post`). Exampl
 
 ## SEO agent
 
-A daily job (`/api/cron/seo-agent`, 05:00 UTC) that writes one blog article for a search query the site already appears for but does not get clicks on. The code is a self-contained module in `src/lib/seo-agent`; only `site.ts` and `blog-posts.ts` touch the rest of the app. The tab is `/admin/seo/agent`, under Analytics.
+A daily job (`/api/cron/seo-agent`, 05:00 UTC) that writes one new page of a type with conversion data behind it: a document template, a comparison or alternatives page, or an e-signature law page. The code is a self-contained module in `src/lib/seo-agent`; only `site.ts`, `blog-posts.ts` and `published-pages.ts` touch the rest of the app. The tab is `/admin/seo/agent`, under Analytics.
+
+### Page mode (the default)
+
+1. **Picks a candidate.** `page-queue.ts` lists what may be written, each with the facts it needs: templates the library lacks (with their category, roles and the situation they serve), competitors with their pricing pages, and countries with verified statute facts (Ghana's Electronic Transactions Act, 2008 (Act 772), section by section). Law pages go first, then templates and competitor pages alternate. A candidate the site already covers (same path, or a page owning its keyword) is skipped.
+2. **Gathers facts.** A comparison fetches the competitor's pricing page that day; a round-up needs at least two readable sources. With too few, the page is not generated and the run says why.
+3. **Writes the page.** Claude gets the facts it may state and nothing else, the intros of the neighbouring pages (so its own is written to differ), and the paths it may link to.
+4. **Quality gates** (`quality.ts`). *Required data*: every field filled, no placeholder text, no empty section, and the same schema and rules the file pages are held to. *Specific intro*: compared with the neighbours' intros after masking the names, so a swapped-name intro fails. *Linked into its hub*: at least three real related pages, one in its own hub. *Verified law only* (law pages): every statute and section cited is one of the verified facts. A page failing any of these gets one retry with the reasons, then is not generated. *Not a duplicate*: the body is compared with every existing page; too close and the page is saved **flagged and noindexed**, listed in the tab's duplicate report, and never published on its own.
+5. **Draft or publish.** The first three pages are drafts for review; after that, pages that pass every gate publish themselves unless "Review every page" is chosen. Published pages live in the database and appear wherever the file pages do: the template library and its category, industry and team pages, the dashboard's templates, `/compare`, `/esignature-law`, the sitemap and `/llms.txt`. Comparison, alternatives and law pages also link to their neighbours in the hub, so every page has links in. A flagged page published by hand goes live noindexed, outside the sitemap and hubs.
+
+Setup: `ANTHROPIC_API_KEY` and `CRON_SECRET`; apply the migration (`npx prisma migrate deploy`) first.
+
+### Article mode (off)
+
+The original daily run: a blog article for a search query the site already appears for but does not get clicks on. Switched off because those articles brought visits that did not convert; set `SEO_AGENT_MODE=articles` to turn it back on. Articles it already published stay live and are managed in the tab.
 
 1. **Finds opportunities.** It reads the Search Console property's queries and pages for the last 90 days (ending three days ago, where final data ends). A query qualifies with at least `SEO_AGENT_MIN_IMPRESSIONS` impressions (default 50), an average position from 11 to 50, at most one click, and not a search for the brand. Queries are ranked by missed clicks: impressions times how far their click-through rate falls below what their position normally earns.
 2. **Skips what is covered.** A query is skipped when a blog post, landing, tool or comparison page, template, or an earlier target already covers it (same words, or nearly). Every picked query is stored in `seo_agent_targets` and never picked again.
@@ -107,7 +121,7 @@ A daily job (`/api/cron/seo-agent`, 05:00 UTC) that writes one blog article for 
 5. **Links to it.** On publish, one sentence linking to the article is added to two or three of the busiest pages (Google Analytics page views for 30 days; Search Console clicks when GA is not connected) that are blog posts or registry pages and do not already link to it. Claude writes the sentence and picks the paragraph; the sentence is stored and spliced in when the page renders, so the page's file is never edited.
 6. **Finds orphan pages.** A weekly crawl (`/api/cron/seo-agent/orphans`, Mondays) fetches every sitemap page and lists the ones no other page links to. They are only listed, for a person to fix and mark reviewed.
 
-Setup: `GA_SERVICE_ACCOUNT_KEY_BASE64` (the same key as the Traffic tab) with that service account added as a user on the Search Console property, `ANTHROPIC_API_KEY`, and `CRON_SECRET`. `SEARCH_CONSOLE_SITE_URL` names the property if it is not the site's own URL with a trailing slash (a domain property is `sc-domain:example.com`). Apply the migration (`npx prisma migrate deploy`) before the first run. Both jobs can also be started from the tab.
+Setup (article mode): `GA_SERVICE_ACCOUNT_KEY_BASE64` (the same key as the Traffic tab) with that service account added as a user on the Search Console property, `ANTHROPIC_API_KEY`, and `CRON_SECRET`. `SEARCH_CONSOLE_SITE_URL` names the property if it is not the site's own URL with a trailing slash (a domain property is `sc-domain:example.com`). Apply the migration (`npx prisma migrate deploy`) before the first run. Both jobs can also be started from the tab.
 
 ## Testing
 

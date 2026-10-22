@@ -7,14 +7,14 @@
  */
 import { describe, expect, it, vi } from "vitest"
 import { buildInventory, countByType, filterInventory, inventoryCsv, type InventoryInput } from "./inventory"
-import { getPages, loadAllPages } from "./pages"
+import { getPages, loadAllPages, withoutLawPages } from "./pages"
 import { getTemplates } from "@/lib/templates"
 import { TEMPLATE_INDUSTRIES, TEMPLATE_TEAMS } from "@/lib/templates-taxonomy"
 import sitemap from "@/app/sitemap"
 
 // The sitemap includes the SEO agent's published articles, read from the
 // database; this test is about the files, so there are none.
-vi.mock("@/lib/seo-agent/store", () => ({ publishedArticles: async () => [], publishedArticle: async () => null }))
+vi.mock("@/lib/seo-agent/store", () => ({ publishedArticles: async () => [], publishedArticle: async () => null, publishedPages: async () => [], publishedPage: async () => null }))
 
 const base: InventoryInput = {
   sitemapPaths: [],
@@ -131,7 +131,7 @@ describe("the site's own inventory", () => {
     const { rows, conflicts } = buildInventory({
       ...base,
       sitemapPaths: (await sitemap()).map((e) => new URL(e.url).pathname),
-      registry: loadAllPages().filter((p) => p.locale === "en"),
+      registry: withoutLawPages(loadAllPages().filter((p) => p.locale === "en")),
       templates: getTemplates(),
       industryPaths: Object.values(TEMPLATE_INDUSTRIES),
       teamPaths: Object.values(TEMPLATE_TEAMS),

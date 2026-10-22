@@ -11,8 +11,11 @@ import { getChangelog } from "@/lib/changelog"
 import { localizedPath } from "@/i18n/alternates"
 import { siteConfig } from "@/config/site"
 import { isKitSite } from "@/config/kit"
-import { getPages, type SitePage } from "@/lib/seo/pages"
-import { getTemplates, TEMPLATES_PATH } from "@/lib/templates"
+// Was getPages and getTemplates: the SEO agent's published (and indexable)
+// templates, comparisons and law pages are listed with the files.
+import { PAGE_KINDS, type SitePage } from "@/lib/seo/pages"
+import { TEMPLATES_PATH } from "@/lib/templates"
+import { libraryTemplates, registryPages } from "@/lib/seo-agent/published-pages"
 import { categoryPath, MIN_TEMPLATES_PER_CATEGORY_PAGE, TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
 import { getHelpArticles, HELP_PATH, HELP_VIDEOS_PATH, helpArticlePath } from "@/lib/help"
 
@@ -134,7 +137,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // each with the date it was last revised, and the hubs that list them,
   // dated by their newest page. Only published English pages; a translation
   // would be listed with hreflang alternates by `localized`, once it exists.
-  const seoPages = getPages()
+  const seoPages = await registryPages([...PAGE_KINDS])
   const updatedOf = (pages: SitePage[]) => newest(pages.map((p) => p.updated))
   const registry: MetadataRoute.Sitemap = seoPages.flatMap((p) =>
     localized(p.path, p.locales, {
@@ -147,13 +150,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/tools", pages: seoPages.filter((p) => p.kind === "tool") },
     { path: "/compare", pages: seoPages.filter((p) => p.kind === "comparison" || p.kind === "alternative") },
     { path: "/esignature-for", pages: seoPages.filter((p) => p.kind === "use-case") },
+    // Listed once it holds a law page; until then it is noindexed.
+    { path: "/esignature-law", pages: seoPages.filter((p) => p.kind === "compliance") },
   ]
     .filter((hub) => hub.pages.length > 0)
     .map((hub) => ({ url: `${siteConfig.url}${hub.path}`, changeFrequency: "monthly" as const, priority: 0.6, ...updatedOf(hub.pages) }))
 
   // The free templates (src/lib/templates.ts) and their hub, English only
   // like the registry pages, dated by their newest change.
-  const templates = getTemplates()
+  const templates = await libraryTemplates()
   const templateRoutes: MetadataRoute.Sitemap = templates.length
     ? [
         { url: `${siteConfig.url}${TEMPLATES_PATH}`, changeFrequency: "monthly" as const, priority: 0.7, ...newest(templates.map((t) => t.updated)) },

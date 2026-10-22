@@ -36,7 +36,10 @@ import { z } from "zod"
 import { siteConfig } from "@/config/site"
 import { routing } from "@/i18n/routing"
 
-export const PAGE_KINDS = ["solution", "tool", "comparison", "alternative", "use-case"] as const
+// "compliance" was added for the e-signature law pages (one per country,
+// under /esignature-law), which the SEO agent writes from verified statutes.
+// Was: ["solution", "tool", "comparison", "alternative", "use-case"]
+export const PAGE_KINDS = ["solution", "tool", "comparison", "alternative", "use-case", "compliance"] as const
 export type PageKind = (typeof PAGE_KINDS)[number]
 
 /** The folder under content/pages that holds each kind. */
@@ -46,6 +49,7 @@ export const KIND_FOLDERS: Record<PageKind, string> = {
   comparison: "compare",
   alternative: "alternatives",
   "use-case": "use-cases",
+  compliance: "compliance",
 }
 
 export const TOOL_IDS = ["sign-pdf", "add-signature-to-pdf", "fill-and-sign-pdf", "request-signature", "pdf-signature-generator"] as const
@@ -65,6 +69,8 @@ export function pagePath(kind: PageKind, slug: string): string {
       return `/alternatives/${slug}`
     case "use-case":
       return `/esignature-for/${slug}`
+    case "compliance":
+      return `/esignature-law/${slug}`
     default:
       return `/${slug}`
   }
@@ -108,6 +114,10 @@ export const frontmatterSchema = z
     if (data.kind === "tool" && data.howItWorks.length < 3) ctx.addIssue({ code: "custom", path: ["howItWorks"], message: "a tool page explains at least three steps" })
     if (data.kind === "comparison" && (!data.checked || data.sources.length === 0 || !data.competitor)) {
       ctx.addIssue({ code: "custom", path: ["sources"], message: "a comparison names its competitor, its sources and the date they were checked" })
+    }
+    // A page about the law cites the law: at least two sources and the date they were read.
+    if (data.kind === "compliance" && (!data.checked || data.sources.length < 2)) {
+      ctx.addIssue({ code: "custom", path: ["sources"], message: "a law page cites at least two sources and the date they were checked" })
     }
     if (data.updated < data.published) ctx.addIssue({ code: "custom", path: ["updated"], message: "updated is before published" })
   })
@@ -190,6 +200,16 @@ export function getPage(kind: PageKind, slug: string, locale: string = routing.d
   return getPages({ kind, locale }).find((p) => p.slug === slug)
 }
 
+/**
+ * Pages without the e-signature law kind, for the SEO inventory
+ * (src/lib/seo/inventory.ts), which predates it and is left as it was. Law
+ * pages are written by the SEO agent into the database, never as files, so
+ * this drops nothing the inventory could have listed.
+ */
+export function withoutLawPages(pages: SitePage[]): (SitePage & { kind: Exclude<PageKind, "compliance"> })[] {
+  return pages.filter((p): p is SitePage & { kind: Exclude<PageKind, "compliance"> } => p.kind !== "compliance")
+}
+
 export function getPageByPath(pathname: string): SitePage | undefined {
   return getPages().find((p) => p.path === pathname)
 }
@@ -223,7 +243,7 @@ export function similarity(a: string, b: string): number {
 }
 
 /** Running text a page must carry, by kind. Tools also carry steps, benefits and FAQs. */
-export const MIN_WORDS: Record<PageKind, number> = { solution: 450, tool: 300, comparison: 500, alternative: 450, "use-case": 450 }
+export const MIN_WORDS: Record<PageKind, number> = { solution: 450, tool: 300, comparison: 500, alternative: 450, "use-case": 450, compliance: 700 }
 /** Above this, two pages say too much of the same thing to both deserve a URL. */
 export const MAX_SIMILARITY = 0.12
 
