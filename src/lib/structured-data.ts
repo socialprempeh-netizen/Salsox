@@ -33,10 +33,9 @@ export function organizationJsonLd() {
       siteConfig.links.x,
       siteConfig.links.linkedin,
       siteConfig.links.youtube,
-      siteConfig.links.instagram,
       siteConfig.links.tiktok,
       siteConfig.links.facebook,
-      siteConfig.links.pinterest,
+      siteConfig.links.reddit,
     ].filter(Boolean),
   }
 }

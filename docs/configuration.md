@@ -136,7 +136,7 @@ The kit ships **brand-neutral**: a placeholder name and a black + grayscale them
 | `NEXT_PUBLIC_CONTACT_EMAIL` | Public contact address. |
 | `NEXT_PUBLIC_MAINTAINER_NAME`, `NEXT_PUBLIC_MAINTAINER_URL` | Who builds the product, shown in a "Who builds it" section on the About page. The section hides entirely when the name is unset; the URL is optional and the name renders without a link. |
 | `NEXT_PUBLIC_GITHUB_ORG_URL` | GitHub presence; its footer icon hides when unset. |
-| `NEXT_PUBLIC_X_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, `NEXT_PUBLIC_YOUTUBE_URL`, `NEXT_PUBLIC_INSTAGRAM_URL`, `NEXT_PUBLIC_TIKTOK_URL`, `NEXT_PUBLIC_FACEBOOK_URL`, `NEXT_PUBLIC_PINTEREST_URL` | Social profiles. Each footer icon is a link when set and shown inert (not a link) until then. |
+| `NEXT_PUBLIC_X_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, `NEXT_PUBLIC_YOUTUBE_URL`, `NEXT_PUBLIC_TIKTOK_URL`, `NEXT_PUBLIC_FACEBOOK_URL`, `NEXT_PUBLIC_REDDIT_URL` | Social profiles. Each footer icon is a link when set and shown inert (not a link) until then. |
 | `NEXT_PUBLIC_APP_STORE_URL`, `NEXT_PUBLIC_PLAY_STORE_URL` | Mobile app store listings. Until set, the footer badges are inert placeholders marked "coming soon". |
 | `NEXT_PUBLIC_BRAND_WORDMARK_ACCENT` | Substring of the name to gradient-highlight in the logo. |
 | `NEXT_PUBLIC_BRAND_PRIMARY`, `NEXT_PUBLIC_BRAND_PRIMARY_2` | Accent colors (hex). Buttons, links, focus rings and Open Graph images follow them automatically. The interface is flat: the accent is used solid, not as a gradient. |

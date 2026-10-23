@@ -141,10 +141,10 @@ test("the footer shows every social icon, linked only when its profile is set", 
   const footer = page.locator("footer")
   const networks: [string, string, RegExp][] = [
     ["YouTube", "NEXT_PUBLIC_YOUTUBE_URL", /^https:\/\/(www\.)?youtube\.com\//],
-    ["Instagram", "NEXT_PUBLIC_INSTAGRAM_URL", /^https:\/\/(www\.)?instagram\.com\//],
     ["TikTok", "NEXT_PUBLIC_TIKTOK_URL", /^https:\/\/(www\.)?tiktok\.com\//],
-    ["Facebook", "NEXT_PUBLIC_FACEBOOK_URL", /^https:\/\/(www\.)?facebook\.com\//],
-    ["Pinterest", "NEXT_PUBLIC_PINTEREST_URL", /^https:\/\/([a-z]+\.)?pinterest\.[a-z.]+\//],
+    // Was (www\.)? only: the configured profile is on web.facebook.com.
+    ["Facebook", "NEXT_PUBLIC_FACEBOOK_URL", /^https:\/\/([a-z]+\.)?facebook\.com\//],
+    ["Reddit", "NEXT_PUBLIC_REDDIT_URL", /^https:\/\/(www\.)?reddit\.com\//],
     ["LinkedIn", "NEXT_PUBLIC_LINKEDIN_URL", /^https:\/\/(www\.)?linkedin\.com\//],
     ["X / Twitter", "NEXT_PUBLIC_X_URL", /^https:\/\/(x|twitter)\.com\//],
   ]
@@ -162,7 +162,7 @@ test("the footer shows every social icon, linked only when its profile is set", 
   }
   // The badges, icons and logo mark are the supplied artwork's web copies
   // (public/brand/web, made by scripts/brand-web-assets.mjs).
-  for (const src of ["/badges/app-store-badge.svg", "/brand/web/badge-google-play.png", "/brand/web/icon-pinterest.png", "/brand/web/logo-mark.png"]) {
+  for (const src of ["/badges/app-store-badge.svg", "/brand/web/badge-google-play.png", "/brand/web/icon-reddit.png", "/brand/web/logo-mark.png"]) {
     expect((await page.request.get(src)).status(), src).toBe(200)
   }
 })

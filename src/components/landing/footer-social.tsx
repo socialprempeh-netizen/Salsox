@@ -5,8 +5,8 @@ import { siX } from "simple-icons"
 import { cn } from "@/lib/utils"
 
 /**
- * The footer's social icons: YouTube, Instagram, TikTok, Facebook, LinkedIn,
- * Pinterest and X.
+ * The footer's social icons: YouTube, TikTok, Facebook, LinkedIn, Reddit
+ * and X. (Instagram and Pinterest were removed: no profiles there.)
  *
  * Each is the brand's own artwork from public/brand/ (icon-*.png and
  * icon-youtube.jpg), served from the trimmed, background-free 78px copies in
@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils"
  * on their first load); off under prefers-reduced-motion.
  */
 
-export type SocialNetwork = "youtube" | "instagram" | "tiktok" | "facebook" | "linkedin" | "pinterest" | "x"
+export type SocialNetwork = "youtube" | "tiktok" | "facebook" | "linkedin" | "reddit" | "x"
 
 // Was: brand-coloured simple-icons glyphs (24px) on a 26px white tile, the
 // white needed behind the marks' cut-outs on a black footer:
@@ -39,14 +39,13 @@ export type SocialNetwork = "youtube" | "instagram" | "tiktok" | "facebook" | "l
 // with LinkedIn as <LinkedinIcon className="h-6 w-6 text-[#0A66C2]" />.
 const IMAGES: Record<Exclude<SocialNetwork, "x">, string> = {
   youtube: "/brand/web/icon-youtube.png",
-  instagram: "/brand/web/icon-instagram.png",
   tiktok: "/brand/web/icon-tiktok.png",
   facebook: "/brand/web/icon-facebook.png",
   linkedin: "/brand/web/icon-linkedin.png",
-  pinterest: "/brand/web/icon-pinterest.png",
+  reddit: "/brand/web/icon-reddit.png",
 }
 
-export const SOCIAL_ORDER: SocialNetwork[] = ["youtube", "instagram", "tiktok", "facebook", "linkedin", "pinterest", "x"]
+export const SOCIAL_ORDER: SocialNetwork[] = ["youtube", "tiktok", "facebook", "linkedin", "reddit", "x"]
 
 // Was 26px (the reference footer's size): too small to read as the brands'
 // icons at a glance, so the homepage redesign drew them at 36px. The 78px

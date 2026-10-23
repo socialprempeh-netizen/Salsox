@@ -14,9 +14,10 @@
  *
  * The sources are left untouched; run this again whenever one is replaced.
  * Per file:
- *  - transparent icons (Facebook, LinkedIn, Pinterest, TikTok) and the logo
+ *  - transparent icons (Facebook, LinkedIn, Reddit, TikTok) and the logo
  *    mark: trimmed to their visible pixels and centred on a square canvas;
- *  - Instagram: its canvas is solid magenta, so it is cut to the circle;
+ *    (Pinterest was here, and Instagram had its own step below, until both
+ *    left the footer;)
  *  - YouTube: a JPEG on a navy vignette, cut to the red logo's rounded
  *    rectangle;
  *  - the Google Play badge: a JPEG on white, cut to its rounded rectangle.
@@ -126,7 +127,8 @@ const visible = (r, g, b, a) => a > 8
 const report = []
 
 // Transparent sources: trim to visible pixels, square, 78px (26px tiles at 3x).
-for (const name of ["facebook", "linkedin", "pinterest", "tiktok"]) {
+// Was ["facebook", "linkedin", "pinterest", "tiktok"]: Reddit replaced Pinterest.
+for (const name of ["facebook", "linkedin", "reddit", "tiktok"]) {
   const file = src(`icon-${name}.png`)
   const trimmed = await sharp(file).extract(await bounds(file, visible)).png().toBuffer()
   await (await square(trimmed, 78)).png().toFile(out(`icon-${name}.png`))
@@ -141,19 +143,20 @@ for (const name of ["facebook", "linkedin", "pinterest", "tiktok"]) {
   report.push("logo-mark.png")
 }
 
-// Instagram: everything that is not the magenta background, cut to a circle.
-{
-  const file = src("icon-instagram.png")
-  const notMagenta = (r, g, b) => !(r > 200 && g < 60 && b > 200)
-  const box = await bounds(file, notMagenta)
-  const side = Math.min(box.width, box.height)
-  const squareBox = { left: box.left + Math.floor((box.width - side) / 2), top: box.top + Math.floor((box.height - side) / 2), width: side, height: side }
-  // One pixel inside the edge, so no magenta fringe survives the anti-aliasing.
-  const inset = { left: squareBox.left + 2, top: squareBox.top + 2, width: side - 4, height: side - 4 }
-  const circle = await cut(file, inset, { kind: "circle" })
-  await (await square(circle, 78)).png().toFile(out("icon-instagram.png"))
-  report.push("icon-instagram.png")
-}
+// Instagram left the footer, so its icon is no longer built. Was:
+// // Instagram: everything that is not the magenta background, cut to a circle.
+// {
+//   const file = src("icon-instagram.png")
+//   const notMagenta = (r, g, b) => !(r > 200 && g < 60 && b > 200)
+//   const box = await bounds(file, notMagenta)
+//   const side = Math.min(box.width, box.height)
+//   const squareBox = { left: box.left + Math.floor((box.width - side) / 2), top: box.top + Math.floor((box.height - side) / 2), width: side, height: side }
+//   // One pixel inside the edge, so no magenta fringe survives the anti-aliasing.
+//   const inset = { left: squareBox.left + 2, top: squareBox.top + 2, width: side - 4, height: side - 4 }
+//   const circle = await cut(file, inset, { kind: "circle" })
+//   await (await square(circle, 78)).png().toFile(out("icon-instagram.png"))
+//   report.push("icon-instagram.png")
+// }
 
 // YouTube: the red rounded rectangle, off its navy background.
 {

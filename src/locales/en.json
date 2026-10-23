@@ -1801,10 +1801,9 @@
     "whoItsFor": "Who it's for",
     "social": {
       "youtube": "YouTube",
-      "instagram": "Instagram",
       "tiktok": "TikTok",
       "facebook": "Facebook",
-      "pinterest": "Pinterest",
+      "reddit": "Reddit",
       "x": "X / Twitter"
     },
     "socialSoon": "{name} (coming soon)",

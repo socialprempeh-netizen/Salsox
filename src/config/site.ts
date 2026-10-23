@@ -108,11 +108,11 @@ export const siteConfig = {
     /** LinkedIn company page. Inert footer icon on the product site when unset. */
     linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || null,
     /** The other social profiles, same rule: a link when set, an inert icon when not. */
+    // Instagram and Pinterest were removed with their footer icons.
     youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL || null,
-    instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || null,
     tiktok: process.env.NEXT_PUBLIC_TIKTOK_URL || null,
     facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || null,
-    pinterest: process.env.NEXT_PUBLIC_PINTEREST_URL || null,
+    reddit: process.env.NEXT_PUBLIC_REDDIT_URL || null,
     /**
      * Store listings for mobile apps. There is no app yet: until these are
      * set, the footer shows the official badges as inert placeholders,

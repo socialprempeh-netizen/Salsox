@@ -188,10 +188,9 @@ export async function Footer() {
   const [t, nav] = await Promise.all([getTranslations("footer"), getSiteNav()])
   const social = {
     youtube: t("social.youtube"),
-    instagram: t("social.instagram"),
     tiktok: t("social.tiktok"),
     facebook: t("social.facebook"),
-    pinterest: t("social.pinterest"),
+    reddit: t("social.reddit"),
     linkedin: t("linkedin"),
     x: t("social.x"),
   }
@@ -244,11 +243,10 @@ export async function Footer() {
               <FooterSocial
                 links={{
                   youtube: siteConfig.links.youtube,
-                  instagram: siteConfig.links.instagram,
                   tiktok: siteConfig.links.tiktok,
                   facebook: siteConfig.links.facebook,
                   linkedin: siteConfig.links.linkedin,
-                  pinterest: siteConfig.links.pinterest,
+                  reddit: siteConfig.links.reddit,
                   x: siteConfig.links.x,
                 }}
                 labels={social}
@@ -510,10 +508,10 @@ export async function Footer() {
 //   const [t, nav] = await Promise.all([getTranslations("footer"), getSiteNav()])
 //   const social = {
 //     youtube: t("social.youtube"),
-//     instagram: t("social.instagram"),
+//     instagram: (its "social.instagram" label, removed with the Instagram icon),
 //     tiktok: t("social.tiktok"),
 //     facebook: t("social.facebook"),
-//     pinterest: t("social.pinterest"),
+//     pinterest: (its "social.pinterest" label, removed with the Pinterest icon),
 //     linkedin: t("linkedin"),
 //     x: t("social.x"),
 //   }
