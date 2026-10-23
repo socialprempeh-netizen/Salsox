@@ -4,13 +4,17 @@
  * automation. A platform without its credentials is simply not offered.
  *
  *  - Facebook Page: Meta Graph API, POST /{page-id}/feed with a Page access
- *    token (META_PAGE_ID, META_PAGE_ACCESS_TOKEN; META_GRAPH_VERSION, default
- *    v23.0). Instagram needs an image per post, so it is not offered for text.
+ *    token (FACEBOOK_PAGE_ID, the numeric id; FACEBOOK_PAGE_ACCESS_TOKEN;
+ *    FACEBOOK_GRAPH_VERSION, default v23.0). The META_* names these had first
+ *    (META_PAGE_ID, META_PAGE_ACCESS_TOKEN, META_GRAPH_VERSION) still work.
+ *    Instagram needs an image per post, so it is not offered for text.
  *  - LinkedIn company page: Posts API, POST /rest/posts as the organization
  *    (LINKEDIN_ORGANIZATION_ID, LINKEDIN_ACCESS_TOKEN with w_organization_social;
- *    LINKEDIN_API_VERSION, default 202510).
- *  - X: API v2, POST /2/tweets with an OAuth 2.0 user-context token
- *    (X_ACCESS_TOKEN, tweet.write scope).
+ *    LINKEDIN_API_VERSION, default 202610; 202510 was retired a year on).
+ *  - X: API v2, POST /2/tweets, signed with OAuth 1.0a when the app's own
+ *    keys are set (X_API_KEY, X_API_KEY_SECRET, X_ACCESS_TOKEN,
+ *    X_ACCESS_TOKEN_SECRET; see oauth1.ts), or else with an OAuth 2.0
+ *    user-context token alone in X_ACCESS_TOKEN (tweet.write scope).
  *
  * Request building and length rules are pure and tested; `publish` only
  * sends what they build. Tokens go in headers or the request body to the
@@ -23,6 +27,7 @@
  * them, and they can never be scheduled.
  */
 import type { SocialPlatform } from "@prisma/client"
+import { oauth1Header, type OAuth1Credentials } from "./oauth1"
 
 /** The platforms the agent publishes to through their APIs. */
 export const PLATFORMS: SocialPlatform[] = ["LINKEDIN", "X", "FACEBOOK"]
@@ -89,12 +94,38 @@ export function redditSubmitUrl({ title, body }: { title: string; body: string }
 
 type Env = Record<string, string | undefined>
 
+const read = (env: Env, ...names: string[]) => names.map((n) => env[n]?.trim()).find(Boolean) ?? ""
+
+/** The Facebook Page settings, under their FACEBOOK_* names or the earlier META_* ones. */
+export function facebookSettings(env: Env = process.env) {
+  return {
+    pageId: read(env, "FACEBOOK_PAGE_ID", "META_PAGE_ID"),
+    token: read(env, "FACEBOOK_PAGE_ACCESS_TOKEN", "META_PAGE_ACCESS_TOKEN"),
+    version: read(env, "FACEBOOK_GRAPH_VERSION", "META_GRAPH_VERSION") || "v23.0",
+  }
+}
+
+/** How X requests are authorised: OAuth 1.0a with the app's four keys, an OAuth 2.0 token alone, or not at all. */
+export function xAuth(env: Env = process.env): { kind: "oauth1"; credentials: OAuth1Credentials } | { kind: "bearer"; token: string } | null {
+  const consumerKey = read(env, "X_API_KEY")
+  const consumerSecret = read(env, "X_API_KEY_SECRET")
+  const token = read(env, "X_ACCESS_TOKEN")
+  const tokenSecret = read(env, "X_ACCESS_TOKEN_SECRET")
+  if (consumerKey && consumerSecret && token && tokenSecret) return { kind: "oauth1", credentials: { consumerKey, consumerSecret, token, tokenSecret } }
+  if (token && !tokenSecret) return { kind: "bearer", token }
+  return null
+}
+
 export function platformConfigured(platform: SocialPlatform, env: Env = process.env): boolean {
   // Manual platforms have no API connection to configure.
   if (!isAutoPlatform(platform)) return false
-  if (platform === "FACEBOOK") return Boolean(env.META_PAGE_ID?.trim() && env.META_PAGE_ACCESS_TOKEN?.trim())
+  // Was META_PAGE_ID and META_PAGE_ACCESS_TOKEN only, and X_ACCESS_TOKEN alone for X.
+  if (platform === "FACEBOOK") {
+    const fb = facebookSettings(env)
+    return Boolean(fb.pageId && fb.token)
+  }
   if (platform === "LINKEDIN") return Boolean(env.LINKEDIN_ORGANIZATION_ID?.trim() && env.LINKEDIN_ACCESS_TOKEN?.trim())
-  return Boolean(env.X_ACCESS_TOKEN?.trim())
+  return xAuth(env) !== null
 }
 
 /** Why a post cannot go out as written, or null when it can. */
@@ -111,10 +142,10 @@ export type PlatformRequest = { url: string; init: RequestInit }
 export function buildRequest(platform: SocialPlatform, body: string, env: Env = process.env): PlatformRequest {
   const text = body.trim()
   if (platform === "FACEBOOK") {
-    const version = env.META_GRAPH_VERSION?.trim() || "v23.0"
+    const fb = facebookSettings(env)
     return {
-      url: `https://graph.facebook.com/${version}/${encodeURIComponent(env.META_PAGE_ID!.trim())}/feed`,
-      init: { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ message: text, access_token: env.META_PAGE_ACCESS_TOKEN!.trim() }).toString() },
+      url: `https://graph.facebook.com/${fb.version}/${encodeURIComponent(fb.pageId)}/feed`,
+      init: { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ message: text, access_token: fb.token }).toString() },
     }
   }
   if (platform === "LINKEDIN") {
@@ -125,7 +156,8 @@ export function buildRequest(platform: SocialPlatform, body: string, env: Env = 
         headers: {
           authorization: `Bearer ${env.LINKEDIN_ACCESS_TOKEN!.trim()}`,
           "content-type": "application/json",
-          "linkedin-version": env.LINKEDIN_API_VERSION?.trim() || "202510",
+          // Was "202510": LinkedIn retires each version after about a year.
+          "linkedin-version": env.LINKEDIN_API_VERSION?.trim() || "202610",
           "x-restli-protocol-version": "2.0.0",
         },
         body: JSON.stringify({
@@ -139,9 +171,12 @@ export function buildRequest(platform: SocialPlatform, body: string, env: Env = 
       },
     }
   }
+  // With OAuth 1.0a the Authorization header is signed per request in
+  // `publish` (signing is asynchronous); with an OAuth 2.0 token it is set here.
+  const auth = xAuth(env)
   return {
     url: "https://api.x.com/2/tweets",
-    init: { method: "POST", headers: { authorization: `Bearer ${env.X_ACCESS_TOKEN!.trim()}`, "content-type": "application/json" }, body: JSON.stringify({ text }) },
+    init: { method: "POST", headers: { ...(auth?.kind === "bearer" ? { authorization: `Bearer ${auth.token}` } : {}), "content-type": "application/json" }, body: JSON.stringify({ text }) },
   }
 }
 
@@ -159,6 +194,8 @@ export async function publish(platform: SocialPlatform, body: string, env: Env =
   const problem = postProblem(platform, body)
   if (problem) throw new Error(problem === "empty" ? "the post is empty" : `the post is longer than ${LIMITS[platform]} characters`)
   const { url, init } = buildRequest(platform, body, env)
+  const auth = platform === "X" ? xAuth(env) : null
+  if (auth?.kind === "oauth1") init.headers = { ...(init.headers as Record<string, string>), authorization: await oauth1Header({ method: "POST", url }, auth.credentials) }
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) })
   if (!response.ok) throw new Error(`${platform} refused the post (HTTP ${response.status})`)
   return { externalId: await readPostId(platform, response) }

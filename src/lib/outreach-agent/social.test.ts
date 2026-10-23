@@ -87,3 +87,27 @@ describe("the manual platforms (Reddit, TikTok, YouTube)", () => {
     expect(long.searchParams.get("text")).toHaveLength(REDDIT_URL_BODY_MAX)
   })
 })
+
+describe("credential names", () => {
+  it("reads Facebook under FACEBOOK_* names, and the earlier META_* ones", async () => {
+    const { facebookSettings } = await import("./social")
+    expect(facebookSettings({ FACEBOOK_PAGE_ID: "1", FACEBOOK_PAGE_ACCESS_TOKEN: "t" })).toEqual({ pageId: "1", token: "t", version: "v23.0" })
+    expect(facebookSettings({ META_PAGE_ID: "2", META_PAGE_ACCESS_TOKEN: "m", META_GRAPH_VERSION: "v24.0" })).toEqual({ pageId: "2", token: "m", version: "v24.0" })
+    expect(platformConfigured("FACEBOOK", { FACEBOOK_PAGE_ID: "1", FACEBOOK_PAGE_ACCESS_TOKEN: "t" })).toBe(true)
+    const { url, init } = buildRequest("FACEBOOK", "Hi", { FACEBOOK_PAGE_ID: "99", FACEBOOK_PAGE_ACCESS_TOKEN: "fb-tok" })
+    expect(url).toBe("https://graph.facebook.com/v23.0/99/feed")
+    expect(String(init.body)).toContain("access_token=fb-tok")
+  })
+
+  it("signs X with OAuth 1.0a when all four app keys are set, else uses an OAuth 2.0 token", async () => {
+    const { xAuth } = await import("./social")
+    const four = { X_API_KEY: "k", X_API_KEY_SECRET: "ks", X_ACCESS_TOKEN: "1-t", X_ACCESS_TOKEN_SECRET: "ts" }
+    expect(xAuth(four)?.kind).toBe("oauth1")
+    expect(xAuth({ X_ACCESS_TOKEN: "bearer-tok" })?.kind).toBe("bearer")
+    expect(xAuth({ X_ACCESS_TOKEN: "1-t", X_ACCESS_TOKEN_SECRET: "ts" })).toBeNull()
+    // The OAuth 1.0a header is added when publishing, not here.
+    const { init } = buildRequest("X", "Hi", four)
+    expect((init.headers as Record<string, string>).authorization).toBeUndefined()
+    expect((buildRequest("X", "Hi", { X_ACCESS_TOKEN: "bearer-tok" }).init.headers as Record<string, string>).authorization).toBe("Bearer bearer-tok")
+  })
+})
