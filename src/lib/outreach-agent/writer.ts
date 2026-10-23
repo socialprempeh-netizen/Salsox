@@ -27,6 +27,8 @@ import {
   extractSystemPrompt,
   followUpSystemPrompt,
   followUpUserPrompt,
+  redditSystemPrompt,
+  redditUserPrompt,
   socialSystemPrompt,
   socialUserPrompt,
   type EmailBrief,
@@ -142,7 +144,27 @@ const socialSchema = z.object({
 
 export type SocialDraft = z.infer<typeof socialSchema>["posts"][number]
 
+const redditSchema = z.object({ title: z.string(), body: z.string() })
+
+/**
+ * Writes the batch. Reddit is a separate call that is given the idea and
+ * nothing about the product (redditSystemPrompt), so its draft has no
+ * product behind it to leak; the other platforms are written together from
+ * the product facts as before. Was one call for every platform:
+ *   const { data, model } = await structured({ model: writerModel(), system: socialSystemPrompt(input.siteName), user: socialUserPrompt(input), schema: socialSchema, maxTokens: 6_000, effort: "medium" })
+ *   return { posts: data.posts.filter((p) => input.platforms.includes(p.platform)), model }
+ */
 export async function writeSocialPosts(input: { siteName: string; productSummary: string; fixes: Fix[]; platforms: SocialDraft["platform"][]; theme?: string }): Promise<{ posts: SocialDraft[]; model: string }> {
-  const { data, model } = await structured({ model: writerModel(), system: socialSystemPrompt(input.siteName), user: socialUserPrompt(input), schema: socialSchema, maxTokens: 6_000, effort: "medium" })
-  return { posts: data.posts.filter((p) => input.platforms.includes(p.platform)), model }
+  const others: SocialDraft["platform"][] = input.platforms.filter((p) => p !== "REDDIT")
+  const [main, reddit] = await Promise.all([
+    others.length
+      ? structured({ model: writerModel(), system: socialSystemPrompt(input.siteName), user: socialUserPrompt({ ...input, platforms: others }), schema: socialSchema, maxTokens: 6_000, effort: "medium" })
+      : null,
+    input.platforms.includes("REDDIT") ? structured({ model: writerModel(), system: redditSystemPrompt(), user: redditUserPrompt({ idea: input.theme }), schema: redditSchema, maxTokens: 3_000, effort: "medium" }) : null,
+  ])
+  const posts: SocialDraft[] = [
+    ...(main?.data.posts.filter((p) => others.includes(p.platform)) ?? []),
+    ...(reddit ? [{ platform: "REDDIT" as const, title: reddit.data.title, body: reddit.data.body, description: "" }] : []),
+  ]
+  return { posts, model: (main ?? reddit)!.model }
 }

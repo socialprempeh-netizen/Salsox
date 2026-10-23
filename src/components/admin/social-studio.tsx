@@ -12,7 +12,9 @@
  *   X, LinkedIn and Facebook are edited, scheduled or published now through
  *   their APIs (savePost, schedulePost, publishPostNow), exactly as before.
  *   Reddit is never posted by the app: "Create Reddit post" opens reddit.com's
- *   own submit page in a new tab, pre-filled, for a person to submit.
+ *   own submit page in a new tab, pre-filled, for a person to submit, under a
+ *   reminder to check the community's self-promotion rules first. Its draft
+ *   is a genuine community post with no product in it (reddit-voice.ts).
  *   TikTok and YouTube are never posted either (there is no video yet): their
  *   caption, title and description are edited and copied by hand. All three
  *   are marked posted by hand (markPosted) once they are out.
@@ -32,7 +34,7 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useFormatter, useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { CalendarClock, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Send, Sparkles } from "lucide-react"
+import { CalendarClock, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Send, ShieldAlert, Sparkles } from "lucide-react"
 import { siX } from "simple-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -369,6 +371,13 @@ function RedditSquare({ post }: { post: StudioPost }) {
         <Textarea id={`rb-${post.id}`} value={body} onChange={(e) => setBody(e.target.value)} readOnly={posted} rows={8} className="text-sm leading-relaxed" />
       </div>
       {cut && <p className="text-xs text-amber-700 dark:text-amber-400">{t("redditCut", { max: REDDIT_URL_BODY_MAX })}</p>}
+      {/* The community's rules come before any post: most subreddits ban self-promotion outright. */}
+      {!posted && (
+        <p role="note" className="flex gap-2 border border-amber-500/40 border-l-4 border-l-amber-500 bg-amber-500/[0.06] p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+          <ShieldAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{t("redditRules")}</span>
+        </p>
+      )}
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
         {dirty && !posted && (
           <Button size="sm" variant="outline" disabled={pending || invalid} onClick={() => run("save", () => savePost(post.id, body, { title }), t("saved"))}>

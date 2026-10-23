@@ -1351,6 +1351,7 @@
       "description": "Description",
       "createReddit": "Create Reddit post",
       "redditHint": "Opens reddit.com's own post page in a new tab with the title and body filled in. Choose the community, read it through and submit it yourself, then mark it posted here.",
+      "redditRules": "Check this subreddit's self-promotion rules before posting. Most ban it entirely, and many warn that breaking the rule means a permanent ban.",
       "redditCut": "The body is longer than {max} characters, so the link carries the first part only. Copy the full body and paste it in.",
       "copyBody": "Copy body",
       "copy": "Copy",

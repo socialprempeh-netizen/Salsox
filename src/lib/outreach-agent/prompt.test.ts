@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { classifySystemPrompt, emailSystemPrompt, emailUserPrompt, extractPostPrompt, extractReviewsPrompt, extractSystemPrompt, followUpSystemPrompt, followUpUserPrompt, socialSystemPrompt, socialUserPrompt } from "./prompt"
+import { classifySystemPrompt, emailSystemPrompt, emailUserPrompt, extractPostPrompt, extractReviewsPrompt, extractSystemPrompt, followUpSystemPrompt, followUpUserPrompt, redditSystemPrompt, redditUserPrompt, socialSystemPrompt, socialUserPrompt } from "./prompt"
 
 const fix = { id: "price", answers: ["pricing" as const], label: "Unlimited documents", facts: "Paid plans send unlimited documents." }
 const brief = {
@@ -77,11 +77,26 @@ describe("social", () => {
 })
 
 describe("social system prompt", () => {
-  it("covers the three manual platforms and keeps title and description off the others", () => {
+  it("covers TikTok and YouTube, and leaves Reddit to its own prompt", () => {
     const p = socialSystemPrompt("Salsox")
-    expect(p).toMatch(/Reddit: a text post a person will submit by hand/)
     expect(p).toMatch(/TikTok: for a short video made separately/)
     expect(p).toMatch(/YouTube: for a video made separately/)
     expect(p).toMatch(/return an empty string for them on every other platform/)
+    expect(p).not.toMatch(/Reddit/)
+  })
+})
+
+describe("Reddit prompt", () => {
+  it("knows nothing about the product, and forbids pitches and listicles", () => {
+    const system = redditSystemPrompt()
+    const user = redditUserPrompt({ idea: "clients sign on their phone in under a minute" })
+    for (const text of [system, user]) {
+      expect(text).not.toMatch(/Salsox|SUMMARY|product facts/i)
+    }
+    expect(system).toMatch(/Never mention, recommend or hint at any product/)
+    expect(system).toMatch(/Never a listicle or article/)
+    expect(system).toMatch(/Never a disguised pitch/)
+    expect(user).toMatch(/ignore the benefit/)
+    expect(redditUserPrompt({})).toMatch(/Pick an everyday situation/)
   })
 })

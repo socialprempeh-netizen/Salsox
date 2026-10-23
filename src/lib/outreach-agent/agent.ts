@@ -33,6 +33,7 @@ import { followUpCutoff, remainingToday, shouldAutoSend } from "./policy"
 import { searchReddit, redditConfigured } from "./reddit"
 import { isAllowed } from "./robots"
 import { rejection, sourceKey } from "./signals"
+import { redditVoiceProblems } from "./reddit-voice"
 import { DESCRIPTION_LIMITS, draftProblems, isAutoPlatform, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
 import { COMPETITORS, competitorIn, redditQueries, reviewPages, type LeadSource } from "./sources"
 import * as store from "./store"
@@ -498,6 +499,8 @@ export async function draftSocialPosts(site: OutreachAdapter, { platforms, theme
     const seen = new Set<SocialPlatform>()
     const usable = posts
       .filter((p) => platforms.includes(p.platform) && !seen.has(p.platform) && seen.add(p.platform) && draftProblems(p.platform, p).length === 0)
+      // A Reddit draft that names the product, pitches, or reads as a listicle is dropped (reddit-voice.ts).
+      .filter((p) => p.platform !== "REDDIT" || redditVoiceProblems(p, [site.name]).length === 0)
       .map((p) => ({
         platform: p.platform,
         body: p.body.trim(),

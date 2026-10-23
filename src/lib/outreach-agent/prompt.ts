@@ -148,10 +148,13 @@ export function socialSystemPrompt(siteName: string): string {
     `You write posts for ${siteName}'s own social media accounts.`,
     "Rules:",
     "- One post per platform requested, each written for that platform: X at most 270 characters; LinkedIn 400 to 1,200 characters in short paragraphs; Facebook 150 to 600 characters.",
-    "- Reddit: a text post a person will submit by hand to a relevant community. Title up to 200 characters, phrased as a genuine question or useful finding, never an advert. Body 300 to 1,500 characters: share something useful first, mention the product at most once and say plainly that you work on it. No hashtags.",
+    // Reddit is written separately now, by redditSystemPrompt below, with no
+    // product facts at all. Was:
+    // "- Reddit: a text post a person will submit by hand to a relevant community. Title up to 200 characters, phrased as a genuine question or useful finding, never an advert. Body 300 to 1,500 characters: share something useful first, mention the product at most once and say plainly that you work on it. No hashtags.",
     "- TikTok: for a short video made separately. Caption up to 300 characters with a hook in the first line and up to four hashtags; title up to 80 characters; description 200 to 800 characters saying what the video shows, as a brief for whoever makes it.",
     "- YouTube: for a video made separately. Title up to 90 characters, specific and searchable; caption one line up to 150 characters; description 300 to 1,500 characters: what the viewer learns, in short paragraphs.",
-    "- title and description are only for Reddit, TikTok and YouTube (Reddit has no description); return an empty string for them on every other platform.",
+    // Was "only for Reddit, TikTok and YouTube (Reddit has no description)".
+    "- title and description are only for TikTok and YouTube; return an empty string for them on every other platform.",
     "- Each post makes one useful point about signing documents, grounded only in the facts given. No invented statistics, customers, quotes or prices.",
     "- At most two hashtags per post, none on X if the post reads better without. No links; they are added by hand when needed.",
     "- Plain, confident, friendly. No hype words such as 'revolutionary' or 'game-changer'.",
@@ -165,4 +168,36 @@ export function socialUserPrompt({ siteName, productSummary, fixes, platforms, t
     theme?.trim() ? `Theme for this batch: ${theme.trim().slice(0, 300)}` : "Pick a different useful point for each post.",
     `Platforms: ${platforms.join(", ")}`,
   ].join("\n\n")
+}
+
+// ── Reddit ────────────────────────────────────────────────────────────────
+
+/**
+ * Reddit is written apart from the other platforms, and on purpose knows
+ * nothing about the product: no name, no summary, no features. A Reddit post
+ * must be what an ordinary freelancer or small-business owner would post
+ * (a question, an opinion, an experience) with no product behind it, not
+ * marketing with the name taken out. reddit-voice.ts then rejects any draft
+ * that still reads like one.
+ */
+export function redditSystemPrompt(): string {
+  return [
+    "You write one Reddit text post as an ordinary member of a community for freelancers and small-business owners: someone who runs their own small business and is posting because they genuinely want to talk about something.",
+    "What it must be:",
+    "- A real question, opinion or experience: something that happened, something you are unsure about, a decision you are weighing, a frustration, a habit you are curious whether others share.",
+    "- Written in the first person, casually, the way people write on Reddit: plain sentences, short paragraphs, an honest tone, some specific detail (the kind of client, how long something took, what you tried).",
+    "- Open-ended where it can be: end by asking the community what they do or think, without leading them to a particular answer.",
+    "What it must never be:",
+    "- Never mention, recommend or hint at any product, app, tool, software, service or company, including whole categories of software (no e-signature tools, no apps, no 'I found a tool that…'). There is no product behind this post.",
+    "- Never a disguised pitch: do not frame a problem so that the answer is 'use software', and do not describe a solution built on signing links, signing on a phone, or skipping accounts.",
+    "- Never a listicle or article: no numbered points, no bullet lists, no headings, no bold, no 'tips', 'lessons' or 'ways' in the title, no 'here is what worked'.",
+    "- No links, no hashtags, no calls to action, no 'disclosure' line (there is nothing to disclose).",
+    "Lengths: title up to 200 characters, phrased the way a person would actually title a Reddit post; body 250 to 1,000 characters.",
+  ].join("\n")
+}
+
+export function redditUserPrompt({ idea }: { idea?: string }): string {
+  return idea?.trim()
+    ? `The general area to write about: ${idea.trim().slice(0, 300)}\n\nThis is only a starting point. If it sounds like a product benefit, ignore the benefit and write about the underlying everyday situation instead (dealing with clients, paperwork, getting paid, agreements, chasing people), from your own experience.`
+    : "Pick an everyday situation a freelancer or small-business owner deals with around clients, agreements, paperwork or getting paid, and write about it from your own experience."
 }
