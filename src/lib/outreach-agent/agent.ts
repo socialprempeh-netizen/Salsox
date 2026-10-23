@@ -33,7 +33,7 @@ import { followUpCutoff, remainingToday, shouldAutoSend } from "./policy"
 import { searchReddit, redditConfigured } from "./reddit"
 import { isAllowed } from "./robots"
 import { rejection, sourceKey } from "./signals"
-import { platformConfigured, postProblem, publish, PLATFORMS } from "./social"
+import { DESCRIPTION_LIMITS, draftProblems, isAutoPlatform, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
 import { COMPETITORS, competitorIn, redditQueries, reviewPages, type LeadSource } from "./sources"
 import * as store from "./store"
 import { classifyReply, extractFromPost, extractFromReviews, hasWriterKey, writeEmail, writeFollowUp, writeSocialPosts, type ExtractedSignal, type ReplyCategory } from "./writer"
@@ -65,6 +65,8 @@ export type OutreachAdapter = {
 }
 
 const PAGE = "/admin/outreach/agent"
+/** The social studio, where posts are drafted, edited and scheduled. */
+const SOCIAL_PAGE = "/admin/outreach/social"
 /** First emails written per run while every email waits for review: a queue, not a flood. */
 const REVIEW_QUEUE = 10
 /** Reddit posts read per hunt, newest first. */
@@ -479,14 +481,34 @@ export function connectedPlatforms(env: Record<string, string | undefined> = pro
   return PLATFORMS.filter((p) => platformConfigured(p, env))
 }
 
+/**
+ * Drafts one post per platform from one idea (the theme), as a batch: the
+ * studio shows a batch's drafts side by side. A draft that comes back
+ * incomplete or too long for its platform is dropped, and only the platforms
+ * asked for are kept, one each. Title and description are kept only where
+ * the platform has them (Reddit, TikTok, YouTube).
+ */
 export async function draftSocialPosts(site: OutreachAdapter, { platforms, theme }: { platforms: SocialPlatform[]; theme?: string }): Promise<{ ok: boolean; message: string }> {
   if (!hasWriterKey()) return { ok: false, message: "Not configured: set ANTHROPIC_API_KEY." }
   if (platforms.length === 0) return { ok: false, message: "Choose at least one platform." }
   try {
     const { posts, model } = await writeSocialPosts({ siteName: site.name, productSummary: site.productSummary, fixes: site.fixes, platforms, theme })
-    const usable = posts.filter((p) => postProblem(p.platform, p.body) === null).map((p) => ({ platform: p.platform, body: p.body.trim(), model }))
+    // Was: posts.filter((p) => postProblem(p.platform, p.body) === null).map((p) => ({ platform: p.platform, body: p.body.trim(), model }))
+    const batchId = crypto.randomUUID()
+    const seen = new Set<SocialPlatform>()
+    const usable = posts
+      .filter((p) => platforms.includes(p.platform) && !seen.has(p.platform) && seen.add(p.platform) && draftProblems(p.platform, p).length === 0)
+      .map((p) => ({
+        platform: p.platform,
+        body: p.body.trim(),
+        title: TITLE_LIMITS[p.platform] ? p.title.trim() : null,
+        description: DESCRIPTION_LIMITS[p.platform] ? p.description.trim() : null,
+        idea: theme?.trim() || null,
+        batchId,
+        model,
+      }))
     const count = await store.createPosts(usable)
-    site.revalidate([PAGE])
+    site.revalidate([PAGE, SOCIAL_PAGE])
     return { ok: count > 0, message: count ? `Drafted ${count} post${count === 1 ? "" : "s"}.` : "No post came back within the platforms' length limits; try again." }
   } catch (error) {
     return { ok: false, message: `Drafting failed: ${errorText(error)}` }
@@ -496,6 +518,8 @@ export async function draftSocialPosts(site: OutreachAdapter, { platforms, theme
 export async function publishPost(site: OutreachAdapter, postId: string): Promise<{ ok: boolean; message: string }> {
   const post = await store.getPost(postId)
   if (!post) return { ok: false, message: "That post no longer exists." }
+  // Reddit, TikTok and YouTube are posted by a person, never from here.
+  if (!isAutoPlatform(post.platform)) return { ok: false, message: `${post.platform} is posted by hand, not published by the agent.` }
   if (!platformConfigured(post.platform)) return { ok: false, message: `${post.platform} is not connected.` }
   const problem = postProblem(post.platform, post.body)
   if (problem) return { ok: false, message: problem === "empty" ? "The post is empty." : "The post is too long for this platform." }
@@ -503,11 +527,11 @@ export async function publishPost(site: OutreachAdapter, postId: string): Promis
   try {
     const { externalId } = await publish(post.platform, post.body)
     await store.postPublished(postId, externalId)
-    site.revalidate([PAGE])
+    site.revalidate([PAGE, SOCIAL_PAGE])
     return { ok: true, message: `Published to ${post.platform}.` }
   } catch (error) {
     await store.postFailed(postId, errorText(error))
-    site.revalidate([PAGE])
+    site.revalidate([PAGE, SOCIAL_PAGE])
     return { ok: false, message: `Publishing failed: ${errorText(error)}` }
   }
 }

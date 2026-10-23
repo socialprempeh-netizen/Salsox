@@ -57,6 +57,8 @@ export const ADMIN_NAV: AdminSection[] = [
       { href: "/admin/outreach", key: "outreach" },
       // The lead-gen, cold outreach and social agent (src/lib/outreach-agent).
       { href: "/admin/outreach/agent", key: "outreachAgent" },
+      // The social studio: posts drafted, scheduled and tracked per platform.
+      { href: "/admin/outreach/social", key: "social" },
     ],
   },
   {

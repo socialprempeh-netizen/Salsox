@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { classifySystemPrompt, emailSystemPrompt, emailUserPrompt, extractPostPrompt, extractReviewsPrompt, extractSystemPrompt, followUpSystemPrompt, followUpUserPrompt, socialUserPrompt } from "./prompt"
+import { classifySystemPrompt, emailSystemPrompt, emailUserPrompt, extractPostPrompt, extractReviewsPrompt, extractSystemPrompt, followUpSystemPrompt, followUpUserPrompt, socialSystemPrompt, socialUserPrompt } from "./prompt"
 
 const fix = { id: "price", answers: ["pricing" as const], label: "Unlimited documents", facts: "Paid plans send unlimited documents." }
 const brief = {
@@ -73,5 +73,15 @@ describe("social", () => {
     const p = socialUserPrompt({ siteName: "Salsox", productSummary: "SUMMARY", fixes: [fix], platforms: ["X", "LINKEDIN"] })
     expect(p).toContain("SUMMARY")
     expect(p).toContain("Platforms: X, LINKEDIN")
+  })
+})
+
+describe("social system prompt", () => {
+  it("covers the three manual platforms and keeps title and description off the others", () => {
+    const p = socialSystemPrompt("Salsox")
+    expect(p).toMatch(/Reddit: a text post a person will submit by hand/)
+    expect(p).toMatch(/TikTok: for a short video made separately/)
+    expect(p).toMatch(/YouTube: for a video made separately/)
+    expect(p).toMatch(/return an empty string for them on every other platform/)
   })
 })

@@ -227,7 +227,7 @@ export async function isSuppressed(email: string): Promise<boolean> {
 
 // ── Social posts ──────────────────────────────────────────────────────────
 
-export async function createPosts(posts: { platform: SocialPlatform; body: string; model: string }[]): Promise<number> {
+export async function createPosts(posts: { platform: SocialPlatform; body: string; title?: string | null; description?: string | null; idea?: string | null; batchId?: string | null; model: string }[]): Promise<number> {
   const { count } = await prisma.socialPost.createMany({ data: posts })
   return count
 }
@@ -240,7 +240,7 @@ export async function getPost(id: string) {
   return prisma.socialPost.findUnique({ where: { id } })
 }
 
-export async function updatePost(id: string, patch: { body?: string; scheduledFor?: Date | null; status?: "DRAFT" | "SCHEDULED" | "DISCARDED" }): Promise<boolean> {
+export async function updatePost(id: string, patch: { body?: string; title?: string | null; description?: string | null; scheduledFor?: Date | null; status?: "DRAFT" | "SCHEDULED" | "DISCARDED" }): Promise<boolean> {
   const { count } = await prisma.socialPost.updateMany({ where: { id, status: { in: ["DRAFT", "SCHEDULED", "FAILED"] } }, data: patch })
   return count > 0
 }
@@ -260,5 +260,22 @@ export async function postFailed(id: string, error: string): Promise<void> {
 }
 
 export async function duePosts(now: Date) {
-  return prisma.socialPost.findMany({ where: { status: "SCHEDULED", scheduledFor: { lte: now } }, orderBy: { scheduledFor: "asc" }, take: 20 })
+  // Only the API platforms: a Reddit, TikTok or YouTube post is never
+  // published by the cron, even if one were ever left SCHEDULED.
+  // Was: where: { status: "SCHEDULED", scheduledFor: { lte: now } }
+  return prisma.socialPost.findMany({ where: { status: "SCHEDULED", scheduledFor: { lte: now }, platform: { in: ["LINKEDIN", "X", "FACEBOOK"] } }, orderBy: { scheduledFor: "asc" }, take: 20 })
+}
+
+/**
+ * Marks a Reddit, TikTok or YouTube draft as posted by hand, so it moves to
+ * the studio's history. Only those platforms, and only an open draft.
+ */
+export async function markPostedByHand(id: string): Promise<boolean> {
+  const { count } = await prisma.socialPost.updateMany({ where: { id, platform: { in: ["REDDIT", "TIKTOK", "YOUTUBE"] }, status: { in: ["DRAFT", "FAILED"] } }, data: { status: "PUBLISHED", publishedAt: new Date(), error: null } })
+  return count > 0
+}
+
+/** The studio's data: every post that is not discarded, newest first, with the batches they came in. */
+export async function studioPosts(limit = 200) {
+  return prisma.socialPost.findMany({ where: { status: { not: "DISCARDED" } }, orderBy: { createdAt: "desc" }, take: limit })
 }

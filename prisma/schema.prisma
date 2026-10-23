@@ -795,10 +795,17 @@ enum OutreachReplyCategory {
   OTHER
 }
 
+// FACEBOOK, LINKEDIN and X publish through their APIs. REDDIT, TIKTOK and
+// YOUTUBE are drafted only: Reddit is posted by hand from reddit.com's own
+// submit page, and TikTok and YouTube need a video, so their caption, title
+// and description are copied in by hand.
 enum SocialPlatform {
   FACEBOOK
   LINKEDIN
   X
+  REDDIT
+  TIKTOK
+  YOUTUBE
 }
 
 enum SocialPostStatus {
@@ -895,7 +902,16 @@ model OutreachSuppression {
 model SocialPost {
   id           String           @id @default(cuid())
   platform     SocialPlatform
+  // The post text; Reddit's post body; TikTok's and YouTube's caption.
   body         String
+  // Reddit, TikTok and YouTube only: the post or video title.
+  title        String?
+  // TikTok and YouTube only: the video description.
+  description  String?
+  // The idea the batch was drafted from, and the batch: one draft per
+  // platform from the same idea share a batchId.
+  idea         String?
+  batchId      String?          @map("batch_id")
   status       SocialPostStatus @default(DRAFT)
   scheduledFor DateTime?        @map("scheduled_for")
   publishedAt  DateTime?        @map("published_at")
@@ -906,6 +922,7 @@ model SocialPost {
   updatedAt    DateTime         @updatedAt @map("updated_at")
 
   @@index([status, scheduledFor])
+  @@index([batchId])
   @@map("outreach_social_posts")
 }
 

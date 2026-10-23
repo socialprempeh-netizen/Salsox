@@ -5,7 +5,9 @@
  * the hunt or the outreach now, give a lead its address or skip it, approve,
  * edit, discard or retry an email, log a reply by hand, add a lead to the
  * Outreach tracker, change the sending settings, and draft, schedule and
- * publish social posts.
+ * publish social posts (from the social studio, /admin/outreach/social:
+ * Reddit, TikTok and YouTube drafts are edited and marked posted here, never
+ * scheduled or published).
  *
  * Admin only, checked on every call: an action is a public endpoint whatever
  * page renders it. Every argument is re-parsed here, and the work itself is
@@ -17,12 +19,14 @@ import { z } from "zod"
 import { getCurrentUser } from "@/lib/auth"
 import { addToCustomers, draftSocialPosts, logReplyByHand, publishPost, runHunt, runOutreach, sendMessage } from "@/lib/outreach-agent/agent"
 import { clampCap } from "@/lib/outreach-agent/policy"
+import { draftProblems, isAutoPlatform } from "@/lib/outreach-agent/social"
 import { salsoxOutreach } from "@/lib/outreach-agent/site"
 import * as store from "@/lib/outreach-agent/store"
 
 export type OutreachAgentResult = { ok: true; message?: string } | { ok: false; error: "notFound" | "invalid" | "failed"; message?: string }
 
 const PATH = "/admin/outreach/agent"
+const STUDIO = "/admin/outreach/social"
 const id = z.string().min(1).max(64)
 
 async function requireAdmin() {
@@ -32,6 +36,7 @@ async function requireAdmin() {
 
 const done = (ok: boolean, message?: string): OutreachAgentResult => {
   revalidatePath(PATH)
+  revalidatePath(STUDIO)
   return ok ? { ok: true, message } : { ok: false, error: "failed", message }
 }
 
@@ -136,21 +141,44 @@ export async function updateOutreachSettings(patch: { reviewEvery?: boolean; pau
 
 // ── Social ────────────────────────────────────────────────────────────────
 
-const platform = z.enum(["FACEBOOK", "LINKEDIN", "X"])
+// Was z.enum(["FACEBOOK", "LINKEDIN", "X"]) and at most three: the studio
+// drafts for all six platforms from one idea.
+const platform = z.enum(["FACEBOOK", "LINKEDIN", "X", "REDDIT", "TIKTOK", "YOUTUBE"])
 
 export async function draftPosts(platforms: string[], theme: string): Promise<OutreachAgentResult> {
   await requireAdmin()
-  const parsed = z.object({ platforms: z.array(platform).min(1).max(3), theme: z.string().trim().max(300) }).safeParse({ platforms, theme })
+  const parsed = z.object({ platforms: z.array(platform).min(1).max(6), theme: z.string().trim().max(300) }).safeParse({ platforms, theme })
   if (!parsed.success) return { ok: false, error: "invalid" }
   const result = await draftSocialPosts(salsoxOutreach, { platforms: [...new Set(parsed.data.platforms)], theme: parsed.data.theme || undefined })
   return done(result.ok, result.message)
 }
 
-export async function savePost(postId: string, body: string): Promise<OutreachAgentResult> {
+/**
+ * Saves an edited post. `extra` carries the title and description Reddit,
+ * TikTok and YouTube have; the whole draft is re-checked against its
+ * platform's limits (draftProblems) before it is stored.
+ */
+export async function savePost(postId: string, body: string, extra: { title?: string; description?: string } = {}): Promise<OutreachAgentResult> {
   await requireAdmin()
-  const parsed = z.object({ postId: id, body: z.string().trim().min(1).max(5_000) }).safeParse({ postId, body })
+  // Was body only, at most 5,000 characters: a Reddit body can be 40,000.
+  const parsed = z
+    .object({ postId: id, body: z.string().trim().min(1).max(40_000), title: z.string().trim().max(300).optional(), description: z.string().trim().max(5_000).optional() })
+    .safeParse({ postId, body, ...extra })
   if (!parsed.success) return { ok: false, error: "invalid" }
-  if (!(await store.updatePost(parsed.data.postId, { body: parsed.data.body }))) return { ok: false, error: "notFound" }
+  const post = await store.getPost(parsed.data.postId)
+  if (!post) return { ok: false, error: "notFound" }
+  const fields = { body: parsed.data.body, title: parsed.data.title ?? post.title, description: parsed.data.description ?? post.description }
+  if (draftProblems(post.platform, fields).length) return { ok: false, error: "invalid" }
+  const patch = isAutoPlatform(post.platform) ? { body: fields.body } : fields
+  if (!(await store.updatePost(parsed.data.postId, patch))) return { ok: false, error: "notFound" }
+  return done(true)
+}
+
+/** Marks a Reddit, TikTok or YouTube draft as posted by hand. */
+export async function markPosted(postId: string): Promise<OutreachAgentResult> {
+  await requireAdmin()
+  if (!id.safeParse(postId).success) return { ok: false, error: "invalid" }
+  if (!(await store.markPostedByHand(postId))) return { ok: false, error: "notFound" }
   return done(true)
 }
 
@@ -158,6 +186,10 @@ export async function savePost(postId: string, body: string): Promise<OutreachAg
 export async function schedulePost(postId: string, when: string | null): Promise<OutreachAgentResult> {
   await requireAdmin()
   if (!id.safeParse(postId).success) return { ok: false, error: "invalid" }
+  // Only the API platforms can be scheduled; the others are posted by hand.
+  const post = await store.getPost(postId)
+  if (!post) return { ok: false, error: "notFound" }
+  if (!isAutoPlatform(post.platform)) return { ok: false, error: "invalid" }
   if (when === null) return (await store.updatePost(postId, { status: "DRAFT", scheduledFor: null })) ? done(true) : { ok: false, error: "notFound" }
   const date = new Date(when)
   if (Number.isNaN(date.getTime()) || date.getTime() < Date.now() - 60_000) return { ok: false, error: "invalid" }

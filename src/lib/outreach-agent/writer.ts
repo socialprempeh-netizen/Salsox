@@ -133,9 +133,16 @@ export async function classifyReply(input: { subject: string; text: string }): P
 
 // ── Social ────────────────────────────────────────────────────────────────
 
-const socialSchema = z.object({ posts: z.array(z.object({ platform: z.enum(["FACEBOOK", "LINKEDIN", "X"]), body: z.string() })) })
+// Was platform: z.enum(["FACEBOOK", "LINKEDIN", "X"]) and a body alone.
+// Reddit, TikTok and YouTube also take a title, and TikTok and YouTube a
+// description; platforms without one return an empty string for it.
+const socialSchema = z.object({
+  posts: z.array(z.object({ platform: z.enum(["FACEBOOK", "LINKEDIN", "X", "REDDIT", "TIKTOK", "YOUTUBE"]), body: z.string(), title: z.string(), description: z.string() })),
+})
 
-export async function writeSocialPosts(input: { siteName: string; productSummary: string; fixes: Fix[]; platforms: ("FACEBOOK" | "LINKEDIN" | "X")[]; theme?: string }): Promise<{ posts: z.infer<typeof socialSchema>["posts"]; model: string }> {
+export type SocialDraft = z.infer<typeof socialSchema>["posts"][number]
+
+export async function writeSocialPosts(input: { siteName: string; productSummary: string; fixes: Fix[]; platforms: SocialDraft["platform"][]; theme?: string }): Promise<{ posts: SocialDraft[]; model: string }> {
   const { data, model } = await structured({ model: writerModel(), system: socialSystemPrompt(input.siteName), user: socialUserPrompt(input), schema: socialSchema, maxTokens: 6_000, effort: "medium" })
   return { posts: data.posts.filter((p) => input.platforms.includes(p.platform)), model }
 }

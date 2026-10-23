@@ -51,3 +51,39 @@ describe("readPostId", () => {
     expect(await readPostId("LINKEDIN", new Response(null, { headers: { "x-restli-id": "urn:li:share:9" } }))).toBe("urn:li:share:9")
   })
 })
+
+describe("the manual platforms (Reddit, TikTok, YouTube)", () => {
+  it("are never auto-published and have no API connection", async () => {
+    const { isAutoPlatform, MANUAL_PLATFORMS, PLATFORMS, publish } = await import("./social")
+    for (const p of MANUAL_PLATFORMS) {
+      expect(isAutoPlatform(p)).toBe(false)
+      expect(platformConfigured(p, env)).toBe(false)
+      await expect(publish(p, "A post.", env)).rejects.toThrow(/posted by hand/)
+    }
+    expect(PLATFORMS).toEqual(["LINKEDIN", "X", "FACEBOOK"])
+  })
+
+  it("need a title (and TikTok and YouTube a description) within limits", async () => {
+    const { draftProblems } = await import("./social")
+    expect(draftProblems("REDDIT", { body: "A useful finding.", title: "A question?" })).toEqual([])
+    expect(draftProblems("REDDIT", { body: "A useful finding.", title: "" })).toEqual([{ field: "title", problem: "empty" }])
+    expect(draftProblems("YOUTUBE", { body: "Caption", title: "t".repeat(101), description: "" })).toEqual([
+      { field: "title", problem: "tooLong" },
+      { field: "description", problem: "empty" },
+    ])
+    expect(draftProblems("TIKTOK", { body: "Hook", title: "Title", description: "What the video shows." })).toEqual([])
+    // X, LinkedIn and Facebook are still the body alone.
+    expect(draftProblems("X", { body: "a".repeat(281) })).toEqual([{ field: "body", problem: "tooLong" }])
+  })
+
+  it("open reddit.com's own submit page pre-filled, cutting a very long body", async () => {
+    const { redditSubmitUrl, REDDIT_URL_BODY_MAX } = await import("./social")
+    const url = new URL(redditSubmitUrl({ title: " How do you collect signatures? ", body: "We tried three ways & one stuck." }))
+    expect(url.origin + url.pathname).toBe("https://www.reddit.com/submit")
+    expect(url.searchParams.get("type")).toBe("TEXT")
+    expect(url.searchParams.get("title")).toBe("How do you collect signatures?")
+    expect(url.searchParams.get("text")).toBe("We tried three ways & one stuck.")
+    const long = new URL(redditSubmitUrl({ title: "T", body: "x".repeat(REDDIT_URL_BODY_MAX + 50) }))
+    expect(long.searchParams.get("text")).toHaveLength(REDDIT_URL_BODY_MAX)
+  })
+})

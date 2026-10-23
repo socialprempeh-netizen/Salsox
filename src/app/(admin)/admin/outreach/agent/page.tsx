@@ -7,12 +7,14 @@
  * sends from), four figures (leads, emails sent today against the limit,
  * replies, emails waiting for review), what is left to set up, the sending
  * settings with the trust gate, the lead pipeline (address needed, drafts to
- * approve, replies to act on), social posts, and the run log.
+ * approve, replies to act on), a summary of social posts with a link to the
+ * social studio (/admin/outreach/social) where they are made, and the run log.
  *
  * Data is read here, on the server, and handed to the client parts
  * (src/components/admin/outreach-agent-console.tsx) as plain values. A hunt
  * started from here crawls and reads a dozen pages, hence maxDuration.
  */
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getFormatter, getTranslations } from "next-intl/server"
 import { Crosshair, DatabaseZap, Inbox, Megaphone, MessageSquareReply, ScrollText, Send, Settings2, ShieldCheck, Sparkles, Users } from "lucide-react"
@@ -23,10 +25,13 @@ import { fixFor, isComplaint } from "@/lib/outreach-agent/fixes"
 import { outreachFrom } from "@/lib/outreach-agent/mailer"
 import { MAX_DAILY_CAP, REVIEW_FIRST, remainingToday } from "@/lib/outreach-agent/policy"
 import { salsoxOutreach, SALSOX_FIXES } from "@/lib/outreach-agent/site"
-import { LIMITS } from "@/lib/outreach-agent/social"
+// Was LIMITS, for the social panel that moved to the social studio.
+// import { LIMITS } from "@/lib/outreach-agent/social"
 import * as store from "@/lib/outreach-agent/store"
 import { AdminPageHeader, Chip, Empty, Panel, StatGrid, StatTile, StatusBanner, Timeline, type Tone } from "@/components/admin/admin-ui"
-import { AgentRunButtons, LeadBoard, SendingSettings, SocialPanel, type LeadRow, type PostRow } from "@/components/admin/outreach-agent-console"
+// SocialPanel and PostRow were the social section, now the social studio.
+// import { AgentRunButtons, LeadBoard, SendingSettings, SocialPanel, type LeadRow, type PostRow } from "@/components/admin/outreach-agent-console"
+import { AgentRunButtons, LeadBoard, SendingSettings, type LeadRow } from "@/components/admin/outreach-agent-console"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -78,7 +83,10 @@ export default async function OutreachAgentPage() {
         replies: l.replies.map((r) => ({ id: r.id, category: r.category, summary: r.summary, text: r.text, receivedAt: r.receivedAt.toISOString(), source: r.source })),
       }))
     : []
-  const posts: PostRow[] = data.ok ? data.posts.map((p) => ({ id: p.id, platform: p.platform, body: p.body, status: p.status as PostRow["status"], scheduledFor: p.scheduledFor?.toISOString() ?? null, publishedAt: p.publishedAt?.toISOString() ?? null, error: p.error })) : []
+  // Was the rows for SocialPanel; the studio loads its own.
+  // const posts: PostRow[] = data.ok ? data.posts.map((p) => ({ id: p.id, platform: p.platform, body: p.body, status: p.status as PostRow["status"], scheduledFor: p.scheduledFor?.toISOString() ?? null, publishedAt: p.publishedAt?.toISOString() ?? null, error: p.error })) : []
+  const postDrafts = data.ok ? data.posts.filter((p) => p.status === "DRAFT").length : 0
+  const postsScheduled = data.ok ? data.posts.filter((p) => p.status === "SCHEDULED").length : 0
   const waiting = leads.filter((l) => l.messages.some((m) => m.status === "DRAFT")).length
   const totalLeads = data.ok ? Object.values(data.counts).reduce((a, b) => a + b, 0) : 0
   const contacted = data.ok ? data.counts.CONTACTED + data.counts.REPLIED + data.counts.UNSUBSCRIBED : 0
@@ -153,7 +161,15 @@ export default async function OutreachAgentPage() {
 
           <div className="grid gap-6 lg:grid-cols-5">
             <Panel title={t("socialTitle")} hint={t("socialHint")} flush index={6} icon={Sparkles} className="lg:col-span-3" badge={<Chip tone={connected.length ? "good" : "default"}>{t("connectedCount", { count: connected.length })}</Chip>}>
-              <SocialPanel posts={posts} connected={connected} limits={LIMITS} />
+              {/* Was <SocialPanel posts={posts} connected={connected} limits={LIMITS} />:
+                  drafting, editing and scheduling moved to the social studio. */}
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <p className="text-sm text-muted-foreground">{t("socialStudioSummary", { drafts: postDrafts, scheduled: postsScheduled })}</p>
+                <Link href="/admin/outreach/social" className="inline-flex h-10 shrink-0 items-center justify-center gap-2 bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+                  <Sparkles aria-hidden className="h-4 w-4" />
+                  {t("openStudio")}
+                </Link>
+              </div>
             </Panel>
 
             <Panel title={t("runsTitle")} hint={t("runsHint")} flush index={7} icon={ScrollText} className="lg:col-span-2" badge={data.runs.length > 0 ? <Chip>{t("runsCount", { count: data.runs.length })}</Chip> : undefined}>
