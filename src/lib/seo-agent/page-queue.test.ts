@@ -80,7 +80,8 @@ describe("the candidate queue", () => {
   it("names what each page is about, for the intro check", () => {
     expect(candidateSubject(GERMANY)).toEqual(["Germany"])
     expect(candidateSubject(COMPETITOR_CANDIDATES[0])[0]).toBe(COMPETITOR_CANDIDATES[0].competitor.name)
-    expect(candidateSubject(TEMPLATE_CANDIDATES[0])[0]).toBe("loan agreement")
+    // Was "loan agreement", the first candidate until it was written by hand.
+    expect(candidateSubject(TEMPLATE_CANDIDATES[0])[0]).toBe("property management agreement")
   })
 })
 

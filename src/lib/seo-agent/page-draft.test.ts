@@ -21,23 +21,25 @@ function templateDraftFrom(slug: string, rename: string): TemplateDraft {
   }
 }
 
+// Used the queued loan agreement, which is now a hand-written template
+// (content/templates/loan-agreement.md); the next queued candidate stands in.
 describe("generated templates", () => {
-  const candidate = { ...TEMPLATE_CANDIDATES.find((c) => c.slug === "loan-agreement")!, roles: getTemplates().find((x) => x.slug === "mutual-nda")!.roles }
+  const candidate = { ...TEMPLATE_CANDIDATES.find((c) => c.slug === "property-management-agreement")!, roles: getTemplates().find((x) => x.slug === "mutual-nda")!.roles }
 
   it("become library Templates and pass the library's own rules", () => {
-    const stored = templateData(candidate, templateDraftFrom("mutual-nda", "Loan Agreement"), today)
-    const built = toTemplate("loan-agreement", stored)
-    expect("template" in built && built.template.path).toBe("/templates/loan-agreement")
-    expect(templateProblems("loan-agreement", stored, getTemplates())).toEqual([])
+    const stored = templateData(candidate, templateDraftFrom("mutual-nda", "Property Management Agreement"), today)
+    const built = toTemplate("property-management-agreement", stored)
+    expect("template" in built && built.template.path).toBe("/templates/property-management-agreement")
+    expect(templateProblems("property-management-agreement", stored, getTemplates())).toEqual([])
   })
 
   it("fail on a title an existing template already has, or a blank without a sample", () => {
-    const draft = templateDraftFrom("mutual-nda", "Loan Agreement")
+    const draft = templateDraftFrom("mutual-nda", "Property Management Agreement")
     const taken = getTemplates().find((x) => x.slug === "mutual-nda")!.title
     const dup = templateData(candidate, { ...draft, title: taken }, today)
-    expect(templateProblems("loan-agreement", dup, getTemplates()).join(" ")).toMatch(/same title as \/templates\/mutual-nda/)
+    expect(templateProblems("property-management-agreement", dup, getTemplates()).join(" ")).toMatch(/same title as \/templates\/mutual-nda/)
     const missing = templateData(candidate, { ...draft, variables: draft.variables.slice(1) }, today)
-    expect(templateProblems("loan-agreement", missing, getTemplates()).join(" ")).toMatch(/has no sample in variables/)
+    expect(templateProblems("property-management-agreement", missing, getTemplates()).join(" ")).toMatch(/has no sample in variables/)
   })
 })
 

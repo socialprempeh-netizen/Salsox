@@ -23,9 +23,15 @@ import { renderTemplatePdf, toWinAnsi } from "./templates-pdf"
 const templates = getTemplates()
 
 describe("the template library", () => {
-  it("has between 40 and 60 templates", () => {
+  // The library is growing toward about 100 templates, so the ceiling moved.
+  // It still exists to catch a runaway import, not to cap the library. Was:
+  //   it("has between 40 and 60 templates", () => {
+  //     expect(templates.length).toBeGreaterThanOrEqual(40)
+  //     expect(templates.length).toBeLessThanOrEqual(60)
+  //   })
+  it("has between 40 and 120 templates", () => {
     expect(templates.length).toBeGreaterThanOrEqual(40)
-    expect(templates.length).toBeLessThanOrEqual(60)
+    expect(templates.length).toBeLessThanOrEqual(120)
   })
 
   it("passes every publishing rule", () => {
