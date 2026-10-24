@@ -187,7 +187,26 @@ export async function readPostId(platform: SocialPlatform, response: Response): 
   return (platform === "X" ? json?.data?.id : json?.id) ?? null
 }
 
-/** Publishes one post. Throws with the platform's status, never with a token. */
+/** Every credential a platform's request carries, so none can reach an error message. */
+function secretsOf(platform: SocialPlatform, env: Env): string[] {
+  if (platform === "FACEBOOK") return [facebookSettings(env).token]
+  if (platform === "LINKEDIN") return [read(env, "LINKEDIN_ACCESS_TOKEN")]
+  return ["X_API_KEY", "X_API_KEY_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET"].map((n) => read(env, n))
+}
+
+/**
+ * The platform's own explanation of a refusal, from its error body (Meta's
+ * `error.message`, X's `detail` or `title`, LinkedIn's `message`), as
+ * ": reason", or nothing. Any credential is cut out, and it is kept short.
+ */
+export async function refusalReason(response: Response, secrets: string[]): Promise<string> {
+  const json = (await response.json().catch(() => null)) as { error?: { message?: string; code?: number; type?: string }; detail?: string; title?: string; message?: string } | null
+  const raw = json?.error?.message ? `${json.error.message}${json.error.code ? ` (code ${json.error.code})` : ""}` : json?.detail || json?.title || json?.message || ""
+  const clean = secrets.filter((x) => x.length > 3).reduce((text, secret) => text.split(secret).join("[redacted]"), String(raw)).trim().slice(0, 300)
+  return clean ? `: ${clean}` : ""
+}
+
+/** Publishes one post. Throws with the platform's status and reason, never with a token. */
 export async function publish(platform: SocialPlatform, body: string, env: Env = process.env): Promise<{ externalId: string | null }> {
   if (!isAutoPlatform(platform)) throw new Error(`${platform} is posted by hand, never by the agent`)
   if (!platformConfigured(platform, env)) throw new Error(`${platform} is not connected`)
@@ -197,6 +216,7 @@ export async function publish(platform: SocialPlatform, body: string, env: Env =
   const auth = platform === "X" ? xAuth(env) : null
   if (auth?.kind === "oauth1") init.headers = { ...(init.headers as Record<string, string>), authorization: await oauth1Header({ method: "POST", url }, auth.credentials) }
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) })
-  if (!response.ok) throw new Error(`${platform} refused the post (HTTP ${response.status})`)
+  // Was the status alone: the platform's own reason is what tells a person what to fix.
+  if (!response.ok) throw new Error(`${platform} refused the post (HTTP ${response.status})${await refusalReason(response, secretsOf(platform, env))}`)
   return { externalId: await readPostId(platform, response) }
 }

@@ -111,3 +111,13 @@ describe("credential names", () => {
     expect((buildRequest("X", "Hi", { X_ACCESS_TOKEN: "bearer-tok" }).init.headers as Record<string, string>).authorization).toBe("Bearer bearer-tok")
   })
 })
+
+describe("refusalReason", () => {
+  it("gives the platform's own reason, with any credential cut out", async () => {
+    const { refusalReason } = await import("./social")
+    const meta = new Response(JSON.stringify({ error: { message: "(#200) The user hasn't authorized the application to perform this action, token page-tok", type: "OAuthException", code: 200 } }), { status: 403 })
+    expect(await refusalReason(meta, ["page-tok"])).toBe(": (#200) The user hasn't authorized the application to perform this action, token [redacted] (code 200)")
+    expect(await refusalReason(new Response(JSON.stringify({ title: "Forbidden", detail: "You are not permitted to perform this action." }), { status: 403 }), [])).toBe(": You are not permitted to perform this action.")
+    expect(await refusalReason(new Response("not json", { status: 500 }), [])).toBe("")
+  })
+})
