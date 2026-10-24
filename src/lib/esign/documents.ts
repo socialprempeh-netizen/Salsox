@@ -29,6 +29,7 @@ import { AUDIT, recordAudit, requestMeta } from "./audit"
 import { deleteFile, deleteFolder, documentKey, getFile, putFile, sealedDocumentKey, sha256, userFolder } from "./storage"
 import { inspectPdf, type PdfInspection } from "./pdf/inspect"
 import { sealDocument } from "./pdf/seal"
+import { signedViaHref } from "./viral"
 import { newSigningToken } from "./tokens"
 import {
   canRenewDocument,
@@ -603,7 +604,10 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
   // still sealed in the sense that matters for the record (fields stamped,
   // forms flattened, hash stored); the audit trail stays on the dashboard and
   // in the export, it is just not printed into the PDF.
-  const withCertificate = hasFeature(tierForEntitlement(await getEntitlement(document.userId)), "auditCertificate")
+  // Was: hasFeature(tierForEntitlement(await getEntitlement(document.userId)), "auditCertificate"),
+  // read once now for the certificate and for whether the copy carries the "Signed with" link.
+  const ownerTier = tierForEntitlement(await getEntitlement(document.userId))
+  const withCertificate = hasFeature(ownerTier, "auditCertificate")
 
   // The COMPLETED event is printed on the certificate before it exists as a
   // row, so it is built here with the exact timestamp the row will get. Its
@@ -622,6 +626,11 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
   const verificationCode = document.verificationCode ?? newVerificationCode()
   const sealed = await sealDocument({
     verification: withCertificate ? { code: verificationCode, url: verificationUrl(appUrl(), verificationCode) } : null,
+    // Every signer keeps this copy: the link back to the product, tagged so a
+    // signup from it is attributed (viral.ts). On the certificate page always,
+    // and on the document's last page unless the plan removes the brand.
+    signedVia: { url: signedViaHref("signed_pdf", appUrl()), host: new URL(appUrl()).host },
+    brandDocument: !hasFeature(ownerTier, "unbrandedPdf"),
     certificate: withCertificate,
     original: await getFile(document.originalKey),
     documentId: document.id,

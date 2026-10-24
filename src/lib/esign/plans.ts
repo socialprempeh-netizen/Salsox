@@ -11,7 +11,8 @@
  *             request prepared with the public request-a-signature tool
  *   personal  unlimited documents (Personal, $9/mo)
  *   business  Sign & Pay, sequential signing and approvers, sealed PDFs with
- *             the audit certificate (Business, $19/mo, and Lifetime)
+ *             the audit certificate and without the "Signed with {site}"
+ *             line (Business, $19/mo, and Lifetime)
  *
  * Enterprise is sold by contact, not as a plan row: its extras (support,
  * invoicing, SLA) are commercial terms, so it has no tier of its own here and
@@ -26,7 +27,10 @@ export type PlanTier = "free" | "personal" | "business"
 // `savedTemplates`: saving a customised copy of a library template to reuse
 // (src/lib/esign/templates.ts). Using any template is free on every plan;
 // what it sends counts towards the free monthly allowance like anything else.
-export type PlanFeature = "unlimitedDocuments" | "signAndPay" | "sequentialSigning" | "approvers" | "auditCertificate" | "savedTemplates"
+// `unbrandedPdf`: the signed PDF without the small "Signed with {site}" link
+// on its last page (src/lib/esign/pdf/seal.ts). Free and Personal copies
+// carry it, the way free tiers of signing tools are branded.
+export type PlanFeature = "unlimitedDocuments" | "signAndPay" | "sequentialSigning" | "approvers" | "auditCertificate" | "savedTemplates" | "unbrandedPdf"
 
 /** The lowest tier that includes each feature. */
 export const FEATURE_TIER: Record<PlanFeature, PlanTier> = {
@@ -36,6 +40,7 @@ export const FEATURE_TIER: Record<PlanFeature, PlanTier> = {
   approvers: "business",
   auditCertificate: "business",
   savedTemplates: "personal",
+  unbrandedPdf: "business",
 }
 
 const RANK: Record<PlanTier, number> = { free: 0, personal: 1, business: 2 }

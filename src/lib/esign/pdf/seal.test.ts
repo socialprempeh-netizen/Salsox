@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { PDFDocument } from "pdf-lib"
+import { PDFDocument, PDFName } from "pdf-lib"
 import { sealDocument, toWinAnsi } from "./seal"
 import { inspectPdf } from "./inspect"
 
@@ -121,5 +121,45 @@ describe("sealDocument", () => {
     expect(toWinAnsi("Ẹ̀kọ́ Àdùnní")).toBe("Eko Àdùnní")
     expect(toWinAnsi("₵200 or ₦5,000")).toBe("GHS 200 or NGN 5,000")
     expect(toWinAnsi("“Quoted” – €10…")).toBe("“Quoted” – €10…")
+  })
+})
+
+describe("the link back in the signed PDF", () => {
+  const signedVia = { url: "https://salsox.com/signup?next=%2Fdashboard&utm_source=signed_pdf&utm_medium=document&utm_campaign=signed_via", host: "salsox.com" }
+
+  /** The web addresses each page's link annotations open. */
+  async function linksByPage(bytes: Uint8Array): Promise<string[][]> {
+    const doc = await PDFDocument.load(bytes)
+    return doc.getPages().map((page) => {
+      const annots = page.node.Annots()
+      if (!annots) return []
+      return annots.asArray().map((ref) => {
+        const annot = doc.context.lookup(ref) as unknown as { lookup: (k: unknown) => { lookup: (k: unknown) => { decodeText?: () => string } } }
+        const action = annot.lookup(PDFName.of("A"))
+        return action.lookup(PDFName.of("URI"))?.decodeText?.() ?? ""
+      })
+    })
+  }
+
+  it("brands the last page of a Free or Personal copy with a clickable, tagged link", async () => {
+    const sealed = await sealDocument({ ...base, certificate: false, brandDocument: true, signedVia, original: await samplePdf(2), fields: [] })
+    const links = await linksByPage(sealed)
+    expect(links[0]).toEqual([])
+    expect(links[1]).toEqual([signedVia.url])
+  })
+
+  it("leaves a Business copy's own pages unbranded, and links from its certificate", async () => {
+    const verification = { code: "7K3M-Q9TX-2HVD", url: "https://salsox.com/verify?code=7K3M-Q9TX-2HVD" }
+    const sealed = await sealDocument({ ...base, brandDocument: false, signedVia, verification, original: await samplePdf(1), fields: [] })
+    const links = await linksByPage(sealed)
+    expect(links[0]).toEqual([])
+    // The certificate page: the record line links home; the printed address and the QR open verification.
+    expect(links.at(-1)).toEqual([signedVia.url, verification.url, verification.url])
+  })
+
+  it("adds no link without signedVia, and none to a rejected copy's pages", async () => {
+    expect((await linksByPage(await sealDocument({ ...base, certificate: false, original: await samplePdf(1), fields: [] })))[0]).toEqual([])
+    const rejected = await sealDocument({ ...base, certificate: false, rejected: true, brandDocument: true, signedVia, original: await samplePdf(1), fields: [] })
+    expect((await linksByPage(rejected))[0]).toEqual([])
   })
 })

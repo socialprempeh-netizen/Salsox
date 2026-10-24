@@ -16,6 +16,13 @@ describe("signedViaHref", () => {
     expect(url.searchParams.get("utm_campaign")).toBe("signed_via")
   })
 
+  it("tags the signed PDF's link as its own source and medium", () => {
+    const url = new URL(signedViaHref("signed_pdf", "https://app.example.com"))
+    expect(url.searchParams.get("utm_source")).toBe("signed_pdf")
+    expect(url.searchParams.get("utm_medium")).toBe("document")
+    expect(url.searchParams.get("utm_campaign")).toBe("signed_via")
+  })
+
   it("is absolute when given a base, for emails", () => {
     expect(signedViaHref("completed_email", "https://app.example.com")).toMatch(/^https:\/\/app\.example\.com\/signup\?/)
   })

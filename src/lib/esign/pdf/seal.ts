@@ -16,7 +16,7 @@
  * Pure with respect to storage and database: it takes plain data and returns
  * bytes, which is what makes it testable against a generated PDF.
  */
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
+import { PDFDocument, PDFString, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
 import { stampFields, toWinAnsi, INK, type StampField } from "./stamp"
 import { inspectSignatureBytes } from "./signature-image"
 import { encode } from "uqr"
@@ -67,9 +67,52 @@ export type SealInput = {
    * before codes existed, which verify by their document ID.
    */
   verification?: { code: string; url: string } | null
+  /**
+   * The link back to the product every signer keeps in their copy
+   * (src/lib/esign/viral.ts, tagged "signed_pdf"), and its readable host.
+   * On the certificate page whenever there is one; on the document's last
+   * page too when `brandDocument` is set (Free and Personal plans, see
+   * plans.ts, "unbrandedPdf"). Absent: no link anywhere.
+   */
+  signedVia?: { url: string; host: string } | null
+  brandDocument?: boolean
 }
 
 const MUTED = rgb(0.39, 0.45, 0.55)
+
+/**
+ * Makes a rectangle of a page open a web address when clicked: a URI link
+ * annotation, with no visible border (the text drawn under it is the link).
+ */
+export function addLink(doc: PDFDocument, page: PDFPage, url: string, rect: { x: number; y: number; width: number; height: number }) {
+  const annotation = doc.context.register(
+    doc.context.obj({
+      Type: "Annot",
+      Subtype: "Link",
+      Rect: [rect.x, rect.y, rect.x + rect.width, rect.y + rect.height],
+      Border: [0, 0, 0],
+      A: { Type: "Action", S: "URI", URI: PDFString.of(url) },
+    })
+  )
+  page.node.addAnnot(annotation)
+}
+
+/**
+ * The small "Signed with {app} · {host}" line in the bottom margin of the
+ * document's last page, linked to the product. 7pt and muted, inside the
+ * bottom 18pt that documents almost always leave blank, so it reads as a
+ * footnote and never as part of what was signed.
+ */
+async function brandLastPage(doc: PDFDocument, appName: string, signedVia: { url: string; host: string }) {
+  const font = await doc.embedFont(StandardFonts.Helvetica)
+  const page = doc.getPage(doc.getPageCount() - 1)
+  const text = toWinAnsi(`Signed with ${appName} - ${signedVia.host}`)
+  const size = 7
+  const x = 24
+  const y = 9
+  page.drawText(text, { x, y, size, font, color: MUTED })
+  addLink(doc, page, signedVia.url, { x, y: y - 2, width: font.widthOfTextAtSize(text, size), height: size + 4 })
+}
 
 function stampRejected(doc: PDFDocument, font: PDFFont) {
   for (const page of doc.getPages()) {
@@ -105,7 +148,16 @@ async function appendCertificate(doc: PDFDocument, input: SealInput) {
   }
 
   line(`Certificate of ${input.rejected ? "rejection" : "completion"}`, { font: bold, size: 18, gap: 10 })
-  line(`${input.appName} - electronic signature record`, { color: MUTED, gap: 14 })
+  // Was the record line alone: it now names where the record came from, linked.
+  // line(`${input.appName} - electronic signature record`, { color: MUTED, gap: 14 })
+  if (input.signedVia) {
+    const text = toWinAnsi(`${input.appName} - electronic signature record - ${input.signedVia.host}`)
+    const startY = y
+    line(text, { color: MUTED, gap: 14 })
+    addLink(doc, page, input.signedVia.url, { x: margin, y: startY - 2, width: regular.widthOfTextAtSize(text, 9), height: 13 })
+  } else {
+    line(`${input.appName} - electronic signature record`, { color: MUTED, gap: 14 })
+  }
   line(`Document: ${input.title}`, { font: bold, size: 11 })
   line(`Document ID: ${input.documentId}`)
   line(`Original SHA-256: ${input.originalSha256}`)
@@ -124,6 +176,9 @@ async function appendCertificate(doc: PDFDocument, input: SealInput) {
     beside("Verify this document", 14, bold, 11)
     beside(`Verification code: ${input.verification.code}`, 32, bold, 10)
     beside(input.verification.url, 48, regular, 8, MUTED)
+    // The printed address opens the verification page when clicked, and so does the QR's square.
+    addLink(doc, page, input.verification.url, { x: textX, y: top - 50, width: regular.widthOfTextAtSize(toWinAnsi(input.verification.url).slice(0, 90), 8), height: 11 })
+    addLink(doc, page, input.verification.url, { x: margin, y: top - qr, width: qr, height: qr })
     beside("Shows who signed and when. The content of the document is never shown.", 62, regular, 8, MUTED)
     y = top - qr - 16
   }
@@ -198,6 +253,8 @@ export async function sealDocument(input: SealInput): Promise<Uint8Array> {
     // on the page, so the seal proceeds rather than failing the document.
   }
   if (input.rejected) stampRejected(doc, await doc.embedFont(StandardFonts.HelveticaBold))
+  // The link back, on the document itself, for plans that carry the brand (before the certificate is appended, so it marks the signed document's own last page).
+  if (input.signedVia && input.brandDocument && !input.rejected) await brandLastPage(doc, input.appName, input.signedVia)
   const withCertificate = input.certificate !== false
   if (withCertificate) await appendCertificate(doc, input)
 
