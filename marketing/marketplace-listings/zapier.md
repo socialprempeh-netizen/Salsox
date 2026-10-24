@@ -14,7 +14,7 @@ Requirements source: [Zapier integration publishing requirements](https://docs.z
 
 > Salsox is an e-signature app built for phones: send PDFs to sign by email, WhatsApp or SMS, track every signature, and collect payment as people sign.
 
-(154 characters.)
+(150 characters.)
 
 **Category:** Signatures (fallback: Documents)
 
