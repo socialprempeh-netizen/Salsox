@@ -70,6 +70,9 @@ for (const width of WIDTHS) {
       "/tools",
       "/compare",
       "/esignature-for",
+      "/integrations",
+      "/integrations/zapier",
+      "/integrations/google-drive",
       // The e-signature law hub (the SEO agent's law pages are added from
       // the database, so only the hub is here).
       "/esignature-law",

@@ -28,6 +28,7 @@ const PAGE_SECTIONS: { kind: PageKind; heading: string; intro: string }[] = [
   { kind: "use-case", heading: "Use cases", intro: "How the product is used in particular industries and teams." },
   { kind: "comparison", heading: "Comparisons", intro: "Side-by-side comparisons with other e-signature services, with the date their facts were checked." },
   { kind: "alternative", heading: "Alternatives", intro: "Options for people looking to switch from another e-signature service." },
+  { kind: "integration", heading: "Integrations", intro: "The tools the product works with, each page saying whether the connection works today or is still being built." },
   { kind: "compliance", heading: "E-signature law", intro: "What each country's law says about electronic signatures, section by section, with the date it was checked." },
 ]
 

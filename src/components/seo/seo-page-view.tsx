@@ -1,7 +1,8 @@
 import { getFormatter, getTranslations } from "next-intl/server"
 import Link from "next/link"
-import { ArrowRight, Check, ExternalLink, ShieldCheck } from "lucide-react"
+import { ArrowRight, Check, ExternalLink, ShieldCheck, CheckCircle2, Clock } from "lucide-react"
 import { BreadcrumbTrail } from "@/components/ui/breadcrumb"
+import { FadeUp } from "@/components/motion/fade-up"
 import { Reveal } from "@/components/landing/reveal"
 import { TrackedLink } from "@/components/analytics/tracked-link"
 import { EmailCapture } from "@/components/landing/email-capture"
@@ -50,7 +51,7 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
   // Links the SEO agent added to this page when it published an article
   // (src/lib/seo-agent/links.ts), spliced in here; the page's file is untouched.
   const body = injectLinks(page.body, await linksFrom(page.path))
-  const trail = pageTrail(page, { home: t("breadcrumbHome"), tools: t("breadcrumbTools"), compare: t("breadcrumbCompare"), useCases: t("breadcrumbUseCases"), law: t("breadcrumbLaw") })
+  const trail = pageTrail(page, { home: t("breadcrumbHome"), tools: t("breadcrumbTools"), compare: t("breadcrumbCompare"), useCases: t("breadcrumbUseCases"), law: t("breadcrumbLaw"), integrations: t("breadcrumbIntegrations") })
   // Was resolveLinks(page.related, await fixedLinkLabels()): generated pages
   // can be related too, so their labels join the fixed ones.
   const related = resolveLinks(page.related, { ...(await fixedLinkLabels()), ...(await generatedLinkLabels()) })
@@ -111,6 +112,35 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
                 </TrackedLink>
               </p>
             </div>
+          )}
+
+          {/* Where an integration stands, said before anything else on the
+              page: what works today, or that the connection is still being
+              built, so nobody signs up for something that is not there. */}
+          {page.integration && (
+            <FadeUp delay={0.15}>
+            <div
+              className={
+                page.integration.status === "works-today"
+                  ? "mt-6 flex gap-3 border border-l-4 border-primary/30 border-l-primary bg-primary/5 p-4 text-sm"
+                  : "mt-6 flex gap-3 border border-l-4 border-amber-500/40 border-l-amber-500 bg-amber-500/5 p-4 text-sm"
+              }
+            >
+              {page.integration.status === "works-today" ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              ) : (
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              )}
+              <p className="text-foreground">
+                {t(page.integration.status === "works-today" ? "integrationWorksToday" : "integrationInDevelopment", { tool: page.integration.name })}{" "}
+                {page.integration.status === "in-development" && (
+                  <TrackedLink href="/contact" location={`integration-ask:${page.path}`} className="font-medium text-primary underline-offset-4 hover:underline">
+                    {t("integrationAsk")}
+                  </TrackedLink>
+                )}
+              </p>
+            </div>
+            </FadeUp>
           )}
 
           {/* Was comparisons only; a law page cites its statutes the same way. */}

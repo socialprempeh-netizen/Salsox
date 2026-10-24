@@ -29,6 +29,7 @@ export const INVENTORY_TYPES = [
   "industry",
   "team",
   "use-case",
+  "integration",
   "template",
   "category",
   "hub",
@@ -54,6 +55,7 @@ export const INTENT_BY_TYPE: Record<InventoryType, SearchIntent> = {
   industry: "commercial",
   team: "commercial",
   "use-case": "commercial",
+  integration: "commercial",
   template: "transactional",
   category: "transactional",
   hub: "navigational",
@@ -80,7 +82,7 @@ export type InventoryRow = {
 
 /** A registry page, as much of it as the inventory reads. */
 export type RegistryInput = {
-  kind: "solution" | "tool" | "comparison" | "alternative" | "use-case"
+  kind: "solution" | "tool" | "comparison" | "alternative" | "use-case" | "integration"
   path: string
   title: string
   primaryKeyword: string
@@ -124,6 +126,7 @@ const REGISTRY_TYPE: Record<Exclude<RegistryInput["kind"], "use-case">, Inventor
   tool: "tool",
   comparison: "comparison",
   alternative: "alternative",
+  integration: "integration",
 }
 
 export function buildInventory(input: InventoryInput): { rows: InventoryRow[]; conflicts: { keyword: string; paths: string[] }[] } {
@@ -170,7 +173,7 @@ export function buildInventory(input: InventoryInput): { rows: InventoryRow[]; c
   }
   // Published pages the sitemap forgot, and drafts held back on purpose.
   for (const [path, k] of known) {
-    if (listed.has(path) || !["feature", "tool", "comparison", "alternative", "industry", "team", "use-case", "template", "category"].includes(k.type)) continue
+    if (listed.has(path) || !["feature", "tool", "comparison", "alternative", "industry", "team", "use-case", "integration", "template", "category"].includes(k.type)) continue
     rows.push(row(path, input.defaultLocale, path, k.draft ? "draft" : "unlisted"))
   }
 

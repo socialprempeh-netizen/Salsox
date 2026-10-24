@@ -23,7 +23,7 @@ import { siteConfig } from "@/config/site"
  * moment its file is added. Server-rendered and static, square corners,
  * single column on phones.
  */
-export async function HubPage({ hub, kinds, path, guides = [] }: { hub: "tools" | "compare" | "useCases" | "law"; kinds: PageKind[]; path: string; guides?: LinkCard[] }) {
+export async function HubPage({ hub, kinds, path, guides = [] }: { hub: "tools" | "compare" | "useCases" | "law" | "integrations"; kinds: PageKind[]; path: string; guides?: LinkCard[] }) {
   const t = await getTranslations("seoPages")
   // Was: kinds.flatMap((kind) => getPages({ kind }))
   const pages = await registryPages(kinds)

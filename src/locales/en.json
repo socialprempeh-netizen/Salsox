@@ -1199,6 +1199,7 @@
         "industry": "Industry",
         "team": "Team",
         "use-case": "Use case",
+        "integration": "Integration",
         "template": "Template",
         "category": "Template category",
         "hub": "Hub",
@@ -3035,7 +3036,8 @@
       "comparison": "Comparison",
       "alternative": "Alternative",
       "use-case": "Use case",
-      "compliance": "E-signature law"
+      "compliance": "E-signature law",
+      "integration": "Integration"
     },
     "templatesTitle": "Templates to start from",
     "templatesHint": "Each opens in the editor with its signature fields already in place.",
@@ -3043,6 +3045,10 @@
     "breadcrumbHome": "Home",
     "breadcrumbTools": "Free tools",
     "breadcrumbCompare": "Compare",
+    "breadcrumbIntegrations": "Integrations",
+    "integrationWorksToday": "Works today with {tool}: nothing to install or connect.",
+    "integrationInDevelopment": "A native {tool} integration is in development and not available yet. This page says what you can do today.",
+    "integrationAsk": "Tell us what you would automate.",
     "breadcrumbUseCases": "Use cases",
     "breadcrumbLaw": "E-signature law",
     "ctaPrimary": "Start free",
@@ -3133,6 +3139,13 @@
         "breadcrumb": "E-signature law",
         "h1": "E-signature law by country",
         "lede": "What each country's law actually says about signing electronically, section by section: what it recognises, what it excludes, and what makes a signature hold up as evidence."
+      },
+      "integrations": {
+        "metaTitle": "Integrations: Gmail, Google Drive, Slack, Zapier, Make",
+        "metaDescription": "How {site} works with Gmail, Google Drive, Slack, Zapier and Make: what works today without setup, and which native connections are still being built.",
+        "breadcrumb": "Integrations",
+        "h1": "Integrations",
+        "lede": "How e-signatures fit the tools you already use. Each page says plainly what works today and what is still being built."
       }
     }
   },

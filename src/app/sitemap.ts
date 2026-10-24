@@ -152,6 +152,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/esignature-for", pages: seoPages.filter((p) => p.kind === "use-case") },
     // Listed once it holds a law page; until then it is noindexed.
     { path: "/esignature-law", pages: seoPages.filter((p) => p.kind === "compliance") },
+    { path: "/integrations", pages: seoPages.filter((p) => p.kind === "integration") },
   ]
     .filter((hub) => hub.pages.length > 0)
     .map((hub) => ({ url: `${siteConfig.url}${hub.path}`, changeFrequency: "monthly" as const, priority: 0.6, ...updatedOf(hub.pages) }))

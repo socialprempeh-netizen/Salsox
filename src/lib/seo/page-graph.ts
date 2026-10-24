@@ -16,16 +16,17 @@ import { breadcrumbJsonLd, faqPageJsonLd, webApplicationJsonLd, webPageJsonLd, t
 import type { PageKind, SitePage } from "./pages"
 
 /** The hub each kind sits under in the trail, if any. */
-export const HUB: Partial<Record<PageKind, { path: string; key: "tools" | "compare" | "useCases" | "law" }>> = {
+export const HUB: Partial<Record<PageKind, { path: string; key: "tools" | "compare" | "useCases" | "law" | "integrations" }>> = {
   tool: { path: "/tools", key: "tools" },
   comparison: { path: "/compare", key: "compare" },
   alternative: { path: "/compare", key: "compare" },
   "use-case": { path: "/esignature-for", key: "useCases" },
   compliance: { path: "/esignature-law", key: "law" },
+  integration: { path: "/integrations", key: "integrations" },
 }
 
 /** Home, the hub (when there is one), the page. Labels come from the caller's messages. */
-export function pageTrail(page: Pick<SitePage, "kind" | "path" | "breadcrumb">, labels: { home: string; tools: string; compare: string; useCases: string; law: string }): Crumb[] {
+export function pageTrail(page: Pick<SitePage, "kind" | "path" | "breadcrumb">, labels: { home: string; tools: string; compare: string; useCases: string; law: string; integrations: string }): Crumb[] {
   const hub = HUB[page.kind]
   return [
     { name: labels.home, href: "/" },

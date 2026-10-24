@@ -39,7 +39,11 @@ import { routing } from "@/i18n/routing"
 // "compliance" was added for the e-signature law pages (one per country,
 // under /esignature-law), which the SEO agent writes from verified statutes.
 // Was: ["solution", "tool", "comparison", "alternative", "use-case"]
-export const PAGE_KINDS = ["solution", "tool", "comparison", "alternative", "use-case", "compliance"] as const
+// "integration" was added for the pages about the tools {site} works with
+// (Zapier, Gmail, ...), under /integrations; each says plainly whether the
+// connection exists today or is still being built (`integration.status`).
+// Was: ["solution", "tool", "comparison", "alternative", "use-case", "compliance"]
+export const PAGE_KINDS = ["solution", "tool", "comparison", "alternative", "use-case", "compliance", "integration"] as const
 export type PageKind = (typeof PAGE_KINDS)[number]
 
 /** The folder under content/pages that holds each kind. */
@@ -50,6 +54,7 @@ export const KIND_FOLDERS: Record<PageKind, string> = {
   alternative: "alternatives",
   "use-case": "use-cases",
   compliance: "compliance",
+  integration: "integrations",
 }
 
 export const TOOL_IDS = ["sign-pdf", "add-signature-to-pdf", "fill-and-sign-pdf", "request-signature", "pdf-signature-generator"] as const
@@ -71,6 +76,8 @@ export function pagePath(kind: PageKind, slug: string): string {
       return `/esignature-for/${slug}`
     case "compliance":
       return `/esignature-law/${slug}`
+    case "integration":
+      return `/integrations/${slug}`
     default:
       return `/${slug}`
   }
@@ -107,6 +114,12 @@ export const frontmatterSchema = z
     // from the library (src/lib/templates-taxonomy.ts names which page
     // serves each industry and team).
     templates: z.object({ industry: z.string().optional(), team: z.string().optional(), category: z.string().optional() }).optional(),
+    // An integration page names the tool and says where the connection
+    // stands: "works-today" for what already works with no setup (a link
+    // pasted into Slack, a PDF picked from Drive), "in-development" for a
+    // native connection that does not exist yet. The page must never read as
+    // if a planned connection were available.
+    integration: z.object({ name: z.string().min(2), status: z.enum(["works-today", "in-development"]), url: z.url() }).optional(),
     draft: z.boolean().default(false),
   })
   .superRefine((data, ctx) => {
@@ -119,6 +132,7 @@ export const frontmatterSchema = z
     if (data.kind === "compliance" && (!data.checked || data.sources.length < 2)) {
       ctx.addIssue({ code: "custom", path: ["sources"], message: "a law page cites at least two sources and the date they were checked" })
     }
+    if (data.kind === "integration" && !data.integration) ctx.addIssue({ code: "custom", path: ["integration"], message: "an integration page names the tool and the status of the connection" })
     if (data.updated < data.published) ctx.addIssue({ code: "custom", path: ["updated"], message: "updated is before published" })
   })
 
@@ -243,7 +257,7 @@ export function similarity(a: string, b: string): number {
 }
 
 /** Running text a page must carry, by kind. Tools also carry steps, benefits and FAQs. */
-export const MIN_WORDS: Record<PageKind, number> = { solution: 450, tool: 300, comparison: 500, alternative: 450, "use-case": 450, compliance: 700 }
+export const MIN_WORDS: Record<PageKind, number> = { solution: 450, tool: 300, comparison: 500, alternative: 450, "use-case": 450, compliance: 700, integration: 400 }
 /** Above this, two pages say too much of the same thing to both deserve a URL. */
 export const MAX_SIMILARITY = 0.12
 
