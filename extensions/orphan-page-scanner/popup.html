@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+  Orphan Page Scanner popup: the site in the current tab, a Scan button,
+  progress while the background worker scans, and the result. Behaviour is in
+  popup.js; the look in popup.css. No remote code, fonts or images.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Orphan Page Scanner</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="top">
+      <img src="icons/icon-32.png" alt="" width="24" height="24" />
+      <div>
+        <h1>Orphan Page Scanner</h1>
+        <p class="sub">Sitemap pages nothing else links to</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="site" aria-live="polite">
+        <p class="label">Site</p>
+        <p id="origin" class="origin">Reading the current tab…</p>
+      </section>
+
+      <section id="start" class="panel" hidden>
+        <label class="label" for="limit">Pages to check</label>
+        <div class="row">
+          <select id="limit">
+            <option value="100">Up to 100</option>
+            <option value="250" selected>Up to 250</option>
+            <option value="500">Up to 500</option>
+            <option value="1000">Up to 1,000</option>
+          </select>
+          <button id="scan" class="primary" type="button">Scan site</button>
+        </div>
+        <p class="hint">Reads your sitemap, opens each page, and counts the links between them. Only this site is contacted; nothing is sent anywhere else.</p>
+      </section>
+
+      <section id="progress" class="panel" hidden aria-live="polite">
+        <p id="phase" class="phase">Reading the sitemap…</p>
+        <div class="bar" role="progressbar" aria-label="Scan progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="bar-fill"></span></div>
+        <div class="row between">
+          <p id="count" class="hint">&nbsp;</p>
+          <button id="cancel" class="ghost" type="button">Cancel</button>
+        </div>
+      </section>
+
+      <section id="result" hidden>
+        <div class="tiles">
+          <div class="tile"><p class="label">In sitemap</p><p id="t-listed" class="num">0</p></div>
+          <div class="tile accent"><p class="label">Orphans</p><p id="t-orphans" class="num">0</p></div>
+          <div class="tile"><p class="label">Did not load</p><p id="t-failed" class="num">0</p></div>
+        </div>
+        <p id="note" class="hint"></p>
+        <div id="orphan-wrap">
+          <p class="label list-title">Orphan pages</p>
+          <ul id="orphans" class="list"></ul>
+        </div>
+        <div class="row actions">
+          <button id="csv" class="primary" type="button">Export CSV</button>
+          <button id="copy" class="ghost" type="button" title="Copy the orphan list">Copy list</button>
+          <button id="again" class="ghost" type="button">Scan again</button>
+        </div>
+      </section>
+
+      <p id="message" class="message" hidden role="alert"></p>
+    </main>
+
+    <footer class="foot">
+      <a id="salsox" href="https://salsox.com/?utm_source=orphan_scanner&amp;utm_medium=extension&amp;utm_campaign=orphan_scanner" target="_blank" rel="noopener">Free from Salsox, e-signatures built for phones</a>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
