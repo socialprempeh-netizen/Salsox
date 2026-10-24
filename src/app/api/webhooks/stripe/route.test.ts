@@ -230,3 +230,33 @@ describe("POST /api/webhooks/stripe: Sign & Pay disputes", () => {
     expect(settleMock.recoverLostDispute).not.toHaveBeenCalled()
   })
 })
+
+describe("POST /api/webhooks/stripe: Sign & Pay direct charges (Connect endpoint)", () => {
+  const CONNECT_SECRET = "whsec_connect_secret"
+  /** An event from a connected account, as Stripe sends to a Connect endpoint. */
+  const connectEvent = (type: string, data: Record<string, unknown>) => JSON.stringify({ id: "evt_connect", object: "event", type, account: "acct_sender", data: { object: data } })
+  const lost = connectEvent("charge.dispute.closed", { id: "dp_2", object: "dispute", payment_intent: "pi_2", status: "lost", reason: "fraudulent", amount: 10_000 })
+
+  beforeEach(() => {
+    process.env.STRIPE_CONNECT_WEBHOOK_SECRET = CONNECT_SECRET
+    paymentIntentsMock.retrieve.mockResolvedValue({ id: "pi_2", metadata: { salsoxPaymentId: "pay_2" } })
+    settleMock.recordDispute.mockResolvedValue(undefined)
+  })
+
+  it("accepts an event signed with the Connect endpoint's secret", async () => {
+    const response = await POST(signed(lost, { secret: CONNECT_SECRET }) as never)
+    expect(response.status).toBe(200)
+  })
+
+  it("still rejects a secret that is neither endpoint's", async () => {
+    const response = await POST(signed(lost, { secret: "whsec_someone_else" }) as never)
+    expect(response.status).toBe(400)
+  })
+
+  it("records a direct charge's lost dispute, reads it on the sender's account, and recovers nothing", async () => {
+    await POST(signed(lost, { secret: CONNECT_SECRET }) as never)
+    expect(paymentIntentsMock.retrieve).toHaveBeenCalledWith("pi_2", undefined, { stripeAccount: "acct_sender" })
+    expect(settleMock.recordDispute).toHaveBeenCalledWith(expect.objectContaining({ find: { id: "pay_2" }, disputeId: "dp_2", outcome: "lost" }))
+    expect(settleMock.recoverLostDispute).not.toHaveBeenCalled()
+  })
+})

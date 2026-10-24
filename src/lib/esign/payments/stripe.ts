@@ -1,4 +1,13 @@
 /**
+ * DIRECT CHARGES (charge-mode.ts): new checkouts can now be made on the
+ * sender's own Stripe account instead, with Salsox's share as an
+ * application fee. Stripe then debits the sender's account, not Salsox's,
+ * for disputes and for its processing fee, which is what stops Salsox
+ * absorbing signers' chargebacks; the fee pass-through and the lost-dispute
+ * recovery below have nothing to do for such a checkout. Direct is the
+ * default in Stripe test mode; live keeps the destination flow described
+ * next until STRIPE_SIGN_AND_PAY_CHARGES=direct is set.
+ *
  * Stripe adapter for Sign & Pay, using Stripe Connect destination charges:
  * the signer pays on a Stripe Checkout page, the money settles to the sender's
  * connected account (a full Stripe account since Accounts v2; Express
@@ -30,6 +39,7 @@ import { stripe } from "@/lib/stripe"
 import { processorFeeToRecover } from "./fee-passthrough"
 import { disputeLoss, lostDisputeRecovery } from "./dispute-recovery"
 import { isStripeConnectCountry, type StripeConnectCountry } from "./stripe-countries"
+import { chargeMode, decodeCheckoutRef, encodeCheckoutRef, onAccount } from "./charge-mode"
 import { platformFee, type CheckoutRequest, type DisputeRecovery, type FeeRecovery, type SignAndPayProvider } from "./types"
 
 /**
@@ -50,6 +60,29 @@ export const stripeSignAndPay: SignAndPayProvider = {
 
   async createCheckout(req: CheckoutRequest) {
     const fee = platformFee(req.amount)
+    if (chargeMode() === "direct") {
+      // On the sender's own account: the charge, its Stripe fee and any
+      // dispute are theirs; Salsox's share arrives as an application fee.
+      // No on_behalf_of or transfer_data: there is nothing to transfer.
+      const session = await stripe.checkout.sessions.create(
+        {
+          mode: "payment",
+          customer_email: req.payerEmail,
+          line_items: [{ quantity: 1, price_data: { currency: req.currency.toLowerCase(), unit_amount: req.amount, product_data: { name: req.description } } }],
+          payment_intent_data: {
+            ...(fee > 0 ? { application_fee_amount: fee } : {}),
+            metadata: { salsoxPaymentId: req.paymentId, salsoxDocumentId: req.documentId },
+          },
+          // No processorFee tag: the sender's account pays Stripe directly.
+          metadata: { salsoxPaymentId: req.paymentId, salsoxDocumentId: req.documentId, kind: "sign_and_pay", charge: "direct" },
+          success_url: req.successUrl,
+          cancel_url: req.cancelUrl,
+        },
+        { stripeAccount: req.payoutAccountId }
+      )
+      if (!session.url) throw new Error("Stripe returned a Checkout session without a URL")
+      return { url: session.url, providerRef: encodeCheckoutRef({ mode: "direct", account: req.payoutAccountId, sessionId: session.id }) }
+    }
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: req.payerEmail,
@@ -85,7 +118,9 @@ export const stripeSignAndPay: SignAndPayProvider = {
   },
 
   async verify(providerRef: string) {
-    const session = await stripe.checkout.sessions.retrieve(providerRef)
+    // Was retrieve(providerRef): a direct checkout lives on the sender's account.
+    const ref = decodeCheckoutRef(providerRef)
+    const session = await stripe.checkout.sessions.retrieve(ref.sessionId, undefined, onAccount(ref))
     const status = session.payment_status === "paid" ? "PAID" : session.status === "expired" ? "FAILED" : "PENDING"
     return {
       status,
@@ -100,9 +135,10 @@ export const stripeSignAndPay: SignAndPayProvider = {
   },
 
   async cancelCheckout(providerRef: string) {
-    const session = await stripe.checkout.sessions.retrieve(providerRef)
+    const ref = decodeCheckoutRef(providerRef)
+    const session = await stripe.checkout.sessions.retrieve(ref.sessionId, undefined, onAccount(ref))
     if (session.status !== "open") return session.status === "expired"
-    await stripe.checkout.sessions.expire(providerRef)
+    await stripe.checkout.sessions.expire(ref.sessionId, undefined, onAccount(ref))
     return true
   },
 
@@ -118,6 +154,8 @@ export const stripeSignAndPay: SignAndPayProvider = {
    * created with an idempotency key.
    */
   async recoverProcessorFee({ providerRef, paymentId }): Promise<FeeRecovery> {
+    // A direct charge's Stripe fee was taken from the sender's account already.
+    if (decodeCheckoutRef(providerRef).mode === "direct") return { status: "notApplicable" }
     const session = await stripe.checkout.sessions.retrieve(providerRef, {
       expand: ["payment_intent.latest_charge.balance_transaction", "payment_intent.latest_charge.transfer"],
     })
@@ -212,9 +250,23 @@ export const stripeSignAndPay: SignAndPayProvider = {
   },
 
   async refund({ providerRef, paymentId }) {
-    const session = await stripe.checkout.sessions.retrieve(providerRef)
+    const ref = decodeCheckoutRef(providerRef)
+    const session = await stripe.checkout.sessions.retrieve(ref.sessionId, undefined, onAccount(ref))
     const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id
     if (!paymentIntent) throw new Error(`Checkout ${providerRef} has no payment to refund`)
+    if (ref.mode === "direct") {
+      try {
+        // On the sender's account, from their balance; Salsox's application fee goes back too.
+        const refund = await stripe.refunds.create(
+          { payment_intent: paymentIntent, refund_application_fee: true, metadata: { salsoxPaymentId: paymentId } },
+          { stripeAccount: ref.account, idempotencyKey: `salsox-refund-${paymentId}` }
+        )
+        return { refundId: refund.id }
+      } catch (error) {
+        if ((error as { code?: string }).code === "charge_already_refunded") return { refundId: `already:${paymentIntent}` }
+        throw error
+      }
+    }
     try {
       const refund = await stripe.refunds.create(
         {

@@ -4,22 +4,30 @@ import { prisma } from "@/lib/prisma"
 import { subscriptionDates } from "@/lib/billing"
 import type Stripe from "stripe"
 import * as Sentry from "@sentry/nextjs"
+import { needsDisputeRecovery, webhookSecrets } from "@/lib/stripe-webhook"
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const sig = req.headers.get("stripe-signature")
 
-  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+  // Was the platform secret alone. Sign & Pay's direct charges happen on the
+  // senders' accounts, whose events come from a Connect endpoint signed with
+  // its own secret (src/lib/stripe-webhook.ts); either may sign this request.
+  const secrets = webhookSecrets()
+  if (!sig || secrets.length === 0) {
     return NextResponse.json({ error: "Missing signature or webhook secret" }, { status: 400 })
   }
 
-  let event: Stripe.Event
-
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
-  } catch {
-    return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 })
+  let event: Stripe.Event | null = null
+  for (const secret of secrets) {
+    try {
+      event = stripe.webhooks.constructEvent(body, sig, secret)
+      break
+    } catch {
+      // Not this endpoint's secret; try the next one.
+    }
   }
+  if (!event) return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 })
 
   try {
     switch (event.type) {
@@ -46,16 +54,16 @@ export async function POST(req: NextRequest) {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge
         await handleChargeRefunded(charge)
-        await handleSignAndPayRefund(charge)
+        await handleSignAndPayRefund(charge, event.account)
         break
       }
-      // Sign & Pay chargebacks. With destination charges the dispute is
-      // raised on the platform account, so it arrives here, not on the
-      // sender's connected account.
+      // Sign & Pay chargebacks. A destination charge's dispute is raised on
+      // the platform account; a direct charge's on the sender's account,
+      // arriving through the Connect endpoint with `event.account` set.
       case "charge.dispute.created":
       case "charge.dispute.closed": {
         const dispute = event.data.object as Stripe.Dispute
-        await handleSignAndPayDispute(dispute, event.type === "charge.dispute.created" ? "opened" : "closed")
+        await handleSignAndPayDispute(dispute, event.type === "charge.dispute.created" ? "opened" : "closed", event.account)
         break
       }
       // Stripe Connect: a sender finished (or updated) payout onboarding for
@@ -289,18 +297,20 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
  */
 async function signAndPayPaymentId(
   paymentIntent: string | Stripe.PaymentIntent | null | undefined,
-  metadata?: Stripe.Metadata | null
+  metadata?: Stripe.Metadata | null,
+  account?: string | null
 ): Promise<string | null> {
   if (metadata?.salsoxPaymentId) return metadata.salsoxPaymentId
   const id = typeof paymentIntent === "string" ? paymentIntent : paymentIntent?.id
   if (!id) return null
-  const intent = await stripe.paymentIntents.retrieve(id)
+  // A direct charge's payment lives on the sender's account.
+  const intent = await stripe.paymentIntents.retrieve(id, undefined, account ? { stripeAccount: account } : undefined)
   return intent.metadata?.salsoxPaymentId ?? null
 }
 
 /** A Sign & Pay refund, ours or one made from the Stripe dashboard. */
-async function handleSignAndPayRefund(charge: Stripe.Charge) {
-  const paymentId = await signAndPayPaymentId(charge.payment_intent, charge.metadata)
+async function handleSignAndPayRefund(charge: Stripe.Charge, account?: string | null) {
+  const paymentId = await signAndPayPaymentId(charge.payment_intent, charge.metadata, account)
   if (!paymentId) return
   const { recordProviderRefund } = await import("@/lib/esign/payments/settle")
   await recordProviderRefund({
@@ -312,8 +322,8 @@ async function handleSignAndPayRefund(charge: Stripe.Charge) {
   })
 }
 
-async function handleSignAndPayDispute(dispute: Stripe.Dispute, stage: "opened" | "closed") {
-  const paymentId = await signAndPayPaymentId(dispute.payment_intent)
+async function handleSignAndPayDispute(dispute: Stripe.Dispute, stage: "opened" | "closed", account?: string | null) {
+  const paymentId = await signAndPayPaymentId(dispute.payment_intent, null, account)
   if (!paymentId) return
   const { recordDispute } = await import("@/lib/esign/payments/settle")
   await recordDispute({
@@ -333,7 +343,9 @@ async function handleSignAndPayDispute(dispute: Stripe.Dispute, stage: "opened" 
   // retried delivery cannot reverse twice. A refusal is reported and
   // rethrown: the webhook answers with an error and Stripe delivers it
   // again, while recordDispute above, already recorded, is skipped.
-  if (stage === "closed" && dispute.status === "lost") {
+  // Was every lost dispute: a direct charge's loss was Stripe's to debit from
+  // the sender's own account, so there is nothing for Salsox to recover.
+  if (stage === "closed" && dispute.status === "lost" && needsDisputeRecovery({ account })) {
     const { recoverLostDispute } = await import("@/lib/esign/payments/settle")
     try {
       await recoverLostDispute({ find: { id: paymentId }, disputeId: dispute.id })
