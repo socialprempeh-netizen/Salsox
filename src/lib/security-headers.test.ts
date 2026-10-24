@@ -113,6 +113,13 @@ describe("securityHeaders", () => {
     }
   })
 
+  it("pins HTTPS for at least a year, subdomains included", () => {
+    const hsts = securityHeaders({ dev: false }).find((h) => h.key === "Strict-Transport-Security")!.value
+    const maxAge = Number(/max-age=(\d+)/.exec(hsts)?.[1])
+    expect(maxAge).toBeGreaterThanOrEqual(31_536_000)
+    expect(hsts).toMatch(/includeSubDomains/)
+  })
+
   it("switches off the powerful browser features the app never uses", () => {
     const policy = securityHeaders({ dev: false }).find((h) => h.key === "Permissions-Policy")!.value
     for (const feature of ["camera", "microphone", "geolocation", "payment", "usb", "browsing-topics"]) {
