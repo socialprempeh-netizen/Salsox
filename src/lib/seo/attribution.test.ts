@@ -37,6 +37,7 @@ describe("classifyChannel", () => {
     expect(classifyChannel(touch("", "?utm_medium=email&utm_source=newsletter"))).toBe("email")
     expect(classifyChannel(touch("https://someblog.example/post"))).toBe("referral")
     expect(classifyChannel(touch("", "?utm_source=invite&utm_medium=invite"))).toBe("referral")
+    expect(classifyChannel(touch("", "?utm_source=jane&utm_medium=affiliate"))).toBe("referral")
     expect(classifyChannel(touch("", "?utm_source=partner"))).toBe("campaign")
     expect(classifyChannel(touch(""))).toBe("direct")
     expect(classifyChannel(null)).toBe("direct")

@@ -99,6 +99,7 @@ for (const width of WIDTHS) {
     await check("/dashboard/billing", "billing")
     await check("/dashboard/payouts", "payouts")
     await check("/dashboard/referrals", "referrals")
+    await check("/dashboard/affiliate", "affiliate")
     await check("/dashboard/settings", "settings")
     await check("/dashboard/settings/sessions", "devices")
 

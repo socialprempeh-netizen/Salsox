@@ -11,6 +11,7 @@ import {
   Send,
   Wallet,
   Gift,
+  Handshake,
   LayoutGrid,
   // Used only by the admin list replaced below (now commented out).
   // ShieldAlert,
@@ -49,6 +50,8 @@ const menus = {
     { href: "/dashboard/payouts", key: "payouts", icon: Wallet },
     // Invite & earn: free Pro months for invites (src/lib/referrals.ts).
     { href: "/dashboard/referrals", key: "referrals", icon: Gift },
+    // Affiliate program: links, clicks and signups (src/lib/affiliates.ts).
+    { href: "/dashboard/affiliate", key: "affiliate", icon: Handshake },
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],

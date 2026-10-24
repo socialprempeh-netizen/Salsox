@@ -25,4 +25,5 @@ export const MIGRATIONS = [
   "20261022120000_seo_agent_pages",
   "20261023120000_social_studio",
   "20261024120000_referrals",
+  "20261024130000_affiliates",
 ] as const

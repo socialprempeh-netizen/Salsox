@@ -79,6 +79,12 @@ model User {
   referralProUntil      DateTime?
   referralRewards       ReferralReward[] @relation("RewardEarner")
   referralRewardFor     ReferralReward?  @relation("RewardReferee")
+  // Affiliate program (src/lib/affiliates.ts): the affiliate whose link this
+  // account signed up through (sx_aff cookie), and the user's own affiliate
+  // profile when they have joined.
+  affiliateId           String?
+  referredByAffiliate   Affiliate?      @relation("AffiliateSignups", fields: [affiliateId], references: [id], onDelete: SetNull)
+  affiliate             Affiliate?      @relation("AffiliateOwner")
   accounts              Account[]
   sessions              Session[]
   twoFactor             TwoFactor[]
@@ -92,6 +98,39 @@ model User {
 
   @@index([signupChannel, createdAt])
   @@index([referredById])
+  @@index([affiliateId, createdAt])
+}
+
+// Affiliate program (src/lib/affiliates.ts). An affiliate is a user who has
+// joined with a code of their choosing; links are /go/{code}. Commission
+// terms and payouts are not modelled yet: the dashboard reports clicks,
+// signups and paying customers, and payment is settled by hand.
+model Affiliate {
+  id        String           @id @default(cuid())
+  userId    String           @unique
+  code      String           @unique
+  // An admin can pause an affiliate: links still redirect, nothing is
+  // recorded for them.
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  user      User             @relation("AffiliateOwner", fields: [userId], references: [id], onDelete: Cascade)
+  signups   User[]           @relation("AffiliateSignups")
+  clicks    AffiliateClick[]
+}
+
+// One row per visit through an affiliate link. No address, no user agent,
+// no cookie value: only when, where to, the referring host, and whether this
+// browser had arrived through the same link before (`unique` is false then).
+model AffiliateClick {
+  id          String    @id @default(cuid())
+  affiliateId String
+  path        String
+  refHost     String?
+  unique      Boolean
+  createdAt   DateTime  @default(now())
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId, createdAt])
 }
 
 // One reward per invited person, granted when they become active (send their

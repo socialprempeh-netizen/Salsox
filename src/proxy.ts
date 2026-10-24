@@ -51,6 +51,8 @@ const UNLOCALIZED = [
   // Invite links (/invite/{code}, src/lib/referrals.ts): a redirect to
   // signup that must resolve exactly as shared.
   "/invite/",
+  // Affiliate links (/go/{code}, src/lib/affiliates.ts), for the same reason.
+  "/go/",
   // Root level metadata routes.
   "/sitemap.xml",
   "/robots.txt",

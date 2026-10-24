@@ -374,6 +374,9 @@ export const auth = betterAuth({
           // Never throws either.
           const { recordReferral } = await import("@/lib/referrals-store")
           await recordReferral(user.id, ctx?.headers ?? ctx?.request?.headers)
+          // And the affiliate link they came through (src/lib/affiliates.ts).
+          const { recordAffiliateSignup } = await import("@/lib/affiliates-store")
+          await recordAffiliateSignup(user.id, ctx?.headers ?? ctx?.request?.headers)
           if (user.email && process.env.RESEND_API_KEY) {
             const { sendWelcomeEmail } = await import("@/lib/email")
             // Awaited for the same reason as the webhook emails: nothing
