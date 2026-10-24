@@ -66,3 +66,20 @@ describe("toCsv", () => {
     expect(toCsv([{ url: "https://example.com/a,b", inbound: 0, status: 200, orphan: true }])).toBe('url,inbound_links,status,orphan\n"https://example.com/a,b",0,200,yes')
   })
 })
+
+describe("the Claude skill's copy of the scanning rules", () => {
+  it("is identical to the extension's, so the two tools never disagree", async () => {
+    const fs = await import("node:fs")
+    const path = await import("node:path")
+    const read = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8").replace(/\r\n/g, "\n")
+    expect(read("claude-skills/orphan-page-scanner/skills/orphan-page-scanner/scripts/scan.js")).toBe(read("extensions/orphan-page-scanner/lib/scan.js"))
+  })
+
+  it("has the frontmatter a skill needs: a name and a description", async () => {
+    const fs = await import("node:fs")
+    const skill = fs.readFileSync("claude-skills/orphan-page-scanner/skills/orphan-page-scanner/SKILL.md", "utf8")
+    const front = /^---\n([\s\S]*?)\n---/.exec(skill.replace(/\r\n/g, "\n"))?.[1] ?? ""
+    expect(front).toMatch(/^name: orphan-page-scanner$/m)
+    expect(/^description: (.+)$/m.exec(front)?.[1].length).toBeGreaterThan(80)
+  })
+})

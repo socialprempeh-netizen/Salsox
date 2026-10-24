@@ -48,7 +48,9 @@ function render(state) {
   const when = new Date(state.finished).toLocaleString()
   $("note").textContent = state.noSitemap
     ? "No sitemap was found at robots.txt or /sitemap.xml, so there is nothing to compare links against."
-    : `Scanned ${when}.${state.capped ? " The page limit was reached; raise it to check the rest." : ""}${state.failed ? " Pages that did not load still count as listed; their own links are unknown." : ""}`
+    : `Scanned ${when}.${state.capped ? " The page limit was reached, so these are candidates: a page that links to one of them may simply not have been checked. Raise the limit for a definite answer." : ""}${state.failed ? " Pages that did not load still count as listed; their own links are unknown." : ""}`
+  // Capped, the list is "not linked from the pages checked", not proven orphans.
+  document.querySelector(".list-title").textContent = state.capped ? `Not linked from the ${state.listed} pages checked` : "Orphan pages"
   const list = $("orphans")
   list.replaceChildren()
   if (state.orphans.length === 0) {

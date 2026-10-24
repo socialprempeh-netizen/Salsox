@@ -1,0 +1,15 @@
+{
+  "name": "salsox-tools",
+  "owner": { "name": "Salsox", "url": "https://salsox.com" },
+  "metadata": { "description": "Free tools from Salsox for Claude.", "version": "1.0.0" },
+  "plugins": [
+    {
+      "name": "orphan-page-scanner",
+      "source": "./orphan-page-scanner",
+      "description": "Find the pages in a website's sitemap that no other page links to, and get specific internal-linking fixes.",
+      "version": "1.0.0",
+      "category": "seo",
+      "license": "MIT"
+    }
+  ]
+}

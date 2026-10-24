@@ -1,0 +1,9 @@
+{
+  "name": "orphan-page-scanner",
+  "version": "1.0.0",
+  "description": "Find the pages in a website's sitemap that no other page links to, and get specific internal-linking fixes. Free; needs only Node, no API key.",
+  "author": { "name": "Salsox", "url": "https://salsox.com" },
+  "homepage": "https://salsox.com/?utm_source=orphan_scanner_skill&utm_medium=claude&utm_campaign=orphan_scanner",
+  "license": "MIT",
+  "keywords": ["seo", "internal-links", "orphan-pages", "sitemap", "site-audit"]
+}
