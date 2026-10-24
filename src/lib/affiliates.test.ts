@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { affiliateDestination, affiliateLink, claimableAffiliateCode, conversionRate, dailySeries, isBot, normalizeAffiliateCode } from "./affiliates"
+import { AFFILIATE_COMMISSION, affiliateDestination, affiliateLink, claimableAffiliateCode, commissionFor, commissionWindowEnd, conversionRate, dailySeries, isBot, normalizeAffiliateCode } from "./affiliates"
 
 describe("affiliate codes", () => {
   it("are 3 to 24 lower-case letters, digits and inner single hyphens", () => {
@@ -66,5 +66,31 @@ describe("dashboard numbers", () => {
   it("gives a conversion rate only when there were visitors", () => {
     expect(conversionRate(1, 3)).toBe(33.3)
     expect(conversionRate(0, 0)).toBeNull()
+  })
+})
+
+describe("affiliate commission", () => {
+  const first = new Date("2026-01-31T10:00:00Z")
+
+  it("is 20% recurring for 12 months by default", () => {
+    expect(AFFILIATE_COMMISSION).toEqual({ percent: 20, months: 12 })
+  })
+
+  it("is the percent of each payment, rounded down to the cent", () => {
+    expect(commissionFor(1900, first, first)).toBe(380)
+    expect(commissionFor(999, first, first)).toBe(199)
+    expect(commissionFor(4, first, first)).toBe(0)
+  })
+
+  it("is paid on every payment inside the window and none after it", () => {
+    expect(commissionWindowEnd(first).toISOString()).toBe("2027-01-31T10:00:00.000Z")
+    expect(commissionFor(1900, new Date("2027-01-31T09:59:59Z"), first)).toBe(380)
+    expect(commissionFor(1900, new Date("2027-01-31T10:00:00Z"), first)).toBe(0)
+  })
+
+  it("is nothing on a payment of nothing", () => {
+    expect(commissionFor(0, first, first)).toBe(0)
+    expect(commissionFor(-500, first, first)).toBe(0)
+    expect(commissionFor(Number.NaN, first, first)).toBe(0)
   })
 })

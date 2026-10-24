@@ -46,6 +46,13 @@ export async function POST(req: NextRequest) {
         await handleSubscriptionDeleted(subscription)
         break
       }
+      // Affiliate commission on every subscription payment (src/lib/affiliates.ts).
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice
+        // An invoice on a connected account is a sender's own business.
+        if (!event.account) await handleInvoicePaid(invoice)
+        break
+      }
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice
         await handlePaymentFailed(invoice)
@@ -213,6 +220,18 @@ async function handleOneTimeCheckout(session: Stripe.Checkout.Session) {
     },
   })
 
+  // Idempotent on the PaymentIntent id on its own, so it runs on replays too:
+  // a delivery that failed after the purchase was saved still records it.
+  const { recordAffiliateCommission } = await import("@/lib/affiliates-store")
+  await recordAffiliateCommission({
+    sourceId: paymentIntentId,
+    paymentIntentId,
+    customer: { userId },
+    amount: session.amount_total ?? plan.price,
+    currency: session.currency ?? "usd",
+    paidAt: new Date(session.created * 1000),
+  })
+
   if (isNewPurchase && process.env.RESEND_API_KEY) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -276,6 +295,32 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   await prisma.subscription.updateMany({
     where: { stripeSubscriptionId: subscription.id },
     data: { status: "CANCELED" },
+  })
+}
+
+/**
+ * A paid subscription invoice earns the referring affiliate their commission.
+ * The customer is found by Stripe customer id, which is saved before checkout
+ * starts, so a first invoice arriving ahead of checkout.session.completed is
+ * still credited. Invoices for nothing (trials, full discounts) earn nothing.
+ */
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  const customer = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id
+  if (!invoice.id || !customer || invoice.amount_paid <= 0) return
+  if (!invoice.parent?.subscription_details?.subscription) return
+  // The PaymentIntent is what a refund names, so it is kept to reverse the
+  // commission later. Since the 2025 API it is reached through the invoice's
+  // payments, not the invoice itself.
+  const payments = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 1 })
+  const intent = payments.data[0]?.payment?.payment_intent
+  const { recordAffiliateCommission } = await import("@/lib/affiliates-store")
+  await recordAffiliateCommission({
+    sourceId: invoice.id,
+    paymentIntentId: (typeof intent === "string" ? intent : intent?.id) ?? null,
+    customer: { stripeCustomerId: customer },
+    amount: invoice.amount_paid,
+    currency: invoice.currency,
+    paidAt: new Date((invoice.status_transitions?.paid_at ?? invoice.created) * 1000),
   })
 }
 
@@ -369,6 +414,11 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     where: { stripePaymentIntentId: paymentIntentId },
     data: { status: "REFUNDED" },
   })
+
+  // A refunded payment earns no commission, whether it was a purchase or a
+  // subscription invoice.
+  const { reverseAffiliateCommission } = await import("@/lib/affiliates-store")
+  await reverseAffiliateCommission(paymentIntentId)
 }
 
 function mapSubscriptionStatus(status: string) {

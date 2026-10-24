@@ -13,7 +13,9 @@ import { expectNoHorizontalScroll, freshEmail, quickSend, samplePdf, signUp, tok
 const WIDTHS = [360, 390]
 const shotDir = process.env.SCREENSHOT_DIR
 
-test.describe.configure({ timeout: 180_000 })
+// Was 180_000: joining the affiliate program to check its dashboard pushed
+// a cold dev server (every page compiled on first visit) past it.
+test.describe.configure({ timeout: 240_000 })
 
 for (const width of WIDTHS) {
   test(`all main pages fit a ${width}px phone`, async ({ browser }) => {
@@ -103,6 +105,13 @@ for (const width of WIDTHS) {
     await check("/dashboard/payouts", "payouts")
     await check("/dashboard/referrals", "referrals")
     await check("/dashboard/affiliate", "affiliate")
+    // Join, so the affiliate dashboard itself (link, commission, chart) is
+    // checked too, not only the join form.
+    await page.locator("#affiliate-code").fill(`e2e-${Date.now().toString(36)}`)
+    await page.locator('input[type="checkbox"]').check()
+    await page.locator('button[type="submit"]').click()
+    await page.locator("#affiliate-earnings-title").waitFor({ timeout: 15_000 })
+    await check("/dashboard/affiliate", "affiliate-dashboard")
     await check("/dashboard/settings", "settings")
     await check("/dashboard/settings/sessions", "devices")
 

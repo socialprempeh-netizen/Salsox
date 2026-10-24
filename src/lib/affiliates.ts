@@ -11,8 +11,11 @@
  *   new account (src/auth.ts, via affiliates-store.ts). The last affiliate
  *   link a visitor used wins, the usual rule for affiliate cookies.
  * - The dashboard counts clicks, unique visitors, signups and signups that
- *   now pay. Commission terms and payouts are not decided yet, so nothing
- *   here computes money.
+ *   now pay, and the commission those payments earned.
+ * - Commission is recurring: AFFILIATE_COMMISSION.percent of every payment a
+ *   referred customer makes during the AFFILIATE_COMMISSION.months after
+ *   their first one. The Stripe webhook writes one ledger row per payment
+ *   (affiliates-store.ts); payouts are settled by hand from that ledger.
  *
  * The database side is in affiliates-store.ts.
  */
@@ -20,6 +23,33 @@
 export const AFFILIATE_COOKIE = "sx_aff"
 export const AFFILIATE_COOKIE_DAYS = 60
 export const AFFILIATE_DASHBOARD_DAYS = 30
+
+/**
+ * The commission terms, in one place: the webhook, the dashboard and the
+ * join page all read them from here. Changing a term applies to payments
+ * recorded from then on; each ledger row keeps the percent it was paid at.
+ */
+export const AFFILIATE_COMMISSION = { percent: 20, months: 12 } as const
+
+/** The end of a customer's commission window, AFFILIATE_COMMISSION.months after their first payment. */
+export function commissionWindowEnd(firstPaidAt: Date): Date {
+  const end = new Date(firstPaidAt)
+  end.setUTCMonth(end.getUTCMonth() + AFFILIATE_COMMISSION.months)
+  return end
+}
+
+/**
+ * The commission on one payment, in the payment's minor unit (cents),
+ * rounded down so the ledger never owes a fraction of a cent. Zero for a
+ * payment of nothing, and for one made after the window closed.
+ * `firstPaidAt` is the customer's first commissionable payment; for that
+ * first payment it is the payment's own date.
+ */
+export function commissionFor(amount: number, paidAt: Date, firstPaidAt: Date): number {
+  if (!Number.isFinite(amount) || amount <= 0) return 0
+  if (paidAt.getTime() >= commissionWindowEnd(firstPaidAt).getTime()) return 0
+  return Math.floor((amount * AFFILIATE_COMMISSION.percent) / 100)
+}
 
 // Codes that would read as the product speaking, or that someone could use
 // to pass a link off as official.

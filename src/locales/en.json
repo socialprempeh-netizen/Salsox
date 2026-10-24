@@ -120,10 +120,10 @@
     "affiliate": {
       "metaTitle": "Affiliate program",
       "joinTitle": "Become an affiliate",
-      "joinSubtitle": "Get a link of your own, send people to it, and see every click and signup it brings. A visit counts for {days} days.",
+      "joinSubtitle": "Get a link of your own and earn {percent}% of every payment from the customers it brings, for {months} months after their first one. A visit counts for {days} days.",
       "perkLink": "A short link with a code you choose, to any of our main pages.",
       "perkTracking": "Clicks, unique visitors and signups, counted as they happen.",
-      "perkDashboard": "A dashboard with the last 30 days and the accounts that now pay.",
+      "perkDashboard": "A dashboard with the last 30 days, the accounts that now pay, and the commission they earned you.",
       "codeLabel": "Your link code",
       "codeHelp": "3 to 24 characters: letters, numbers and hyphens. It cannot be changed later.",
       "codeInvalid": "Use 3 to 24 letters, numbers or hyphens, not starting or ending with a hyphen, and not a reserved word.",
@@ -145,6 +145,11 @@
       "copiedShort": "Copied",
       "copied": "Affiliate link copied",
       "copyFailed": "Could not copy. Select the link and copy it instead.",
+      "earningsTitle": "Your commission",
+      "earningsTerms": "You earn {percent}% of every payment a customer you brought makes, for {months} months after their first payment. A refunded payment earns nothing.",
+      "earningsEmpty": "Nothing earned yet. Commission appears here as soon as someone you brought pays.",
+      "earningsEarned": "Earned",
+      "earningsUnpaid": "Awaiting payout",
       "statClicks": "Clicks",
       "statVisitors": "Unique visitors",
       "statSignups": "Signups",
@@ -164,7 +169,7 @@
       "joinedOn": "Joined {date}",
       "statusPaying": "Paying",
       "statusFree": "Free plan",
-      "payoutNote": "Commission is paid by hand for now, on customers who pay. Write to {email} with questions about your payouts."
+      "payoutNote": "Payouts are made by hand for now. Write to {email} with questions about your payouts."
     },
     "referrals": {
       "metaTitle": "Invite & earn",

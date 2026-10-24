@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { affiliateDashboard } from "@/lib/affiliates-store"
-import { AFFILIATE_COOKIE_DAYS, AFFILIATE_DESTINATIONS, claimableAffiliateCode } from "@/lib/affiliates"
+import { AFFILIATE_COMMISSION, AFFILIATE_COOKIE_DAYS, AFFILIATE_DESTINATIONS, claimableAffiliateCode } from "@/lib/affiliates"
 import { AffiliateJoin } from "@/components/dashboard/affiliate-join"
 import { AffiliateDashboardView } from "@/components/dashboard/affiliate-dashboard"
 
@@ -33,7 +33,7 @@ export default async function AffiliatePage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold">{t("joinTitle")}</h1>
-          <p className="mt-1 text-muted-foreground">{t("joinSubtitle", { days: AFFILIATE_COOKIE_DAYS })}</p>
+          <p className="mt-1 text-muted-foreground">{t("joinSubtitle", { days: AFFILIATE_COOKIE_DAYS, ...AFFILIATE_COMMISSION })}</p>
         </div>
         <AffiliateJoin host={host} suggestion={claimableAffiliateCode(fromName) ? fromName : ""} />
       </div>
@@ -41,6 +41,8 @@ export default async function AffiliatePage() {
   }
 
   const pct = (n: number | null) => (n === null ? "–" : `${format.number(n, { maximumFractionDigits: 1 })}%`)
+  // Commission is stored in minor units; every currency we charge in has two decimals.
+  const money = (minor: number, currency: string) => format.number(minor / 100, { style: "currency", currency: currency.toUpperCase() })
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
@@ -54,6 +56,8 @@ export default async function AffiliatePage() {
         destinations={[...AFFILIATE_DESTINATIONS]}
         totals={{ ...dashboard.totals, conversionLabel: pct(dashboard.totals.conversion) }}
         allTime={dashboard.allTime}
+        terms={AFFILIATE_COMMISSION}
+        earnings={dashboard.earnings.map((e) => ({ currency: e.currency, earned: money(e.earned, e.currency), unpaid: money(e.unpaid, e.currency) }))}
         series={dashboard.series}
         recent={dashboard.recent.map((r) => ({ id: r.id, name: r.name, joined: format.dateTime(r.joinedAt, { dateStyle: "medium" }), paying: r.paying }))}
         contactEmail={siteConfig.contactEmail}

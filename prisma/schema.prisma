@@ -85,6 +85,7 @@ model User {
   affiliateId           String?
   referredByAffiliate   Affiliate?      @relation("AffiliateSignups", fields: [affiliateId], references: [id], onDelete: SetNull)
   affiliate             Affiliate?      @relation("AffiliateOwner")
+  affiliateCommissions  AffiliateCommission[]
   accounts              Account[]
   sessions              Session[]
   twoFactor             TwoFactor[]
@@ -102,9 +103,8 @@ model User {
 }
 
 // Affiliate program (src/lib/affiliates.ts). An affiliate is a user who has
-// joined with a code of their choosing; links are /go/{code}. Commission
-// terms and payouts are not modelled yet: the dashboard reports clicks,
-// signups and paying customers, and payment is settled by hand.
+// joined with a code of their choosing; links are /go/{code}. Commission is
+// recorded per payment in AffiliateCommission; payouts are settled by hand.
 model Affiliate {
   id        String           @id @default(cuid())
   userId    String           @unique
@@ -115,7 +115,8 @@ model Affiliate {
   createdAt DateTime         @default(now())
   user      User             @relation("AffiliateOwner", fields: [userId], references: [id], onDelete: Cascade)
   signups   User[]           @relation("AffiliateSignups")
-  clicks    AffiliateClick[]
+  clicks      AffiliateClick[]
+  commissions AffiliateCommission[]
 }
 
 // One row per visit through an affiliate link. No address, no user agent,
@@ -131,6 +132,36 @@ model AffiliateClick {
   affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
 
   @@index([affiliateId, createdAt])
+}
+
+// One row per payment a referred customer made inside their commission
+// window (AFFILIATE_COMMISSION in src/lib/affiliates.ts), written by the
+// Stripe webhook. `sourceId` is the Stripe invoice or PaymentIntent id and is
+// unique, so a replayed event can never record the same payment twice.
+// `percent` keeps the rate the row was earned at, so changing the terms
+// later does not rewrite history. A full refund sets `reversedAt`; a payout
+// made by hand sets `paidOutAt`. The customer is kept as a nullable link: a
+// commission already earned stays owed if they delete their account.
+model AffiliateCommission {
+  id              String    @id @default(cuid())
+  affiliateId     String
+  customerId      String?
+  sourceId        String    @unique
+  paymentIntentId String?
+  amount          Int
+  commission      Int
+  currency        String
+  percent         Int
+  paidAt          DateTime
+  reversedAt      DateTime?
+  paidOutAt       DateTime?
+  createdAt       DateTime  @default(now())
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  customer        User?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([affiliateId, paidAt])
+  @@index([customerId, paidAt])
+  @@index([paymentIntentId])
 }
 
 // One reward per invited person, granted when they become active (send their

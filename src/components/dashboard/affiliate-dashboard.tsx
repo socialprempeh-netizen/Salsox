@@ -1,8 +1,9 @@
 "use client"
 
 /**
- * An affiliate's dashboard (/dashboard/affiliate): the link builder, the last
- * 30 days in four numbers and a chart, and the accounts they brought. Shows
+ * An affiliate's dashboard (/dashboard/affiliate): the link builder, the
+ * commission earned and its terms, the last 30 days in four numbers and a
+ * chart, and the accounts they brought. Shows
  * what affiliateDashboard (src/lib/affiliates-store.ts) computed and decides
  * nothing.
  *
@@ -19,7 +20,7 @@ import { useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import { useFormatter, useTranslations } from "next-intl"
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { Check, Copy, PauseCircle } from "lucide-react"
+import { Check, Copy, PauseCircle, Wallet } from "lucide-react"
 import { toast } from "@/components/ui/sonner"
 import { Button } from "@/components/ui/button"
 import { affiliateLink } from "@/lib/affiliates"
@@ -32,6 +33,9 @@ type Props = {
   destinations: string[]
   totals: { clicks: number; visitors: number; signups: number; paying: number; conversionLabel: string }
   allTime: { signups: number; paying: number }
+  terms: { percent: number; months: number }
+  /** Already formatted for the viewer's locale, one row per currency earned in. */
+  earnings: { currency: string; earned: string; unpaid: string }[]
   series: DailyCount[]
   recent: { id: string; name: string; joined: string; paying: boolean }[]
   contactEmail: string
@@ -103,8 +107,41 @@ export function AffiliateDashboardView(props: Props) {
         <p className="mt-2 text-xs text-muted-foreground">{t("linkHelp")}</p>
       </section>
 
-      <dl className="grid grid-cols-2 gap-px border bg-border md:grid-cols-4">
-        {tiles.map((tile, i) => (
+      <motion.section
+        aria-labelledby="affiliate-earnings-title"
+        initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="border border-l-4 border-l-primary bg-card p-4 sm:p-6"
+      >
+        <div className="flex items-start gap-3">
+          <Wallet className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <div className="min-w-0">
+            <h2 id="affiliate-earnings-title" className="text-sm font-semibold">{t("earningsTitle")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("earningsTerms", props.terms)}</p>
+          </div>
+        </div>
+        {props.earnings.length === 0 ? (
+          <p className="mt-3 pl-8 text-sm text-muted-foreground">{t("earningsEmpty")}</p>
+        ) : (
+          <dl className="mt-4 grid grid-cols-2 gap-px border bg-border">
+            {props.earnings.map((row) => (
+              <div key={row.currency} className="contents">
+                <div className="bg-card p-4">
+                  <dt className="text-xs text-muted-foreground">{t("earningsEarned")}</dt>
+                  <dd className="mt-1 break-words text-xl font-semibold tabular-nums sm:text-2xl">{row.earned}</dd>
+                </div>
+                <div className="bg-card p-4">
+                  <dt className="text-xs text-muted-foreground">{t("earningsUnpaid")}</dt>
+                  <dd className="mt-1 break-words text-xl font-semibold tabular-nums sm:text-2xl">{row.unpaid}</dd>
+                </div>
+              </div>
+            ))}
+          </dl>
+        )}
+      </motion.section>
+
+      <dl className="grid grid-cols-2 gap-px border bg-border md:grid-cols-4">        {tiles.map((tile, i) => (
           <motion.div
             key={tile.key}
             initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }}
