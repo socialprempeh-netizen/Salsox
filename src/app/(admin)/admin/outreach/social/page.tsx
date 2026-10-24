@@ -21,6 +21,7 @@ import { connectedPlatforms } from "@/lib/outreach-agent/agent"
 import { PLATFORM_LABEL } from "@/lib/outreach-agent/social"
 import * as store from "@/lib/outreach-agent/store"
 import { hasWriterKey } from "@/lib/outreach-agent/writer"
+import { imageGeneration } from "@/lib/outreach-agent/images"
 import { AdminPageHeader, Chip, Empty, Panel, StatGrid, StatTile, StatusBanner } from "@/components/admin/admin-ui"
 import { IdeaComposer, PlatformSquares, PostCalendar, type Platform, type PostStatus, type StudioPost } from "@/components/admin/social-studio"
 
@@ -103,7 +104,7 @@ export default async function SocialStudioPage({ searchParams }: { searchParams:
           </Panel>
 
           <Panel title={idea ? t("squaresTitleIdea", { idea }) : t("squaresTitle")} hint={t("squaresHint")} flush index={4} icon={FilePen} badge={batch.length ? <Chip>{t("draftsCount", { count: batch.length })}</Chip> : undefined}>
-            {batch.length === 0 ? <Empty icon={Lightbulb}>{t("noDrafts")}</Empty> : <PlatformSquares key={batchId ?? "unbatched"} posts={batch} connected={connected} />}
+            {batch.length === 0 ? <Empty icon={Lightbulb}>{t("noDrafts")}</Empty> : <PlatformSquares key={batchId ?? "unbatched"} posts={batch} connected={connected} imagesAvailable={imageGeneration().available} />}
           </Panel>
 
           <Panel title={t("calendarTitle")} hint={t("calendarHint")} flush index={5} icon={CalendarDays} badge={<Chip>{t("postsCount", { count: posts.length })}</Chip>}>

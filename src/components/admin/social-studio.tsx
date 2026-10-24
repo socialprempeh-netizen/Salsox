@@ -18,6 +18,10 @@
  *   TikTok and YouTube are never posted either (there is no video yet): their
  *   caption, title and description are edited and copied by hand. All three
  *   are marked posted by hand (markPosted) once they are out.
+ *   X and Facebook drafts also get hashtag suggestions from the post's own
+ *   words plus the niche's evergreen set (hashtags.ts), tapped on and off,
+ *   and an image slot that says plainly it is not set up yet (images.ts:
+ *   no image API has been chosen).
  * - PostCalendar: a month calendar of scheduled and past posts on wider
  *   screens, a day-by-day agenda on a phone, and the list of every post with
  *   its status, filterable.
@@ -34,7 +38,7 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useFormatter, useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { CalendarClock, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Send, ShieldAlert, Sparkles } from "lucide-react"
+import { CalendarClock, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Hash, ImageOff, Send, ShieldAlert, Sparkles } from "lucide-react"
 import { siX } from "simple-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,6 +47,7 @@ import { Chip, Empty, type Tone } from "@/components/admin/admin-ui"
 import { SegmentMeter } from "@/components/admin/segment-meter"
 import { discardPost, draftPosts, markPosted, publishPostNow, savePost, schedulePost, type OutreachAgentResult } from "@/app/actions/outreach-agent"
 import { dayKey, monthGrid, shiftMonth } from "@/lib/admin/calendar"
+import { hashtagsIn, suggestHashtags, toggleHashtag } from "@/lib/outreach-agent/hashtags"
 import { ALL_PLATFORMS, DESCRIPTION_LIMITS, isAutoPlatform, LIMITS, PLATFORM_LABEL, REDDIT_URL_BODY_MAX, redditSubmitUrl, TITLE_LIMITS } from "@/lib/outreach-agent/social"
 import { cn } from "@/lib/utils"
 
@@ -232,7 +237,7 @@ export function IdeaComposer({ canDraft, connected }: { canDraft: boolean; conne
 
 // ── The six squares ───────────────────────────────────────────────────────
 
-export function PlatformSquares({ posts, connected }: { posts: StudioPost[]; connected: Platform[] }) {
+export function PlatformSquares({ posts, connected, imagesAvailable = false }: { posts: StudioPost[]; connected: Platform[]; imagesAvailable?: boolean }) {
   const t = useTranslations("admin.socialStudio")
   const reduce = useReducedMotion()
   const byPlatform = new Map(posts.map((p) => [p.platform, p]))
@@ -259,7 +264,7 @@ export function PlatformSquares({ posts, connected }: { posts: StudioPost[]; con
             {!post ? (
               <p className="flex-1 p-4 text-sm text-muted-foreground">{t("notInBatch")}</p>
             ) : isAutoPlatform(platform) ? (
-              <AutoSquare post={post} connected={connected.includes(platform)} />
+              <AutoSquare post={post} connected={connected.includes(platform)} imagesAvailable={imagesAvailable} />
             ) : platform === "REDDIT" ? (
               <RedditSquare post={post} />
             ) : (
@@ -293,7 +298,73 @@ function When({ post }: { post: StudioPost }) {
 }
 
 /** X, LinkedIn, Facebook: edit, publish now or schedule through the existing actions. */
-function AutoSquare({ post, connected }: { post: StudioPost; connected: boolean }) {
+/**
+ * Hashtags for an X or Facebook draft: the post's own topics, then the
+ * evergreen set. A tag in the post shows as chosen; tapping toggles it in the
+ * text. The hint says how many the platform reads best with.
+ */
+function HashtagPicker({ platform, body, onChange }: { platform: "X" | "FACEBOOK"; body: string; onChange: (next: string) => void }) {
+  const t = useTranslations("admin.socialStudio")
+  const reduce = useReducedMotion()
+  // Suggestions follow the words, not the tags, so choosing one does not reshuffle the list.
+  const suggestions = useMemo(() => suggestHashtags(platform, body.replace(/(^|\s)#[\p{L}\p{N}_]+/gu, " ")), [platform, body])
+  const present = hashtagsIn(body)
+  const chip = (tag: string, i: number) => {
+    const on = present.has(tag.slice(1).toLowerCase())
+    return (
+      <motion.button
+        key={tag}
+        type="button"
+        aria-pressed={on}
+        onClick={() => onChange(toggleHashtag(platform, body, tag))}
+        initial={reduce ? false : { opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.16, delay: reduce ? 0 : i * 0.02 }}
+        className={cn(
+          "inline-flex h-8 items-center gap-1 border px-2 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+          on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+        )}
+      >
+        {on && <Check aria-hidden className="h-3 w-3" strokeWidth={3} />}
+        {tag}
+      </motion.button>
+    )
+  }
+  return (
+    <div className="space-y-2 border border-border bg-muted/20 p-3">
+      <p className="flex items-center gap-1.5 text-xs font-medium">
+        <Hash aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
+        {t("hashtagsTitle")}
+        {/* The platform's whole budget: suggestions are worked out from the words alone, so `recommended` is the full count. */}
+        <span className="font-normal text-muted-foreground">{t("hashtagsHint", { count: suggestions.recommended })}</span>
+      </p>
+      {suggestions.contextual.length > 0 && (
+        <div>
+          <p className="mb-1 text-[11px] text-muted-foreground">{t("hashtagsForPost")}</p>
+          <div className="flex flex-wrap gap-1.5">{suggestions.contextual.map(chip)}</div>
+        </div>
+      )}
+      <div>
+        <p className="mb-1 text-[11px] text-muted-foreground">{t("hashtagsEvergreen")}</p>
+        <div className="flex flex-wrap gap-1.5">{suggestions.evergreen.map((tag, i) => chip(tag, i + suggestions.contextual.length))}</div>
+      </div>
+    </div>
+  )
+}
+
+/** The post image slot: honest about not being built until an image API is chosen. */
+function ImageSlot({ available }: { available: boolean }) {
+  const t = useTranslations("admin.socialStudio")
+  if (available) return null
+  return (
+    <p className="flex items-start gap-2 border border-dashed border-border p-3 text-xs text-muted-foreground">
+      <ImageOff aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>{t("imageNotSetUp")}</span>
+    </p>
+  )
+}
+
+function AutoSquare({ post, connected, imagesAvailable }: { post: StudioPost; connected: boolean; imagesAvailable: boolean }) {
   const t = useTranslations("admin.socialStudio")
   const { run, pending, busy } = useAction()
   const [body, setBody] = useState(post.body)
@@ -312,6 +383,8 @@ function AutoSquare({ post, connected }: { post: StudioPost; connected: boolean 
         <p className="whitespace-pre-line text-sm leading-relaxed">{post.body}</p>
       )}
       {editable && <LengthMeter value={body} limit={limit} label={t("length")} />}
+      {editable && (post.platform === "X" || post.platform === "FACEBOOK") && <HashtagPicker platform={post.platform} body={body} onChange={setBody} />}
+      {editable && (post.platform === "X" || post.platform === "FACEBOOK") && <ImageSlot available={imagesAvailable} />}
       {post.status === "FAILED" && post.error && <p className="break-words border-l-2 border-destructive pl-3 text-sm text-destructive">{post.error}</p>}
       {editable && (
         <div className="mt-auto space-y-2 pt-1">
