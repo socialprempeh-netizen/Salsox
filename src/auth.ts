@@ -370,6 +370,10 @@ export const auth = betterAuth({
         after: async (user, ctx) => {
           const { recordSignupAttribution } = await import("@/lib/seo/attribution-store")
           await recordSignupAttribution(user.id, ctx?.headers ?? ctx?.request?.headers)
+          // Who invited them, from the sx_ref cookie (src/lib/referrals.ts).
+          // Never throws either.
+          const { recordReferral } = await import("@/lib/referrals-store")
+          await recordReferral(user.id, ctx?.headers ?? ctx?.request?.headers)
           if (user.email && process.env.RESEND_API_KEY) {
             const { sendWelcomeEmail } = await import("@/lib/email")
             // Awaited for the same reason as the webhook emails: nothing

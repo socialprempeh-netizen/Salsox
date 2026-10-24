@@ -66,6 +66,19 @@ model User {
   // admin SEO page can count signups per channel without scanning JSON.
   acquisition           Json?
   signupChannel         String?
+  // Peer referrals (src/lib/referrals.ts). `referralCode` is the user's own
+  // invite code, made the first time they open the referrals page;
+  // `referredById` is who invited them, recorded at signup from the sx_ref
+  // cookie. `referralProUntil` is when the free Pro months earned by inviting
+  // people end: the plan rules read it next to billing (accountTier in
+  // src/lib/esign/sender.ts).
+  referralCode          String?         @unique
+  referredById          String?
+  referredBy            User?           @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals             User[]          @relation("Referrals")
+  referralProUntil      DateTime?
+  referralRewards       ReferralReward[] @relation("RewardEarner")
+  referralRewardFor     ReferralReward?  @relation("RewardReferee")
   accounts              Account[]
   sessions              Session[]
   twoFactor             TwoFactor[]
@@ -78,6 +91,24 @@ model User {
   updatedAt             DateTime        @updatedAt
 
   @@index([signupChannel, createdAt])
+  @@index([referredById])
+}
+
+// One reward per invited person, granted when they become active (send their
+// first document). `refereeId` is unique, so a second send, a retry or a race
+// between two sends can never pay the same invitation twice.
+model ReferralReward {
+  id         String   @id @default(cuid())
+  referrerId String
+  refereeId  String   @unique
+  months     Int
+  // The referrer's referralProUntil after this reward, kept for the history.
+  proUntil   DateTime
+  createdAt  DateTime @default(now())
+  referrer   User     @relation("RewardEarner", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee    User     @relation("RewardReferee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId, createdAt])
 }
 
 // One row per way of signing in. OAuth accounts and the email+password

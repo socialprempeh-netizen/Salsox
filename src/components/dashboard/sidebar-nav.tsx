@@ -10,6 +10,7 @@ import {
   FileSignature,
   Send,
   Wallet,
+  Gift,
   LayoutGrid,
   // Used only by the admin list replaced below (now commented out).
   // ShieldAlert,
@@ -40,6 +41,8 @@ const menus = {
     // The template library (src/lib/templates.ts): start a document from one.
     { href: "/dashboard/templates", key: "templates", icon: LayoutTemplate },
     { href: "/dashboard/payouts", key: "payouts", icon: Wallet },
+    // Invite & earn: free Pro months for invites (src/lib/referrals.ts).
+    { href: "/dashboard/referrals", key: "referrals", icon: Gift },
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],

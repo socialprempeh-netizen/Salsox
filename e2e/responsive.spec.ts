@@ -98,6 +98,7 @@ for (const width of WIDTHS) {
     await check(`/dashboard/documents/${documentId}`, "document-detail")
     await check("/dashboard/billing", "billing")
     await check("/dashboard/payouts", "payouts")
+    await check("/dashboard/referrals", "referrals")
     await check("/dashboard/settings", "settings")
     await check("/dashboard/settings/sessions", "devices")
 

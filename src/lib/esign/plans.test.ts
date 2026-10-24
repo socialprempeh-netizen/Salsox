@@ -11,6 +11,7 @@ import {
   setupBlocker,
   tierForEntitlement,
   tierForPlanSlug,
+  withReferralPro,
 } from "./plans"
 
 describe("hasFeature", () => {
@@ -118,5 +119,15 @@ describe("monthStartUtc", () => {
 describe("planErrorCode", () => {
   it("prefixes the feature, matching the keys in esign.errors", () => {
     expect(planErrorCode("signAndPay")).toBe("plan_signAndPay")
+  })
+})
+
+describe("withReferralPro", () => {
+  const now = new Date("2026-10-24T00:00:00Z")
+  it("gives Business while earned free months run, and nothing after", () => {
+    expect(withReferralPro("free", new Date("2027-01-24T00:00:00Z"), now)).toBe("business")
+    expect(withReferralPro("personal", new Date("2027-01-24T00:00:00Z"), now)).toBe("business")
+    expect(withReferralPro("free", new Date("2026-10-23T00:00:00Z"), now)).toBe("free")
+    expect(withReferralPro("personal", null, now)).toBe("personal")
   })
 })

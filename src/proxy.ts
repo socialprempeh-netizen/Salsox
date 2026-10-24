@@ -48,6 +48,9 @@ const UNLOCALIZED = [
   // resolve exactly as sent. The token is the authorization, checked by the
   // page itself, so this path is deliberately absent from PROTECTED_ROUTES.
   "/sign/",
+  // Invite links (/invite/{code}, src/lib/referrals.ts): a redirect to
+  // signup that must resolve exactly as shared.
+  "/invite/",
   // Root level metadata routes.
   "/sitemap.xml",
   "/robots.txt",

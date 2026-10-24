@@ -83,6 +83,10 @@ export function classifyChannel(touch: Pick<Touch, "ref" | "utm"> | null): Chann
   if (/^(email|newsletter)$/.test(medium) || EMAIL.some((re) => re.test(host))) return "email"
   if (/^(social|social-network|social_media)$/.test(medium) || SOCIAL.some((re) => re.test(host))) return "social"
   if (isSearch) return "organic_search"
+  // Invite links tag themselves utm_medium=invite
+  // (src/app/invite/[code]/route.ts): a person sent them, not a campaign.
+  // Not "referral", which the signing-page links use and count as campaign.
+  if (medium === "invite") return "referral"
   if (touch.utm.source || touch.utm.campaign) return "campaign"
   if (host) return "referral"
   return "direct"

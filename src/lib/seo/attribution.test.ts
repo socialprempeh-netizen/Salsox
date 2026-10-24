@@ -36,6 +36,7 @@ describe("classifyChannel", () => {
     expect(classifyChannel(touch("https://t.co/abc"))).toBe("social")
     expect(classifyChannel(touch("", "?utm_medium=email&utm_source=newsletter"))).toBe("email")
     expect(classifyChannel(touch("https://someblog.example/post"))).toBe("referral")
+    expect(classifyChannel(touch("", "?utm_source=invite&utm_medium=invite"))).toBe("referral")
     expect(classifyChannel(touch("", "?utm_source=partner"))).toBe("campaign")
     expect(classifyChannel(touch(""))).toBe("direct")
     expect(classifyChannel(null)).toBe("direct")

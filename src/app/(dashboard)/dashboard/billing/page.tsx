@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { requireUser } from "@/lib/auth"
 import { getFormatter, getLocale, getTranslations } from "next-intl/server"
 import { prisma } from "@/lib/prisma"
@@ -62,7 +63,7 @@ export default async function BillingPage() {
   const [user, entitlement, documentCount] = await Promise.all([
     prisma.user.findUnique({
       where: { id: currentUser.id },
-      select: { stripeCustomerId: true, subscription: { select: { id: true } } },
+      select: { stripeCustomerId: true, referralProUntil: true, subscription: { select: { id: true } } },
     }),
     getEntitlement(currentUser.id),
     prisma.document.count({ where: { userId: currentUser.id } }),
@@ -183,6 +184,12 @@ export default async function BillingPage() {
     return d.code ? `${line} · ${t("discountCode", { code: d.code })}` : line
   })
 
+  // Free Pro months earned by inviting people (src/lib/referrals.ts) are not
+  // a billing object, so the plan card below does not know about them: said
+  // here instead, so a "Free" card does not contradict an unlocked editor.
+  const tReferrals = await getTranslations("dashboard.referrals")
+  const referralPro = user?.referralProUntil && user.referralProUntil > new Date() ? longDate(user.referralProUntil) : null
+
   return (
     <div className="space-y-6">
       <CheckoutStatusToast />
@@ -190,6 +197,15 @@ export default async function BillingPage() {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {referralPro && (
+        <div className="flex flex-col gap-2 border border-l-4 border-primary/30 border-l-primary bg-primary/5 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <p>{tReferrals("billingNote", { date: referralPro })}</p>
+          <Link href="/dashboard/referrals" className="shrink-0 font-medium text-primary underline-offset-4 hover:underline">
+            {tReferrals("billingLink")}
+          </Link>
+        </div>
+      )}
 
       <Card className="rounded-none">
         <CardHeader>

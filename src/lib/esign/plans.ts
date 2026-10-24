@@ -93,6 +93,16 @@ export function tierForEntitlement(
 }
 
 /**
+ * The tier with free Pro months earned by inviting people (src/lib/referrals.ts)
+ * applied: Business while `referralProUntil` is in the future, otherwise the
+ * billing tier unchanged. Never lowers a tier, so a paid plan always wins.
+ */
+export function withReferralPro(tier: PlanTier, referralProUntil: Date | null | undefined, now: Date): PlanTier {
+  if (!referralProUntil || referralProUntil <= now) return tier
+  return RANK[tier] >= RANK.business ? tier : "business"
+}
+
+/**
  * The first gated feature a document setup uses that the tier lacks, or null
  * when the plan covers it all. Checked when a setup is saved and again when
  * the document is sent, since a plan can change in between.

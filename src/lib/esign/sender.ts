@@ -13,7 +13,7 @@
  */
 import { prisma } from "@/lib/prisma"
 import { getEntitlement } from "@/lib/billing"
-import { documentsLeft, hasFeature, monthStartUtc, requestToolUsesLeft, tierForEntitlement, type PlanTier } from "./plans"
+import { documentsLeft, hasFeature, monthStartUtc, requestToolUsesLeft, tierForEntitlement, withReferralPro, type PlanTier } from "./plans"
 import {
   dailyWindowStart,
   emailConfirmationRequired,
@@ -52,13 +52,26 @@ export async function senderBlocker(
 }
 
 /**
+ * The tier an account has now: what billing grants, raised to Business while
+ * free Pro months earned by inviting people run (src/lib/referrals.ts). Every
+ * plan gate reads the tier through here, so the two sources never disagree.
+ */
+export async function accountTier(userId: string, now = new Date()): Promise<PlanTier> {
+  const [entitlement, user] = await Promise.all([
+    getEntitlement(userId),
+    prisma.user.findUnique({ where: { id: userId }, select: { referralProUntil: true } }),
+  ])
+  return withReferralPro(tierForEntitlement(entitlement), user?.referralProUntil, now)
+}
+
+/**
  * The sender's plan, for the gates in plans.ts: their tier, and how many
  * documents they may still send this month (null when unlimited). Read from
  * billing on every call, like the standing above, so an upgrade applies as
  * soon as the Stripe webhook lands.
  */
 export async function senderPlan(userId: string, now = new Date()): Promise<{ tier: PlanTier; documentsLeft: number | null }> {
-  const tier = tierForEntitlement(await getEntitlement(userId))
+  const tier = await accountTier(userId, now)
   if (hasFeature(tier, "unlimitedDocuments")) return { tier, documentsLeft: null }
   const sentThisMonth = await prisma.document.count({ where: { userId, sentAt: { gte: monthStartUtc(now) } } })
   return { tier, documentsLeft: documentsLeft(tier, sentThisMonth) }
@@ -71,7 +84,7 @@ export async function senderPlan(userId: string, now = new Date()): Promise<{ ti
  * deleteDraft), so the free use cannot be won back by deleting one.
  */
 export async function requestToolLeft(userId: string): Promise<number | null> {
-  const tier = tierForEntitlement(await getEntitlement(userId))
+  const tier = await accountTier(userId)
   if (hasFeature(tier, "unlimitedDocuments")) return null
   const used = await prisma.document.count({ where: { userId, fromRequestTool: true, sentAt: { not: null } } })
   return requestToolUsesLeft(tier, used)

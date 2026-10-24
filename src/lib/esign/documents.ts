@@ -46,9 +46,9 @@ import { chooseProvider, formatMinorUnits, isSignAndPayCurrency, toMinorUnits } 
 import { nameFromEmail, type DocumentSetup } from "./schemas"
 import { signingUrl } from "./share"
 import { sendDocumentCompleted, sendDocumentExpired, sendSigningInvite } from "./emails"
-import { requestToolLeft, senderBlocker, senderPlan } from "./sender"
-import { hasFeature, planErrorCode, setupBlocker, tierForEntitlement } from "./plans"
-import { getEntitlement } from "@/lib/billing"
+import { accountTier, requestToolLeft, senderBlocker, senderPlan } from "./sender"
+import { hasFeature, planErrorCode, setupBlocker } from "./plans"
+import { rewardReferrer } from "@/lib/referrals-store"
 import { DEFAULT_EXPIRY_DAYS } from "./limits"
 import { closeOpenCheckouts } from "./payments/settle"
 import { newVerificationCode, verificationUrl } from "./verify"
@@ -354,6 +354,10 @@ export async function sendDocument(userId: string, documentId: string): Promise<
     meta: await requestMeta(),
   })
 
+  // A first document sent makes an invited account active, which earns
+  // whoever invited it free Pro months (src/lib/referrals.ts). Never throws.
+  await rewardReferrer(userId, now)
+
   const fresh = await prisma.document.findUniqueOrThrow({ where: { id: documentId }, include: { recipients: true, user: true } })
   const { undelivered, notEmailed } = await notifyNext(fresh)
   return { ok: true, undelivered: undelivered.length, notEmailed: notEmailed.length }
@@ -606,7 +610,7 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
   // in the export, it is just not printed into the PDF.
   // Was: hasFeature(tierForEntitlement(await getEntitlement(document.userId)), "auditCertificate"),
   // read once now for the certificate and for whether the copy carries the "Signed with" link.
-  const ownerTier = tierForEntitlement(await getEntitlement(document.userId))
+  const ownerTier = await accountTier(document.userId)
   const withCertificate = hasFeature(ownerTier, "auditCertificate")
 
   // The COMPLETED event is printed on the certificate before it exists as a
