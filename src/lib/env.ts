@@ -117,6 +117,10 @@ export const envSchema = z
     INDEXNOW_KEY: blankAsUnset(z.string().regex(/^[a-zA-Z0-9-]{8,128}$/, "8 to 128 letters, digits or dashes").optional()),
 
     NEXT_PUBLIC_APP_URL: optional,
+    // Chrome extension ids allowed to sign in through /extension/connect
+    // (src/lib/extension-connect.ts), comma-separated. Optional: unset, no
+    // extension can connect outside development.
+    SIGNING_EXTENSION_IDS: optional,
     // Search and analytics (docs/seo.md). All optional: verification tokens
     // for Search Console and Bing Webmaster Tools (DNS verification needs
     // neither), and a GA4 measurement id, which also opens the CSP to Google.

@@ -15,6 +15,7 @@ Everything you need to go from `git clone` to production.
 | [Upgrading](./upgrading.md) | Taking a newer version without losing your work, and the cost in advance |
 | [E-signatures (Salsox)](./esign.md) | How documents are sent, signed, paid for and sealed, and how to configure it |
 | [Webhooks and the API](./webhooks.md) | Sending document events to other software, API keys for integrations, and how deliveries stay safe |
+| [The signing Chrome extension](./signing-extension.md) | How the extension connects to an account and sends through the API, and the extension ids the server must allow |
 | [SEO](./seo.md) | Landing, tool and comparison pages, the rules against duplicates, Search Console, IndexNow and analytics |
 
 Quick pointers:

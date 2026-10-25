@@ -624,6 +624,20 @@
       "body": "{seconds, plural, one {You will be signed out in # second because of inactivity.} other {You will be signed out in # seconds because of inactivity.}}",
       "stay": "Stay signed in"
     },
+    "extensionConnect": {
+      "metaTitle": "Connect the Chrome extension | {site}",
+      "title": "Connect the Chrome extension",
+      "subtitle": "The {site} Signing extension wants to use your account, {email}.",
+      "canSend": "Send PDFs for signature from your browser, counted against your plan like any other document.",
+      "canPlan": "See your plan and how many free documents are left this month.",
+      "canRevoke": "Disconnect it from the extension, or revoke its key under Developers at any time.",
+      "connect": "Connect",
+      "cancel": "Cancel",
+      "errorRate": "Too many connections just now. Wait a few minutes and try again.",
+      "errorInvalid": "This connection request is no longer valid. Close this window and press Connect in the extension again.",
+      "invalidTitle": "This link is not from the extension",
+      "invalidBody": "Open the {site} Signing extension and press Connect to sign in from there."
+    },
     "developers": {
       "title": "Developers",
       "subtitle": "Connect this account to other software: send document events to a URL as they happen, and let integrations like Zapier act for you.",

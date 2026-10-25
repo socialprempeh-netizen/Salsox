@@ -1,0 +1,150 @@
+<!doctype html>
+<!--
+  Salsox Signing popup: connect, choose a PDF, place fields, add the signers,
+  send. One section shows at a time; popup.js decides which from what is in
+  chrome.storage.local, so closing the popup and opening it again picks up
+  where it was. Narrow for the short steps, wide (Chrome's popup limit is
+  800 x 600) while fields are placed and recipients added. No remote code,
+  fonts or images: pdf.js is bundled in vendor/.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Salsox Signing</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="narrow">
+    <header class="top">
+      <img src="icons/icon-32.png" alt="" width="24" height="24" />
+      <div class="brand">
+        <h1>Salsox Signing</h1>
+        <p id="who" class="sub">Send a PDF for signature</p>
+      </div>
+      <button id="disconnect" class="link" type="button" hidden>Disconnect</button>
+    </header>
+
+    <main>
+      <!-- Not connected -->
+      <section id="connect" class="panel" hidden>
+        <h2>Sign in with your Salsox account</h2>
+        <p class="hint">A Salsox window opens. If you're signed in to Salsox in this browser, confirm there and you're done.</p>
+        <button id="connect-btn" class="primary wide-btn" type="button">Connect to Salsox</button>
+        <p class="hint small">No account? <a id="signup-link" href="#">Create one on salsox.com</a>, then come back.</p>
+      </section>
+
+      <!-- Connected, no draft -->
+      <section id="upload" hidden>
+        <p id="allowance" class="allowance"></p>
+        <div id="upload-upgrade" class="upgrade" hidden role="alert"></div>
+        <label id="drop" class="drop" for="file">
+          <input id="file" type="file" accept="application/pdf,.pdf" />
+          <span class="drop-title">Choose a PDF</span>
+          <span class="drop-sub">or drop it here. Up to 4 MB.</span>
+        </label>
+      </section>
+
+      <!-- Placing fields -->
+      <section id="place" hidden>
+        <div class="toolbar">
+          <div class="tools" role="radiogroup" aria-label="Field to place">
+            <button class="tool" type="button" role="radio" data-type="SIGNATURE">Signature</button>
+            <button class="tool" type="button" role="radio" data-type="DATE">Date</button>
+            <button class="tool" type="button" role="radio" data-type="TEXT">Text</button>
+          </div>
+          <div id="signers" class="signers" aria-label="Signer the next field is for"></div>
+          <div class="pager">
+            <button id="prev" class="ghost icon" type="button" aria-label="Previous page">‹</button>
+            <span id="page-label">Page 1 of 1</span>
+            <button id="next" class="ghost icon" type="button" aria-label="Next page">›</button>
+          </div>
+        </div>
+        <div class="workspace">
+          <div id="viewer" class="viewer">
+            <div id="sheet" class="sheet">
+              <canvas id="canvas"></canvas>
+              <div id="layer" class="layer" aria-label="Page. Click to place the selected field."></div>
+            </div>
+          </div>
+          <aside class="side">
+            <div id="selected" class="selected" hidden>
+              <p class="label">Selected field</p>
+              <p id="sel-type" class="sel-type"></p>
+              <label class="label" for="sel-signer">For</label>
+              <select id="sel-signer"></select>
+              <div id="sel-label-wrap" hidden>
+                <label class="label" for="sel-label">Label for the signer</label>
+                <input id="sel-label" type="text" maxlength="80" placeholder="e.g. Job title" />
+              </div>
+              <button id="sel-delete" class="ghost danger" type="button">Delete field</button>
+            </div>
+            <div id="howto" class="howto">
+              <p class="label">How to place</p>
+              <p class="hint">Pick a field and a signer, then click the page where it goes. Drag a field to move it.</p>
+            </div>
+            <ul id="summary" class="summary"></ul>
+          </aside>
+        </div>
+        <div class="foot-actions">
+          <button id="restart" class="ghost" type="button">Start over</button>
+          <p id="place-hint" class="hint"></p>
+          <button id="to-recipients" class="primary" type="button">Add recipients</button>
+        </div>
+      </section>
+
+      <!-- Recipients and send -->
+      <section id="recipients" hidden>
+        <div class="columns">
+          <div class="col">
+            <p class="label">Who signs</p>
+            <ol id="people" class="people"></ol>
+          </div>
+          <div class="col">
+            <label class="label" for="title">Document title</label>
+            <input id="title" type="text" maxlength="140" />
+            <label class="label" for="message">Message <span class="muted">(optional)</span></label>
+            <textarea id="message" rows="3" maxlength="2000" placeholder="Shown in the email each signer gets."></textarea>
+            <label class="check"><input id="in-order" type="checkbox" /> <span>Sign in order, one after another</span></label>
+            <label class="check"><input id="pay" type="checkbox" /> <span>Collect a payment as they sign (Sign &amp; Pay)</span></label>
+            <div id="info" class="info" hidden></div>
+          </div>
+        </div>
+        <!-- Filled by popup.js (showUpgrade) with the reason and a link to the plans. -->
+        <div id="upgrade" class="upgrade" hidden role="alert"></div>
+        <div class="foot-actions">
+          <button id="back-to-place" class="ghost" type="button">Back to fields</button>
+          <p id="send-allowance" class="hint"></p>
+          <button id="send" class="primary" type="button">Send for signature</button>
+        </div>
+      </section>
+
+      <!-- Sending, sent, or refused -->
+      <section id="result" class="panel" hidden aria-live="polite">
+        <div id="sending" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="center">Sending…</p>
+        </div>
+        <div id="sent" hidden>
+          <h2>Sent for signature</h2>
+          <p id="sent-body" class="hint"></p>
+          <p id="sent-warn" class="warn" hidden></p>
+          <div class="row">
+            <button id="open-doc" class="primary" type="button">Open in Salsox</button>
+            <button id="another" class="ghost" type="button">Send another</button>
+          </div>
+        </div>
+        <div id="failed" hidden>
+          <h2>Not sent</h2>
+          <p id="failed-body" class="warn"></p>
+          <div class="row">
+            <button id="failed-back" class="primary" type="button">Back to the document</button>
+          </div>
+        </div>
+      </section>
+
+      <p id="notice" class="notice" hidden role="status"></p>
+    </main>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

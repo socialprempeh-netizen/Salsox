@@ -53,7 +53,9 @@ describe("registry basics", () => {
   })
 })
 
-describe("validatePages catches", () => {
+// Each case validates every content page: quick alone, past the 5-second
+// default when the whole suite runs at once (see "passes every quality rule").
+describe("validatePages catches", { timeout: 30_000 }, () => {
   const base = getPages()[0]
   const clone = (over: Partial<SitePage>): SitePage => ({ ...base, ...over })
 

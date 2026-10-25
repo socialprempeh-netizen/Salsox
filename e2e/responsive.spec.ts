@@ -125,6 +125,9 @@ for (const width of WIDTHS) {
     await check("/dashboard/security", "security")
     // Webhooks and API keys (src/lib/webhooks).
     await check("/dashboard/developers", "developers")
+    // The Chrome extension's sign-in question (any extension id passes in
+    // development; elsewhere this shows the "not from the extension" card).
+    await check("/extension/connect?redirect_uri=https%3A%2F%2Fabcdefghijklmnopabcdefghijklmnop.chromiumapp.org%2Fconnected", "extension-connect")
     await check("/dashboard/settings", "settings")
     await check("/dashboard/settings/sessions", "devices")
 

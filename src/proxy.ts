@@ -53,6 +53,9 @@ const UNLOCALIZED = [
   "/invite/",
   // Affiliate links (/go/{code}, src/lib/affiliates.ts), for the same reason.
   "/go/",
+  // The browser extension's sign-in page (/extension/connect, in the (auth)
+  // group): opened by the extension at exactly that address.
+  "/extension/",
   // Root level metadata routes.
   "/sitemap.xml",
   "/robots.txt",
