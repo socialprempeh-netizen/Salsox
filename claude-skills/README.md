@@ -21,6 +21,10 @@ From a clone of this repository, or once it is published on GitHub:
 
 `node scripts/package-orphan-scanner-skill.mjs` writes `dist/orphan-page-scanner-skill.zip`, the skill folder with `SKILL.md` at its root, for **Settings > Capabilities > Skills > Upload**.
 
+On claude.ai the script runs in Claude's code-execution sandbox, so code execution must be on, and the sandbox's network access must reach the site being scanned. A setting that allows only package registries will make every page "did not load". Check the network option under the same Capabilities settings before testing; in Claude Code the script runs on your own machine and has no such limit.
+
+Checked on 2026-10-25: the zip unpacks to `orphan-page-scanner/` with `SKILL.md` (valid name, 324-character description), `scripts/find-orphans.mjs`, `scripts/scan.js` (byte-identical to the extension's `lib/scan.js`), `scripts/package.json` and `LICENSE`. Its script, run from the unpacked zip, scanned salsox.com.
+
 ### Submitting to a marketplace
 
 Submission is manual. What a listing needs is in `orphan-page-scanner/LISTING.md`.

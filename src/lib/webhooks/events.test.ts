@@ -1,6 +1,6 @@
 /** Tests for the webhook event list and its mapping from engine events (events.ts). */
 import { describe, expect, it } from "vitest"
-import { isWebhookEvent, normalizeEvents, webhookEventFor, WEBHOOK_EVENTS } from "./events"
+import { auditTypesFor, isWebhookEvent, normalizeEvents, webhookEventFor, WEBHOOK_EVENTS } from "./events"
 
 describe("webhook events", () => {
   it("are the seven public events", () => {
@@ -23,5 +23,14 @@ describe("webhook events", () => {
     expect(normalizeEvents(["payment.sent", "document.sent", "nope", "document.sent"])).toEqual(["document.sent", "payment.sent"])
     expect(isWebhookEvent("document.viewed")).toBe(true)
     expect(isWebhookEvent("document.deleted")).toBe(false)
+  })
+
+  it("map back to the audit events they come from, for recent-event lookups", () => {
+    for (const event of WEBHOOK_EVENTS) {
+      const types = auditTypesFor(event)
+      expect(types.length).toBeGreaterThan(0)
+      for (const t of types) expect(webhookEventFor(t)).toBe(event)
+    }
+    expect(auditTypesFor("payment.sent")).toEqual(["PAYMENT_RECEIVED"])
   })
 })

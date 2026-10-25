@@ -82,10 +82,12 @@ describe("the real content", () => {
     )
   })
 
+  // Reads and checks every content page from disk: under a second on its
+  // own, but past the 5-second default when the whole suite runs at once.
   it("passes every quality rule", () => {
     const problems = validatePages(loadAllPages(), knownPaths())
     expect(problems, problems.join("\n")).toEqual([])
-  })
+  }, 30_000)
 
   it("fills in the product name everywhere", () => {
     for (const p of getPages()) expect(`${p.title}${p.description}${p.h1}${p.body}${JSON.stringify(p.faq)}`).not.toContain("{site}")

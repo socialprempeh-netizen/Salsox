@@ -77,8 +77,18 @@ export async function recordAudit(
   // Outside a transaction the event is final, so the account's webhooks for
   // it (src/lib/webhooks) are queued now. Inside one it could still roll
   // back, so the caller queues after the commit (signing.ts, documents.ts).
-  // Queuing never throws, and only five event types are sent out at all.
-  if ("$transaction" in db && webhookEventFor(event.type)) {
+  // Queuing never throws, and only seven event types are sent out at all.
+  //
+  // Replaced: `"$transaction" in db` was meant to tell the client from a
+  // transaction, but Prisma 7's interactive transaction client has a
+  // `$transaction` too. A signature (recorded inside one) was then queued
+  // twice: once from inside the uncommitted transaction, read by another
+  // connection as still NOT_SIGNED, and again by signing.ts after the commit.
+  // Found by e2e/webhooks-api.spec.ts. Outside a transaction now means the
+  // app's own client was passed, which every non-transactional caller does.
+  // if ("$transaction" in db && webhookEventFor(event.type)) {
+  const { prisma } = await import("@/lib/prisma")
+  if (db === prisma && webhookEventFor(event.type)) {
     const { queueWebhookEvent } = await import("@/lib/webhooks/store")
     await queueWebhookEvent({ documentId: event.documentId, auditType: event.type, recipientId: event.recipientId })
   }

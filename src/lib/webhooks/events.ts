@@ -38,6 +38,11 @@ export function webhookEventFor(auditType: string): WebhookEvent | null {
   return FROM_AUDIT[auditType] ?? null
 }
 
+/** The engine audit events a webhook event comes from: the reverse of webhookEventFor. */
+export function auditTypesFor(event: WebhookEvent): string[] {
+  return Object.entries(FROM_AUDIT).filter(([, e]) => e === event).map(([audit]) => audit)
+}
+
 export function isWebhookEvent(value: unknown): value is WebhookEvent {
   return (WEBHOOK_EVENTS as readonly string[]).includes(value as string)
 }

@@ -119,6 +119,7 @@ Integrations subscribe to events, send documents and find them with an **API key
 | `POST /api/v1/webhooks` | Subscribes: `{ "url": "https://…", "events": ["document.completed"] }` (or `target_url` and `event`). Returns `id`, `url`, `events` and the `secret`, once. |
 | `DELETE /api/v1/webhooks/{id}` | Unsubscribes. |
 | `GET /api/v1/webhooks/sample?event=document.completed` | A sample payload for an event, as a one-item list. |
+| `GET /api/v1/events?event=document.completed&limit=3` | Your latest real events of that kind, newest first, each exactly as a webhook carries it (up to 25). An empty list when none has happened yet. |
 | `POST /api/v1/documents` | Creates a document and sends it for signing. |
 | `GET /api/v1/documents` | Finds documents, newest first. |
 | `GET /api/v1/documents/{id}` | One document. |

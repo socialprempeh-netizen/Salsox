@@ -16,8 +16,8 @@ import { randomBytes } from "node:crypto"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
-import { normalizeEvents, webhookEventFor, type WebhookEvent } from "./events"
-import { buildPayload, samplePayload } from "./payload"
+import { auditTypesFor, normalizeEvents, webhookEventFor, type WebhookEvent } from "./events"
+import { buildPayload, samplePayload, type WebhookPayload } from "./payload"
 import { isSuccess, nextAttemptAt } from "./retry"
 import { newWebhookSecret, openSecret, sealSecret } from "./secret-box"
 import { checkWebhookUrl, type UrlProblem } from "./url-safety"
@@ -145,6 +145,60 @@ export async function queueWebhookEvent(input: { documentId: string; auditType: 
     console.warn("[webhooks] event not queued", error)
     return []
   }
+}
+
+/** Most events an integration may ask for at once (GET /api/v1/events). */
+export const RECENT_EVENTS_MAX = 25
+
+/**
+ * The account's latest real events of one kind, newest first, as webhook
+ * payloads. Integration platforms ask for these while someone builds a
+ * workflow (Zapier's "perform list" for an instant trigger) so the test step
+ * shows the user's own data rather than a sample.
+ *
+ * Rebuilt from the audit trail, the same source webhooks come from, with the
+ * same builder. Two differences from a delivery: the `id` is derived from the
+ * audit row (`evt_a_<id>`), so the same event has the same id on every call,
+ * and the document is shown as it stands now, not as it stood at the event.
+ */
+export async function recentEvents(userId: string, event: WebhookEvent, limit = 3): Promise<WebhookPayload[]> {
+  const auditTypes = auditTypesFor(event)
+  const rows = await prisma.auditEvent.findMany({
+    where: { type: { in: auditTypes }, document: { userId } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: Math.min(Math.max(limit, 1), RECENT_EVENTS_MAX),
+    select: {
+      id: true,
+      createdAt: true,
+      recipientId: true,
+      document: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          createdAt: true,
+          sentAt: true,
+          completedAt: true,
+          pageCount: true,
+          signingOrder: true,
+          recipients: { select: { id: true, name: true, email: true, role: true, order: true, signingStatus: true, viewedAt: true, signedAt: true, rejectionReason: true } },
+        },
+      },
+    },
+  })
+  const out: WebhookPayload[] = []
+  for (const row of rows) {
+    const payment =
+      event === "payment.sent"
+        ? await prisma.payment.findFirst({
+            where: { documentId: row.document.id, status: "PAID", ...(row.recipientId ? { recipientId: row.recipientId } : {}), paidAt: { lte: new Date(row.createdAt.getTime() + 60_000) } },
+            orderBy: { paidAt: "desc" },
+            select: { id: true, amount: true, currency: true, status: true, provider: true, paidAt: true },
+          })
+        : null
+    out.push(buildPayload({ id: `evt_a_${row.id}`, event, at: row.createdAt, appUrl: siteConfig.url, document: row.document, recipientId: row.recipientId, payment }))
+  }
+  return out
 }
 
 /**

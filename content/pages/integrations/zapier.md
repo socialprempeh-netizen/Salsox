@@ -25,7 +25,7 @@ Zapier connects apps through triggers ("a new row was added") and actions ("send
 
 ## What you can automate today
 
-Every {site} account can add webhook endpoints under Dashboard → Developers. Each one receives a signed JSON message when a document is sent, first viewed, signed by a recipient or completed by everyone, and when a signer pays through Sign & Pay. Point one at a Zapier Catch Hook and each of those moments can start a Zap, with the document's title, every signer's name and status, and a link to the document as fields to map.
+Every {site} account can add webhook endpoints under Dashboard → Developers. Each one receives a signed JSON message when a document is sent, first viewed, signed by a recipient, declined, expired or completed by everyone, and when a signer pays through Sign & Pay. Point one at a Zapier Catch Hook and each of those moments can start a Zap, with the document's title, every signer's name and status, and a link to the document as fields to map.
 
 ## Building the Zap
 

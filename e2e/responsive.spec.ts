@@ -91,6 +91,8 @@ for (const width of WIDTHS) {
       "/resources/help/webhooks-and-api",
       // Its no-code companion, with a JSON request block that must not push the page sideways.
       "/resources/help/connect-zapier-or-make",
+      // The privacy URL the Chrome Web Store listing points at.
+      "/resources/help/orphan-page-scanner-privacy",
     ]) {
       await check(path, path.slice(1).replaceAll("/", "-"))
     }

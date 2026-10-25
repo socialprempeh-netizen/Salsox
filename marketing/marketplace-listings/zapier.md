@@ -1,11 +1,31 @@
 # Zapier App Directory: listing draft
 
-**Status: draft, everything on the Salsox side exists; not submitted (updated 2026-10-25).** Zapier publishes only integrations built on its Developer Platform that pass review. The Salsox side is complete for a full first version: API-key authentication, REST-hook subscribe and unsubscribe endpoints with sample data for each trigger, webhooks for seven document events, and since the second update on 2026-10-25 an API to send documents and to find them, so the actions and the search below can be built too, not only triggers. Still to do: build the integration in the Zapier Developer Platform, test it privately with real users, and capture the screenshots.
+**Status: draft, everything on the Salsox side exists; not submitted (updated 2026-10-25).** Zapier publishes only integrations built on its Developer Platform that pass review. The Salsox side is complete for a full first version: API-key authentication, REST-hook subscribe and unsubscribe endpoints with sample data for each trigger, webhooks for seven document events, and since the second update on 2026-10-25 an API to send documents and to find them, so the actions and the search below can be built too, not only triggers. Still to do: build the integration in the Zapier Developer Platform, test it privately with real users, and capture the screenshots. See "Ready to submit?" below.
+
+## Ready to submit? (checked 2026-10-25)
+
+**Not as-is.** Zapier reviews an integration built on its own platform; this file is the plan for that build, not something Zapier accepts by itself. What is done and what is not:
+
+| | State |
+|---|---|
+| API-key auth, `GET /api/v1/me` for the connection test and label | Done, live |
+| REST-hook subscribe / unsubscribe (`target_url` + `event`, `DELETE` by id) | Done, live |
+| Seven trigger events, signed, retried, logged | Done, live; verified end to end (below) |
+| Perform list with the user's real recent events | Done (`GET /api/v1/events`), live with the commit that adds it |
+| Actions (send PDF, send template) and search (find document) | Done on the Salsox side, live |
+| The integration itself on the Zapier Developer Platform | **Not started.** Define auth, the seven triggers, two actions and one search from the sections below, in the Platform UI or with the Zapier CLI |
+| Private testing with real accounts | **Not done.** Invite a few customers to the private integration and keep their Zaps running; check Zapier's current requirement for live users before requesting publication |
+| Screenshots, Zap templates, a reviewer test account | **Not done.** Lists below |
+| Public setup guide | `/integrations/zapier` exists but describes the webhook route; rewrite it when the integration is approved (see the last section) |
+
+A triggers-only first version is possible and is the fastest route: everything it needs is live. The actions and search can follow as an update.
+
+**Verified end to end on 2026-10-25** (`e2e/webhooks-api.spec.ts`, against Postgres with a real receiver): an API key made on the Developers page; a REST-hook subscription for five events; two documents sent through `POST /api/v1/documents`; a real signer viewed and signed one on a phone, another declined the other. Exactly seven deliveries arrived (sent twice, viewed twice, signed, completed, declined), each about the right document and recipient, each with a unique id and a signature that checks out under the published algorithm. `GET /api/v1/events` returned the same history. That run found and fixed a bug that would have hurt a Zap: one signature sent **two** `document.signed` webhooks, the first with the signer still unsigned (`src/lib/esign/audit.ts`). `document.expired` and `payment.sent` come from the same builder and are covered by unit tests, not by that run.
 
 ## What the platform provides (for the Zapier build)
 
 - **Authentication:** API key. Zapier's "API Key" auth with the key sent as `Authorization: Bearer {{bundle.authData.api_key}}`. Test request: `GET /api/v1/me`, whose `email` makes a good connection label.
-- **Triggers (REST hooks):** subscribe with `POST /api/v1/webhooks` and body `{ "target_url": "{{bundle.targetUrl}}", "event": "document.completed" }`, store the returned `id`; unsubscribe with `DELETE /api/v1/webhooks/{{bundle.subscribeData.id}}`; "perform list" (sample data) with `GET /api/v1/webhooks/sample?event=document.completed`.
+- **Triggers (REST hooks):** subscribe with `POST /api/v1/webhooks` and body `{ "target_url": "{{bundle.targetUrl}}", "event": "document.completed" }`, store the returned `id`; unsubscribe with `DELETE /api/v1/webhooks/{{bundle.subscribeData.id}}`; "perform list" with `GET /api/v1/events?event=document.completed&limit=3`, which returns the account's latest real events of that kind in exactly the shape a webhook delivers (Zapier asks that a trigger's test step show the user's own data), and when it returns `[]` (a new account), fall back to `GET /api/v1/webhooks/sample?event=document.completed`, a sample marked `"test": true`. Every item has a unique `id`, which Zapier uses to de-duplicate.
 - **Actions:** `POST /api/v1/documents` with a JSON body (see the action table below for the input fields each one maps). Answers `201` with the document; a refusal is `{ "error": { "code", "message" } }`, which the integration should raise as a Zapier error with the message, since it is written for the person (for example "Confirm your email address before sending").
 - **Dynamic dropdown for templates:** `GET /api/v1/templates` returns `data` (library templates: `slug`, `title`, `roles`, `variables`) and `saved` (the account's saved templates: `id`, `name`, `template`). Use it for the Template field, and its `roles` and `variables` for dynamic input fields (one email and name per role that is not `sender`, one text field per variable).
 - **Search:** `GET /api/v1/documents?title=&recipient=&status=&limit=1`, returning `{ data: [...] }`; a document is the webhook's `data.document` with its `recipients`, so trigger and search outputs map the same way. `GET /api/v1/documents/{id}` for a lookup by id.

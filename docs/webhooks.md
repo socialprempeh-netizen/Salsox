@@ -25,7 +25,7 @@ Each account can send its document events to other software as signed JSON, and 
 
 `document.sent`, `document.viewed`, `document.signed`, `document.completed`, `payment.sent`, `document.declined` and `document.expired`. Each is an audit event the signing engine already records once per occurrence (`src/lib/esign/audit.ts`), so webhooks need no de-duplication of their own.
 
-`recordAudit` queues the webhook straight after writing the audit row when it runs outside a transaction. Inside one (a signature, a completion) the event could still roll back, so the caller queues after the commit (`signing.ts`, `documents.ts`). Queuing never throws: a webhook problem must not stop a signature. A crash in the instant between the commit and the queue would lose that one webhook; the delivery log would simply not show it.
+`recordAudit` queues the webhook straight after writing the audit row when it is given the app's own client (`prisma`), that is outside a transaction. (It used to test for a `$transaction` method, which Prisma 7's transaction client also has, so a signature was queued twice.) Inside one (a signature, a completion) the event could still roll back, so the caller queues after the commit (`signing.ts`, `documents.ts`). Queuing never throws: a webhook problem must not stop a signature. A crash in the instant between the commit and the queue would lose that one webhook; the delivery log would simply not show it.
 
 ## Delivery
 
@@ -50,6 +50,7 @@ Authenticated with `Authorization: Bearer ak_…`, 120 requests a minute per key
 | `GET /api/v1/me` | The key's account: integrations call it to test a key. |
 | `GET`, `POST /api/v1/webhooks`, `DELETE /api/v1/webhooks/{id}` | Subscriptions, in the REST-hook pattern Zapier and Make use for instant triggers. |
 | `GET /api/v1/webhooks/sample?event=` | A sample payload for an event. |
+| `GET /api/v1/events?event=&limit=` | The account's latest real events of one kind (up to 25), rebuilt from the audit trail by `recentEvents` in `store.ts`, in the payload shape. Zapier's "perform list" uses it, falling back to the sample when it is empty. Ids are `evt_a_<audit id>`, stable across calls; the document is shown as it stands now. |
 | `POST /api/v1/documents` | Creates and sends a document, from a PDF or a template. |
 | `GET /api/v1/documents` | Finds documents: `status`, `recipient`, `title`, `created_after`, `created_before`, `limit` (up to 100), `cursor`. |
 | `GET /api/v1/documents/{id}` | One document. |

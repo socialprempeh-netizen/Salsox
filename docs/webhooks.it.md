@@ -2,7 +2,7 @@
 title: Webhook e API
 description: Inviare gli eventi dei documenti ad altri software, chiavi API per le integrazioni, e come le consegne restano sicure.
 translated_from: webhooks.md
-source_checksum: 4ef6211e8e03
+source_checksum: a71e28a8a49b
 ---
 
 # Webhook e API
@@ -32,7 +32,7 @@ Ogni account può inviare gli eventi dei propri documenti ad altri software come
 
 `document.sent`, `document.viewed`, `document.signed`, `document.completed`, `payment.sent`, `document.declined` e `document.expired`. Ognuno è un evento di audit che il motore di firma registra già una volta per occorrenza (`src/lib/esign/audit.ts`), quindi i webhook non devono eliminare duplicati.
 
-`recordAudit` mette in coda il webhook subito dopo la riga di audit quando lavora fuori da una transazione. Dentro una transazione (una firma, un completamento) l'evento potrebbe ancora essere annullato, quindi è il chiamante a metterlo in coda dopo il commit (`signing.ts`, `documents.ts`). La coda non lancia mai eccezioni: un problema di webhook non deve fermare una firma. Un crash nell'istante tra il commit e la coda perderebbe quel solo webhook.
+`recordAudit` mette in coda il webhook subito dopo la riga di audit quando riceve il client dell'app (`prisma`), cioè fuori da una transazione. (Prima controllava la presenza di un metodo `$transaction`, che anche il client di transazione di Prisma 7 ha, quindi una firma veniva messa in coda due volte.) Dentro una transazione (una firma, un completamento) l'evento potrebbe ancora essere annullato, quindi è il chiamante a metterlo in coda dopo il commit (`signing.ts`, `documents.ts`). La coda non lancia mai eccezioni: un problema di webhook non deve fermare una firma. Un crash nell'istante tra il commit e la coda perderebbe quel solo webhook.
 
 ## Consegna
 
@@ -57,6 +57,7 @@ Autenticazione con `Authorization: Bearer ak_…`, 120 richieste al minuto per c
 | `GET /api/v1/me` | L'account della chiave: le integrazioni la chiamano per provare una chiave. |
 | `GET`, `POST /api/v1/webhooks`, `DELETE /api/v1/webhooks/{id}` | Iscrizioni, nello schema "REST hook" che Zapier e Make usano per i trigger istantanei. |
 | `GET /api/v1/webhooks/sample?event=` | Un payload di esempio per un evento. |
+| `GET /api/v1/events?event=&limit=` | Gli ultimi eventi reali di un tipo dell'account (fino a 25), ricostruiti dall'audit trail da `recentEvents` in `store.ts`, nella forma del payload. Il "perform list" di Zapier lo usa, e ripiega sull'esempio quando è vuoto. Gli id sono `evt_a_<id dell'audit>`, stabili tra una chiamata e l'altra; il documento è mostrato com'è adesso. |
 | `POST /api/v1/documents` | Crea e invia un documento, da un PDF o da un modello. |
 | `GET /api/v1/documents` | Cerca documenti: `status`, `recipient`, `title`, `created_after`, `created_before`, `limit` (fino a 100), `cursor`. |
 | `GET /api/v1/documents/{id}` | Un documento. |
