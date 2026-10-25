@@ -1,6 +1,8 @@
 import { ClientMessagesProvider } from "@/i18n/client-provider"
 import { getAdminAccess, getCurrentUser } from "@/lib/auth"
 import { ADMIN_ENROLL_PATH, ADMIN_VERIFY_PATH } from "@/lib/two-factor-policy"
+import { getSecurityPolicy } from "@/lib/security-settings"
+import { IdleSignOut } from "@/components/auth/idle-sign-out"
 import { getTranslations } from "next-intl/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
@@ -23,11 +25,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (access === "enroll") redirect(ADMIN_ENROLL_PATH)
   if (access === "verify") redirect(ADMIN_VERIFY_PATH)
   if (access !== "ok") redirect("/dashboard")
+  const policy = await getSecurityPolicy()
 
   // Client components here get only the "app" messages (src/i18n/client-messages.ts).
   return (
     <ClientMessagesProvider area="app">
     <div className="flex min-h-screen bg-muted/20">
+      {/* Inactivity sign-out, when an admin has set one (/admin/security). */}
+      {policy.sessionTimeoutMinutes !== null && <IdleSignOut minutes={policy.sessionTimeoutMinutes} />}
       <aside className="sticky top-0 hidden h-screen w-60 flex-col border-r border-border bg-background transition-[width] duration-200 md:flex sidebar-collapsed:w-16">
         <div className="flex h-16 items-center border-b border-border px-5 sidebar-collapsed:justify-center sidebar-collapsed:px-0">
           <Link href="/" className="flex items-center gap-2 font-bold text-foreground">

@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ProfileForm } from "@/components/dashboard/profile-form"
 import { DeleteAccount } from "@/components/dashboard/delete-account"
-import { TwoFactorCard } from "@/components/settings/two-factor-card"
+// Moved to the Security page (src/components/settings/security-methods.tsx).
+// import { TwoFactorCard } from "@/components/settings/two-factor-card"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 // The full list moved to its own page (/dashboard/settings/sessions); this
 // card now shows a summary that links there.
 // import { ActiveSessions } from "@/components/settings/active-sessions"
@@ -241,7 +244,10 @@ export async function SettingsView({
 
       {/* Between the sign-in methods and the account facts, because that is
           where someone looking for it looks: it belongs to how you get in. */}
-      {/* Anchored: the admin area and the payout suggestion link straight here. */}
+      {/* Replaced: two-factor setup moved to its own Security page
+          (/dashboard/security), in the sidebar, with passkeys beside it, so it
+          is one click from anywhere instead of halfway down Settings. This card
+          now points there. Was:
       <Card id="two-factor" className="scroll-mt-20">
         <CardHeader>
           <CardTitle>{t("twoFactor.title")}</CardTitle>
@@ -253,6 +259,19 @@ export async function SettingsView({
             hasPassword={hasPassword}
             isDemo={process.env.DEMO_MODE === "true"}
           />
+        </CardContent>
+      </Card>
+      */}
+      <Card id="two-factor" className="scroll-mt-20">
+        <CardHeader>
+          <CardTitle>{t("twoFactor.title")}</CardTitle>
+          <CardDescription>{t("securityMoved")}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <Badge variant={user.twoFactorEnabled ? "secondary" : "outline"}>{user.twoFactorEnabled ? t("twoFactor.on") : t("securityOff")}</Badge>
+          <Button asChild size="sm" className="rounded-none">
+            <Link href="/dashboard/security">{t("securityOpen")}</Link>
+          </Button>
         </CardContent>
       </Card>
 

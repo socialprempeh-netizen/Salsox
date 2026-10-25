@@ -10,6 +10,8 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { BACKUP_CODE_LENGTH, normalizeBackupCode } from "@/lib/backup-codes"
 import { ADMIN_ENROLL_PATH } from "@/lib/two-factor-policy"
 import { sessionTokenFromSetCookie } from "@/lib/auth/session-cookie"
+import { canEnroll } from "@/lib/security-policy"
+import { getSecurityPolicy } from "@/lib/security-settings"
 
 /**
  * Two-factor authentication, from the settings page.
@@ -26,7 +28,8 @@ import { sessionTokenFromSetCookie } from "@/lib/auth/session-cookie"
  * the difference between a feature and a lock-out.
  */
 
-const SETTINGS = "/dashboard/settings"
+// Was "/dashboard/settings": 2FA and passkeys moved to their own Security page.
+const SETTINGS = "/dashboard/security"
 
 export type SetupState = {
   error?: string
@@ -78,6 +81,11 @@ export async function startTwoFactorSetup(
   // night. A second factor set up here would outlive the reset for nobody and
   // lock the next visitor out of the showcase.
   if (process.env.DEMO_MODE === "true") return { error: "demo" }
+
+  // The admin's policy (src/lib/security-policy.ts). The Better Auth gate
+  // refuses the same call; asking first gives the right message instead of
+  // "wrong password", which is how any refusal below would read.
+  if (!canEnroll(await getSecurityPolicy(), "totp", currentUser.role)) return { error: "disabled" }
 
   const password = String(formData.get("password") ?? "")
   if (!password) return { error: "password" }

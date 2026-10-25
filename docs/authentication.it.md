@@ -105,11 +105,29 @@ Sono generati in maiuscolo e senza `0`, `O`, `1` e `I` (`src/lib/backup-codes.ts
 
 Per gli amministratori la verifica in due passaggi è obbligatoria, e viene controllata due volte: l'account deve averla attivata, e la sessione in uso deve aver superato un codice. La regola è `adminAccess` in `src/lib/two-factor-policy.ts`; il layout dell'area admin, le server action e le route API admin passano tutte da `getAdminUser()` / `getAdminAccess()` in `src/lib/auth`.
 
-- **Un amministratore senza 2FA** viene mandato da `/admin` alle Impostazioni per attivarla. Completare la configurazione vale come codice superato, quindi dopo entra direttamente.
+- **Un amministratore senza 2FA** viene mandato da `/admin` alla pagina Sicurezza per attivare l'app di autenticazione o una passkey. Completare la configurazione vale come codice superato, quindi dopo entra direttamente.
 - **Un amministratore la cui sessione non ha mai visto il codice**, di solito dopo "Continua con Google" su un account collegato (che salta il secondo fattore, vedi [Collegare più account](#collegare-più-account)), viene mandato a `/dashboard/admin-verify` per inserirne uno, o un codice di backup.
 - Ogni sessione registra quando ha superato un codice (`Session.twoFactorVerifiedAt`): il passaggio di accesso, un codice di backup, la fine della configurazione o il controllo admin. Il controllo admin è limitato a 10 tentativi ogni 15 minuti e 30 al giorno per amministratore, perché il blocco della libreria conta solo i tentativi di accesso.
 
 Per tutti gli altri la 2FA resta facoltativa. Chi ha un account di pagamento Stripe o Paystack vede un suggerimento, una volta sola, per attivarla, nella dashboard e nella pagina dei pagamenti, finché non la attiva o lo chiude. Le Impostazioni admin mostrano quanti amministratori ne sono privi e quanti utenti la usano.
+
+### Passkey
+
+Una passkey (WebAuthn) è il secondo metodo, accanto all'app di autenticazione e non al suo posto: impronta, volto, PIN del dispositivo o chiave di sicurezza. Si aggiungono nella pagina **Sicurezza** (`/dashboard/security`, nella barra laterale, dove ora si attiva anche l'app di autenticazione) e si usano dalla pagina di accesso ("Accedi con una passkey"). La cerimonia la fa il plugin `@better-auth/passkey` di Better Auth; si salva solo la chiave pubblica (tabella `Passkey`).
+
+- Una passkey vale da sola come secondo fattore: ciascuno dei due metodi soddisfa la regola per gli amministratori, l'obbligo e il suggerimento per i pagamenti (`hasSecondFactor` in `src/lib/two-factor-policy.ts`). Un accesso con passkey, o l'aggiunta di una passkey, segna la sessione come verificata (`src/lib/auth/security-gate.ts`), quindi un amministratore entrato con una passkey va diretto nell'area admin, e anche il controllo admin la accetta.
+- Il relying party è il dominio principale di `NEXT_PUBLIC_APP_URL` (senza `www.`), e le origini ammesse sono quelle di cui Better Auth si fida. Le passkey create su un dominio non funzionano su un altro: imposta l'URL di produzione prima che le persone le aggiungano.
+
+### La politica di accesso (/admin/security)
+
+Gli amministratori la impostano in **Admin → Sicurezza**, salvata in una riga (`SecuritySettings`) con le regole in `src/lib/security-policy.ts`:
+
+- **Verifica in due passaggi**: offerta o no agli utenti. Spenta, gli utenti non possono attivare un metodo e l'obbligo è spento; chi ne ha già uno lo conserva. Gli amministratori ne hanno bisogno comunque.
+- **Metodi di autenticazione**: app di autenticazione e passkey, ciascuno attivabile o no per le nuove configurazioni. L'ultimo acceso resta bloccato acceso. Spegnere le passkey spegne anche l'accesso con passkey, quindi finché sono spente una passkey non conta per la regola degli amministratori; per questo non si possono spegnere finché un amministratore accede solo con una passkey.
+- **Obbligo per tutti gli utenti**: spento di default. Acceso, un utente senza metodo vede la schermata di configurazione al posto della dashboard finché non ne aggiunge uno. Chi non potrebbe attivare nessuno dei due (senza password, passkey spente) non viene bloccato.
+- **Timeout di sessione**: disconnessione dopo un periodo senza attività, da 15 minuti a 8 ore, con un avviso un minuto prima. Funziona nel browser, su tutte le schede; la scadenza della sessione copre un computer chiuso o in sospensione.
+
+Il controllo in Better Auth rifiuta l'attivazione di un metodo spento e l'accesso con passkey mentre sono spente, quindi le impostazioni valgono anche per le chiamate dirette all'API, non solo nelle pagine.
 
 ### Se sono spariti sia il telefono sia i codici
 

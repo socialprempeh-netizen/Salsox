@@ -28,4 +28,5 @@ export const MIGRATIONS = [
   "20261024130000_affiliates",
   "20261024140000_affiliate_commissions",
   "20261025120000_two_factor_sessions",
+  "20261025140000_passkeys_security_settings",
 ] as const

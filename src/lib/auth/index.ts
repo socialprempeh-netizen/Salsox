@@ -5,7 +5,8 @@ import type { Role } from "@prisma/client"
 
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { adminAccess, isTwoFactorEnrolled, type AdminAccess } from "@/lib/two-factor-policy"
+import { getSecurityPolicy } from "@/lib/security-settings"
+import { adminAccess, hasSecondFactor, isTwoFactorEnrolled, type AdminAccess } from "@/lib/two-factor-policy"
 
 /**
  * The boundary between this application and whatever library handles
@@ -89,10 +90,15 @@ export const getAdminAccess = cache(async (): Promise<AdminAccess> => {
   if (!session?.session?.id) return "not-admin"
   const row = await prisma.session.findUnique({
     where: { id: session.session.id },
-    select: { twoFactorVerifiedAt: true, user: { select: { role: true, twoFactorEnabled: true, twoFactor: { select: { verified: true } } } } },
+    select: { twoFactorVerifiedAt: true, user: { select: { role: true, twoFactorEnabled: true, twoFactor: { select: { verified: true } }, _count: { select: { passkeys: true } } } } },
   })
   if (!row) return "not-admin"
-  return adminAccess({ role: row.user.role, enrolled: isTwoFactorEnrolled(row.user), sessionVerified: row.twoFactorVerifiedAt !== null })
+  // Enrolled is either method: the authenticator app or a passkey, the latter
+  // only while passkeys are on (an admin cannot sign in with one otherwise,
+  // and would be stuck at a check they cannot pass).
+  const { passkeyEnabled } = await getSecurityPolicy()
+  const enrolled = hasSecondFactor({ totp: isTwoFactorEnrolled(row.user), passkeys: passkeyEnabled ? row.user._count.passkeys : 0 })
+  return adminAccess({ role: row.user.role, enrolled, sessionVerified: row.twoFactorVerifiedAt !== null })
 })
 
 /**

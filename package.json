@@ -27,6 +27,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
+    "@better-auth/core": "^1.7.5",
+    "@better-auth/passkey": "^1.7.5",
     "@better-auth/prisma-adapter": "^1.7.5",
     "@hookform/resolvers": "^5.9.1",
     "@prisma/adapter-pg": "^7.10.0",

@@ -4,7 +4,7 @@
  * A one-time suggestion to turn on 2FA, for people who can receive money
  * through a Stripe or Paystack payout account (the rule is in
  * src/lib/two-factor-policy.ts). A suggestion, not a gate: it links to the
- * setup in Settings and can be dismissed for good, which is stored on the
+ * setup on the Security page and can be dismissed for good, which is stored on the
  * account (dismissTwoFactorNudge), so it does not come back on another device.
  *
  * Dismissing hides it at once, before the server answers; it leaves with a
@@ -48,7 +48,7 @@ export function TwoFactorNudge() {
               <p className="mt-0.5 text-sm text-muted-foreground">{t("body")}</p>
             </div>
             <Button asChild size="sm" className="w-full shrink-0 rounded-none sm:w-auto">
-              <Link href="/dashboard/settings#two-factor">{t("action")}</Link>
+              <Link href="/dashboard/security">{t("action")}</Link>
             </Button>
           </div>
           <button

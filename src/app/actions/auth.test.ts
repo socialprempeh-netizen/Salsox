@@ -214,7 +214,7 @@ describe("verifyTwoFactorBackupCode", () => {
    */
   it("lands in settings, with the code marked as spent", async () => {
     expect(await redirectOf(() => verifyTwoFactorBackupCode(form({ code: "abcd-efgh" })))).toBe(
-      "/dashboard/settings?ok=backup-used"
+      "/dashboard/security?ok=backup-used"
     )
     expect(markVerified).toHaveBeenCalledWith("session-backup")
   })

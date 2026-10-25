@@ -10,6 +10,7 @@ import { redirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { getAdminAccess, requireUser } from "@/lib/auth"
 import { ADMIN_ENROLL_PATH } from "@/lib/two-factor-policy"
+import { getSecurityPolicy } from "@/lib/security-settings"
 import { AdminVerifyForm } from "@/components/settings/admin-verify-form"
 
 export async function generateMetadata() {
@@ -26,7 +27,8 @@ export default async function AdminVerifyPage() {
 
   return (
     <div className="mx-auto max-w-md py-4 sm:py-10">
-      <AdminVerifyForm />
+      {/* A passkey is offered while passkeys are on (/admin/security). */}
+      <AdminVerifyForm passkey={(await getSecurityPolicy()).passkeyEnabled} />
     </div>
   )
 }

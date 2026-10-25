@@ -15,6 +15,8 @@ import { siteConfig } from "@/config/site"
 import { socialProvidersConfig } from "@/lib/oauth-providers"
 import { emailVerificationRequired } from "@/lib/email-verification-policy"
 import { betterAuthRateLimitStorage } from "@/lib/rate-limit"
+import { passkey } from "@better-auth/passkey"
+import { securityGate } from "@/lib/auth/security-gate"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixture sign-ins: dev and demo.
@@ -428,6 +430,18 @@ export const auth = betterAuth({
         customBackupCodesGenerate: generateBackupCodes,
       },
     }),
+    // Passkeys (WebAuthn): sign in with a fingerprint, face, PIN or security
+    // key, alongside the authenticator app, not instead of it. The relying
+    // party is the apex domain, so a passkey made on www works on the apex
+    // and the other way round; the origins are the same ones trusted above.
+    passkey({
+      rpID: new URL(siteConfig.url).hostname.replace(/^www\./, ""),
+      rpName: siteConfig.name,
+      origin: trustedOriginsFor(siteConfig.url),
+    }),
+    // The organisation's sign-in policy, set at /admin/security: which methods
+    // can be set up, and passkey sessions counted as a second factor.
+    securityGate(),
     ...(process.env.NODE_ENV === "development" ? [devLogin()] : []),
     ...(process.env.DEMO_MODE === "true" ? [demoLogin()] : []),
     // MUST stay last. Server actions cannot set cookies the way a route

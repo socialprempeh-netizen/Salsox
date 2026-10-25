@@ -10,6 +10,8 @@ import { PendingButton } from "@/components/auth/pending-button"
 import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
 import { configuredOAuthProviders, isOAuthProviderConfigured } from "@/lib/oauth-providers"
+import { getSecurityPolicy } from "@/lib/security-settings"
+import { PasskeySignIn } from "@/components/auth/passkey-sign-in"
 import * as Sentry from "@sentry/nextjs"
 import type { Metadata } from "next"
 
@@ -23,9 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; reset?: string }>
+  searchParams: Promise<{ error?: string; reset?: string; reason?: string }>
 }) {
-  const { error, reset } = await searchParams
+  const { error, reset, reason } = await searchParams
   const t = await getTranslations("auth.login")
   // `errors` covers our own action redirects (credentials, email, rate) plus
   // the library built-ins such as an expired magic link. The
@@ -52,6 +54,9 @@ export default async function LoginPage({
   const oauth = configuredOAuthProviders(process.env)
   const showGoogle = true
   const showGithub = isDemo || oauth.includes("github")
+  // Passkeys, while an admin has them on (/admin/security). Not on demo
+  // deployments, whose shared accounts no device should be bound to.
+  const showPasskey = !isDemo && (await getSecurityPolicy()).passkeyEnabled
 
   // Marketing deployments delegate sign-in to the demo deployment
   // (same place the navbar and footer already point).
@@ -71,6 +76,7 @@ export default async function LoginPage({
         </div>
 
         <div className="flex flex-col gap-3">
+          {showPasskey && <PasskeySignIn label={t("passkey")} failed={t("passkeyFailed")} cancelled={t("passkeyCancelled")} />}
           {showGoogle && (
             <form
               action={async () => {
@@ -191,6 +197,10 @@ export default async function LoginPage({
               <p className="mb-4 border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
                 {errorMessage}
               </p>
+            )}
+            {/* Signed out by the inactivity limit (src/components/auth/idle-sign-out.tsx). */}
+            {reason === "idle" && (
+              <p className="mb-4 border border-primary/30 bg-primary/10 px-4 py-2.5 text-center text-sm text-primary-hover">{t("idle")}</p>
             )}
             {reset === "1" && (
               <p className="mb-4 border border-primary/30 bg-primary/10 px-4 py-2.5 text-center text-sm text-primary-hover">

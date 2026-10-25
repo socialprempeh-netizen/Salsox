@@ -26,6 +26,7 @@ import {
   Repeat,
   LifeBuoy,
   KeyRound,
+  ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { sectionFor, type AdminSectionId } from "@/lib/admin/sections"
@@ -47,6 +48,8 @@ const menus = {
     // Affiliate program: links, clicks and signups (src/lib/affiliates.ts).
     { href: "/dashboard/affiliate", key: "affiliate", icon: Handshake },
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
+    // 2FA and passkeys: their own page, so setting them up is one click away.
+    { href: "/dashboard/security", key: "security", icon: ShieldCheck },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],
   // Replaced by the eight sections of src/lib/admin/sections.ts. These pages
@@ -70,6 +73,7 @@ const menus = {
     { href: "/admin/revenue", key: "revenue", icon: Banknote, section: "revenue" },
     { href: "/admin/subscriptions", key: "subscriptions", icon: Repeat, section: "subscriptions" },
     { href: "/admin/health", key: "health", icon: LifeBuoy, section: "health" },
+    { href: "/admin/security", key: "adminSecurity", icon: ShieldCheck, section: "security" },
     { href: "/admin/settings", key: "adminSettings", icon: KeyRound, section: "settings" },
   ],
 } satisfies Record<string, { href: string; key: string; icon: unknown; exact?: boolean; section?: AdminSectionId }[]>

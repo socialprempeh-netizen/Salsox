@@ -93,6 +93,7 @@ model User {
   accounts              Account[]
   sessions              Session[]
   twoFactor             TwoFactor[]
+  passkeys              Passkey[]
   subscription          Subscription?
   purchases             Purchase[]
   documents             Document[]
@@ -265,6 +266,50 @@ model TwoFactor {
 
   @@index([userId])
   @@index([secret])
+}
+
+// Passkeys (WebAuthn): a fingerprint, face, PIN or security key that signs
+// in on its own and counts as a second factor (src/lib/security-policy.ts).
+// Every column is Better Auth's passkey plugin's (@better-auth/passkey),
+// declared in its shape and read by these names. Only the public key is
+// stored; the private key never leaves the person's device.
+model Passkey {
+  id           String    @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  aaguid       String?
+  createdAt    DateTime? @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialID])
+}
+
+// The organisation's sign-in policy, one row (id 1), set by admins at
+// /admin/security and read through src/lib/security-settings.ts. The rules
+// that interpret it are in src/lib/security-policy.ts. Defaults are the
+// behaviour before this table existed: 2FA offered with both methods, not
+// enforced on users, no inactivity sign-out.
+model SecuritySettings {
+  id                    Int      @id @default(1)
+  // 2FA offered to users at all. Admins need it regardless.
+  twoFactorEnabled      Boolean  @default(true) @map("two_factor_enabled")
+  totpEnabled           Boolean  @default(true) @map("totp_enabled")
+  passkeyEnabled        Boolean  @default(true) @map("passkey_enabled")
+  // Every user must set up a method before using the dashboard. Off by default.
+  enforceTwoFactor      Boolean  @default(false) @map("enforce_two_factor")
+  // Sign out after this many minutes without activity; null is off.
+  sessionTimeoutMinutes Int?     @map("session_timeout_minutes")
+  updatedBy             String?  @map("updated_by")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("security_settings")
 }
 
 // Every short-lived token Better Auth issues: magic links, email verification

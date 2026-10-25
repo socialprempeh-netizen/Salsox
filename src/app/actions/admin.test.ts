@@ -18,6 +18,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
+vi.mock("@/lib/security-settings", () => ({ getSecurityPolicy: async () => ({ twoFactorEnabled: true, totpEnabled: true, passkeyEnabled: true, enforceTwoFactor: false, sessionTimeoutMinutes: null }) }))
 
 const { setUserRole } = await import("./admin")
 
@@ -25,7 +26,7 @@ const { setUserRole } = await import("./admin")
 // the admin actions accept since 2FA became mandatory for admins.
 const adminRow = (enrolled: boolean, verified: boolean) => ({
   twoFactorVerifiedAt: verified ? new Date() : null,
-  user: { role: "ADMIN", twoFactorEnabled: enrolled, twoFactor: enrolled ? [{ verified: true }] : [] },
+  user: { role: "ADMIN", twoFactorEnabled: enrolled, twoFactor: enrolled ? [{ verified: true }] : [], _count: { passkeys: 0 } },
 })
 const asAdmin = (enrolled = true, verified = true) => {
   session.mockResolvedValue({ user: { id: "admin-1", role: "ADMIN" }, session: { id: "s-1" } })

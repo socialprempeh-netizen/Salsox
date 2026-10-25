@@ -5,7 +5,7 @@
  * inputs. Used by the dashboard home and the payouts page.
  */
 import { prisma } from "@/lib/prisma"
-import { isTwoFactorEnrolled, showPayoutTwoFactorNudge } from "@/lib/two-factor-policy"
+import { hasSecondFactor, isTwoFactorEnrolled, showPayoutTwoFactorNudge } from "@/lib/two-factor-policy"
 
 export async function shouldShowTwoFactorNudge(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
@@ -14,12 +14,12 @@ export async function shouldShowTwoFactorNudge(userId: string): Promise<boolean>
       twoFactorEnabled: true,
       twoFactorNudgeDismissedAt: true,
       twoFactor: { select: { verified: true } },
-      _count: { select: { payoutAccounts: true } },
+      _count: { select: { payoutAccounts: true, passkeys: true } },
     },
   })
   if (!user) return false
   return showPayoutTwoFactorNudge({
-    enrolled: isTwoFactorEnrolled(user),
+    enrolled: hasSecondFactor({ totp: isTwoFactorEnrolled(user), passkeys: user._count.passkeys }),
     payoutAccounts: user._count.payoutAccounts,
     dismissedAt: user.twoFactorNudgeDismissedAt,
   })

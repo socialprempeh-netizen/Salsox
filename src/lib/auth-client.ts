@@ -1,5 +1,6 @@
 import { createAuthClient } from "better-auth/react"
 import { inferAdditionalFields, magicLinkClient, twoFactorClient } from "better-auth/client/plugins"
+import { passkeyClient } from "@better-auth/passkey/client"
 import type { auth } from "@/auth"
 
 /**
@@ -25,8 +26,12 @@ import type { auth } from "@/auth"
  * that a clone building a client-side flow has `authClient.twoFactor.*` and
  * its types without editing this file.
  */
+// Passkeys are the exception to "server actions only": a WebAuthn ceremony
+// runs in the browser by design (the fingerprint or face prompt is the
+// browser's), so registering one and signing in with one go through this
+// client. What crosses the wire is a signed challenge, never a secret.
 export const authClient = createAuthClient({
-  plugins: [magicLinkClient(), twoFactorClient(), inferAdditionalFields<typeof auth>()],
+  plugins: [magicLinkClient(), twoFactorClient(), passkeyClient(), inferAdditionalFields<typeof auth>()],
 })
 
 export const { signIn, signOut, signUp, useSession } = authClient

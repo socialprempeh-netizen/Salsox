@@ -26,7 +26,7 @@ function adminPages(): string[] {
 describe("the admin console map", () => {
   it("has exactly the eight sections, in order", () => {
     expect(ADMIN_NAV.map((s) => s.id)).toEqual([...ADMIN_SECTIONS])
-    expect(ADMIN_NAV).toHaveLength(8)
+    expect(ADMIN_NAV).toHaveLength(9)
   })
 
   it("puts every admin page on disk in a section, so none is unreachable", () => {

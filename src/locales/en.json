@@ -92,7 +92,11 @@
         "generic": "Something went wrong. Try again.",
         "2fa": "This account uses two-factor authentication, so it signs in with a password and a code from your authenticator app.",
         "two_factor_linking": "This account uses two-factor authentication, so a provider cannot attach itself to it here. Sign in with your password and a code, then connect the provider from Settings."
-      }
+      },
+      "passkey": "Sign in with a passkey",
+      "passkeyFailed": "That passkey could not sign you in. Try again, or use another way.",
+      "passkeyCancelled": "Passkey sign-in was cancelled.",
+      "idle": "You were signed out after a period without activity. Sign in again to continue."
     },
     "twoFactor": {
       "title": "Two-factor authentication",
@@ -133,7 +137,9 @@
         "backup": "That backup code is wrong, or has already been used.",
         "multiple": "That is the whole list. Enter a single code from it, in the form ABCDE-FGHJK: the others stay valid.",
         "rate": "Too many attempts. Try again in a few minutes."
-      }
+      },
+      "usePasskey": "Use a passkey instead",
+      "passkeyFailed": "That passkey did not work. Try again, or enter a code."
     },
     "twoFactorNudge": {
       "title": "Protect your payouts with two-factor authentication",
@@ -320,7 +326,8 @@
           "code": "That code is wrong or has expired. Codes change every 30 seconds.",
           "rate": "Too many attempts. Try again in a few minutes.",
           "demo": "Not available on the demo.",
-          "generic": "Something went wrong. Try again."
+          "generic": "Something went wrong. Try again.",
+          "disabled": "The authenticator app is turned off for this workspace."
         },
         "apps": "Any authenticator app works: Google Authenticator, 1Password, Bitwarden, Authy.",
         "codesStore": "Keep them somewhere other than the phone holding your authenticator: one lost thing should not take both.",
@@ -329,7 +336,8 @@
         "passwordWhyShort": "The one you sign in with. It confirms it is you, and not somebody who found your screen unlocked.",
         "keyShape": "Letters and the digits 2 to 7 only: a round character is always the letter O, never a zero, and there is no 1 to mistake for I or L. Spaces do not matter.",
         "codesShape": "Upper case, without the characters that look like each other: no O or zero, no I or one. Spaces and the dash are forgiven when you type one back in.",
-        "codesHowToUse": "You get ten because each one is spent when you use it. At sign-in you enter a single code, not the list: that one stops working from then on, and next time you take another."
+        "codesHowToUse": "You get ten because each one is spent when you use it. At sign-in you enter a single code, not the list: that one stops working from then on, and next time you take another.",
+        "disabledByAdmin": "The authenticator app is turned off for this workspace."
       },
       "sessions": {
         "title": "Active sessions",
@@ -405,7 +413,10 @@
         "signOutOthersConfirmBody": "You stay signed in here. Everyone else, including you on your other devices, has to sign in again.",
         "tip": "Do not recognise a device? Sign it out, then change your password and turn on two-factor authentication.",
         "caveat": "A device you sign out can stay signed in for up to a minute, because the session is cached in a cookie for that long. Changing your password ends every other session at once."
-      }
+      },
+      "securityMoved": "Two-factor authentication and passkeys now have their own Security page.",
+      "securityOff": "Off",
+      "securityOpen": "Open Security"
     },
     "billing": {
       "title": "Billing",
@@ -520,7 +531,7 @@
       "revenue": "Revenue & Payments",
       "subscriptions": "Subscriptions & Plans",
       "health": "Support & System Health",
-      "adminSettings": "Settings & Security",
+      "adminSettings": "Settings",
       "accounts": "Accounts",
       "waitlist": "Waitlist",
       "growth": "Growth",
@@ -531,7 +542,9 @@
       "revenueSummary": "Summary",
       "reconciliation": "Reconciliation",
       "systemHealth": "System health",
-      "sectionPages": "Pages in this section"
+      "sectionPages": "Pages in this section",
+      "security": "Security",
+      "adminSecurity": "Security"
     },
     "templates": {
       "title": "Templates",
@@ -563,6 +576,49 @@
       "deleted": "Saved template deleted",
       "saveLocked": "Saving your own templates is part of the Personal plan.",
       "upgrade": "See plans"
+    },
+    "security": {
+      "title": "Security",
+      "subtitle": "How you sign in: a second step with an authenticator app or a passkey, and the devices signed in.",
+      "adminRequired": "Admins need two-factor authentication to use the admin area. Set up the authenticator app or a passkey below.",
+      "totpTitle": "Authenticator app",
+      "totpDescription": "A six-digit code from an app on your phone, asked for after your password.",
+      "passkeysTitle": "Passkeys",
+      "passkeysDescription": "Sign in with your fingerprint, face or device PIN. Nothing to type, and nothing to phish.",
+      "on": "On",
+      "passkeyCount": "{count, plural, one {# passkey} other {# passkeys}}",
+      "sessionsTitle": "Devices signed in",
+      "sessionsBody": "See every device on your account and sign out the ones you don't recognise.",
+      "enforcedTitle": "Set up two-factor authentication to continue",
+      "enforcedBody": "Your organisation requires a second sign-in step. Add the authenticator app or a passkey below; the dashboard opens as soon as one is set up.",
+      "passkeys": {
+        "unnamed": "Passkey",
+        "addedOn": "Added {date}",
+        "synced": "Synced",
+        "removeLabel": "Remove {name}",
+        "removeTitle": "Remove this passkey?",
+        "removeBody": "You will no longer be able to sign in with it. Your other passkeys and the authenticator app are not affected.",
+        "remove": "Remove",
+        "cancel": "Cancel",
+        "none": "No passkeys yet.",
+        "demo": "Passkeys are turned off on the demo account.",
+        "disabledByAdmin": "Passkeys are turned off for this workspace.",
+        "unsupported": "This browser cannot create passkeys. Try a current version of Chrome, Safari, Edge or Firefox.",
+        "nameLabel": "Name (optional)",
+        "nameHint": "To tell your devices apart, like Work laptop or iPhone.",
+        "namePlaceholder": "Work laptop",
+        "add": "Add a passkey",
+        "added": "Passkey added",
+        "addFailed": "The passkey could not be added. Try again.",
+        "cancelled": "Cancelled. No passkey was added.",
+        "removed": "Passkey removed",
+        "removeFailed": "The passkey could not be removed. Try again."
+      }
+    },
+    "idle": {
+      "title": "Still there?",
+      "body": "{seconds, plural, one {You will be signed out in # second because of inactivity.} other {You will be signed out in # seconds because of inactivity.}}",
+      "stay": "Stay signed in"
     }
   },
   "adminCustomers": {
@@ -1069,24 +1125,11 @@
       }
     },
     "settings": {
-      "title": "Settings & Security",
-      "subtitle": "Who has admin rights, how the payment connections are set up, and the audit logs.",
+      "title": "Settings",
+      "subtitle": "How this deployment is connected and configured, and the signing audit log.",
       "admins": "Admins",
-      "withoutTwoFactor": "Admins without 2FA",
-      "twoFactorHint": "Required: no admin area until it is on",
-      "usersWithTwoFactor": "Users with 2FA",
-      "usersWithTwoFactorHint": "{share}% of {total} users. Optional for them",
-      "openSessions": "Open admin sessions",
-      "openSessionsHint": "Of the latest 15 sign-ins",
       "liveKeys": "Live payment keys",
       "liveKeysHint": "Test keys take no real money",
-      "permissionsTitle": "Admin permissions",
-      "permissionsHint": "Accounts with full access to this console.",
-      "manageRoles": "Manage roles",
-      "lastSignIn": "Last signed in {when}",
-      "neverSignedIn": "Never signed in",
-      "twoFactorOn": "2FA on",
-      "twoFactorOff": "No 2FA",
       "connectionsTitle": "Payment and messaging connections",
       "connectionsHint": "Keys are never shown; only whether each is set and its mode.",
       "connection": {
@@ -1101,23 +1144,26 @@
       "paystackDetail": "Sender subaccounts: {ready} ready, {waiting} not finished.",
       "connected": "Connected",
       "notConnected": "Not set up on this deployment.",
-      "signInsTitle": "Admin sign-ins",
-      "signInsHint": "The latest sessions started by admin accounts.",
-      "noSignIns": "No admin sign-ins recorded.",
       "when": "When",
-      "admin": "Admin",
-      "device": "Device",
-      "ip": "IP address",
-      "state": "Session",
-      "open": "Open",
-      "expired": "Expired",
       "auditTitle": "Signing audit log",
       "auditHint": "The latest events across all documents, from each document's audit trail.",
       "noAudit": "No signing events yet.",
       "event": "Event",
       "document": "Document",
       "actor": "By",
-      "roleLogNote": "Admin role changes are not written to a log yet; this page shows sign-ins and the signing audit trail."
+      "roleLogNote": "Admin role changes are not written to a log yet. Admin sign-ins are on the Security page.",
+      "securityLink": "Security settings",
+      "connectionsSetUp": "Connections set up",
+      "connectionsSetUpHint": "Payments, email and SMS",
+      "payoutsReady": "Payout accounts ready",
+      "payoutsReadyHint": "Senders who can receive money",
+      "generalTitle": "General",
+      "generalHint": "From environment variables; change them in your hosting settings.",
+      "general": {
+        "siteName": "Name",
+        "siteUrl": "Address",
+        "contactEmail": "Contact email"
+      }
     }
   },
   "admin": {
@@ -1767,6 +1813,76 @@
         "futureDate": "The contact date cannot be in the future.",
         "notFound": "This conversation was deleted. Reload the page.",
         "saveFailed": "Could not save. Check your connection and try again."
+      }
+    },
+    "security": {
+      "title": "Security",
+      "subtitle": "How people sign in: two-factor authentication, its methods, and how long an idle session lasts.",
+      "withoutTwoFactor": "Admins without 2FA",
+      "withoutTwoFactorHint": "Required: no admin area until it is on",
+      "usersWithTwoFactor": "Users with 2FA",
+      "usersWithTwoFactorHint": "{share}% of {total} users",
+      "passkeys": "Passkeys registered",
+      "passkeysHint": "{count, plural, =0 {Nobody uses one yet} one {Used by # person} other {Used by # people}}",
+      "openSessions": "Open admin sessions",
+      "openSessionsHint": "Of the latest 15 sign-ins",
+      "twoFactorTitle": "Two-factor authentication",
+      "twoFactorBody": "Let people protect their account with a second step at sign-in.",
+      "adminsAlways": "Admins always need it to use the admin area, whatever this switch says.",
+      "offNote": "Off for users: they cannot set it up, and it cannot be enforced. Anyone who already has it keeps it. Admins still need it.",
+      "methodsTitle": "Authentication methods",
+      "methodsBody": "Which methods people can set up. At least one stays on.",
+      "totpTitle": "Authenticator app",
+      "totpBody": "Six-digit codes from Google Authenticator, 1Password, Authy or a similar app.",
+      "passkeyTitle": "Passkey",
+      "passkeyBody": "Fingerprint, face, device PIN or a security key. Nothing to type, and nothing to phish.",
+      "usage": "{count, plural, =0 {Nobody uses it yet} one {# person uses it} other {# people use it}}",
+      "lockedHint": "Stays on: at least one method is needed.",
+      "enforceTitle": "Enforce two-factor authentication for all users",
+      "enforceBody": "Everyone must set up a method the next time they open the dashboard. Off by default.",
+      "enforceActive": "{count, plural, =0 {Everyone has a method set up} one {# user still has to set one up} other {# users still have to set one up}}",
+      "enforceConfirmTitle": "Require 2FA for everyone?",
+      "enforceConfirmBody": "{count, plural, =0 {Everyone already has a method, so nobody will be stopped.} one {# user without a method will be asked to set one up before using the dashboard.} other {# users without a method will be asked to set one up before using the dashboard.}}",
+      "enforceConfirm": "Require 2FA",
+      "cancel": "Cancel",
+      "timeoutTitle": "Session timeout",
+      "timeoutBody": "Sign people out automatically after a period without activity.",
+      "timeoutLegend": "Sign out after",
+      "minutes": "{count} min",
+      "hours": "{count, plural, one {# hour} other {# hours}}",
+      "timeoutWarning": "A notice appears a minute before, with a button to stay signed in.",
+      "onThisPage": "On this page",
+      "yourSignIn": "Your sign-in",
+      "yourSignInHint": "The methods on your own admin account.",
+      "on": "On",
+      "notSetUp": "Not set up",
+      "passkeyCount": "{count, plural, one {# passkey} other {# passkeys}}",
+      "manageMine": "Set up 2FA and passkeys",
+      "adminsTitle": "Admins",
+      "adminsHint": "Accounts with full access to this console, and the methods each uses.",
+      "manageRoles": "Manage roles",
+      "lastSignIn": "Last signed in {when}",
+      "neverSignedIn": "Never signed in",
+      "totpShort": "Authenticator app",
+      "noSecondFactor": "No 2FA",
+      "signInsTitle": "Admin sign-ins",
+      "signInsHint": "The latest sessions started by admin accounts.",
+      "noSignIns": "No admin sign-ins recorded.",
+      "when": "When",
+      "admin": "Admin",
+      "device": "Device",
+      "ip": "IP address",
+      "state": "Session",
+      "open": "Open",
+      "expired": "Expired",
+      "saved": "Saved",
+      "errors": {
+        "last-method": "At least one method has to stay on.",
+        "enforce-needs-2fa": "Turn on two-factor authentication first.",
+        "timeout": "Pick one of the listed times.",
+        "invalid": "That change could not be saved.",
+        "unauthorized": "Only an admin with 2FA can change this.",
+        "admins-passkey-only": "An admin signs in only with a passkey. They need the authenticator app set up before passkeys can be turned off."
       }
     }
   },

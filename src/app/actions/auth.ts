@@ -181,7 +181,7 @@ export async function verifyTwoFactorBackupCode(formData: FormData) {
   // just spent a backup code has one fewer way back in and does not necessarily
   // know it; this puts them in front of the button that makes more, with the
   // reason written above it.
-  redirect("/dashboard/settings?ok=backup-used")
+  redirect("/dashboard/security?ok=backup-used")
 }
 
 // ─── Sign up ──────────────────────────────────────────────────────────────────

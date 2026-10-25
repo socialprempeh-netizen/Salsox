@@ -112,6 +112,8 @@ for (const width of WIDTHS) {
     await page.locator('button[type="submit"]').click()
     await page.locator("#affiliate-earnings-title").waitFor({ timeout: 15_000 })
     await check("/dashboard/affiliate", "affiliate-dashboard")
+    // 2FA and passkeys, on their own page since the Security split.
+    await check("/dashboard/security", "security")
     await check("/dashboard/settings", "settings")
     await check("/dashboard/settings/sessions", "devices")
 

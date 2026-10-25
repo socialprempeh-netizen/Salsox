@@ -11,6 +11,11 @@ import { SidebarCollapseToggle } from "@/components/dashboard/sidebar-collapse-t
 import { SignOutDialog } from "@/components/dashboard/sign-out-dialog"
 import { SignupEvent } from "@/components/analytics/signup-event"
 import { prisma } from "@/lib/prisma"
+import { getSecurityPolicy } from "@/lib/security-settings"
+import { mustEnrollNow } from "@/lib/security-policy"
+import { hasSecondFactor, isTwoFactorEnrolled } from "@/lib/two-factor-policy"
+import { EnforcedSetup } from "@/components/settings/enforced-setup"
+import { IdleSignOut } from "@/components/auth/idle-sign-out"
 
 /** How recent an account must be for its first dashboard visit to count as the signup. */
 const NEW_ACCOUNT_MS = 15 * 60 * 1000
@@ -19,7 +24,32 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const user = await requireUser()
   // For the analytics `sign_up` conversion (signup-event.tsx): one indexed
   // lookup, and the event only renders for an account minutes old.
-  const account = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true, signupChannel: true } })
+  // Also what the sign-in policy needs (src/lib/security-policy.ts): whether
+  // this person has a second factor, and could set one up.
+  const [account, policy] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        createdAt: true,
+        signupChannel: true,
+        twoFactorEnabled: true,
+        twoFactor: { select: { verified: true } },
+        accounts: { where: { providerId: "credential" }, select: { id: true } },
+        _count: { select: { passkeys: true } },
+      },
+    }),
+    getSecurityPolicy(),
+  ])
+  // Enforced 2FA: the setup screen stands in for the page until a method is added.
+  const mustEnroll = account
+    ? mustEnrollNow({
+        policy,
+        role: user.role,
+        // A passkey only counts while passkeys can sign in.
+        enrolled: hasSecondFactor({ totp: isTwoFactorEnrolled(account), passkeys: policy.passkeyEnabled ? account._count.passkeys : 0 }),
+        hasPassword: account.accounts.length > 0,
+      })
+    : false
   // eslint-disable-next-line react-hooks/purity
   const isNew = account ? Date.now() - account.createdAt.getTime() < NEW_ACCOUNT_MS : false
 
@@ -28,6 +58,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <ClientMessagesProvider area="app">
     <div className="flex min-h-screen bg-muted/20">
       {isNew && <SignupEvent userId={user.id} channel={account?.signupChannel ?? "unknown"} />}
+      {policy.sessionTimeoutMinutes !== null && <IdleSignOut minutes={policy.sessionTimeoutMinutes} />}
       <aside className="sticky top-0 hidden h-screen w-60 flex-col border-r border-border bg-background transition-[width] duration-200 md:flex sidebar-collapsed:w-16">
         <div className="flex h-16 items-center border-b border-border px-5 sidebar-collapsed:justify-center sidebar-collapsed:px-0">
           <Link href="/" className="flex items-center gap-2 font-bold text-foreground">
@@ -81,7 +112,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             comes to ~136px instead of 72. Without any cap the content stretched
             to the full viewport and the three stat cards were over 400px each
             to hold one word. */}
-        <main className="mx-auto w-full max-w-5xl flex-1 p-6 lg:px-14">{children}</main>
+        <main className="mx-auto w-full max-w-5xl flex-1 p-6 lg:px-14">{mustEnroll ? <EnforcedSetup userId={user.id} role={user.role} /> : children}</main>
         <footer className="flex items-center justify-center border-t border-border px-6 py-4">
           <PoweredBy />
         </footer>

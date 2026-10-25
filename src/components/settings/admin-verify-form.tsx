@@ -12,20 +12,37 @@
  * The card enters with framer-motion and the mode switch cross-fades; with
  * reduced motion both just appear. Square corners, phone-first.
  */
-import { useActionState, useState } from "react"
+import { useActionState, useState, useTransition } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useTranslations } from "next-intl"
-import { ShieldCheck } from "lucide-react"
+import { Fingerprint, ShieldCheck } from "lucide-react"
+import { authClient } from "@/lib/auth-client"
+import { useRouter } from "next/navigation"
 import { verifyAdminSession, type AdminVerifyState } from "@/app/actions/two-factor"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function AdminVerifyForm() {
+export function AdminVerifyForm({ passkey = false }: { passkey?: boolean }) {
   const t = useTranslations("dashboard.adminVerify")
   const reduceMotion = useReducedMotion()
   const [backup, setBackup] = useState(false)
   const [state, action, pending] = useActionState<AdminVerifyState, FormData>(verifyAdminSession, {})
+  const [passkeyError, setPasskeyError] = useState(false)
+  const [passkeyPending, startPasskey] = useTransition()
+  const router = useRouter()
+
+  // A passkey sign-in opens a new session that already counts as the second
+  // factor (src/lib/auth/security-gate.ts), so it goes straight to the admin area.
+  function usePasskey() {
+    setPasskeyError(false)
+    startPasskey(async () => {
+      const result = await authClient.signIn.passkey()
+      if (result?.error) return setPasskeyError(true)
+      router.push("/admin")
+      router.refresh()
+    })
+  }
 
   return (
     <motion.div
@@ -77,6 +94,16 @@ export function AdminVerifyForm() {
           {t("submit")}
         </Button>
       </form>
+
+      {passkey && (
+        <div className="mt-4 border-t pt-4">
+          <Button type="button" variant="outline" onClick={usePasskey} disabled={passkeyPending} className="h-11 w-full rounded-none">
+            <Fingerprint className="mr-2 h-4 w-4" aria-hidden="true" />
+            {t("usePasskey")}
+          </Button>
+          {passkeyError && <p role="alert" className="mt-2 text-xs text-destructive">{t("passkeyFailed")}</p>}
+        </div>
+      )}
 
       <button
         type="button"

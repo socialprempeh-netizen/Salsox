@@ -41,10 +41,13 @@ export function TwoFactorCard({
   enabled,
   hasPassword,
   isDemo,
+  available = true,
 }: {
   enabled: boolean
   hasPassword: boolean
   isDemo: boolean
+  /** Whether the admin's policy lets this person set it up (src/lib/security-policy.ts). */
+  available?: boolean
 }) {
   const t = useTranslations("dashboard.settings.twoFactor")
   const [setupState, setupAction, setupPending] = useActionState<SetupState, FormData>(
@@ -65,6 +68,12 @@ export function TwoFactorCard({
 
   if (isDemo) {
     return <p className="text-sm text-muted-foreground">{t("demo")}</p>
+  }
+
+  // Turned off by an admin: nothing to set up, but someone who already has
+  // it keeps managing it below.
+  if (!enabled && !available) {
+    return <p className="text-sm text-muted-foreground">{t("disabledByAdmin")}</p>
   }
 
   if (!enabled && !hasPassword) {

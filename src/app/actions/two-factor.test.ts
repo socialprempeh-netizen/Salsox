@@ -38,6 +38,8 @@ vi.mock("@/lib/auth", () => ({
 }))
 vi.mock("@/lib/prisma", () => ({ prisma: { user: { update: (...a: unknown[]) => userUpdate(...a) } } }))
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }))
+const policy = vi.fn()
+vi.mock("@/lib/security-settings", () => ({ getSecurityPolicy: () => policy() }))
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => true }))
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
@@ -58,6 +60,7 @@ const demoMode = process.env.DEMO_MODE
 beforeEach(() => {
   vi.resetAllMocks()
   getCurrentUser.mockResolvedValue({ id: "u1", role: "USER" })
+  policy.mockResolvedValue({ twoFactorEnabled: true, totpEnabled: true, passkeyEnabled: true, enforceTwoFactor: false, sessionTimeoutMinutes: null })
   enableTwoFactor.mockResolvedValue({
     method: "totp",
     totpURI: "otpauth://totp/Acme:a@b.co?secret=JBSWY3DPEHPK3PXP&issuer=Acme",
@@ -72,6 +75,12 @@ afterEach(() => {
 })
 
 describe("startTwoFactorSetup", () => {
+  it("refuses when the admin has turned the authenticator app off", async () => {
+    policy.mockResolvedValue({ twoFactorEnabled: true, totpEnabled: false, passkeyEnabled: true, enforceTwoFactor: false, sessionTimeoutMinutes: null })
+    expect(await startTwoFactorSetup({}, form({ password: "pw" }))).toEqual({ error: "disabled" })
+    expect(enableTwoFactor).not.toHaveBeenCalled()
+  })
+
   it("returns the pairing data, with the secret pulled out for manual entry", async () => {
     const state = await startTwoFactorSetup({}, form({ password: "pw" }))
     expect(state.setup?.secret).toBe("JBSWY3DPEHPK3PXP")
@@ -163,7 +172,7 @@ describe("verifyAdminSession", () => {
     getAdminAccess.mockResolvedValue("not-admin")
     expect(await redirectOf(() => verifyAdminSession({}, form({ code: "123456" })))).toBe("/dashboard")
     getAdminAccess.mockResolvedValue("enroll")
-    expect(await redirectOf(() => verifyAdminSession({}, form({ code: "123456" })))).toBe("/dashboard/settings?error=admin-2fa#two-factor")
+    expect(await redirectOf(() => verifyAdminSession({}, form({ code: "123456" })))).toBe("/dashboard/security?required=admin")
     expect(verifyTOTP).not.toHaveBeenCalled()
   })
 })

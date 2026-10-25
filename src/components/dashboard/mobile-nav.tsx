@@ -27,6 +27,7 @@ import {
   Repeat,
   LifeBuoy,
   KeyRound,
+  ShieldCheck,
 } from "lucide-react"
 import { sectionFor } from "@/lib/admin/sections"
 import {
@@ -53,6 +54,8 @@ const menus = {
     // Affiliate program: links, clicks and signups (src/lib/affiliates.ts).
     { href: "/dashboard/affiliate", key: "affiliate", icon: Handshake },
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
+    // 2FA and passkeys: their own page, so setting them up is one click away.
+    { href: "/dashboard/security", key: "security", icon: ShieldCheck },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],
   // Replaced by the eight sections of src/lib/admin/sections.ts, as in
@@ -72,6 +75,7 @@ const menus = {
     { href: "/admin/revenue", key: "revenue", icon: Banknote },
     { href: "/admin/subscriptions", key: "subscriptions", icon: Repeat },
     { href: "/admin/health", key: "health", icon: LifeBuoy },
+    { href: "/admin/security", key: "adminSecurity", icon: ShieldCheck },
     { href: "/admin/settings", key: "adminSettings", icon: KeyRound },
   ],
 }

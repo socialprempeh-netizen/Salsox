@@ -4,7 +4,7 @@
  * shows.
  */
 import { describe, expect, it } from "vitest"
-import { adminAccess, enrollmentShare, isTwoFactorEnrolled, showPayoutTwoFactorNudge } from "./two-factor-policy"
+import { adminAccess, enrollmentShare, hasSecondFactor, isTwoFactorEnrolled, showPayoutTwoFactorNudge } from "./two-factor-policy"
 
 describe("isTwoFactorEnrolled", () => {
   it("needs the flag and a verified authenticator", () => {
@@ -16,6 +16,14 @@ describe("isTwoFactorEnrolled", () => {
     expect(isTwoFactorEnrolled({ twoFactorEnabled: true, twoFactor: [{ verified: false }] })).toBe(false)
     expect(isTwoFactorEnrolled({ twoFactorEnabled: true, twoFactor: [] })).toBe(false)
     expect(isTwoFactorEnrolled({ twoFactorEnabled: null, twoFactor: [{ verified: true }] })).toBe(false)
+  })
+})
+
+describe("hasSecondFactor", () => {
+  it("counts the authenticator app or any passkey", () => {
+    expect(hasSecondFactor({ totp: true, passkeys: 0 })).toBe(true)
+    expect(hasSecondFactor({ totp: false, passkeys: 2 })).toBe(true)
+    expect(hasSecondFactor({ totp: false, passkeys: 0 })).toBe(false)
   })
 })
 

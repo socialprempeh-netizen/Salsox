@@ -65,7 +65,7 @@ The response is the same whether or not the new address already belongs to anoth
 
 ## Two-factor authentication
 
-Any account with a password can turn on a second factor from Dashboard → Settings: a six digit code from an authenticator app (TOTP, RFC 6238). Self-hosted, so no vendor and no SMS bill. The name your users will read inside their app comes from `siteConfig.name`, which is why it is worth setting before anyone enables this.
+Any account with a password can turn on a second factor from Dashboard → **Security** (`/dashboard/security`, in the sidebar): a six digit code from an authenticator app (TOTP, RFC 6238). Self-hosted, so no vendor and no SMS bill. The name your users will read inside their app comes from `siteConfig.name`, which is why it is worth setting before anyone enables this.
 
 **Turning it on is two steps on purpose.** The first stores an unverified secret and shows the QR code, the manual key and ten backup codes; only a correct code from the app switches it on. A setup abandoned halfway therefore leaves the account exactly as it was, which is the difference between a feature and a lock-out.
 
@@ -98,11 +98,29 @@ They are generated upper case and without `0`, `O`, `1` or `I` (`src/lib/backup-
 
 For admins, two-factor authentication is mandatory, and it is checked twice: the account must have it set up, and the session in use must have passed a code. The rule is `adminAccess` in `src/lib/two-factor-policy.ts`; the admin layout, the admin server actions and the admin API routes all go through `getAdminUser()` / `getAdminAccess()` in `src/lib/auth`.
 
-- **An admin without 2FA** is sent from `/admin` to Settings to turn it on. Finishing the setup counts as passing the code, so they go straight in afterwards.
+- **An admin without 2FA** is sent from `/admin` to the Security page to set up the authenticator app or a passkey. Finishing the setup counts as passing the code, so they go straight in afterwards.
 - **An admin whose session never saw the code**, usually after "Continue with Google" on a linked account (which skips the second factor, see [Account linking](#account-linking)), is sent to `/dashboard/admin-verify` to enter one, or a backup code.
 - Each session records when it passed a code (`Session.twoFactorVerifiedAt`): the sign-in step, a backup code, finishing setup, or the admin check. The admin check is limited to 10 tries per 15 minutes and 30 a day per admin, because the library's own lockout only counts sign-in attempts.
 
 For everyone else 2FA stays optional. People with a Stripe or Paystack payout account see a one-time suggestion to turn it on, on the dashboard and the payouts page, until they do or dismiss it. Admin Settings shows how many admins lack it and how many users have it.
+
+### Passkeys
+
+A passkey (WebAuthn) is the second method, beside the authenticator app, not instead of it: a fingerprint, face, device PIN or security key. People add them on the Security page and sign in with them from the sign-in page ("Sign in with a passkey"). Better Auth's `@better-auth/passkey` plugin does the ceremony; only the public key is stored (`Passkey` table).
+
+- A passkey counts as a second factor on its own: either method satisfies the admin rule, the enforcement policy and the payout suggestion (`hasSecondFactor` in `src/lib/two-factor-policy.ts`). A passkey sign-in, or adding a passkey, marks the session as having passed it (`src/lib/auth/security-gate.ts`), so an admin signed in with a passkey goes straight into the admin area, and the admin check also accepts one.
+- The relying party is the apex of `NEXT_PUBLIC_APP_URL` (`www.` stripped), and the allowed origins are the same ones Better Auth trusts. Passkeys made on one domain do not work on another, so set the production URL before people add them.
+
+### The sign-in policy (/admin/security)
+
+Admins set it on **Admin → Security**, stored in one row (`SecuritySettings`) with its rules in `src/lib/security-policy.ts`:
+
+- **Two-factor authentication**: offered to users at all. Off, users cannot set up a method and enforcement is off; anyone who already has one keeps it. Admins need it regardless.
+- **Authentication methods**: the authenticator app and passkeys, each on or off for new setups. The last one on is locked on. Turning passkeys off also turns off passkey sign-in, so a passkey stops counting for the admin rule while they are off; for that reason it is refused while any admin signs in only with a passkey.
+- **Enforce two-factor authentication for all users**: off by default. On, a user with no method sees the setup screen instead of the dashboard until they add one. Someone who could set up neither method (no password, passkeys off) is not held.
+- **Session timeout**: sign out after 15 minutes to 8 hours without activity, with a notice a minute before. It runs in the browser, across tabs; the session's own expiry covers a closed or sleeping machine.
+
+The Better Auth gate refuses setting up a method that is off, and passkey sign-in while passkeys are off, so the switches hold for direct API calls too, not only in the pages.
 
 ### If both the phone and the codes are gone
 

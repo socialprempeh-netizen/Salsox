@@ -1,5 +1,5 @@
 /**
- * The admin console's map: eight sections, the pages under each, and which
+ * The admin console's map: nine sections, the pages under each, and which
  * section a URL belongs to. The sidebar, the phone menu and each section's
  * tab row all read it, so the three cannot disagree about where a page lives.
  *
@@ -18,7 +18,9 @@
  * an icon per section id.
  */
 
-export const ADMIN_SECTIONS = ["overview", "users", "documents", "analytics", "revenue", "subscriptions", "health", "settings"] as const
+// "security" split out of "settings": sign-in policy, 2FA and passkeys, and
+// admin sign-ins have their own page; settings keeps connections and config.
+export const ADMIN_SECTIONS = ["overview", "users", "documents", "analytics", "revenue", "subscriptions", "health", "security", "settings"] as const
 export type AdminSectionId = (typeof ADMIN_SECTIONS)[number]
 
 /** A page inside a section, shown as a tab. `key` names its label in the message file. */
@@ -78,6 +80,7 @@ export const ADMIN_NAV: AdminSection[] = [
       { href: "/admin/moderation", key: "moderation" },
     ],
   },
+  { id: "security", href: "/admin/security", tabs: [{ href: "/admin/security", key: "security" }] },
   { id: "settings", href: "/admin/settings", tabs: [{ href: "/admin/settings", key: "settings" }] },
 ]
 

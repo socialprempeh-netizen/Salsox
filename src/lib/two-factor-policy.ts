@@ -23,6 +23,15 @@ export function isTwoFactorEnrolled(user: { twoFactorEnabled: boolean | null | u
   return Boolean(user.twoFactorEnabled) && user.twoFactor.some((row) => row.verified)
 }
 
+/**
+ * Has a second factor: the authenticator app (enrolled as above) or at least
+ * one passkey, either of which satisfies the admin rule, the enforcement
+ * policy (src/lib/security-policy.ts) and the payout suggestion.
+ */
+export function hasSecondFactor(input: { totp: boolean; passkeys: number }): boolean {
+  return input.totp || input.passkeys > 0
+}
+
 export type AdminAccess = "ok" | "enroll" | "verify" | "not-admin"
 
 /**
@@ -37,7 +46,9 @@ export function adminAccess(input: { role: string; enrolled: boolean; sessionVer
 }
 
 /** Where each blocked step sends the admin. */
-export const ADMIN_ENROLL_PATH = "/dashboard/settings?error=admin-2fa#two-factor"
+// Was "/dashboard/settings?error=admin-2fa#two-factor": setup moved to its
+// own Security page, which is in the sidebar and easier to find.
+export const ADMIN_ENROLL_PATH = "/dashboard/security?required=admin"
 export const ADMIN_VERIFY_PATH = "/dashboard/admin-verify"
 
 /**
