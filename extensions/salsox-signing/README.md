@@ -38,7 +38,7 @@ The server is the authority on every rule; the popup only tells the person first
 | `popup.html`, `popup.css`, `popup.js` | The popup: connect, upload, place, recipients, result |
 | `lib/fields.js` | The rules as pure functions (tested in `src/lib/signing-extension.test.ts`) |
 | `vendor/pdfjs/` | pdf.js 6.3.289 (`pdfjs-dist`), Apache-2.0, unmodified |
-| `icons/` | From `public/brand/mark.png`, the signing engine's mark |
+| `icons/` | The brand icon, the plain teal S: the same files as the Orphan Page Scanner's `icons/` |
 | `PRIVACY.md`, `store-listing.md` | For the Chrome Web Store |
 
 ## Try it locally
