@@ -2,6 +2,8 @@
 
 **Status: draft, not submittable yet.** HubSpot lists public apps built on its developer platform, authorised with OAuth, and its Ecosystem Quality team reviews every listing by hand. Salsox needs, first: a HubSpot public app (OAuth only) that does what the listing below says; a public setup guide; and live, crawlable URLs for every link in the listing. Check the current minimum-install and review criteria when you start, as they change.
 
+**Update 2026-10-25:** the events this app would show on deal timelines now exist as Salsox webhooks (sent, viewed, signed, completed, declined, expired, payment), documented at `/resources/help/webhooks-and-api`, so the app's server can receive them instead of polling. Still missing on the Salsox side: OAuth (HubSpot does not accept API keys for public apps), and an API to send a template, which "Send for signature" from a deal needs.
+
 Requirements source: [HubSpot App Marketplace listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/app-marketplace-listing-requirements).
 
 Rules to respect in everything below: the listing describes this integration's value, not Salsox in general; never put "Hub" or "HubSpot" in the app's name or logo.

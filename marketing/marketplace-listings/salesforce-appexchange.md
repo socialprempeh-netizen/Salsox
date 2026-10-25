@@ -6,6 +6,8 @@ Requirements and fees: [ISVforce security review fees](https://developer.salesfo
 
 This is the largest of the three builds. Do it after Zapier and HubSpot.
 
+**Update 2026-10-25:** the Salsox endpoints a package would call have started to exist: signed webhooks for document events and an API-key REST API at `/api/v1` (documented at `/resources/help/webhooks-and-api`). The package still needs OAuth for its connected app, an API to send documents from a Salesforce record, and the security review, which will scan these endpoints: the webhook sender already refuses private addresses and does not follow redirects, which reviewers check for.
+
 ## Listing fields
 
 **Listing title:** Salsox e-Signatures for Salesforce

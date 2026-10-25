@@ -4,15 +4,26 @@ Draft copy and assets for listing Salsox in three integration marketplaces, to r
 
 | Marketplace | File | Can it be submitted today? |
 |---|---|---|
-| Zapier App Directory | [zapier.md](zapier.md) | No: needs a Zapier integration built on a public Salsox API |
-| HubSpot App Marketplace | [hubspot.md](hubspot.md) | No: needs a HubSpot public app (OAuth) and a public setup guide |
-| Salesforce AppExchange | [salesforce-appexchange.md](salesforce-appexchange.md) | No: needs a Salesforce connected app or package and a passed security review |
+| Zapier App Directory | [zapier.md](zapier.md) | Closer, not yet: the API and webhooks it needs exist (2026-10-25); the Zapier integration itself must still be built on Zapier's platform and tested privately |
+| HubSpot App Marketplace | [hubspot.md](hubspot.md) | No: needs a HubSpot public app with OAuth (HubSpot does not accept API keys) and a public setup guide; webhooks now supply the events it would show |
+| Salesforce AppExchange | [salesforce-appexchange.md](salesforce-appexchange.md) | No: needs partner enrolment, a package with a connected app (OAuth) and a passed security review |
 
-## The blocker they share
+## What exists now (2026-10-25)
 
-All three marketplaces list *working integrations*, reviewed before they go live. Salsox has no public API, webhooks or native integration today (the site says so on `/esignature-api` and `/integrations/zapier`). Each draft therefore describes the integration as it is planned, and says at the top what must be built before it can be submitted. Do not submit any of them, or publish the copy anywhere, before that work ships: a listing that promises features that do not exist will be rejected, and is false advertising if it is not.
+The shared blocker was "no public API, no webhooks". Salsox now has the foundation all three build on:
 
-Recommended order: build the public API and webhooks first, then the Zapier integration (smallest build, widest reach: it also covers Make-style users who search Zapier), then HubSpot, then AppExchange (largest effort, security review).
+- **Webhooks** for `document.sent`, `document.viewed`, `document.signed`, `document.completed`, `payment.sent`, `document.declined` and `document.expired`: signed JSON (HMAC-SHA256 in a Stripe-style timestamped header), retried for about 40 hours, with a delivery log, test sends and manual resend on Dashboard → Developers.
+- **API keys** (per account, stored hashed, revocable, last use shown) and a small **REST API** at `/api/v1`: `GET /me` (key test), `GET` and `POST /webhooks` (subscribe, REST-hook style), `DELETE /webhooks/{id}` (unsubscribe), `GET /webhooks/sample?event=` (sample data).
+- **Public documentation**: `/resources/help/webhooks-and-api` (events, payload, headers, signature check, retries, API) and `/resources/help/connect-zapier-or-make`.
+- The public pages `/esignature-api`, `/integrations/zapier` and `/integrations/make` now say this, and still say plainly what is missing.
+
+## What is still missing
+
+- **An API to create and send documents.** Every "send for signature" action in these drafts needs it. Until it exists, an integration can only react to events.
+- **OAuth.** HubSpot and AppExchange require it; Zapier accepts API keys, which is why it is first.
+- **The integrations themselves**, built on each platform, tested with real accounts, with screenshots taken from them.
+
+Recommended order is unchanged: Zapier first (a triggers-only first version is possible now), then HubSpot (after OAuth), then AppExchange. Do not submit or publish any draft before its integration exists.
 
 ## Assets
 
@@ -26,4 +37,4 @@ Screenshots must be of the real integration, so they cannot be made yet. Each dr
 
 ## Requirements checked
 
-Checked on 2026-10-24 against each marketplace's own documentation, linked in each file. Requirements change; re-read them when you submit.
+Requirements were checked on 2026-10-24 against each marketplace's own documentation, linked in each file; the status above was updated on 2026-10-25. Requirements change; re-read them when you submit.
