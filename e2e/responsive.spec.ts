@@ -75,6 +75,9 @@ for (const width of WIDTHS) {
       "/integrations",
       "/integrations/zapier",
       "/integrations/google-drive",
+      "/integrations/make",
+      // Where the API stands: rewritten when the send API shipped.
+      "/esignature-api",
       // The e-signature law hub (the SEO agent's law pages are added from
       // the database, so only the hub is here).
       "/esignature-law",
@@ -86,6 +89,8 @@ for (const width of WIDTHS) {
       "/resources/help/videos",
       // The public webhook and API reference that integrations link to.
       "/resources/help/webhooks-and-api",
+      // Its no-code companion, with a JSON request block that must not push the page sideways.
+      "/resources/help/connect-zapier-or-make",
     ]) {
       await check(path, path.slice(1).replaceAll("/", "-"))
     }

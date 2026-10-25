@@ -27,7 +27,7 @@ faq:
   - q: "Does Adobe let you collect payments with a signature?"
     a: "Adobe's Acrobat Sign page lists collecting payments among its features. {site} includes Sign & Pay on its Business plan, by card through Stripe or by card and mobile money through Paystack."
   - q: "Does {site} integrate with Microsoft, Salesforce or Workday like Acrobat Sign?"
-    a: "No. Adobe lists signing inside Microsoft Word and Teams, Salesforce and Workday. {site} has no such integrations, and its API covers webhooks only, not sending documents."
+    a: "No. Adobe lists signing inside Microsoft Word and Teams, Salesforce and Workday. {site} has no such integrations; its API can send documents and its webhooks report on them, for software you connect yourself or through Zapier or Make."
 related: ["/vs/docusign", "/vs/dropbox-sign", "/alternatives/docusign", "/esignature-for/enterprises", "/pdf-signature", "/pricing"]
 ---
 

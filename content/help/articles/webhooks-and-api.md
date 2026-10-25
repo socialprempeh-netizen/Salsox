@@ -1,6 +1,6 @@
 ---
 title: "Webhooks and the API: reference"
-description: "The events we send, the JSON payload, how to check the signature, retries, and the API endpoints integrations use to subscribe."
+description: "The events we send, the JSON payload, how to check the signature, retries, and the API integrations use to subscribe, send documents and find them."
 category: developers
 order: 1
 ---
@@ -110,7 +110,7 @@ Answer with any `2xx` status to confirm a delivery. Anything else, no answer wit
 
 ## The API, for integrations
 
-Integrations subscribe to events with an **API key**, created under **Dashboard → Developers → API keys**. Send it as `Authorization: Bearer <key>` to the base URL shown on that page, ending in `/api/v1`.
+Integrations subscribe to events, send documents and find them with an **API key**, created under **Dashboard → Developers → API keys**. Send it as `Authorization: Bearer <key>` to the base URL shown on that page, ending in `/api/v1`. A key can send documents from your account, so treat it like a password.
 
 | Request | Does |
 |---|---|
@@ -119,8 +119,104 @@ Integrations subscribe to events with an **API key**, created under **Dashboard 
 | `POST /api/v1/webhooks` | Subscribes: `{ "url": "https://…", "events": ["document.completed"] }` (or `target_url` and `event`). Returns `id`, `url`, `events` and the `secret`, once. |
 | `DELETE /api/v1/webhooks/{id}` | Unsubscribes. |
 | `GET /api/v1/webhooks/sample?event=document.completed` | A sample payload for an event, as a one-item list. |
+| `POST /api/v1/documents` | Creates a document and sends it for signing. |
+| `GET /api/v1/documents` | Finds documents, newest first. |
+| `GET /api/v1/documents/{id}` | One document. |
+| `GET /api/v1/templates` | The templates you can send from, with their roles and blanks, and your saved ones. |
 
 Errors come back as `{ "error": { "code": "…", "message": "…" } }` with a 4xx status. A key can make 120 requests a minute.
+
+## Send a document
+
+`POST /api/v1/documents` sends a document exactly as **Send** in the dashboard does: the same emails go out, it counts towards your plan the same way, and your webhooks receive `document.sent`. Give **one** source:
+
+| Source | How |
+|---|---|
+| A PDF at a link | `"file_url": "https://…"`. It must be a public https address. |
+| A PDF in the request | `multipart/form-data` with the PDF as a `file` part and the JSON below as a `data` part. |
+| A PDF as text | `"file_base64": "…"`, for PDFs under about 3 MB. |
+| A template | `"template": "<slug>"` with `"values": { "<blank>": "…" }`. `GET /api/v1/templates` lists the slugs and blanks. |
+| A saved template | `"saved_template_id": "…"`. Any `values` you give replace the saved ones. |
+
+PDFs can be up to 4 MB. A minimal request, to one signer:
+
+```json
+{
+  "title": "Service agreement",
+  "file_url": "https://files.example.com/service-agreement.pdf",
+  "recipients": [{ "email": "ama@example.com", "name": "Ama Mensah" }]
+}
+```
+
+Each signer gets a signature and a date at the foot of the last page (on a page added at the end when there are more than three signers), as with Quick Send. To place fields yourself, add `fields`:
+
+```json
+{
+  "title": "Service agreement",
+  "file_url": "https://files.example.com/service-agreement.pdf",
+  "signing_order": "sequential",
+  "recipients": [
+    { "email": "ama@example.com", "name": "Ama Mensah" },
+    { "email": "kofi@example.com", "name": "Kofi Boateng", "role": "approver" },
+    { "email": "office@example.com", "role": "cc" }
+  ],
+  "fields": [
+    { "recipient": 0, "type": "signature", "page": 3, "x": 8, "y": 80, "width": 40, "height": 6 },
+    { "recipient": 0, "type": "date", "page": 3, "x": 56, "y": 80, "width": 24, "height": 6 }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `recipients[]` | `email` (required), `name`, `role` (`signer`, `approver`, `viewer` or `cc`; default `signer`), `order` (default: the order listed), and `template_role` for a template. |
+| `fields[]` | `recipient` (their position in `recipients`, from 0, or their email), `type` (`signature`, `initials`, `name`, `email`, `date`, `text`, `checkbox`), `page` (from 1), and `x`, `y`, `width`, `height` as percentages of the page, from its top left. `required` (default `true`) and `label` are optional. |
+| `signing_order` | `parallel` (default) or `sequential`. |
+| `expires_in_days` | 1 to 365, or `"never"`. Default 30. |
+| `message` | A note in the invitation email. |
+
+Fields are needed whenever the request uses anything Quick Send does not: approvers, viewers, copies, or a signing order. Without them, the request is refused with `fields_required`.
+
+**With a template**, its fields are already placed, so leave out `fields`. Your account takes the template's own role (the one marked `sender` in `GET /api/v1/templates`). Each other role needs one recipient: name it with `template_role`, or list the recipients in the order of the roles.
+
+The answer is `201` with the document, in the same shape as below, plus `undelivered` and `not_emailed`: how many invitation emails were refused, or not sent because email is not set up. The document is sent either way, and its links can be resent from its page.
+
+When the document cannot be sent, nothing is kept and the error says why: `402` for a plan limit (for example a signing order on a plan without it), `403` when your email address is not confirmed yet or the daily sending limit is reached, `422` for anything in the request.
+
+## Find documents
+
+`GET /api/v1/documents` lists your documents, newest first, 25 at a time. Filter with:
+
+| Parameter | Example |
+|---|---|
+| `status` | `completed`, or several: `sent,declined`. Also `draft`, `pending` (same as `sent`), `cancelled`, `expired`. |
+| `recipient` | `ama@example.com`: documents sent to that address. |
+| `title` | `agreement`: titles containing it. |
+| `created_after`, `created_before` | `2026-10-01` or `2026-10-01T09:00:00Z`. |
+| `limit` | 1 to 100. |
+| `cursor` | The `next_cursor` from the previous page. |
+
+```json
+{
+  "data": [
+    {
+      "id": "cmh2x9k0w0001",
+      "title": "Service agreement",
+      "status": "COMPLETED",
+      "created_at": "2026-10-25T12:35:00.000Z",
+      "sent_at": "2026-10-25T13:05:00.000Z",
+      "completed_at": "2026-10-25T15:10:00.000Z",
+      "page_count": 3,
+      "signing_order": "PARALLEL",
+      "url": "https://your-app.example.com/dashboard/documents/cmh2x9k0w0001",
+      "recipients": ["…each recipient, same shape as in a webhook…"]
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+A document has the same fields as `data.document` in a webhook, with its `recipients`, so a workflow can map what it finds and what it receives the same way.
 
 ## Good to know
 

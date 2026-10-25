@@ -21,7 +21,7 @@ related: ["/integrations/zapier", "/integrations/gmail", "/esignature-api", "/do
 
 ## Why there is no module yet
 
-A Make module talks to an app through its API: it receives instant triggers, asks for data and sends commands. {site} now sends webhooks for every document event, and has an API for integrations to subscribe to them, so the trigger half exists. A module also needs actions, such as sending a template, and those need an API to create documents, which {site} does not have yet. Until the module ships, Make's own **Custom webhook** module catches {site}'s webhooks directly.
+A Make module talks to an app through its API: it receives instant triggers, asks for data and sends commands. {site} now sends webhooks for every document event, and has an API for integrations to subscribe to them, so the trigger half exists. A module also needs actions, such as sending a template, and since the API can now send documents and find them, that half exists too: Make's **HTTP → Make a request** module can call it today, as the [Zapier and Make guide](/resources/help/connect-zapier-or-make) shows. Until the module ships, Make's own **Custom webhook** module catches {site}'s webhooks directly.
 
 ## Build a scenario from webhooks
 

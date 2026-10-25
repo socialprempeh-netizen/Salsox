@@ -1,8 +1,8 @@
 ---
 title: "eSignature API: what it is, and does {site} have one?"
-description: "What an e-signature API does, when you need one, and where {site} stands: webhooks and an API to subscribe to them today, no sending API yet."
+description: "What an e-signature API does, when you need one, and where {site} stands: an API to send and find documents, and webhooks for every event. No embedding yet."
 h1: "Electronic signature APIs: what they do, and where {site} stands"
-lede: "An e-signature API lets your own software send documents for signature and react when they are signed. {site} offers the second half today: signed webhooks for every document event, and an API for integrations to subscribe to them. Here is what that covers, what it does not yet, and how to tell what you need."
+lede: "An e-signature API lets your own software send documents for signature and react when they are signed. {site} offers both today: an API to send documents and find them, and signed webhooks for every event. Here is what that covers, what it does not yet, and how to tell what you need."
 primaryKeyword: "esignature api"
 aliases: ["electronic signature api", "e-signature api", "digital signature api", "embedded esignature", "esign api"]
 published: 2026-10-15
@@ -10,7 +10,7 @@ updated: 2026-10-25
 breadcrumb: "eSignature API"
 faq:
   - q: "Does {site} have an API?"
-    a: "Partly. {site} sends webhooks when a document is sent, viewed, signed or completed and when a signer pays, and has an API for integrations such as Zapier to subscribe to them. There is no API yet to send documents or to embed signing: documents are sent from the dashboard."
+    a: "Yes. With an API key, your software can send a document for signature, from a PDF or one of the templates, and find documents by status, recipient or date. Webhooks report when a document is sent, viewed, signed, declined, expired or completed and when a signer pays. There is no embedded signing yet: signers sign on {site}'s own pages."
   - q: "Which e-signature providers publish an API?"
     a: "Several do, including DocuSign, Dropbox Sign, signNow, DocuSeal and SignWell, each with its own pricing for API use. Check each provider's developer documentation and pricing."
   - q: "Do I need an API?"
@@ -33,19 +33,21 @@ Most APIs are paired with webhooks, messages the provider sends your server when
 
 ## The plain answer about {site}
 
-{site} covers the reacting half today. Every account can add webhook endpoints under Dashboard → Developers: signed JSON messages sent when a document is sent, viewed, signed or completed, and when a signer pays. A small API lets integrations such as Zapier and Make subscribe to those events with an API key. The payload, signature check and retries are described in the [webhooks and API reference](/resources/help/webhooks-and-api).
+{site} covers both halves. With an API key from Dashboard → Developers, your software can **send** a document: a PDF (by link or upload) or one of the library's templates with its blanks filled in, to signers, approvers and people who get a copy, with fields placed for you or where you choose. It goes out exactly as it would from the dashboard, counts towards your plan the same way, and is tracked on the same page. The API also **finds** documents by status, recipient, title or date, so a workflow can look one up later.
 
-What {site} does not have yet is the sending half: there is no API to create and send a document from your own software, and no embedded signing. Documents are still prepared and sent from the {site} dashboard by a person, on a phone or a computer. We would rather say so on this page than let you discover it after signing up.
+For the **reacting** half, every account can add webhook endpoints: signed JSON messages sent when a document is sent, viewed, signed, declined, expired or completed, and when a signer pays. Integrations such as Zapier and Make can subscribe to them with the same key. Requests, payloads, the signature check and retries are described in the [webhooks and API reference](/resources/help/webhooks-and-api).
+
+What {site} does not have yet: **embedded signing**, so signers always sign on {site}'s own pages, reached by a link; **bulk send** of one document to many people at once; native apps in the Zapier, HubSpot or Salesforce marketplaces (Zapier and Make connect today through their webhook and HTTP modules); and the signed PDF as a file through the API, which links to the document instead. We would rather say so on this page than let you discover it after signing up.
 
 ## Who publishes one
 
-If you need an API now, several providers publish one. Our comparison pages note it where it matters: [DocuSeal](/vs/docuseal) lists an API and embedding on its Pro plans with per-document API pricing; [SignWell](/vs/signwell) lists a monthly allowance of free API documents; [DocuSign](/vs/docusign), [Dropbox Sign](/vs/dropbox-sign) and [signNow](/vs/signnow) all have developer programmes. Compare their API pricing as well as their plan prices: per-document API fees can matter more than the subscription.
+If you need embedded signing or bulk sending, several providers offer them. Our comparison pages note it where it matters: [DocuSeal](/vs/docuseal) lists an API and embedding on its Pro plans with per-document API pricing; [SignWell](/vs/signwell) lists a monthly allowance of free API documents; [DocuSign](/vs/docusign), [Dropbox Sign](/vs/dropbox-sign) and [signNow](/vs/signnow) all have developer programmes. Compare their API pricing as well as their plan prices: per-document API fees can matter more than the subscription.
 
 ## Do you actually need one?
 
 Many teams searching for an API need something simpler: a way to send documents quickly, track them and get paid. Ask:
 
-1. Will software, not a person, decide when a document is sent? If people decide, you do not need an API.
+1. Will software, not a person, decide when a document is sent? If people decide, you do not need an API, though it can still save typing.
 2. Must signing happen inside your own product's pages? If a link to a signing page is fine, you do not need embedding.
 3. Are you sending hundreds of documents a day from data? If you send a few a day, a dashboard is faster to set up and cheaper to run.
 
@@ -58,4 +60,4 @@ If the answers are no, {site}'s dashboard covers the job: upload a PDF or start 
 - A documents list with status filters and search, automatic reminders and an audit trail per document.
 - Export of every document and audit trail at any time.
 
-If you need to react to signatures, {site}'s webhooks do that today. If your software must send documents itself, or show signing inside your own pages, choose a provider that publishes a sending API today.
+If your software must send documents and react to signatures, {site}'s API and webhooks do that today, on every plan. If signing must happen inside your own pages, or you send one document to hundreds of people at once, choose a provider that offers embedding or bulk send today.

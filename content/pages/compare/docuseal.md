@@ -19,7 +19,7 @@ faq:
   - q: "Is DocuSeal free?"
     a: "Its open source edition is free to self-host, and its cloud Basic plan is $0 with a limit of 10 request emails a month, as listed on 15 October 2026. Its cloud Pro plan is $20 per user a month, or $200 per user a year."
   - q: "Does DocuSeal have an API?"
-    a: "Yes. DocuSeal lists an API and embedding on its Pro plans, charged at $0.20 per document signed through the API in production, with a free sandbox. {site} sends webhooks, but has no API to send documents or embed signing."
+    a: "Yes. DocuSeal lists an API and embedding on its Pro plans, charged at $0.20 per document signed through the API in production, with a free sandbox. {site} has an API to send and find documents, and webhooks, on every plan with no per-document API fee, but no embedded signing."
   - q: "Can both collect payments with a signature?"
     a: "Yes. DocuSeal lists payment collection, with a 4% fee on its free cloud plan and 0% on Pro. {site} includes Sign & Pay on its Business plan, through Stripe or Paystack."
   - q: "Should I self-host my e-signatures?"
@@ -37,7 +37,7 @@ DocuSeal's figures were taken from its pricing page on **15 October 2026**, in U
 | Paid plan | Personal $9/month, Business $19/month, per account | Cloud Pro: $20 per user a month or $200 per user a year |
 | Pricing basis | Per account | Per user (web seats; signers are free) |
 | Self-hosting | No | Yes, open source, with a paid on-premises Pro plan |
-| API and embedding | Webhooks only; no sending API or embedding | Pro plans; $0.20 per document via API in production |
+| API and embedding | API to send and find documents, and webhooks, on every plan; no embedding | Pro plans; $0.20 per document via API in production |
 | Payment with signature | Business plan (Stripe or Paystack) | Listed: 4% fee on free cloud plan, 0% on Pro |
 | Bulk send | Not offered | Pro: 50 a month included, then $0.20 per signature |
 | SMS | Signing links shareable to SMS and WhatsApp; SMS reminders where configured | Pro: SMS verification, 20 a month included, then $0.20 each |

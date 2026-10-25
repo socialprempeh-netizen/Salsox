@@ -57,7 +57,9 @@ export type WebhookPayload = {
   }
 }
 
-type DocumentIn = {
+export type PayloadDocument = WebhookPayload["data"]["document"]
+
+export type DocumentIn = {
   id: string
   title: string
   status: string
@@ -72,6 +74,31 @@ type PaymentIn = { id: string; amount: number; currency: string; status: string;
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null)
 
+/**
+ * A document and its recipients in the payload's shape. The public API
+ * (/api/v1/documents) answers with the same shape, so a document found
+ * through the API and one delivered by a webhook map the same way.
+ */
+export function documentResource(d: DocumentIn, appUrl: string): { document: PayloadDocument; recipients: PayloadRecipient[] } {
+  const recipients = [...d.recipients]
+    .sort((a, b) => a.order - b.order || a.email.localeCompare(b.email))
+    .map((r) => ({ id: r.id, name: r.name, email: r.email, role: r.role, order: r.order, status: r.signingStatus, viewed_at: iso(r.viewedAt), signed_at: iso(r.signedAt), decline_reason: r.rejectionReason ?? null }))
+  return {
+    document: {
+      id: d.id,
+      title: d.title,
+      status: d.status,
+      created_at: d.createdAt.toISOString(),
+      sent_at: iso(d.sentAt),
+      completed_at: iso(d.completedAt),
+      page_count: d.pageCount,
+      signing_order: d.signingOrder,
+      url: `${appUrl.replace(/\/+$/, "")}/dashboard/documents/${d.id}`,
+    },
+    recipients,
+  }
+}
+
 /** The payload for one event, from the document as it stands now. */
 export function buildPayload(input: {
   id: string
@@ -83,10 +110,9 @@ export function buildPayload(input: {
   recipientId?: string | null
   payment?: PaymentIn | null
 }): WebhookPayload {
-  const { document: d } = input
-  const recipients = [...d.recipients]
-    .sort((a, b) => a.order - b.order || a.email.localeCompare(b.email))
-    .map((r) => ({ id: r.id, name: r.name, email: r.email, role: r.role, order: r.order, status: r.signingStatus, viewed_at: iso(r.viewedAt), signed_at: iso(r.signedAt), decline_reason: r.rejectionReason ?? null }))
+  // The document and recipient mapping moved to documentResource, unchanged,
+  // so the public API can answer with the same shape.
+  const { document, recipients } = documentResource(input.document, input.appUrl)
   const p = input.payment
   return {
     id: input.id,
@@ -94,17 +120,7 @@ export function buildPayload(input: {
     created_at: input.at.toISOString(),
     test: input.test ?? false,
     data: {
-      document: {
-        id: d.id,
-        title: d.title,
-        status: d.status,
-        created_at: d.createdAt.toISOString(),
-        sent_at: iso(d.sentAt),
-        completed_at: iso(d.completedAt),
-        page_count: d.pageCount,
-        signing_order: d.signingOrder,
-        url: `${input.appUrl.replace(/\/+$/, "")}/dashboard/documents/${d.id}`,
-      },
+      document,
       recipient: recipients.find((r) => r.id === input.recipientId) ?? null,
       recipients,
       payment: p ? { id: p.id, amount: p.amount, currency: p.currency.toLowerCase(), status: p.status, provider: p.provider, paid_at: iso(p.paidAt) } : null,

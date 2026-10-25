@@ -1,6 +1,6 @@
 ---
 title: "Send document events to Zapier or Make"
-description: "Start a Zapier or Make workflow when a document is signed or completed, using their webhook triggers. No code needed."
+description: "Start a Zapier or Make workflow when a document is signed or completed, and send documents for signature from one. No code needed."
 category: developers
 order: 2
 ---
@@ -22,6 +22,28 @@ Zapier and Make can both start a workflow from a webhook. Point one of your endp
 3. Add that address as an endpoint under **Dashboard → Developers**, with the events you want.
 4. In Make, select **Redetermine data structure**, then **Send test** on the endpoint, so Make learns the fields.
 5. Add the next modules and turn the scenario on.
+
+## Send a document from a workflow
+
+A Zap or a scenario can also send a document for signature, for example when a deal is won or a form is submitted. You need an API key from **Dashboard → Developers → API keys**.
+
+**In Zapier**, add a **Webhooks by Zapier** action with the **Custom Request** event:
+
+1. Method **POST**, URL ending in `/api/v1/documents` (the base URL is on the Developers page).
+2. Under **Headers**, add `Authorization` with the value `Bearer ` followed by your key, and `Content-Type` with `application/json`.
+3. In **Data**, write the request, filling in fields from earlier steps, for example a PDF link and the signer's email:
+
+```json
+{
+  "title": "Service agreement",
+  "file_url": "https://files.example.com/service-agreement.pdf",
+  "recipients": [{ "email": "ama@example.com", "name": "Ama Mensah" }]
+}
+```
+
+**In Make**, add an **HTTP → Make a request** module with the same method, URL, headers and body.
+
+To send one of the library's templates instead of a PDF, give `"template"` and its `"values"`. Every option is in [Webhooks and the API: reference](/resources/help/webhooks-and-api#send-a-document). To look a document up later in a workflow, use `GET /api/v1/documents` with `recipient` or `status`.
 
 ## Good to know
 

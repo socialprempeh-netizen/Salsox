@@ -40,7 +40,9 @@ function safeLookup(hostname: string, options: { all?: boolean; family?: number 
   })
 }
 
-const agent = new Agent({ connect: { lookup: safeLookup as never, timeout: TIMEOUT_MS }, headersTimeout: TIMEOUT_MS, bodyTimeout: TIMEOUT_MS })
+// Exported for the documents API, which downloads a `file_url` under the same
+// rules (src/lib/api/fetch-file.ts).
+export const agent = new Agent({ connect: { lookup: safeLookup as never, timeout: TIMEOUT_MS }, headersTimeout: TIMEOUT_MS, bodyTimeout: TIMEOUT_MS })
 
 export type SendResult = { ok: boolean; status: number | null; error: string | null; ms: number }
 

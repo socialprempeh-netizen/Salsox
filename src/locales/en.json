@@ -631,7 +631,7 @@
       "webhooksTitle": "Webhooks",
       "webhooksBody": "We send a signed JSON message to your URL each time one of the chosen events happens on your documents.",
       "apiTitle": "API keys",
-      "apiBody": "A key lets an integration such as Zapier or Make subscribe to these events for your account. Treat it like a password.",
+      "apiBody": "A key lets an integration such as Zapier or Make send documents and subscribe to these events for your account. Treat it like a password.",
       "verifyTitle": "Check that a webhook came from us",
       "verifyBody": "Each delivery carries a Webhook-Signature header. Compute the same signature with the endpoint's secret and compare; refuse anything older than five minutes.",
       "urlLabel": "Endpoint URL",

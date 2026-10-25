@@ -1,6 +1,6 @@
 # Webhooks and the API
 
-Each account can send its document events to other software as signed JSON, and integrations (Zapier, Make, HubSpot) can subscribe to them with an API key. This guide is how it is built and what to configure. The public reference for people receiving webhooks is the Help Center article `content/help/articles/webhooks-and-api.md`, served at `/resources/help/webhooks-and-api`.
+Each account can send its document events to other software as signed JSON, and integrations (Zapier, Make, HubSpot) can subscribe to them, and send and find documents, with an API key. This guide is how it is built and what to configure. The public reference for people receiving webhooks is the Help Center article `content/help/articles/webhooks-and-api.md`, served at `/resources/help/webhooks-and-api`.
 
 ## Where things are
 
@@ -15,6 +15,10 @@ Each account can send its document events to other software as signed JSON, and 
 | Endpoints, queuing, attempts, retries, tests | `src/lib/webhooks/store.ts` |
 | API keys | `src/lib/api-keys.ts`, `src/lib/api-keys-store.ts` |
 | Public API routes | `src/app/api/v1/` with `src/lib/api/v1.ts` |
+| Reading a send request or a search (pure) | `src/lib/api/documents.ts` |
+| Finding documents | `src/lib/api/documents-store.ts` |
+| Downloading a `file_url` (same SSRF rules as webhooks) | `src/lib/api/fetch-file.ts` |
+| Sending from the API, in the engine | `src/lib/esign/api-send.ts` |
 | Developers page | `src/app/(dashboard)/dashboard/developers/page.tsx`, `src/components/developers/` |
 
 ## Events
@@ -39,7 +43,33 @@ Anything but a 2xx within 10 seconds is a failure, retried after about 1 minute,
 
 ## The API
 
-`GET /api/v1/me`, `GET` and `POST /api/v1/webhooks`, `DELETE /api/v1/webhooks/{id}`, `GET /api/v1/webhooks/sample?event=`. Authenticated with `Authorization: Bearer ak_…`. This is the REST-hook pattern Zapier and Make use for instant triggers. There is no endpoint yet to create or send documents.
+Authenticated with `Authorization: Bearer ak_…`, 120 requests a minute per key. Errors are `{ "error": { "code", "message" } }`.
+
+| Request | Does |
+|---|---|
+| `GET /api/v1/me` | The key's account: integrations call it to test a key. |
+| `GET`, `POST /api/v1/webhooks`, `DELETE /api/v1/webhooks/{id}` | Subscriptions, in the REST-hook pattern Zapier and Make use for instant triggers. |
+| `GET /api/v1/webhooks/sample?event=` | A sample payload for an event. |
+| `POST /api/v1/documents` | Creates and sends a document, from a PDF or a template. |
+| `GET /api/v1/documents` | Finds documents: `status`, `recipient`, `title`, `created_after`, `created_before`, `limit` (up to 100), `cursor`. |
+| `GET /api/v1/documents/{id}` | One document. |
+| `GET /api/v1/templates` | The library's templates (roles and blanks) and the account's saved ones. |
+
+Documents come back in the webhook payload's shape (`documentResource` in `payload.ts`): the document's fields with a `recipients` array. One shape for what a webhook delivers and what a search finds, so an integration maps them once.
+
+### Sending
+
+`POST /api/v1/documents` takes JSON, or `multipart/form-data` with a `file` part and the same JSON as a `data` part. The source is exactly one of a `file` part, `file_url`, `file_base64`, `template` (a library slug) or `saved_template_id`, with `values` for a template's blanks. Then `recipients` (`email`, `name`, `role`, `order`, `template_role`), optional `fields` (`recipient` as a position or an email, `type`, `page`, `x`, `y`, `width`, `height` as page percentages), `title`, `message`, `expires_in_days` and `signing_order`.
+
+It is not a second send path. `sendFromApi` picks one the product already has, so the plan rules, the sender checks, the audit trail and the webhooks (`document.sent` through `recordAudit`) are the dashboard's:
+
+- a PDF to signers in parallel without fields goes through Quick Send (`quickSend`), which places a signature and a date for each;
+- a PDF with fields, approvers, viewers, copies or a signing order goes through the editor's `createDraftFromUpload`, `saveDocumentSetup`, `sendDocument`. Without fields it is refused with `fields_required`, as the engine does not guess where an approver signs;
+- a template goes through `createDraftFromTemplate`, then the editor's path with the people filled in. The sender's own role (`you`) is the key's account; other roles are filled by `template_role`, or in order.
+
+When the draft was made but the send is refused (an unconfirmed email, a plan rule), the draft is deleted, so a failed call leaves nothing behind. Requests also spend the dashboard's own burst buckets (`esign:send:<user>`, `esign:upload:<user>`), so the API is not a way around them. A refusal carries the engine's code and the dashboard's English message for it; plan limits are 402.
+
+**Files.** The PDF limit is the dashboard's (4 MB). A Vercel function takes at most 4.5 MB of body, so a PDF near the limit fits as a multipart upload or a `file_url`, not as base64. `file_url` is fetched under the webhook rules: https only, every resolved address checked at connect time, up to three redirects (Zapier's file links redirect to storage), each hop checked again, 10 seconds, and the body read no further than the size limit.
 
 ## Configuration
 

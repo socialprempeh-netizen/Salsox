@@ -1,11 +1,14 @@
 # Zapier App Directory: listing draft
 
-**Status: draft, closer but not submittable yet (updated 2026-10-25).** Zapier publishes only integrations built on its Developer Platform that pass review. The Salsox side now exists: API-key authentication, REST-hook subscribe and unsubscribe endpoints, sample data for each trigger, and webhooks for seven document events (see "What the platform provides" below). Still to do: build the integration in the Zapier Developer Platform with the triggers below, test it privately with real users, and capture the screenshots. The actions and the search need an API to send and find documents, which does not exist yet, so the first version would be triggers only; confirm in Zapier's current publishing requirements that a triggers-only integration is accepted before building.
+**Status: draft, everything on the Salsox side exists; not submitted (updated 2026-10-25).** Zapier publishes only integrations built on its Developer Platform that pass review. The Salsox side is complete for a full first version: API-key authentication, REST-hook subscribe and unsubscribe endpoints with sample data for each trigger, webhooks for seven document events, and since the second update on 2026-10-25 an API to send documents and to find them, so the actions and the search below can be built too, not only triggers. Still to do: build the integration in the Zapier Developer Platform, test it privately with real users, and capture the screenshots.
 
 ## What the platform provides (for the Zapier build)
 
 - **Authentication:** API key. Zapier's "API Key" auth with the key sent as `Authorization: Bearer {{bundle.authData.api_key}}`. Test request: `GET /api/v1/me`, whose `email` makes a good connection label.
 - **Triggers (REST hooks):** subscribe with `POST /api/v1/webhooks` and body `{ "target_url": "{{bundle.targetUrl}}", "event": "document.completed" }`, store the returned `id`; unsubscribe with `DELETE /api/v1/webhooks/{{bundle.subscribeData.id}}`; "perform list" (sample data) with `GET /api/v1/webhooks/sample?event=document.completed`.
+- **Actions:** `POST /api/v1/documents` with a JSON body (see the action table below for the input fields each one maps). Answers `201` with the document; a refusal is `{ "error": { "code", "message" } }`, which the integration should raise as a Zapier error with the message, since it is written for the person (for example "Confirm your email address before sending").
+- **Dynamic dropdown for templates:** `GET /api/v1/templates` returns `data` (library templates: `slug`, `title`, `roles`, `variables`) and `saved` (the account's saved templates: `id`, `name`, `template`). Use it for the Template field, and its `roles` and `variables` for dynamic input fields (one email and name per role that is not `sender`, one text field per variable).
+- **Search:** `GET /api/v1/documents?title=&recipient=&status=&limit=1`, returning `{ data: [...] }`; a document is the webhook's `data.document` with its `recipients`, so trigger and search outputs map the same way. `GET /api/v1/documents/{id}` for a lookup by id.
 - **Payload and fields:** documented at `/resources/help/webhooks-and-api`. Each delivery is signed; the Zapier integration does not need to check it (Zapier's hook URL is secret), but may.
 - Base URL: the production app URL plus `/api/v1`.
 
@@ -43,22 +46,28 @@ Requirements source: [Zapier integration publishing requirements](https://docs.z
 
 All seven are available today. "Includes a link to the signed PDF" is not promised: the payload links to the document page, not the PDF file.
 
-## Planned actions (later: need an API to send documents)
+## Planned actions (the API exists; build them)
 
-| Action | Description |
-|---|---|
-| Send Template for Signature | Sends one of your saved templates to a new recipient, with their name and email filled in. |
-| Send PDF for Signature | Sends a PDF from a previous step, such as Google Drive or Gmail, for signature with fields placed automatically. |
+| Action | Description | Request |
+|---|---|---|
+| Send Template for Signature | Sends a template from the library, or one of your saved templates, to new recipients, with its blanks filled from earlier steps. | `POST /api/v1/documents` with `template` (slug) or `saved_template_id`, `values` from the dynamic fields, and one recipient per role (`template_role`). |
+| Send PDF for Signature | Sends a PDF from a previous step, such as Google Drive or Gmail, for signature, with a signature and a date placed for each signer automatically. | `POST /api/v1/documents` with `file_url` set to the Zapier file field, `title`, and `recipients` (line items: email, name). Optional `message`, `expires_in_days`. |
 
-## Planned searches (later: need an API to find documents)
+Notes for the build:
 
-| Search | Description |
-|---|---|
-| Find Document | Finds a document by title or ID, for use in later steps. |
+- **Files.** Map Zapier's file field straight to `file_url`. Salsox downloads it over https, follows up to three redirects (Zapier's file links redirect to storage) and refuses private addresses; PDFs up to 4 MB. Check in private testing that a file from Google Drive and from Gmail both arrive. The alternative, a multipart upload (`file` part plus the JSON as a `data` part), also works and needs custom code in the integration.
+- **Fields are placed automatically** only for signers in parallel. "Send PDF for Signature" should not offer approvers, copies or a signing order unless it also asks for field positions, which a Zap user cannot sensibly give; leave them out of the first version. Templates have their fields placed already, so "Send Template for Signature" has no such limit.
+- **Plan limits come back as `402`**, with a message the user can act on (upgrade, or remove the setting).
+
+## Planned search (the API exists; build it)
+
+| Search | Description | Request |
+|---|---|---|
+| Find Document | Finds the newest document matching a title, a recipient's email or a status, for use in later steps. | `GET /api/v1/documents?title=…&recipient=…&status=…&limit=1` |
 
 ## Example Zap descriptions (for the Zap templates Zapier asks for)
 
-Templates 1 and 3 need what is not built yet (the signed PDF as a file, a send action); 2, 4 and 5 work with the triggers above.
+Template 1 needs what is not built yet (the signed PDF as a file); 2 to 5 work with the triggers and actions above.
 
 1. **Save signed Salsox documents to Google Drive.** When a document is completed in Salsox, upload the signed PDF to a Google Drive folder.
 2. **Post to Slack when a contract is signed.** When a document is completed in Salsox, send a message to a Slack channel with its title and signers.

@@ -5,7 +5,8 @@
  * branch on `code` and show `message`.
  *
  * The API exists for integrations (Zapier, Make, HubSpot): subscribing to
- * webhooks the way their "REST hooks" expect, and checking a key works.
+ * webhooks the way their "REST hooks" expect, checking a key works, and
+ * since the documents routes, sending documents and finding them.
  * Described for developers in docs/webhooks.md and the Help Center article.
  */
 import { NextResponse } from "next/server"

@@ -50,7 +50,7 @@ Paid plans include unlimited signature requests. Templates and bulk send are par
 
 ### Salsox
 
-A flat price per account with no document count on paid plans: Personal is $9 a month or $90 a year, and Business, at $19 a month or $190 a year, adds Sign & Pay (card payments through Stripe, and card and mobile money through Paystack), signing order, approvers and a sealed PDF with a certificate. Signers need no account and can be reached by WhatsApp or SMS as well as email. **Where it falls short of Dropbox Sign:** no bulk send, no API to send documents (webhooks only), no native integrations, no team seats, and templates come from a ready-made library rather than your own documents. **Suits:** freelancers and small businesses sending their own contracts, especially if they want a deposit at signing. See [Salsox vs Dropbox Sign](/vs/dropbox-sign).
+A flat price per account with no document count on paid plans: Personal is $9 a month or $90 a year, and Business, at $19 a month or $190 a year, adds Sign & Pay (card payments through Stripe, and card and mobile money through Paystack), signing order, approvers and a sealed PDF with a certificate. Signers need no account and can be reached by WhatsApp or SMS as well as email. **Where it falls short of Dropbox Sign:** no bulk send, no embedded signing (its API sends documents, but signers sign on its own pages), no native integrations, no team seats, and templates come from a ready-made library rather than your own documents. **Suits:** freelancers and small businesses sending their own contracts, especially if they want a deposit at signing. See [Salsox vs Dropbox Sign](/vs/dropbox-sign).
 
 ### SignWell
 

@@ -13,7 +13,7 @@ faq:
   - q: "Is there a {site} app in the Zapier directory?"
     a: "Not yet. A native app is in development. Until it ships, the reliable route is Webhooks by Zapier: {site} sends each document event to the Zap's Catch Hook URL as it happens."
   - q: "Can a Zap send a document for signature through {site}?"
-    a: "No. Sending needs an API to create documents, which {site} does not have yet, so documents are sent from the dashboard by a person. The webhook route on this page reacts to what happens to them."
+    a: "Yes, with Webhooks by Zapier's Custom Request action and a {site} API key: the Zap posts the document, a PDF link or a template, and the recipients to the API, and the document is sent as it would be from the dashboard. The [Zapier and Make guide](/resources/help/connect-zapier-or-make) shows the request. A native app will make this a form to fill in."
   - q: "What does the webhook trigger see?"
     a: "The event, the document's title, status and dates, every recipient's name, email and signing status, and a link to the document. The signed PDF itself is not attached yet: a Zap passes the link on."
 related: ["/esignature-api", "/integrations/make", "/integrations/gmail", "/document-tracking", "/pricing"]
@@ -21,7 +21,7 @@ related: ["/esignature-api", "/integrations/make", "/integrations/gmail", "/docu
 
 ## The short answer
 
-Zapier connects apps through triggers ("a new row was added") and actions ("send a message"). For an e-signature tool, the useful trigger is "a document was signed", and the useful action is "send this document for signature". {site} has no native Zapier app yet, but the trigger half works today: {site} sends a webhook for each document event, and Zapier's own **Webhooks by Zapier** app can catch it. The action half needs an API to create and send documents, which {site} does not have yet, as the [eSignature API page](/esignature-api) explains.
+Zapier connects apps through triggers ("a new row was added") and actions ("send a message"). For an e-signature tool, the useful trigger is "a document was signed", and the useful action is "send this document for signature". {site} has no native Zapier app yet, but the trigger half works today: {site} sends a webhook for each document event, and Zapier's own **Webhooks by Zapier** app can catch it. The action half works too: {site}'s API can send a document for signature, and Zapier's Custom Request action can call it, as the [eSignature API page](/esignature-api) explains.
 
 ## What you can automate today
 

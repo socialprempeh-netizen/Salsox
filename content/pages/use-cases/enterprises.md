@@ -28,7 +28,7 @@ A team of three can pick an e-signature tool in an afternoon. A company of three
 
 **Admin console and team management.** Large rollouts need central administration: seats, roles, shared templates, usage reports. {site} has no team seats or admin console; each account is one sender, and saved templates belong to that account.
 
-**API and integrations.** Contracts often start in a CRM, HR system or procurement platform. {site} has no API to create documents and no native integrations, though it sends webhooks when documents are signed, which an integration platform can act on; see the [e-signature API page](/esignature-api) for what that means and who offers one.
+**API and integrations.** Contracts often start in a CRM, HR system or procurement platform. {site} has an API to send documents from a PDF or a template and to find them, and sends webhooks when documents are signed, which your own systems or an integration platform can act on. It has no native integrations and no embedded signing; see the [e-signature API page](/esignature-api) for what that means and who offers more.
 
 **Audit trail and evidence.** Here {site} meets the bar for everyday agreements: every document has an append-only [audit trail](/esignature-audit-trail) of each view and signature, with time, IP address and device, and Business-plan documents are sealed with a certificate page and a public verification code.
 

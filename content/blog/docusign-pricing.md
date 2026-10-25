@@ -81,7 +81,7 @@ For an individual or a small business that sends its own contracts one at a time
 
 If DocuSign's pricing does not fit, compare on the same terms: how sending is counted, who needs a paid seat, and which features you really use. A few examples:
 
-- **Salsox** charges per account, not per user, and does not count envelopes on paid plans. At the time of writing, Personal is $9 a month or $90 a year, and Business, which adds payment at signing (Sign & Pay), signing order and approvers, is $19 a month or $190 a year. The free plan sends 3 documents a month. Salsox has no bulk send and no native integrations, and its API covers webhooks only, not sending documents; see the [comparison with DocuSign](/vs/docusign) for the full list.
+- **Salsox** charges per account, not per user, and does not count envelopes on paid plans. At the time of writing, Personal is $9 a month or $90 a year, and Business, which adds payment at signing (Sign & Pay), signing order and approvers, is $19 a month or $190 a year. The free plan sends 3 documents a month. Salsox has no bulk send and no native integrations, and its API sends documents and reports events by webhook, but there is no embedded signing; see the [comparison with DocuSign](/vs/docusign) for the full list.
 - **Dropbox Sign, SignWell and DocuSeal** each price differently again; our guide to [Dropbox Sign alternatives](/blog/dropbox-sign-alternatives) sets their published prices side by side.
 
 Whichever you choose, try it with a real document before committing to a year. Our step-by-step guide to [signing a contract online](/blog/how-to-sign-a-contract-online) shows what that looks like from both sides.

@@ -4,6 +4,33 @@
 
 **Update 2026-10-25:** the events this app would show on deal timelines now exist as Salsox webhooks (sent, viewed, signed, completed, declined, expired, payment), documented at `/resources/help/webhooks-and-api`, so the app's server can receive them instead of polling. Still missing on the Salsox side: OAuth (HubSpot does not accept API keys for public apps), and an API to send a template, which "Send for signature" from a deal needs.
 
+**Second update 2026-10-25:** the API to send a template now exists (`POST /api/v1/documents` with `template` or `saved_template_id`, `values` and the recipients), as does finding documents (`GET /api/v1/documents`) and listing templates (`GET /api/v1/templates`). What remains on the Salsox side is OAuth, scoped in the next section and not built, plus a way to fetch the signed PDF for "attached to the deal" (see the last point there).
+
+## OAuth: what this app requires (scoped, not built)
+
+A separate decision, so only scoped here. Check each point against HubSpot's current OAuth documentation when the build starts, since its developer platform changes.
+
+**Direction.** HubSpot is the OAuth *provider* here: the app needs permission to read and write a customer's HubSpot data (contacts, deals, timelines, files). Salsox is the OAuth *client*. Salsox does not have to become an OAuth server for this listing.
+
+**Flow: OAuth 2.0 authorization code grant, per HubSpot account.**
+
+1. Register a public app in a HubSpot developer account. It gets a client id, a client secret and the redirect URL(s) it may use, for example `https://<app>/api/integrations/hubspot/callback`.
+2. "Install" is a link to HubSpot's authorize page (`https://app.hubspot.com/oauth/authorize`) with `client_id`, `redirect_uri`, the `scope` list (and any `optional_scope`) and a `state` value tied to the signed-in Salsox user, so the callback cannot be forged or replayed.
+3. The person chooses their HubSpot account and approves. HubSpot redirects to the callback with a `code`.
+4. The callback, which needs a signed-in Salsox session (`requireUser` from `@/lib/auth`), checks `state`, exchanges the code at HubSpot's token endpoint (`POST https://api.hubapi.com/oauth/v1/token`, `grant_type=authorization_code`) for an access token and a refresh token, and stores them against the Salsox user and the HubSpot account id (`hub_id`). Linking the HubSpot account to the Salsox account is this step: the person is already signed in to Salsox, so no Salsox OAuth server is needed.
+5. Access tokens are short-lived (about 30 minutes at the time of writing). Refresh with `grant_type=refresh_token` before a call when expired, and save the new token.
+6. Uninstall: handle HubSpot's uninstall notification, and offer "Disconnect" in Salsox. Both delete the stored tokens.
+
+**To build on the Salsox side:**
+
+- A `HubSpotConnection` table: user id, `hub_id`, refresh token and access token encrypted at rest (the webhook secret box, `src/lib/webhooks/secret-box.ts`, does this already), expiry, scopes granted.
+- The install link and the callback route, with `state` signed and short-lived.
+- A small HubSpot client that refreshes tokens and retries once on 401.
+- Delivering events to HubSpot: an internal subscriber to the same audit events webhooks use (`src/lib/webhooks/events.ts`) that writes timeline events, rather than a webhook to a URL, since the app's server is Salsox itself.
+- The deal-record card (a HubSpot UI extension) calls Salsox to send a template. Requests from HubSpot carry HubSpot's request signature, which Salsox must verify and map to the `hub_id`, and from it the Salsox user. The send then goes through the same engine function the API uses (`sendFromApi` in `src/lib/esign/api-send.ts`).
+- **Scopes**, least needed, names to confirm in HubSpot's current list: read contacts, companies and deals; timeline events; files (only if the signed PDF is attached). Optional scopes for anything a customer may refuse.
+- **Signed PDF.** "Signed PDF attached to the deal" needs a way to fetch the sealed PDF, which the public API does not offer yet. Inside Salsox the integration can read it from storage directly; if it ever runs outside Salsox, add `GET /api/v1/documents/{id}/pdf`.
+
 Requirements source: [HubSpot App Marketplace listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/app-marketplace-listing-requirements).
 
 Rules to respect in everything below: the listing describes this integration's value, not Salsox in general; never put "Hub" or "HubSpot" in the app's name or logo.
