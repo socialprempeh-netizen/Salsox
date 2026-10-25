@@ -91,7 +91,7 @@ export const OWN_PLAN_FACTS = [
   "Personal: $9 a month or $90 a year, unlimited documents (fair use), one sender.",
   "Business: $19 a month or $190 a year: adds Sign & Pay (payment collected during signing, by card through Stripe or by card and mobile money through Paystack), signing order, an approver role, and a sealed PDF with an audit certificate and verification code.",
   "Every plan keeps an audit trail. Senders can send by email, WhatsApp or SMS.",
-  "There are no team seats today and no public API.",
+  "There are no team seats today, and no API to send documents: the API covers webhooks only.",
 ]
 
 // ─── Templates ───────────────────────────────────────────────────────────────

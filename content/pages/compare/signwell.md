@@ -23,7 +23,7 @@ faq:
   - q: "Does SignWell collect payments with a signature?"
     a: "Payment collection is not listed on SignWell's pricing page. {site} includes Sign & Pay on its Business plan."
   - q: "Does {site} have templates and an API like SignWell?"
-    a: "SignWell lists templates on every plan and 25 free API documents a month. {site} has a library of ready-made templates you can customise and save, but it does not turn your own documents into templates, and it has no public API."
+    a: "SignWell lists templates on every plan and 25 free API documents a month. {site} has a library of ready-made templates you can customise and save, but it does not turn your own documents into templates, and its API covers webhooks only, not sending documents."
 related: ["/vs/dropbox-sign", "/vs/docuseal", "/alternatives/docusign", "/free-esignature", "/pricing"]
 ---
 
@@ -40,7 +40,7 @@ SignWell's figures were taken from its pricing page on **15 October 2026**, in U
 | Documents on paid plans | No count (fair use) | Unlimited |
 | Templates | Ready-made library, customisable and savable on Personal; not from your own documents | On every plan, up to the plan's limit |
 | Bulk send | Not offered | Listed |
-| API | No public API | 25 API documents a month free, then per document |
+| API | Webhooks only; no sending API | 25 API documents a month free, then per document |
 | Payment with signature | Business plan (Stripe or Paystack) | Not listed on the pricing page |
 | Audit trail | Every plan; sealed PDF with certificate on Business | Listed as audit trail and tamper-proof documents |
 

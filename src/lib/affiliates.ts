@@ -12,9 +12,11 @@
  *   link a visitor used wins, the usual rule for affiliate cookies.
  * - The dashboard counts clicks, unique visitors, signups and signups that
  *   now pay, and the commission those payments earned.
- * - Commission is recurring: AFFILIATE_COMMISSION.percent of every payment a
- *   referred customer makes during the AFFILIATE_COMMISSION.months after
- *   their first one. The Stripe webhook writes one ledger row per payment
+ * - Commission is recurring and tiered: for the AFFILIATE_COMMISSION.months
+ *   after a referred customer's first payment, each payment earns the rate
+ *   of that customer's net revenue in its calendar month (UTC): the base
+ *   rate, or a higher tier once the month passes a threshold. The Stripe
+ *   webhook writes one ledger row per payment and re-rates the month's rows
  *   (affiliates-store.ts); payouts are settled by hand from that ledger.
  *
  * The database side is in affiliates-store.ts.
@@ -28,8 +30,73 @@ export const AFFILIATE_DASHBOARD_DAYS = 30
  * The commission terms, in one place: the webhook, the dashboard and the
  * join page all read them from here. Changing a term applies to payments
  * recorded from then on; each ledger row keeps the percent it was paid at.
+ *
+ * Was a flat rate: { percent: 20, months: 12 }. Now tiered, on the model of
+ * the larger e-signature programs: 25% base, 35% in a month the customer
+ * pays over USD 100 net, 45% over USD 250. Tiers are per customer and per
+ * calendar month, in minor units of 	ierCurrency; a payment in another
+ * currency earns the base rate until thresholds are set for it.
  */
-export const AFFILIATE_COMMISSION = { percent: 20, months: 12 } as const
+// export const AFFILIATE_COMMISSION = { percent: 20, months: 12 } as const
+export const AFFILIATE_COMMISSION = {
+  months: 12,
+  basePercent: 25,
+  tierCurrency: "usd",
+  // Highest first is not required; tierPercent takes the best tier passed.
+  tiers: [
+    { over: 10_000, percent: 35 },
+    { over: 25_000, percent: 45 },
+  ],
+} as const
+
+/**
+ * The rate for a customer's month, from their net revenue that month (minor
+ * units). "Over" is strict: exactly USD 100 stays at the base rate.
+ */
+export function tierPercent(monthNet: number, currency: string): number {
+  let percent: number = AFFILIATE_COMMISSION.basePercent
+  if (currency.toLowerCase() !== AFFILIATE_COMMISSION.tierCurrency) return percent
+  for (const tier of AFFILIATE_COMMISSION.tiers) if (monthNet > tier.over && tier.percent > percent) percent = tier.percent
+  return percent
+}
+
+/** The calendar month (UTC) a payment counts toward, as "yyyy-mm". */
+export function commissionMonth(paidAt: Date): string {
+  return paidAt.toISOString().slice(0, 7)
+}
+
+/** The first and the day after the last instant of a "yyyy-mm" month, UTC. */
+export function monthRange(month: string): { start: Date; end: Date } {
+  const [y, m] = month.split("-").map(Number)
+  return { start: new Date(Date.UTC(y, m - 1, 1)), end: new Date(Date.UTC(y, m, 1)) }
+}
+
+export type MonthRow = { id: string; amount: number; currency: string; reversed: boolean; paidOut: boolean; percent: number; commission: number }
+
+/**
+ * Re-rates one customer's month: every live row takes the month's tier, set
+ * by the net of the live rows in the same currency. Reversed rows earn
+ * nothing and do not count; rows already paid out keep what they were paid,
+ * since a payout is money that has left. Returns only the rows that change.
+ */
+export function rerateMonth(rows: MonthRow[]): { id: string; percent: number; commission: number }[] {
+  const netBy = new Map<string, number>()
+  for (const r of rows) if (!r.reversed) netBy.set(r.currency, (netBy.get(r.currency) ?? 0) + r.amount)
+  const changes: { id: string; percent: number; commission: number }[] = []
+  for (const r of rows) {
+    if (r.reversed || r.paidOut) continue
+    const percent = tierPercent(netBy.get(r.currency) ?? 0, r.currency)
+    const commission = commissionAt(r.amount, percent)
+    if (percent !== r.percent || commission !== r.commission) changes.push({ id: r.id, percent, commission })
+  }
+  return changes
+}
+
+/** A percent of an amount in minor units, rounded down to the unit. */
+export function commissionAt(amount: number, percent: number): number {
+  if (!Number.isFinite(amount) || amount <= 0) return 0
+  return Math.floor((amount * percent) / 100)
+}
 
 /** The end of a customer's commission window, AFFILIATE_COMMISSION.months after their first payment. */
 export function commissionWindowEnd(firstPaidAt: Date): Date {
@@ -48,7 +115,15 @@ export function commissionWindowEnd(firstPaidAt: Date): Date {
 export function commissionFor(amount: number, paidAt: Date, firstPaidAt: Date): number {
   if (!Number.isFinite(amount) || amount <= 0) return 0
   if (paidAt.getTime() >= commissionWindowEnd(firstPaidAt).getTime()) return 0
-  return Math.floor((amount * AFFILIATE_COMMISSION.percent) / 100)
+  // Was Math.floor((amount * AFFILIATE_COMMISSION.percent) / 100): the flat
+  // rate. This is now the provisional base-rate figure for a new row, before
+  // rerateMonth lifts the month to its tier.
+  return commissionAt(amount, AFFILIATE_COMMISSION.basePercent)
+}
+
+/** Whether a payment falls inside the customer's commission window. */
+export function inCommissionWindow(paidAt: Date, firstPaidAt: Date): boolean {
+  return paidAt.getTime() < commissionWindowEnd(firstPaidAt).getTime()
 }
 
 // Codes that would read as the product speaking, or that someone could use

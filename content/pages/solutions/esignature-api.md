@@ -1,16 +1,16 @@
 ---
 title: "eSignature API: what it is, and does {site} have one?"
-description: "What an e-signature API does, when you need one, and a plain answer: {site} has no public API today. Who publishes one, and what {site} offers."
+description: "What an e-signature API does, when you need one, and where {site} stands: webhooks and an API to subscribe to them today, no sending API yet."
 h1: "Electronic signature APIs: what they do, and where {site} stands"
-lede: "An e-signature API lets your own software send documents for signature and react when they are signed. {site} does not offer a public API today. Here is what an API is for, who publishes one, and how to tell whether you need it."
+lede: "An e-signature API lets your own software send documents for signature and react when they are signed. {site} offers the second half today: signed webhooks for every document event, and an API for integrations to subscribe to them. Here is what that covers, what it does not yet, and how to tell what you need."
 primaryKeyword: "esignature api"
 aliases: ["electronic signature api", "e-signature api", "digital signature api", "embedded esignature", "esign api"]
 published: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-25
 breadcrumb: "eSignature API"
 faq:
   - q: "Does {site} have an API?"
-    a: "No. {site} has no public API, webhooks or embedded signing today. Documents are sent from its own dashboard, from a phone or a computer."
+    a: "Partly. {site} sends webhooks when a document is sent, viewed, signed or completed and when a signer pays, and has an API for integrations such as Zapier to subscribe to them. There is no API yet to send documents or to embed signing: documents are sent from the dashboard."
   - q: "Which e-signature providers publish an API?"
     a: "Several do, including DocuSign, Dropbox Sign, signNow, DocuSeal and SignWell, each with its own pricing for API use. Check each provider's developer documentation and pricing."
   - q: "Do I need an API?"
@@ -33,7 +33,9 @@ Most APIs are paired with webhooks, messages the provider sends your server when
 
 ## The plain answer about {site}
 
-{site} does not have a public API today, and it has no webhooks or embedded signing. Documents are sent from the {site} dashboard by a person, on a phone or a computer. We would rather say so on this page than let you discover it after signing up.
+{site} covers the reacting half today. Every account can add webhook endpoints under Dashboard → Developers: signed JSON messages sent when a document is sent, viewed, signed or completed, and when a signer pays. A small API lets integrations such as Zapier and Make subscribe to those events with an API key. The payload, signature check and retries are described in the [webhooks and API reference](/resources/help/webhooks-and-api).
+
+What {site} does not have yet is the sending half: there is no API to create and send a document from your own software, and no embedded signing. Documents are still prepared and sent from the {site} dashboard by a person, on a phone or a computer. We would rather say so on this page than let you discover it after signing up.
 
 ## Who publishes one
 
@@ -56,4 +58,4 @@ If the answers are no, {site}'s dashboard covers the job: upload a PDF or start 
 - A documents list with status filters and search, automatic reminders and an audit trail per document.
 - Export of every document and audit trail at any time.
 
-If an API is essential to you, choose a provider that publishes one today.
+If you need to react to signatures, {site}'s webhooks do that today. If your software must send documents itself, or show signing inside your own pages, choose a provider that publishes a sending API today.

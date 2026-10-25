@@ -18,7 +18,7 @@ import { prisma } from "@/lib/prisma"
 import { readCookie } from "@/lib/seo/attribution"
 import { CHECKOUT_BLOCKING_STATUSES } from "@/lib/billing"
 import { mayRefer } from "./referrals"
-import { AFFILIATE_COMMISSION, AFFILIATE_COOKIE, AFFILIATE_DASHBOARD_DAYS, claimableAffiliateCode, commissionFor, conversionRate, dailySeries, normalizeAffiliateCode, type DailyCount } from "./affiliates"
+import { AFFILIATE_COMMISSION, AFFILIATE_COOKIE, AFFILIATE_DASHBOARD_DAYS, claimableAffiliateCode, commissionFor, commissionMonth, conversionRate, dailySeries, monthRange, normalizeAffiliateCode, rerateMonth, type DailyCount } from "./affiliates"
 
 export type JoinResult = { ok: true; code: string } | { ok: false; error: "invalid" | "taken" | "already" }
 
@@ -103,23 +103,29 @@ export async function recordAffiliateCommission(payment: CommissionablePayment):
     orderBy: { paidAt: "asc" },
     select: { paidAt: true },
   })
-  const commission = commissionFor(payment.amount, payment.paidAt, first?.paidAt ?? payment.paidAt)
-  if (commission <= 0) return 0
+  const provisional = commissionFor(payment.amount, payment.paidAt, first?.paidAt ?? payment.paidAt)
+  if (provisional <= 0) return 0
   try {
-    await prisma.affiliateCommission.create({
-      data: {
-        affiliateId: affiliate.id,
-        customerId: customer.id,
-        sourceId: payment.sourceId,
-        paymentIntentId: payment.paymentIntentId,
-        amount: payment.amount,
-        commission,
-        currency: payment.currency.toLowerCase(),
-        percent: AFFILIATE_COMMISSION.percent,
-        paidAt: payment.paidAt,
-      },
+    // Written at the base rate, then the whole month is re-rated to its tier
+    // in the same transaction, this payment included (src/lib/affiliates.ts).
+    return await prisma.$transaction(async (tx) => {
+      const row = await tx.affiliateCommission.create({
+        data: {
+          affiliateId: affiliate.id,
+          customerId: customer.id,
+          sourceId: payment.sourceId,
+          paymentIntentId: payment.paymentIntentId,
+          amount: payment.amount,
+          commission: provisional,
+          currency: payment.currency.toLowerCase(),
+          percent: AFFILIATE_COMMISSION.basePercent,
+          paidAt: payment.paidAt,
+        },
+        select: { id: true },
+      })
+      const changes = await rerateCustomerMonth(tx, customer.id, payment.paidAt)
+      return changes.find((c) => c.id === row.id)?.commission ?? provisional
     })
-    return commission
   } catch (error) {
     // Two deliveries of the same event racing each other: the other one won.
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return 0
@@ -129,10 +135,29 @@ export async function recordAffiliateCommission(payment: CommissionablePayment):
 
 /** Takes back the commission on a fully refunded payment. Idempotent. */
 export async function reverseAffiliateCommission(paymentIntentId: string, now = new Date()): Promise<void> {
-  await prisma.affiliateCommission.updateMany({
-    where: { OR: [{ paymentIntentId }, { sourceId: paymentIntentId }], reversedAt: null },
-    data: { reversedAt: now },
+  await prisma.$transaction(async (tx) => {
+    const where = { OR: [{ paymentIntentId }, { sourceId: paymentIntentId }], reversedAt: null }
+    const rows = await tx.affiliateCommission.findMany({ where, select: { customerId: true, paidAt: true } })
+    if (rows.length === 0) return
+    await tx.affiliateCommission.updateMany({ where, data: { reversedAt: now } })
+    // A refund lowers the month's net, which can drop it a tier for the rest.
+    for (const r of rows) if (r.customerId) await rerateCustomerMonth(tx, r.customerId, r.paidAt)
   })
+}
+
+/**
+ * Puts every row of one customer's month at the month's tier (rerateMonth in
+ * affiliates.ts). Returns the rows it changed.
+ */
+async function rerateCustomerMonth(tx: Prisma.TransactionClient, customerId: string, paidAt: Date) {
+  const { start, end } = monthRange(commissionMonth(paidAt))
+  const rows = await tx.affiliateCommission.findMany({
+    where: { customerId, paidAt: { gte: start, lt: end } },
+    select: { id: true, amount: true, currency: true, reversedAt: true, paidOutAt: true, percent: true, commission: true },
+  })
+  const changes = rerateMonth(rows.map((r) => ({ id: r.id, amount: r.amount, currency: r.currency, reversed: r.reversedAt !== null, paidOut: r.paidOutAt !== null, percent: r.percent, commission: r.commission })))
+  for (const c of changes) await tx.affiliateCommission.update({ where: { id: c.id }, data: { percent: c.percent, commission: c.commission } })
+  return changes
 }
 
 export type AffiliateDashboard = {

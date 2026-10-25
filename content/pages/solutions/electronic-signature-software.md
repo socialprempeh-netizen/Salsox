@@ -23,7 +23,7 @@ faq:
   - q: "Is per-user pricing or per-account pricing better?"
     a: "It depends on how many people send. Per-user plans cost more as a team grows; {site} prices per account and has no team seats today, so it suits individuals and small teams sharing one sender account."
   - q: "What does {site} not do yet?"
-    a: "It cannot yet turn your own documents into reusable templates (it has a library of ready-made ones), and it has no bulk send, no public API and no CRM integrations. If you need those today, a larger platform may suit you better; the comparison pages say where."
+    a: "It cannot yet turn your own documents into reusable templates (it has a library of ready-made ones), and it has no bulk send, no API to send documents (webhooks only) and no CRM integrations. If you need those today, a larger platform may suit you better; the comparison pages say where."
   - q: "Can I try it without paying?"
     a: "Yes. A free account sends 3 documents a month, and the free PDF tools work without an account."
 related: ["/online-esignature", "/document-signing-software", "/vs/docusign", "/business-esignature", "/pricing"]

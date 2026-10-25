@@ -2,7 +2,7 @@
 title: Autenticazione
 description: OAuth, magic link, email e password, reset e collegamento degli account.
 translated_from: authentication.md
-source_checksum: d55a003c2b5f
+source_checksum: a529ebd19c39
 ---
 
 # Autenticazione
@@ -72,7 +72,7 @@ La risposta è la stessa sia che il nuovo indirizzo appartenga già a un altro a
 
 ## Verifica in due passaggi
 
-Ogni account con una password può attivare un secondo fattore da Dashboard → Settings: un codice a sei cifre da un'app di autenticazione (TOTP, RFC 6238). È self-hosted, quindi nessun fornitore esterno e nessuna bolletta di SMS. Il nome che i tuoi utenti leggeranno dentro la loro app viene da `siteConfig.name`, motivo per cui conviene impostarlo prima che qualcuno attivi tutto questo.
+Ogni account con una password può attivare un secondo fattore da Dashboard → **Sicurezza** (`/dashboard/security`, nella barra laterale): un codice a sei cifre da un'app di autenticazione (TOTP, RFC 6238). È self-hosted, quindi nessun fornitore esterno e nessuna bolletta di SMS. Il nome che i tuoi utenti leggeranno dentro la loro app viene da `siteConfig.name`, motivo per cui conviene impostarlo prima che qualcuno attivi tutto questo.
 
 **L'attivazione è in due passi di proposito.** Il primo salva un segreto non verificato e mostra il QR, la chiave da digitare e dieci codici di backup; solo un codice corretto dall'app lo accende davvero. Un'attivazione abbandonata a metà lascia quindi l'account esattamente com'era, ed è la differenza fra una funzione e un'esclusione.
 

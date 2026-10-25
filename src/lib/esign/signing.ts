@@ -211,6 +211,10 @@ export async function completeSigning(token: string): Promise<Result<{ documentC
     return true
   })
   if (!signed) return { ok: false, error: "ALREADY_SIGNED" }
+  // The signature is committed: its document.signed webhook can go out
+  // (recordAudit skips queuing inside a transaction). Never throws.
+  const { queueWebhookEvent } = await import("@/lib/webhooks/store")
+  await queueWebhookEvent({ documentId: recipient.documentId, auditType: AUDIT.RECIPIENT_SIGNED, recipientId: recipient.id })
 
   const document = await prisma.document.findUniqueOrThrow({
     where: { id: recipient.documentId },

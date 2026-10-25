@@ -680,6 +680,13 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
     throw error
   }
 
+  // Only the run that committed gets here, so the document.completed webhook
+  // goes out once (src/lib/webhooks; never throws), when this run recorded it.
+  if (completedEvent) {
+    const { queueWebhookEvent } = await import("@/lib/webhooks/store")
+    await queueWebhookEvent({ documentId, auditType: AUDIT.COMPLETED })
+  }
+
   // Only the run that committed gets here, so everyone is emailed once.
   const base = appUrl()
   await sendDocumentCompleted({

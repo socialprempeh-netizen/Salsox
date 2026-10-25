@@ -1,52 +1,46 @@
 ---
 title: "Make (Integromat) e-signature automation with {site}"
-description: "No native {site} module for Make yet. How to build a scenario today from {site}'s emails with a mailhook or Gmail module, and its limits."
+description: "No native {site} module for Make yet. How to build a real-time scenario today from {site} webhooks with Make's Custom webhook, and its limits."
 h1: "Make scenarios for e-signatures: what you can build with {site} now"
-lede: "{site} does not have a Make module yet; one is in development. Make can still watch for signed documents through the emails {site} sends, with either a mailhook address or a Gmail module. This page shows both."
+lede: "{site} does not have a Make module yet; one is in development. Make can already start a scenario the moment a document is sent, viewed, signed or completed, through {site} webhooks and Make's Custom webhook module. This page shows how, and the email route for when webhooks are not an option."
 primaryKeyword: "make esignature automation"
 aliases: ["make.com esignature", "integromat esignature", "make scenario document signing", "make mailhook signed document"]
 published: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-25
 breadcrumb: "Make"
 integration: { name: "Make", status: "in-development", url: "https://www.make.com" }
 faq:
   - q: "Is there a {site} module in Make?"
-    a: "Not yet. It is in development and depends on a public API and webhooks, which {site} does not offer today. Scenarios can start from {site}'s notification emails in the meantime."
-  - q: "Which is better, a mailhook or the Gmail module?"
-    a: "A mailhook runs as soon as the email arrives and does not need anyone's inbox, but you must forward messages to it. The Gmail module needs no forwarding rule but checks the inbox on a schedule."
+    a: "Not yet. It is in development. In the meantime a scenario can start from {site} webhooks through Make's Custom webhook module, in real time, with each signer's details."
+  - q: "Which is better, a webhook or an email trigger?"
+    a: "The webhook. It fires on every event, not only completion, carries the signer list and timestamps as fields, and does not depend on the wording of an email. Use email only where you cannot add an endpoint."
   - q: "Can a scenario read who signed?"
-    a: "Not reliably. The completion email names the document and links to the signed PDF; the list of signers and their times is in the audit trail in the dashboard and, on the Business plan, on the certificate page of the PDF."
+    a: "Yes, from a webhook: each delivery lists every recipient with their name, email, status and the time they viewed and signed. The signed PDF itself is not attached yet; the payload links to the document."
 related: ["/integrations/zapier", "/integrations/gmail", "/esignature-api", "/document-workflows", "/esignature-audit-trail"]
 ---
 
 ## Why there is no module yet
 
-A Make module talks to an app through its API: it asks for data, sends commands, and receives instant triggers through webhooks. {site} has neither a public API nor webhooks today, so there is nothing for a module to call. The module is planned on top of both. Until then, the dependable signal {site} produces is email, and Make is good at email.
+A Make module talks to an app through its API: it receives instant triggers, asks for data and sends commands. {site} now sends webhooks for every document event, and has an API for integrations to subscribe to them, so the trigger half exists. A module also needs actions, such as sending a template, and those need an API to create documents, which {site} does not have yet. Until the module ships, Make's own **Custom webhook** module catches {site}'s webhooks directly.
 
-## Option one: a mailhook
+## Build a scenario from webhooks
 
-Make can give you an email address of its own, called a mailhook, that starts a scenario whenever a message lands there.
-
-1. Create a scenario and add **Mailhook** as the first module. Make shows an address ending in `@hook.eu1.make.com` or similar.
-2. In your own mailbox, add a rule that forwards messages whose subject contains *is signed by everyone* to that address. Restrict the rule to the address {site} sends from.
-3. Finish a test document so a real message reaches the hook, then click **Run once** to capture its structure.
-4. Use a **Text parser** module with a pattern match to take the document title from between the quotation marks in the subject, and the download link from the body.
+1. Create a scenario and add **Webhooks → Custom webhook** as the first module. Select **Add**, name it, and copy the address Make shows.
+2. In {site}, open Dashboard → Developers, paste the address under Webhooks, and tick the events this scenario should handle.
+3. In Make, select **Redetermine data structure**, then **Send test** on the endpoint in {site}, so Make learns the fields. Sample deliveries carry `"test": true`.
+4. Add a **Router** with one path per event, filtering on the `event` field: `document.completed` to your records, `document.viewed` to the deal's owner, `document.signed` to a progress log.
 5. Route the result where it is needed: an Airtable record, a Google Sheets row, a Trello card moved to "Signed", a Slack or Teams message.
 
-Because the mailhook fires the instant the forwarded email arrives, this is the closest thing to a real-time trigger available today.
+Each delivery is signed. If the scenario does anything sensitive, check the `Webhook-Signature` header as the [webhooks and API reference](/resources/help/webhooks-and-api) describes.
 
-## Option two: the Gmail module
+## Without webhooks: the email route
 
-If you would rather not set up forwarding, start the scenario with **Gmail > Watch emails**, filtered on the same subject text and sender. The scenario runs on Make's schedule, every fifteen minutes on most plans, so expect a short delay. Everything after the trigger is the same as above.
-
-## Routing by outcome
-
-Add a **Router** after the trigger and you can handle different messages in one scenario: completion goes to your records, *declined to sign* goes to the person who owns the deal, *Signing links for "Title" expired* creates a follow-up task. Each path filters on the subject line.
+If you cannot add an endpoint, a scenario can still start from the email {site} sends when everyone has signed. Add **Mailhook** as the first module, forward messages whose subject contains *is signed by everyone* to its address, and take the title from between the quotation marks with a **Text parser**. Or start from **Gmail > Watch emails**, which runs on Make's schedule. Both see only what the email says and break if its wording changes, so treat them as a fallback.
 
 ## Limits to plan around
 
-Email-based scenarios see what the email says and nothing more. They cannot start a signing request, they do not know the individual signers, and a change to an email's wording would break the parser, so keep your patterns loose. Treat them as a bridge, not a foundation.
+Webhook scenarios cannot start a signing request in {site}: documents are still sent from the dashboard. Each scenario needs its address pasted into {site} by hand. And the signed PDF arrives as a link to the document, not a file.
 
 ## What a module will change
 
-The planned module brings instant triggers per signature and per document, actions to send a template to new recipients, and the signed PDF as a file. If your scenario needs something specific, describe it on the contact page; requests shape what is built first.
+The planned module connects your account once with an API key, subscribes to events itself, adds actions to send a template to new recipients, and brings the signed PDF as a file. If your scenario needs something specific, describe it on the contact page; requests shape what is built first.

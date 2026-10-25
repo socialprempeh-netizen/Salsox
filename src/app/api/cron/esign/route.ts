@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { expireSweep, recoverStuckFinalizations, reminderSweep } from "@/lib/esign/documents"
 import { renewalNoticeSweep } from "@/lib/esign/renewal"
 import { reconcilePayments, recoverProcessorFees } from "@/lib/esign/payments/reconcile"
+import { deliverDue } from "@/lib/webhooks/store"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -22,6 +23,7 @@ export const maxDuration = 300
  *              provider and settled: paid, refunded or closed.
  *  - renewals: subscriptions renewing soon get an advance notice, because
  *              Salsox never renews silently.
+ *  - webhooks: deliveries to integrations that failed and are due a retry.
  *
  * Each step is independent and idempotent, so one failing does not stop the
  * others, and a re-run the same day does nothing twice. Requires CRON_SECRET,
@@ -41,7 +43,11 @@ export async function GET(request: Request) {
   // Was without `fees`. It retries passing a paid payment's processor fee on to
   // the sender when that did not happen at confirmation (payments/reconcile.ts).
   // const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), renewals: renewalNoticeSweep }
-  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), fees: () => recoverProcessorFees(), renewals: renewalNoticeSweep }
+  // Was without `webhooks`: retries webhook deliveries that failed and are
+  // due again (src/lib/webhooks/retry.ts). Last, so the other steps' own
+  // events (an expiry, a completion) are queued before it runs.
+  // const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), fees: () => recoverProcessorFees(), renewals: renewalNoticeSweep }
+  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), fees: () => recoverProcessorFees(), renewals: renewalNoticeSweep, webhooks: async () => (await deliverDue()).attempted }
   const results: Record<string, number | string> = {}
   for (const [name, run] of Object.entries(steps)) {
     try {

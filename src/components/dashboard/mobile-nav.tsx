@@ -28,6 +28,7 @@ import {
   LifeBuoy,
   KeyRound,
   ShieldCheck,
+  Webhook,
 } from "lucide-react"
 import { sectionFor } from "@/lib/admin/sections"
 import {
@@ -56,6 +57,8 @@ const menus = {
     { href: "/dashboard/billing", key: "billing", icon: CreditCard },
     // 2FA and passkeys: their own page, so setting them up is one click away.
     { href: "/dashboard/security", key: "security", icon: ShieldCheck },
+    // Webhooks and API keys, for connecting other software (src/lib/webhooks).
+    { href: "/dashboard/developers", key: "developers", icon: Webhook },
     { href: "/dashboard/settings", key: "settings", icon: Settings },
   ],
   // Replaced by the eight sections of src/lib/admin/sections.ts, as in

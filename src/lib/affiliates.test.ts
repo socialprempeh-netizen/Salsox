@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { AFFILIATE_COMMISSION, affiliateDestination, affiliateLink, claimableAffiliateCode, commissionFor, commissionWindowEnd, conversionRate, dailySeries, isBot, normalizeAffiliateCode } from "./affiliates"
+import { AFFILIATE_COMMISSION, affiliateDestination, affiliateLink, claimableAffiliateCode, commissionAt, commissionFor, commissionMonth, commissionWindowEnd, conversionRate, dailySeries, inCommissionWindow, isBot, monthRange, normalizeAffiliateCode, rerateMonth, tierPercent, type MonthRow } from "./affiliates"
 
 describe("affiliate codes", () => {
   it("are 3 to 24 lower-case letters, digits and inner single hyphens", () => {
@@ -72,25 +72,73 @@ describe("dashboard numbers", () => {
 describe("affiliate commission", () => {
   const first = new Date("2026-01-31T10:00:00Z")
 
-  it("is 20% recurring for 12 months by default", () => {
-    expect(AFFILIATE_COMMISSION).toEqual({ percent: 20, months: 12 })
+  it("is 25% base, 35% and 45% tiers, for 12 months, from one config", () => {
+    expect(AFFILIATE_COMMISSION.months).toBe(12)
+    expect(AFFILIATE_COMMISSION.basePercent).toBe(25)
+    expect(AFFILIATE_COMMISSION.tiers.map((t) => [t.over, t.percent])).toEqual([[10_000, 35], [25_000, 45]])
   })
 
-  it("is the percent of each payment, rounded down to the cent", () => {
-    expect(commissionFor(1900, first, first)).toBe(380)
-    expect(commissionFor(999, first, first)).toBe(199)
-    expect(commissionFor(4, first, first)).toBe(0)
+  it("picks the month's tier from its net revenue, strictly over each threshold", () => {
+    expect(tierPercent(10_000, "usd")).toBe(25)
+    expect(tierPercent(10_001, "usd")).toBe(35)
+    expect(tierPercent(25_000, "USD")).toBe(35)
+    expect(tierPercent(25_001, "usd")).toBe(45)
+  })
+
+  it("keeps other currencies at the base rate until thresholds are set for them", () => {
+    expect(tierPercent(10_000_000, "ghs")).toBe(25)
+  })
+
+  it("writes a new payment at the base rate, rounded down to the cent", () => {
+    expect(commissionFor(1900, first, first)).toBe(475)
+    expect(commissionFor(999, first, first)).toBe(249)
+    expect(commissionAt(3, 25)).toBe(0)
   })
 
   it("is paid on every payment inside the window and none after it", () => {
     expect(commissionWindowEnd(first).toISOString()).toBe("2027-01-31T10:00:00.000Z")
-    expect(commissionFor(1900, new Date("2027-01-31T09:59:59Z"), first)).toBe(380)
+    expect(commissionFor(1900, new Date("2027-01-31T09:59:59Z"), first)).toBe(475)
     expect(commissionFor(1900, new Date("2027-01-31T10:00:00Z"), first)).toBe(0)
+    expect(inCommissionWindow(new Date("2026-06-01T00:00:00Z"), first)).toBe(true)
   })
 
   it("is nothing on a payment of nothing", () => {
     expect(commissionFor(0, first, first)).toBe(0)
     expect(commissionFor(-500, first, first)).toBe(0)
     expect(commissionFor(Number.NaN, first, first)).toBe(0)
+  })
+
+  it("buckets payments by UTC calendar month", () => {
+    expect(commissionMonth(new Date("2026-03-31T23:59:59Z"))).toBe("2026-03")
+    expect(commissionMonth(new Date("2026-04-01T00:00:00Z"))).toBe("2026-04")
+    expect(monthRange("2026-12")).toEqual({ start: new Date("2026-12-01T00:00:00Z"), end: new Date("2027-01-01T00:00:00Z") })
+  })
+})
+
+describe("rerateMonth", () => {
+  const row = (id: string, amount: number, extra: Partial<MonthRow> = {}): MonthRow => ({ id, amount, currency: "usd", reversed: false, paidOut: false, percent: 25, commission: Math.floor(amount * 0.25), ...extra })
+
+  it("leaves a month under the first threshold alone", () => {
+    expect(rerateMonth([row("a", 4900), row("b", 4900)])).toEqual([])
+  })
+
+  it("lifts every payment of the month once it passes a threshold, the earlier ones too", () => {
+    expect(rerateMonth([row("a", 6000), row("b", 6000)])).toEqual([
+      { id: "a", percent: 35, commission: 2100 },
+      { id: "b", percent: 35, commission: 2100 },
+    ])
+    expect(rerateMonth([row("a", 20_000), row("b", 6000, { percent: 35, commission: 2100 })])).toEqual([
+      { id: "a", percent: 45, commission: 9000 },
+      { id: "b", percent: 45, commission: 2700 },
+    ])
+  })
+
+  it("drops a tier when a refund takes the month back under", () => {
+    const rows = [row("a", 6000, { percent: 35, commission: 2100 }), row("b", 6000, { reversed: true, percent: 35, commission: 2100 })]
+    expect(rerateMonth(rows)).toEqual([{ id: "a", percent: 25, commission: 1500 }])
+  })
+
+  it("never changes a row already paid out", () => {
+    expect(rerateMonth([row("a", 6000, { paidOut: true }), row("b", 6000)])).toEqual([{ id: "b", percent: 35, commission: 2100 }])
   })
 })

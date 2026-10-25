@@ -7,6 +7,7 @@
  */
 import { headers } from "next/headers"
 import type { Prisma, PrismaClient } from "@prisma/client"
+import { webhookEventFor } from "@/lib/webhooks/events"
 
 export const AUDIT = {
   CREATED: "DOCUMENT_CREATED",
@@ -73,4 +74,12 @@ export async function recordAudit(
       userAgent: event.meta?.userAgent ?? null,
     },
   })
+  // Outside a transaction the event is final, so the account's webhooks for
+  // it (src/lib/webhooks) are queued now. Inside one it could still roll
+  // back, so the caller queues after the commit (signing.ts, documents.ts).
+  // Queuing never throws, and only five event types are sent out at all.
+  if ("$transaction" in db && webhookEventFor(event.type)) {
+    const { queueWebhookEvent } = await import("@/lib/webhooks/store")
+    await queueWebhookEvent({ documentId: event.documentId, auditType: event.type, recipientId: event.recipientId })
+  }
 }

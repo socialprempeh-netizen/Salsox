@@ -41,7 +41,7 @@ Offers in tech move fast and candidates compare them on their phones. The [job o
 
 ## What {site} does not do
 
-Honesty saves you a migration later. {site} has no public API, no CRM integration and no bulk send. If your sales process lives inside Salesforce or HubSpot and you need contracts generated from deal data, a larger platform fits better. If you want a fast, inexpensive way to get a growing number of documents signed by people who are rarely at a desk, {site} is built for that, at a flat price per account rather than per seat.
+Honesty saves you a migration later. {site} has no API to send documents (it sends webhooks when they are signed), no CRM integration and no bulk send. If your sales process lives inside Salesforce or HubSpot and you need contracts generated from deal data, a larger platform fits better. If you want a fast, inexpensive way to get a growing number of documents signed by people who are rarely at a desk, {site} is built for that, at a flat price per account rather than per seat.
 
 ## A workable setup
 

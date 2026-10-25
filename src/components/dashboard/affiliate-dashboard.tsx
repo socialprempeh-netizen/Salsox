@@ -33,7 +33,8 @@ type Props = {
   destinations: string[]
   totals: { clicks: number; visitors: number; signups: number; paying: number; conversionLabel: string }
   allTime: { signups: number; paying: number }
-  terms: { percent: number; months: number }
+  /** The tiered rates, thresholds already formatted (src/lib/affiliates.ts). */
+  terms: { months: number; base: number; tiers: { percent: number; over: string }[] }
   /** Already formatted for the viewer's locale, one row per currency earned in. */
   earnings: { currency: string; earned: string; unpaid: string }[]
   series: DailyCount[]
@@ -118,7 +119,25 @@ export function AffiliateDashboardView(props: Props) {
           <Wallet className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
           <div className="min-w-0">
             <h2 id="affiliate-earnings-title" className="text-sm font-semibold">{t("earningsTitle")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("earningsTerms", props.terms)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("earningsTerms", { months: props.terms.months })}</p>
+            {/* The three rates as a ladder: each step taller than the last, with
+                when it applies. It draws in once; reduced motion shows it set. */}
+            <ol className="mt-3 grid grid-cols-3 items-end gap-2" aria-label={t("tiersLabel")}>
+              {[{ percent: props.terms.base, when: t("tierBase") }, ...props.terms.tiers.map((tier) => ({ percent: tier.percent, when: t("tierOver", { amount: tier.over }) }))].map((step, i, all) => (
+                <li key={step.percent} className="flex flex-col">
+                  <motion.span
+                    aria-hidden="true"
+                    initial={{ scaleY: reduceMotion ? 1 : 0 }}
+                    animate={{ scaleY: 1 }}
+                    transition={{ duration: 0.4, delay: reduceMotion ? 0 : 0.1 + i * 0.08, ease: "easeOut" }}
+                    style={{ height: `${1.25 + i * 0.75}rem`, originY: 1 }}
+                    className={i === all.length - 1 ? "block bg-primary" : "block bg-primary/40"}
+                  />
+                  <span className="mt-1.5 text-lg font-semibold tabular-nums">{step.percent}%</span>
+                  <span className="text-xs leading-snug text-muted-foreground">{step.when}</span>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
         {props.earnings.length === 0 ? (

@@ -39,7 +39,7 @@ It is better to know this before you move than after:
 
 - **No templates from your own PDFs.** {site} has a library of ready-made templates you can customise and save, but a PDF you upload is set up each time you send it; Quick Send places signature and date fields automatically for the simple case.
 - **No bulk send.** Each document goes to up to ten recipients.
-- **No API or integrations.** Signing starts from {site}, not from your CRM or another app.
+- **No sending API or native integrations.** Signing starts from {site}, not from your CRM or another app; webhooks can tell other apps when a document is signed.
 - **No team seats.** Plans are per account.
 - **PDF only.** Export other formats to PDF before sending.
 

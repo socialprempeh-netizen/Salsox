@@ -3,7 +3,7 @@
  * recognisable at a glance in the topic grid, on article pages and on the
  * video cards. Decorative: the category name always sits beside it.
  */
-import { CreditCard, LayoutTemplate, LifeBuoy, PenLine, Receipt, Rocket, Send, ShieldCheck, type LucideIcon } from "lucide-react"
+import { CreditCard, LayoutTemplate, LifeBuoy, PenLine, Receipt, Rocket, Send, ShieldCheck, Webhook, type LucideIcon } from "lucide-react"
 import type { HelpCategory } from "@/lib/help"
 
 const ICONS: Record<HelpCategory, LucideIcon> = {
@@ -14,6 +14,7 @@ const ICONS: Record<HelpCategory, LucideIcon> = {
   "sign-and-pay": CreditCard,
   "account-and-billing": Receipt,
   security: ShieldCheck,
+  developers: Webhook,
   troubleshooting: LifeBuoy,
 }
 

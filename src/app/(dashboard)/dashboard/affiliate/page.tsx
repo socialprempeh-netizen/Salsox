@@ -24,6 +24,9 @@ export default async function AffiliatePage() {
   const format = await getFormatter()
   const dashboard = await affiliateDashboard(user.id)
   const host = new URL(siteConfig.url).host
+  // Tier thresholds are minor units of the tier currency, shown whole.
+  const usd = (minor: number) => format.number(minor / 100, { style: "currency", currency: AFFILIATE_COMMISSION.tierCurrency.toUpperCase(), maximumFractionDigits: 0 })
+  const topTier = AFFILIATE_COMMISSION.tiers[AFFILIATE_COMMISSION.tiers.length - 1]
 
   if (!dashboard) {
     const row = await prisma.user.findUnique({ where: { id: user.id }, select: { name: true } })
@@ -33,7 +36,7 @@ export default async function AffiliatePage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold">{t("joinTitle")}</h1>
-          <p className="mt-1 text-muted-foreground">{t("joinSubtitle", { days: AFFILIATE_COOKIE_DAYS, ...AFFILIATE_COMMISSION })}</p>
+          <p className="mt-1 text-muted-foreground">{t("joinSubtitle", { days: AFFILIATE_COOKIE_DAYS, months: AFFILIATE_COMMISSION.months, base: AFFILIATE_COMMISSION.basePercent, top: topTier.percent, over: usd(topTier.over) })}</p>
         </div>
         <AffiliateJoin host={host} suggestion={claimableAffiliateCode(fromName) ? fromName : ""} />
       </div>
@@ -56,7 +59,7 @@ export default async function AffiliatePage() {
         destinations={[...AFFILIATE_DESTINATIONS]}
         totals={{ ...dashboard.totals, conversionLabel: pct(dashboard.totals.conversion) }}
         allTime={dashboard.allTime}
-        terms={AFFILIATE_COMMISSION}
+        terms={{ months: AFFILIATE_COMMISSION.months, base: AFFILIATE_COMMISSION.basePercent, tiers: AFFILIATE_COMMISSION.tiers.map((tier) => ({ percent: tier.percent, over: usd(tier.over) })) }}
         earnings={dashboard.earnings.map((e) => ({ currency: e.currency, earned: money(e.earned, e.currency), unpaid: money(e.unpaid, e.currency) }))}
         series={dashboard.series}
         recent={dashboard.recent.map((r) => ({ id: r.id, name: r.name, joined: format.dateTime(r.joinedAt, { dateStyle: "medium" }), paying: r.paying }))}

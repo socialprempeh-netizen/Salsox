@@ -1,50 +1,50 @@
 ---
 title: "Zapier e-signature integration: where {site} stands"
-description: "{site} has no native Zapier app yet. What works today: a Zap triggered by the signed-document email, step by step, and what the native app will add."
+description: "{site} has no native Zapier app yet. What works today: a Zap started by {site} webhooks through Webhooks by Zapier, step by step, and its limits."
 h1: "Zapier and {site}: automating e-signatures today"
-lede: "A native {site} app for Zapier is in development, not available yet. You can still automate the moment a document is signed, with a Zap that starts from the completion email. Here is how, and where it falls short."
+lede: "A native {site} app for Zapier is in development, not available yet. You can already start a Zap the moment a document is sent, viewed, signed or completed, with {site} webhooks and Zapier's own webhook trigger. Here is how, and where it falls short."
 primaryKeyword: "zapier esignature integration"
 aliases: ["zapier e-signature", "esignature zapier", "zapier document signing", "zapier signed document trigger"]
 published: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-25
 breadcrumb: "Zapier"
 integration: { name: "Zapier", status: "in-development", url: "https://zapier.com" }
 faq:
   - q: "Is there a {site} app in the Zapier directory?"
-    a: "Not yet. A native app is in development. Until it ships, the reliable route is a Zap whose trigger is the completion email {site} sends when everyone has signed."
+    a: "Not yet. A native app is in development. Until it ships, the reliable route is Webhooks by Zapier: {site} sends each document event to the Zap's Catch Hook URL as it happens."
   - q: "Can a Zap send a document for signature through {site}?"
-    a: "No. Sending needs a public API, which {site} does not have today, so documents are sent from the dashboard by a person. The workaround on this page only reacts to documents that finish."
-  - q: "Does the email trigger see the signed PDF?"
-    a: "It sees the email, which carries the document title and a link to download the signed PDF. A Zap can pass that link on, for example into a spreadsheet row or a chat message."
+    a: "No. Sending needs an API to create documents, which {site} does not have yet, so documents are sent from the dashboard by a person. The webhook route on this page reacts to what happens to them."
+  - q: "What does the webhook trigger see?"
+    a: "The event, the document's title, status and dates, every recipient's name, email and signing status, and a link to the document. The signed PDF itself is not attached yet: a Zap passes the link on."
 related: ["/esignature-api", "/integrations/make", "/integrations/gmail", "/document-tracking", "/pricing"]
 ---
 
 ## The short answer
 
-Zapier connects apps through triggers ("a new row was added") and actions ("send a message"). For an e-signature tool, the useful trigger is "a document was signed", and the useful action is "send this document for signature". {site} offers neither as a native Zapier app today. Both depend on a public API and webhooks, and as the [eSignature API page](/esignature-api) explains, {site} does not have those yet. A Zapier app is being built on top of them; this page will change when it ships, and not before.
+Zapier connects apps through triggers ("a new row was added") and actions ("send a message"). For an e-signature tool, the useful trigger is "a document was signed", and the useful action is "send this document for signature". {site} has no native Zapier app yet, but the trigger half works today: {site} sends a webhook for each document event, and Zapier's own **Webhooks by Zapier** app can catch it. The action half needs an API to create and send documents, which {site} does not have yet, as the [eSignature API page](/esignature-api) explains.
 
 ## What you can automate today
 
-{site} already sends an email at the moments that matter, and Zapier can read email. When the last person signs, everyone on the document receives a message with the subject line *"Title" is signed by everyone* and a button to download the signed PDF. When someone refuses, the sender receives *Name declined to sign "Title"*. Those messages are predictable enough to start a Zap.
+Every {site} account can add webhook endpoints under Dashboard → Developers. Each one receives a signed JSON message when a document is sent, first viewed, signed by a recipient or completed by everyone, and when a signer pays through Sign & Pay. Point one at a Zapier Catch Hook and each of those moments can start a Zap, with the document's title, every signer's name and status, and a link to the document as fields to map.
 
 ## Building the Zap
 
-1. In Zapier, create a Zap and choose **Gmail** (or **Microsoft Outlook**) as the trigger app, with the event **New Email Matching Search**.
-2. Use a search that only matches completion messages, such as `subject:"is signed by everyone"`. Add `from:` with the address your {site} emails come from, so a client quoting the phrase cannot set it off.
-3. Test the trigger with a document you have just finished, so Zapier has a real example to map fields from.
-4. Add a **Formatter** step to pull the document title out of the subject line: the text between the quotation marks.
-5. Add the action you want: a new row in Google Sheets with the title and the date, a message in a Slack channel, a task in your project tool, or a deal stage change in your CRM.
+1. In Zapier, create a Zap and choose **Webhooks by Zapier** as the trigger app, with the event **Catch Hook**. Copy the URL Zapier shows.
+2. In {site}, open Dashboard → Developers, paste that URL under Webhooks, and tick the events this Zap should react to, such as `document.completed`.
+3. Select **Send test** on the new endpoint, then **Test trigger** in Zapier, so Zapier has an example to map fields from. Sample deliveries carry `"test": true`.
+4. Add a **Filter** step on the `event` field if the endpoint sends more than one event and this Zap should act on one.
+5. Add the action you want: a row in Google Sheets with the title and `completed_at`, a message in a Slack channel, a task in your project tool, or a deal stage change in your CRM.
 
-A second Zap built the same way on *declined to sign* can alert you to refusals the moment they happen, which is often when a quick call saves the deal.
+A second endpoint and Zap on `document.viewed` tells you the moment a client opens a contract, which is often when a quick call saves the deal. The fields are listed in the [webhooks and API reference](/resources/help/webhooks-and-api).
 
-## Where the email route falls short
+## Where the webhook route falls short
 
-It is honest automation, not a real integration. It fires when the whole document is complete, not as each person signs. It knows the title, not the signer list or the field values. It needs a mailbox Zapier can read, so the Zap belongs to whoever owns that inbox. And it cannot start anything in {site}: every document is still prepared and sent from the dashboard.
+It is a real-time trigger, set up by hand. Each Zap needs its URL pasted into {site}, rather than connecting your account once inside Zapier. It cannot start anything in {site}: every document is still prepared and sent from the dashboard. And the signed PDF arrives as a link to the document, not as a file other steps can attach.
 
 ## What the native app will add
 
-The planned app covers the parts email cannot: triggers for each signature, decline and expiry with the signer's details; an action to send a saved template to a new recipient; and the signed PDF itself as a file other steps can attach. If there is a workflow you would automate first, tell us through the contact page: the order in which triggers and actions are built follows what people ask for.
+The planned app connects your account once with an API key and subscribes to events itself, so no URL is pasted by hand. It adds an action to send a saved template to a new recipient, and the signed PDF as a file. If there is a workflow you would automate first, tell us through the contact page: the order in which triggers and actions are built follows what people ask for.
 
-## In the meantime
+## Without webhooks
 
-Most teams who ask for Zapier want to know when paperwork is finished without checking. Until the app exists, the [document tracking](/document-tracking) page in the dashboard shows who has opened and signed each document, and the completion email reaches everyone the moment it is done.
+If you cannot add an endpoint, the older route still works: {site} emails everyone when the last person signs, with the subject *"Title" is signed by everyone*, and a Zap can start from **Gmail → New Email Matching Search** on that subject. It fires only on completion and sees only the title, so prefer the webhook route where you can.

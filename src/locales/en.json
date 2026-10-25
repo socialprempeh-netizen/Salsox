@@ -150,7 +150,7 @@
     "affiliate": {
       "metaTitle": "Affiliate program",
       "joinTitle": "Become an affiliate",
-      "joinSubtitle": "Get a link of your own and earn {percent}% of every payment from the customers it brings, for {months} months after their first one. A visit counts for {days} days.",
+      "joinSubtitle": "Get a link of your own and earn {base}% of every payment from the customers it brings, rising to {top}% in a month they pay over {over}, for {months} months after their first payment. A visit counts for {days} days.",
       "perkLink": "A short link with a code you choose, to any of our main pages.",
       "perkTracking": "Clicks, unique visitors and signups, counted as they happen.",
       "perkDashboard": "A dashboard with the last 30 days, the accounts that now pay, and the commission they earned you.",
@@ -176,7 +176,10 @@
       "copied": "Affiliate link copied",
       "copyFailed": "Could not copy. Select the link and copy it instead.",
       "earningsTitle": "Your commission",
-      "earningsTerms": "You earn {percent}% of every payment a customer you brought makes, for {months} months after their first payment. A refunded payment earns nothing.",
+      "earningsTerms": "For {months} months after a customer you brought first pays, you earn a share of every payment they make. The rate is set each calendar month by what that customer paid that month, net of refunds, and applies to all of that month's payments. A refunded payment earns nothing.",
+      "tiersLabel": "Commission rates",
+      "tierBase": "Every payment",
+      "tierOver": "In a month they pay over {amount}",
       "earningsEmpty": "Nothing earned yet. Commission appears here as soon as someone you brought pays.",
       "earningsEarned": "Earned",
       "earningsUnpaid": "Awaiting payout",
@@ -544,7 +547,8 @@
       "systemHealth": "System health",
       "sectionPages": "Pages in this section",
       "security": "Security",
-      "adminSecurity": "Security"
+      "adminSecurity": "Security",
+      "developers": "Developers"
     },
     "templates": {
       "title": "Templates",
@@ -619,6 +623,94 @@
       "title": "Still there?",
       "body": "{seconds, plural, one {You will be signed out in # second because of inactivity.} other {You will be signed out in # seconds because of inactivity.}}",
       "stay": "Stay signed in"
+    },
+    "developers": {
+      "title": "Developers",
+      "subtitle": "Connect this account to other software: send document events to a URL as they happen, and let integrations like Zapier act for you.",
+      "docsLink": "Webhook and API reference",
+      "webhooksTitle": "Webhooks",
+      "webhooksBody": "We send a signed JSON message to your URL each time one of the chosen events happens on your documents.",
+      "apiTitle": "API keys",
+      "apiBody": "A key lets an integration such as Zapier or Make subscribe to these events for your account. Treat it like a password.",
+      "verifyTitle": "Check that a webhook came from us",
+      "verifyBody": "Each delivery carries a Webhook-Signature header. Compute the same signature with the endpoint's secret and compare; refuse anything older than five minutes.",
+      "urlLabel": "Endpoint URL",
+      "descriptionLabel": "Label (optional)",
+      "descriptionPlaceholder": "Zapier, CRM sync…",
+      "eventsLabel": "Events",
+      "event": {
+        "document_sent": "A document goes out for signing.",
+        "document_viewed": "A recipient opens it for the first time.",
+        "document_signed": "A recipient finishes signing.",
+        "document_completed": "Everyone has signed; the sealed PDF is ready.",
+        "payment_sent": "A signer pays through Sign & Pay.",
+        "document_declined": "A recipient declines to sign.",
+        "document_expired": "The signing links lapse before everyone signs."
+      },
+      "addEndpoint": "Add endpoint",
+      "endpointAdded": "Endpoint added",
+      "endpointLimit": "You have the most endpoints an account can have ({max}). Remove one to add another.",
+      "noEndpoints": "No endpoints yet. Add a URL above to start receiving events.",
+      "secretTitle": "Signing secret for this endpoint",
+      "keyTitle": "Your new API key",
+      "shownOnce": "Copy it now and keep it somewhere safe. It will not be shown again.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "savedIt": "I have saved it",
+      "fromIntegration": "Added by an integration",
+      "paused": "Turned off",
+      "enabledLabel": "Send events to this endpoint",
+      "testEventLabel": "Event to send as a test",
+      "sendTest": "Send test",
+      "testOk": "Delivered: the endpoint answered HTTP {status}.",
+      "testFailed": "Not delivered: {reason}.",
+      "unknown": "unknown error",
+      "rotate": "New secret",
+      "rotateTitle": "Replace the signing secret?",
+      "rotateBody": "Deliveries are signed with the new secret straight away, and the old one stops verifying. Update your receiver right after.",
+      "rotateConfirm": "Replace secret",
+      "delete": "Delete",
+      "deleteTitle": "Delete this endpoint?",
+      "deleteBody": "It stops receiving events, and its delivery history is removed.",
+      "deleted": "Endpoint deleted",
+      "cancel": "Cancel",
+      "recentDeliveries": "Latest deliveries",
+      "noDeliveries": "Nothing sent yet. Send a test to see how a delivery looks.",
+      "test": "test",
+      "resend": "Resend",
+      "status": {
+        "delivered": "Delivered",
+        "failed": "Failed",
+        "sending": "Sending",
+        "retrying": "{attempts, plural, one {Retrying after # attempt} other {Retrying after # attempts}}"
+      },
+      "errors": {
+        "invalid": "That is not a valid URL.",
+        "https": "Use an https:// URL.",
+        "credentials": "Leave the user name and password out of the URL.",
+        "private": "That URL points at a private or local address, which we cannot send to.",
+        "port": "That port is not allowed. Use the default https port or one above 1023.",
+        "length": "That URL is too long.",
+        "events": "Choose at least one event.",
+        "limit": "You have the most endpoints an account can have.",
+        "notFound": "That endpoint no longer exists.",
+        "rate": "Too many requests. Wait a few minutes and try again."
+      },
+      "keyNameLabel": "Key name",
+      "keyNamePlaceholder": "Zapier",
+      "createKey": "Create key",
+      "noKeys": "No API keys yet.",
+      "lastUsed": "Last used {when}",
+      "neverUsed": "Never used",
+      "revoke": "Revoke",
+      "revokeTitle": "Revoke this key?",
+      "revokeBody": "Anything using it stops working at once. Integrations it set up keep their webhook endpoints until you delete them.",
+      "revoked": "Key revoked",
+      "keyErrors": {
+        "limit": "You have the most API keys an account can have. Revoke one first.",
+        "name": "Give the key a name.",
+        "rate": "Too many keys created just now. Wait a few minutes."
+      }
     }
   },
   "adminCustomers": {
@@ -3774,6 +3866,10 @@
       "troubleshooting": {
         "title": "Troubleshooting",
         "blurb": "Missing emails, expired links, uploads, fields that won't place, and more."
+      },
+      "developers": {
+        "title": "Developers",
+        "blurb": "Webhooks for document events, the API, and connecting Zapier or Make."
       }
     },
     "videos": {

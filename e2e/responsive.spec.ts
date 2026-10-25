@@ -84,6 +84,8 @@ for (const width of WIDTHS) {
       "/resources/help",
       "/resources/help/plans-and-what-they-include",
       "/resources/help/videos",
+      // The public webhook and API reference that integrations link to.
+      "/resources/help/webhooks-and-api",
     ]) {
       await check(path, path.slice(1).replaceAll("/", "-"))
     }
@@ -114,6 +116,8 @@ for (const width of WIDTHS) {
     await check("/dashboard/affiliate", "affiliate-dashboard")
     // 2FA and passkeys, on their own page since the Security split.
     await check("/dashboard/security", "security")
+    // Webhooks and API keys (src/lib/webhooks).
+    await check("/dashboard/developers", "developers")
     await check("/dashboard/settings", "settings")
     await check("/dashboard/settings/sessions", "devices")
 

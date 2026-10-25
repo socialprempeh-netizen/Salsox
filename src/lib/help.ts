@@ -31,6 +31,8 @@ export const HELP_CATEGORIES = [
   "sign-and-pay",
   "account-and-billing",
   "security",
+  // Webhooks and the API, for connecting other software.
+  "developers",
   "troubleshooting",
 ] as const
 

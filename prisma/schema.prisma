@@ -94,6 +94,8 @@ model User {
   sessions              Session[]
   twoFactor             TwoFactor[]
   passkeys              Passkey[]
+  webhookEndpoints      WebhookEndpoint[]
+  apiKeys               ApiKey[]
   subscription          Subscription?
   purchases             Purchase[]
   documents             Document[]
@@ -289,6 +291,76 @@ model Passkey {
 
   @@index([userId])
   @@index([credentialID])
+}
+
+// ─── Webhooks and the public API (src/lib/webhooks) ──────────────────────────
+// Where an account's document events are sent: a URL, the events it wants,
+// and the secret its deliveries are signed with. Added from the Developers
+// page ("ui") or by an integration through the API ("api", how Zapier-style
+// REST hooks subscribe). `secret` is encrypted with AUTH_SECRET
+// (src/lib/webhooks/secret-box.ts): the server needs it in clear to sign.
+model WebhookEndpoint {
+  id          String            @id @default(cuid())
+  userId      String
+  url         String
+  secret      String
+  events      String[]
+  enabled     Boolean           @default(true)
+  description String?
+  source      String            @default("ui")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries  WebhookDelivery[]
+
+  @@index([userId])
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+// One event sent to one endpoint: the delivery log on the Developers page and
+// the retry queue at once. The payload is fixed when the event happens, so a
+// retry sends exactly what the first attempt sent, under the same event id.
+// PENDING with a nextAttemptAt is waiting for a retry; FAILED gave up.
+model WebhookDelivery {
+  id             String                @id @default(cuid())
+  endpointId     String
+  eventId        String
+  event          String
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  nextAttemptAt  DateTime?
+  responseStatus Int?
+  error          String?
+  test           Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  deliveredAt    DateTime?
+  endpoint       WebhookEndpoint       @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId, createdAt])
+  @@index([status, nextAttemptAt])
+}
+
+// Personal API keys, for integrations (Zapier, Make) to act for an account.
+// Only a SHA-256 of the key is kept; the key is shown once, at creation.
+// `prefix` is its first characters, so people can tell their keys apart.
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  prefix     String
+  hash       String    @unique
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // The organisation's sign-in policy, one row (id 1), set by admins at
