@@ -14,18 +14,29 @@ import { APIError } from "better-auth/api"
 const enableTwoFactor = vi.fn()
 const generateBackupCodes = vi.fn()
 const getCurrentUser = vi.fn()
+const getAdminAccess = vi.fn()
+const markVerified = vi.fn()
+const verifyTOTP = vi.fn()
+const verifyBackupCode = vi.fn()
+const userUpdate = vi.fn()
 
 vi.mock("@/auth", () => ({
   auth: {
     api: {
       enableTwoFactor: (...a: unknown[]) => enableTwoFactor(...a),
       generateBackupCodes: (...a: unknown[]) => generateBackupCodes(...a),
-      verifyTOTP: vi.fn(),
+      verifyTOTP: (...a: unknown[]) => verifyTOTP(...a),
+      verifyBackupCode: (...a: unknown[]) => verifyBackupCode(...a),
       disableTwoFactor: vi.fn(),
     },
   },
 }))
-vi.mock("@/lib/auth", () => ({ getCurrentUser: () => getCurrentUser() }))
+vi.mock("@/lib/auth", () => ({
+  getCurrentUser: () => getCurrentUser(),
+  getAdminAccess: () => getAdminAccess(),
+  markSessionTwoFactorVerified: (...a: unknown[]) => markVerified(...a),
+}))
+vi.mock("@/lib/prisma", () => ({ prisma: { user: { update: (...a: unknown[]) => userUpdate(...a) } } }))
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }))
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => true }))
 vi.mock("next/navigation", () => ({
@@ -34,7 +45,7 @@ vi.mock("next/navigation", () => ({
   },
 }))
 
-const { startTwoFactorSetup, regenerateBackupCodes } = await import("./two-factor")
+const { startTwoFactorSetup, regenerateBackupCodes, verifyAdminSession, dismissTwoFactorNudge } = await import("./two-factor")
 
 const form = (fields: Record<string, string>) => {
   const data = new FormData()
@@ -102,5 +113,64 @@ describe("regenerateBackupCodes", () => {
     process.env.DEMO_MODE = "true"
     expect(await regenerateBackupCodes({}, form({ password: "pw" }))).toEqual({ error: "demo" })
     expect(generateBackupCodes).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * The admin area's check for a session that never passed the second factor
+ * (src/lib/two-factor-policy.ts). It must only ever mark a session after the
+ * library accepted the code, and must send anyone with nothing to verify on
+ * to where they belong.
+ */
+describe("verifyAdminSession", () => {
+  const redirectOf = async (run: () => Promise<unknown>) => {
+    try {
+      await run()
+    } catch (e) {
+      return String((e as Error).message).replace("REDIRECT:", "")
+    }
+    return null
+  }
+
+  beforeEach(() => {
+    getCurrentUser.mockResolvedValue({ id: "a1", role: "ADMIN" })
+    getAdminAccess.mockResolvedValue("verify")
+    verifyTOTP.mockResolvedValue({ token: "admin-session" })
+    verifyBackupCode.mockResolvedValue({ token: "admin-session" })
+  })
+
+  it("marks the session and opens the admin area on a correct code", async () => {
+    expect(await redirectOf(() => verifyAdminSession({}, form({ mode: "app", code: "123 456" })))).toBe("/admin")
+    expect(verifyTOTP).toHaveBeenCalledWith(expect.objectContaining({ body: { code: "123456" } }))
+    expect(markVerified).toHaveBeenCalledWith("admin-session")
+  })
+
+  it("accepts one backup code instead", async () => {
+    expect(await redirectOf(() => verifyAdminSession({}, form({ mode: "backup", code: "abcde-fghjk" })))).toBe("/admin")
+    expect(verifyBackupCode).toHaveBeenCalled()
+    expect(markVerified).toHaveBeenCalledWith("admin-session")
+  })
+
+  it("marks nothing on a wrong code, and says which kind was wrong", async () => {
+    verifyTOTP.mockRejectedValue(new APIError("BAD_REQUEST", { message: "invalid" }))
+    expect(await verifyAdminSession({}, form({ mode: "app", code: "000000" }))).toEqual({ error: "code" })
+    verifyBackupCode.mockRejectedValue(new APIError("BAD_REQUEST", { message: "invalid" }))
+    expect(await verifyAdminSession({}, form({ mode: "backup", code: "ZZZZZ-ZZZZZ" }))).toEqual({ error: "backup" })
+    expect(markVerified).not.toHaveBeenCalled()
+  })
+
+  it("sends anyone with nothing to verify where they belong", async () => {
+    getAdminAccess.mockResolvedValue("not-admin")
+    expect(await redirectOf(() => verifyAdminSession({}, form({ code: "123456" })))).toBe("/dashboard")
+    getAdminAccess.mockResolvedValue("enroll")
+    expect(await redirectOf(() => verifyAdminSession({}, form({ code: "123456" })))).toBe("/dashboard/settings?error=admin-2fa#two-factor")
+    expect(verifyTOTP).not.toHaveBeenCalled()
+  })
+})
+
+describe("dismissTwoFactorNudge", () => {
+  it("stores the dismissal on the signed-in account", async () => {
+    await dismissTwoFactorNudge()
+    expect(userUpdate).toHaveBeenCalledWith({ where: { id: "u1" }, data: { twoFactorNudgeDismissedAt: expect.any(Date) } })
   })
 })

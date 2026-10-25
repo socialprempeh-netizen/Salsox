@@ -94,6 +94,16 @@ Ten of them, each good for exactly one sign-in and spent when used. They are sho
 
 They are generated upper case and without `0`, `O`, `1` or `I` (`src/lib/backup-codes.ts`), because they get written on paper and typed back in on the day the phone is gone; what a user types is forgiven for lower case, spaces and a missing dash, never for a wrong code. They are stored **encrypted** with `AUTH_SECRET`, like the TOTP secret itself, which is the one operational consequence worth knowing before rotating that variable: rotating it makes every stored secret and every backup code unreadable.
 
+### Admins: required
+
+For admins, two-factor authentication is mandatory, and it is checked twice: the account must have it set up, and the session in use must have passed a code. The rule is `adminAccess` in `src/lib/two-factor-policy.ts`; the admin layout, the admin server actions and the admin API routes all go through `getAdminUser()` / `getAdminAccess()` in `src/lib/auth`.
+
+- **An admin without 2FA** is sent from `/admin` to Settings to turn it on. Finishing the setup counts as passing the code, so they go straight in afterwards.
+- **An admin whose session never saw the code**, usually after "Continue with Google" on a linked account (which skips the second factor, see [Account linking](#account-linking)), is sent to `/dashboard/admin-verify` to enter one, or a backup code.
+- Each session records when it passed a code (`Session.twoFactorVerifiedAt`): the sign-in step, a backup code, finishing setup, or the admin check. The admin check is limited to 10 tries per 15 minutes and 30 a day per admin, because the library's own lockout only counts sign-in attempts.
+
+For everyone else 2FA stays optional. People with a Stripe or Paystack payout account see a one-time suggestion to turn it on, on the dashboard and the payouts page, until they do or dismiss it. Admin Settings shows how many admins lack it and how many users have it.
+
 ### If both the phone and the codes are gone
 
 There is no self-service way back in, and the sign-in screen says so rather than letting somebody try combinations at midnight. An administrator clears the second factor for that user:

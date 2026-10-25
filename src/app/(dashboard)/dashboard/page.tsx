@@ -11,6 +11,8 @@ import { CheckoutStatusToast } from "@/components/billing/checkout-status-toast"
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge"
 import { isKitSite } from "@/config/kit"
 import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
+import { shouldShowTwoFactorNudge } from "@/lib/two-factor-nudge"
+import { TwoFactorNudge } from "@/components/dashboard/two-factor-nudge"
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard.home")
@@ -20,13 +22,14 @@ export default async function DashboardPage() {
   // One grouped count instead of one query per status. The entitlement joins
   // the same batch, as nothing here depends on it: it was awaited first, one
   // more database round trip before the rest could start.
-  const [entitlement, statusCounts, userRow] = await Promise.all([
+  const [entitlement, statusCounts, userRow, twoFactorNudge] = await Promise.all([
     getEntitlement(user.id),
     prisma.document.groupBy({ by: ["status"], where: { userId: user.id }, _count: { _all: true } }),
     prisma.user.findUnique({
       where: { id: user.id },
       select: { name: true, onboardingDismissedAt: true, stripeCustomerId: true },
     }),
+    shouldShowTwoFactorNudge(user.id),
   ])
   const subscription = entitlement.kind === "subscription" ? entitlement.subscription : null
   const lifetime = entitlement.kind === "lifetime" ? entitlement.purchase : null
@@ -57,6 +60,9 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {/* Someone who can be paid out is told once that 2FA protects it. */}
+      {twoFactorNudge && <TwoFactorNudge />}
 
       {!userRow?.onboardingDismissedAt && (
         <GetStartedChecklist

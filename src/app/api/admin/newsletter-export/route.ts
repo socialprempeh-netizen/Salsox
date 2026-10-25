@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth"
+import { getAdminUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -8,7 +8,9 @@ import { prisma } from "@/lib/prisma"
  * opt-in for each address.
  */
 export async function GET() {
-  const user = await getCurrentUser()
+  // Was getCurrentUser(): admins also need 2FA, passed on this session
+  // (src/lib/two-factor-policy.ts), so a role alone no longer opens this.
+  const user = await getAdminUser()
   if (!user || user.role !== "ADMIN") {
     return new Response("Forbidden", { status: 403 })
   }

@@ -13,6 +13,8 @@ import { stripeCountryOptions } from "@/lib/esign/payments/stripe-countries"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ConnectStripeButton, PaystackForm, RefreshPayoutsButton } from "@/components/esign/payout-forms"
+import { shouldShowTwoFactorNudge } from "@/lib/two-factor-nudge"
+import { TwoFactorNudge } from "@/components/dashboard/two-factor-nudge"
 
 const PAYSTACK_COUNTRY = process.env.PAYSTACK_COUNTRY ?? "ghana"
 
@@ -23,7 +25,10 @@ export default async function PayoutsPage() {
   // browser too, the names and order could differ from the server's (each
   // runtime has its own locale data) and break hydration.
   const countries = stripeCountryOptions(await getLocale())
-  const accounts = await prisma.payoutAccount.findMany({ where: { userId: user.id } })
+  const [accounts, twoFactorNudge] = await Promise.all([
+    prisma.payoutAccount.findMany({ where: { userId: user.id } }),
+    shouldShowTwoFactorNudge(user.id),
+  ])
   const stripe = accounts.find((a) => a.provider === "STRIPE")
   const paystack = accounts.find((a) => a.provider === "PAYSTACK")
   const stripeAvailable = getProvider("STRIPE").isConfigured()
@@ -50,6 +55,9 @@ export default async function PayoutsPage() {
         </div>
         {accounts.length > 0 && <RefreshPayoutsButton />}
       </div>
+
+      {/* Where the money arrives is where 2FA matters most; suggested once. */}
+      {twoFactorNudge && <TwoFactorNudge />}
 
       <Card>
         <CardHeader>

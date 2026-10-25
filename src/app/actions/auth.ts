@@ -6,6 +6,7 @@ import { safeNext } from "@/lib/safe-next"
 import { APIError } from "better-auth/api"
 import { z } from "zod"
 import { auth } from "@/auth"
+import { markSessionTwoFactorVerified } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { passwordSchema } from "@/lib/password"
 import { checkRateLimit, rateLimitKeyFromIp } from "@/lib/rate-limit"
@@ -138,7 +139,10 @@ export async function verifyTwoFactorCode(formData: FormData) {
   if (!(await checkRateLimit(await rateLimitKeyFromIp("2fa"), 10))) redirect("/2fa?error=rate")
 
   try {
-    await auth.api.verifyTOTP({ body: { code }, headers: await headers() })
+    const result = await auth.api.verifyTOTP({ body: { code }, headers: await headers() })
+    // The new session passed the second factor: the admin area asks for that
+    // (src/lib/two-factor-policy.ts).
+    await markSessionTwoFactorVerified(result.token)
   } catch (error) {
     // Wrong code, expired code, or an expired challenge cookie: the page says
     // the same thing for all three, and none of them reveals anything about
@@ -166,7 +170,8 @@ export async function verifyTwoFactorBackupCode(formData: FormData) {
   }
 
   try {
-    await auth.api.verifyBackupCode({ body: { code }, headers: await headers() })
+    const result = await auth.api.verifyBackupCode({ body: { code }, headers: await headers() })
+    await markSessionTwoFactorVerified(result.token)
   } catch (error) {
     if (error instanceof APIError) redirect("/2fa?mode=backup&error=backup")
     throw error

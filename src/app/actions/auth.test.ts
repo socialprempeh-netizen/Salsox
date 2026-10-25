@@ -19,6 +19,7 @@ const verifyTOTP = vi.fn()
 const verifyBackupCode = vi.fn()
 const findUnique = vi.fn()
 const allowRateLimit = vi.fn()
+const markVerified = vi.fn()
 
 vi.mock("@/auth", () => ({
   auth: {
@@ -31,6 +32,9 @@ vi.mock("@/auth", () => ({
     },
   },
 }))
+// The admin area reads this mark (src/lib/two-factor-policy.ts); here only
+// that the right session is marked.
+vi.mock("@/lib/auth", () => ({ markSessionTwoFactorVerified: (...a: unknown[]) => markVerified(...a) }))
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }))
 vi.mock("@/lib/prisma", () => ({
   prisma: { user: { findUnique: (...a: unknown[]) => findUnique(...a) } },
@@ -78,6 +82,9 @@ beforeEach(() => {
   vi.resetAllMocks()
   allowRateLimit.mockReturnValue(true)
   signInEmail.mockResolvedValue({ token: "t", user: { id: "u1" } })
+  // What Better Auth answers a correct code with: the new session.
+  verifyTOTP.mockResolvedValue({ token: "session-totp", user: { id: "u1" } })
+  verifyBackupCode.mockResolvedValue({ token: "session-backup", user: { id: "u1" } })
   findUnique.mockResolvedValue({ twoFactorEnabled: false })
 })
 
@@ -166,6 +173,17 @@ describe("verifyTwoFactorCode", () => {
     expect(await redirectOf(() => verifyTwoFactorCode(form({ code: "123456" })))).toBe("/dashboard")
   })
 
+  it("marks the new session as having passed the second factor", async () => {
+    await redirectOf(() => verifyTwoFactorCode(form({ code: "123456" })))
+    expect(markVerified).toHaveBeenCalledWith("session-totp")
+  })
+
+  it("marks nothing when the code is wrong", async () => {
+    verifyTOTP.mockRejectedValue(new APIError("BAD_REQUEST", { message: "invalid" }))
+    await redirectOf(() => verifyTwoFactorCode(form({ code: "000000" })))
+    expect(markVerified).not.toHaveBeenCalled()
+  })
+
   it("accepts a code typed with spaces", async () => {
     await redirectOf(() => verifyTwoFactorCode(form({ code: "123 456" })))
     expect(verifyTOTP).toHaveBeenCalledWith(expect.objectContaining({ body: { code: "123456" } }))
@@ -198,6 +216,7 @@ describe("verifyTwoFactorBackupCode", () => {
     expect(await redirectOf(() => verifyTwoFactorBackupCode(form({ code: "abcd-efgh" })))).toBe(
       "/dashboard/settings?ok=backup-used"
     )
+    expect(markVerified).toHaveBeenCalledWith("session-backup")
   })
 
   /**

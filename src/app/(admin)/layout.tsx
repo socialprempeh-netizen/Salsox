@@ -1,5 +1,6 @@
 import { ClientMessagesProvider } from "@/i18n/client-provider"
-import { getCurrentUser } from "@/lib/auth"
+import { getAdminAccess, getCurrentUser } from "@/lib/auth"
+import { ADMIN_ENROLL_PATH, ADMIN_VERIFY_PATH } from "@/lib/two-factor-policy"
 import { getTranslations } from "next-intl/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
@@ -16,6 +17,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const t = await getTranslations("admin")
   if (!user) redirect("/login")
   if (user.role !== "ADMIN") redirect("/dashboard")
+  // 2FA is mandatory for admins (src/lib/two-factor-policy.ts): enrolled, and
+  // passed on this session. Each missing step has its own page.
+  const access = await getAdminAccess()
+  if (access === "enroll") redirect(ADMIN_ENROLL_PATH)
+  if (access === "verify") redirect(ADMIN_VERIFY_PATH)
+  if (access !== "ok") redirect("/dashboard")
 
   // Client components here get only the "app" messages (src/i18n/client-messages.ts).
   return (

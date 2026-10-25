@@ -16,7 +16,7 @@
  */
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { getCurrentUser } from "@/lib/auth"
+import { getAdminUser } from "@/lib/auth"
 import { addToCustomers, draftSocialPosts, logReplyByHand, publishPost, runHunt, runOutreach, sendMessage } from "@/lib/outreach-agent/agent"
 import { clampCap } from "@/lib/outreach-agent/policy"
 import { draftProblems, isAutoPlatform } from "@/lib/outreach-agent/social"
@@ -30,7 +30,9 @@ const STUDIO = "/admin/outreach/social"
 const id = z.string().min(1).max(64)
 
 async function requireAdmin() {
-  const user = await getCurrentUser()
+  // Was getCurrentUser(): admins also need 2FA, passed on this session
+  // (src/lib/two-factor-policy.ts), so a role alone no longer opens this.
+  const user = await getAdminUser()
   if (!user || user.role !== "ADMIN") throw new Error("Unauthorized")
 }
 

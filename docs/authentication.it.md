@@ -101,6 +101,16 @@ Dieci, ognuno valido per un solo accesso e consumato quando lo usi. Si vedono **
 
 Sono generati in maiuscolo e senza `0`, `O`, `1` e `I` (`src/lib/backup-codes.ts`), perché finiscono scritti su carta e vengono ridigitati il giorno in cui il telefono non c'è più; a chi li digita si perdonano minuscole, spazi e trattino mancante, mai un codice sbagliato. Sono conservati **cifrati** con `AUTH_SECRET`, come il segreto TOTP stesso, ed è l'unica conseguenza operativa da conoscere prima di ruotare quella variabile: ruotarla rende illeggibili tutti i segreti e tutti i codici di backup.
 
+### Amministratori: obbligatoria
+
+Per gli amministratori la verifica in due passaggi è obbligatoria, e viene controllata due volte: l'account deve averla attivata, e la sessione in uso deve aver superato un codice. La regola è `adminAccess` in `src/lib/two-factor-policy.ts`; il layout dell'area admin, le server action e le route API admin passano tutte da `getAdminUser()` / `getAdminAccess()` in `src/lib/auth`.
+
+- **Un amministratore senza 2FA** viene mandato da `/admin` alle Impostazioni per attivarla. Completare la configurazione vale come codice superato, quindi dopo entra direttamente.
+- **Un amministratore la cui sessione non ha mai visto il codice**, di solito dopo "Continua con Google" su un account collegato (che salta il secondo fattore, vedi [Collegare più account](#collegare-più-account)), viene mandato a `/dashboard/admin-verify` per inserirne uno, o un codice di backup.
+- Ogni sessione registra quando ha superato un codice (`Session.twoFactorVerifiedAt`): il passaggio di accesso, un codice di backup, la fine della configurazione o il controllo admin. Il controllo admin è limitato a 10 tentativi ogni 15 minuti e 30 al giorno per amministratore, perché il blocco della libreria conta solo i tentativi di accesso.
+
+Per tutti gli altri la 2FA resta facoltativa. Chi ha un account di pagamento Stripe o Paystack vede un suggerimento, una volta sola, per attivarla, nella dashboard e nella pagina dei pagamenti, finché non la attiva o lo chiude. Le Impostazioni admin mostrano quanti amministratori ne sono privi e quanti utenti la usano.
+
 ### Se sono spariti sia il telefono sia i codici
 
 Non esiste un modo di rientrare da soli, e la schermata di accesso lo dice invece di lasciare che qualcuno tenti combinazioni a mezzanotte. Un amministratore azzera il secondo fattore per quell'utente:

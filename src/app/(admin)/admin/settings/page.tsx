@@ -16,6 +16,7 @@ import { redirect } from "next/navigation"
 import { getFormatter, getTranslations } from "next-intl/server"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { enrollmentShare, isTwoFactorEnrolled } from "@/lib/two-factor-policy"
 import { smsConfigured } from "@/lib/esign/sms"
 import { providerConfig } from "@/lib/admin/health-data"
 import { History, KeyRound, LogIn, MonitorSmartphone, Plug, ShieldCheck, ShieldHalf, UserCog, Zap } from "lucide-react"
@@ -44,11 +45,11 @@ export default async function AdminSettingsPage() {
   const when = (d: Date) => format.dateTime(d, { dateStyle: "medium", timeStyle: "short" })
   const now = new Date()
 
-  const [admins, adminSessions, payoutAccounts, auditEvents] = await Promise.all([
+  const [admins, adminSessions, payoutAccounts, auditEvents, userTotal, usersEnrolled] = await Promise.all([
     prisma.user.findMany({
       where: { role: "ADMIN" },
       orderBy: { createdAt: "asc" },
-      select: { id: true, email: true, name: true, twoFactorEnabled: true, sessions: { orderBy: { updatedAt: "desc" }, take: 1, select: { updatedAt: true } } },
+      select: { id: true, email: true, name: true, twoFactorEnabled: true, twoFactor: { select: { verified: true } }, sessions: { orderBy: { updatedAt: "desc" }, take: 1, select: { updatedAt: true } } },
     }),
     prisma.session.findMany({
       where: { user: { role: "ADMIN" } },
@@ -62,10 +63,18 @@ export default async function AdminSettingsPage() {
       take: 25,
       select: { id: true, type: true, actorEmail: true, createdAt: true, document: { select: { title: true } } },
     }),
+    // Everyone else: 2FA is optional for them, so this is visibility, not a target.
+    prisma.user.count({ where: { role: { not: "ADMIN" } } }),
+    prisma.user.count({ where: { role: { not: "ADMIN" }, twoFactorEnabled: true, twoFactor: { some: { verified: true } } } }),
   ])
 
   const config = providerConfig()
-  const withoutTwoFactor = admins.filter((a) => !a.twoFactorEnabled).length
+  // Was admins.filter((a) => !a.twoFactorEnabled): the flag alone. Enrolled now
+  // also needs a verified authenticator (src/lib/two-factor-policy.ts), the
+  // same test the admin area applies before letting anyone in.
+  const enrolledAdmin = (a: (typeof admins)[number]) => isTwoFactorEnrolled(a)
+  const withoutTwoFactor = admins.filter((a) => !enrolledAdmin(a)).length
+  const userShare = enrollmentShare(usersEnrolled, userTotal)
   const openSessions = adminSessions.filter((s) => s.expiresAt > now).length
   const payouts = (provider: "STRIPE" | "PAYSTACK", ready: boolean) => payoutAccounts.find((p) => p.provider === provider && p.ready === ready)?._count._all ?? 0
 
@@ -90,11 +99,14 @@ export default async function AdminSettingsPage() {
     <div className="space-y-6">
       <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={KeyRound} />
 
-      <StatGrid>
+      {/* Five tiles: three across from `sm`, five from `lg`; on a phone the
+          last one spans the row rather than sitting alone in half of it. */}
+      <StatGrid className="sm:grid-cols-3 lg:grid-cols-5 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
         <StatTile label={t("admins")} value={admins.length} href="/admin/users" icon={UserCog} />
         <StatTile label={t("withoutTwoFactor")} value={withoutTwoFactor} tone={withoutTwoFactor > 0 ? "warn" : "good"} hint={t("twoFactorHint")} icon={ShieldHalf} meter={admins.length ? (admins.length - withoutTwoFactor) / admins.length : null} />
         <StatTile label={t("openSessions")} value={openSessions} hint={t("openSessionsHint")} icon={MonitorSmartphone} />
         <StatTile label={t("liveKeys")} value={connections.filter((c) => c.mode === "live").length} hint={t("liveKeysHint")} tone="info" icon={Zap} />
+        <StatTile label={t("usersWithTwoFactor")} value={usersEnrolled} hint={t("usersWithTwoFactorHint", { total: userTotal, share: userShare ?? 0 })} tone="info" icon={ShieldCheck} meter={userShare === null ? null : userShare / 100} />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -106,7 +118,7 @@ export default async function AdminSettingsPage() {
                   <p className="truncate font-medium">{a.email}</p>
                   <p className="text-xs text-muted-foreground">{a.sessions[0] ? t("lastSignIn", { when: when(a.sessions[0].updatedAt) }) : t("neverSignedIn")}</p>
                 </div>
-                <Chip tone={a.twoFactorEnabled ? "good" : "warn"}>{a.twoFactorEnabled ? t("twoFactorOn") : t("twoFactorOff")}</Chip>
+                <Chip tone={enrolledAdmin(a) ? "good" : "warn"}>{enrolledAdmin(a) ? t("twoFactorOn") : t("twoFactorOff")}</Chip>
               </li>
             ))}
           </ul>

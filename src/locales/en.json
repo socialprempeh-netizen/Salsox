@@ -117,6 +117,30 @@
     }
   },
   "dashboard": {
+    "adminVerify": {
+      "metaTitle": "Confirm it's you",
+      "title": "Confirm it's you",
+      "why": "The admin area needs your second factor on every sign-in. This session hasn't used it yet, for example because you signed in with Google.",
+      "subtitle": "Enter the six-digit code from your authenticator app.",
+      "backupSubtitle": "Enter one code from the list you saved. Each code works once.",
+      "codeLabel": "Authenticator code",
+      "backupLabel": "Backup code",
+      "submit": "Verify and continue",
+      "useBackup": "Use a backup code instead",
+      "useApp": "Use your authenticator app instead",
+      "errors": {
+        "code": "That code is wrong or has expired. Codes change every 30 seconds.",
+        "backup": "That backup code is wrong, or has already been used.",
+        "multiple": "That is the whole list. Enter a single code from it, in the form ABCDE-FGHJK: the others stay valid.",
+        "rate": "Too many attempts. Try again in a few minutes."
+      }
+    },
+    "twoFactorNudge": {
+      "title": "Protect your payouts with two-factor authentication",
+      "body": "Money from your documents is paid to the account you connected. With a code from your phone at sign-in, a stolen password alone is not enough to get in.",
+      "action": "Turn on 2FA",
+      "dismiss": "Dismiss this suggestion"
+    },
     "affiliate": {
       "metaTitle": "Affiliate program",
       "joinTitle": "Become an affiliate",
@@ -331,6 +355,7 @@
         "confirm": "The address did not match, so nothing was deleted.",
         "subscription": "Your subscription could not be cancelled, so nothing was deleted. Cancel it in the billing portal and try again.",
         "last-admin": "You are the only administrator. Promote someone else before deleting this account.",
+        "admin-2fa": "Two-factor authentication is required for admins. Turn it on below to use the admin area.",
         "2fa-enabled": "Two-factor authentication is on.",
         "2fa-disabled": "Two-factor authentication is off.",
         "2fa-password": "That password is wrong, so nothing changed.",
@@ -1048,7 +1073,9 @@
       "subtitle": "Who has admin rights, how the payment connections are set up, and the audit logs.",
       "admins": "Admins",
       "withoutTwoFactor": "Admins without 2FA",
-      "twoFactorHint": "Every admin should turn it on",
+      "twoFactorHint": "Required: no admin area until it is on",
+      "usersWithTwoFactor": "Users with 2FA",
+      "usersWithTwoFactorHint": "{share}% of {total} users. Optional for them",
       "openSessions": "Open admin sessions",
       "openSessionsHint": "Of the latest 15 sign-ins",
       "liveKeys": "Live payment keys",

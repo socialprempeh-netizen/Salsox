@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth"
+import { getAdminUser } from "@/lib/auth"
 import { diagnoseServiceAccountKey } from "@/lib/admin/key-diagnostics"
 
 /**
@@ -11,7 +11,9 @@ import { diagnoseServiceAccountKey } from "@/lib/admin/key-diagnostics"
 export const dynamic = "force-dynamic"
 
 export async function GET() {
-  const user = await getCurrentUser()
+  // Was getCurrentUser(): admins also need 2FA, passed on this session
+  // (src/lib/two-factor-policy.ts), so a role alone no longer opens this.
+  const user = await getAdminUser()
   if (!user || user.role !== "ADMIN") {
     return new Response("Forbidden", { status: 403 })
   }

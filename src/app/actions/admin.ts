@@ -2,7 +2,7 @@
 
 import type { Role } from "@prisma/client"
 
-import { getCurrentUser } from "@/lib/auth"
+import { getAdminUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
@@ -20,7 +20,9 @@ import { revalidatePath } from "next/cache"
  * reaches the other person without them signing out.
  */
 export async function setUserRole(userId: string, nextRole: Role, seenRole: Role) {
-  const user = await getCurrentUser()
+  // Was getCurrentUser(): admins also need 2FA, passed on this session
+  // (src/lib/two-factor-policy.ts), so a role alone no longer opens this.
+  const user = await getAdminUser()
   if (!user || user.role !== "ADMIN") {
     throw new Error("Unauthorized")
   }

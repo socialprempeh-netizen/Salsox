@@ -55,6 +55,10 @@ model User {
   // User rather than being derived from the TwoFactor row because sign-in has
   // to know whether to stop and ask, before it goes looking for a secret.
   twoFactorEnabled      Boolean         @default(false)
+  // When the user dismissed the one-time suggestion to turn on 2FA, shown to
+  // people with a payout account (src/lib/two-factor-policy.ts). Kept on the
+  // account, not in the browser, so "once" means once, on every device.
+  twoFactorNudgeDismissedAt DateTime?
   stripeCustomerId      String?         @unique
   // When the user dismissed the "Get started" checklist; the checklist items
   // themselves are derived live (name, documents, billing), only this persists.
@@ -222,6 +226,12 @@ model Session {
   expiresAt DateTime
   ipAddress String?
   userAgent String?
+  // When this session passed a second factor: the sign-in code, a backup
+  // code, finishing 2FA setup, or the admin check at /dashboard/admin-verify.
+  // Ours, not Better Auth's (it never reads it). Admins need it set to use
+  // the admin area (src/lib/two-factor-policy.ts), which is what makes 2FA
+  // required at login for them even when they arrive through Google.
+  twoFactorVerifiedAt DateTime?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

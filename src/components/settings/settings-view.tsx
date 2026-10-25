@@ -45,6 +45,8 @@ const MESSAGE_IS_ERROR: Record<string, boolean> = {
   confirm: true,
   subscription: true,
   "last-admin": true,
+  // An admin sent here from the admin area: 2FA is mandatory for them.
+  "admin-2fa": true,
   unlink: true,
   policy: true,
   current: true,
@@ -239,7 +241,8 @@ export async function SettingsView({
 
       {/* Between the sign-in methods and the account facts, because that is
           where someone looking for it looks: it belongs to how you get in. */}
-      <Card>
+      {/* Anchored: the admin area and the payout suggestion link straight here. */}
+      <Card id="two-factor" className="scroll-mt-20">
         <CardHeader>
           <CardTitle>{t("twoFactor.title")}</CardTitle>
           <CardDescription>{t("twoFactor.description")}</CardDescription>

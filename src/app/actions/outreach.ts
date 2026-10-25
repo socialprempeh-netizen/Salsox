@@ -10,14 +10,16 @@
  * back as keys the page translates.
  */
 import { revalidatePath } from "next/cache"
-import { getCurrentUser } from "@/lib/auth"
+import { getAdminUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { fromDay, OUTREACH_STATUSES, parseOutreachInput, toDay, type OutreachError, type OutreachStatus } from "@/lib/outreach"
 
 export type OutreachResult = { ok: true } | { ok: false; error: OutreachError | "notFound" }
 
 async function requireAdmin() {
-  const user = await getCurrentUser()
+  // Was getCurrentUser(): admins also need 2FA, passed on this session
+  // (src/lib/two-factor-policy.ts), so a role alone no longer opens this.
+  const user = await getAdminUser()
   if (!user || user.role !== "ADMIN") throw new Error("Unauthorized")
 }
 
