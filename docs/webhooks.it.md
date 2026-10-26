@@ -2,7 +2,7 @@
 title: Webhook e API
 description: Inviare gli eventi dei documenti ad altri software, chiavi API per le integrazioni, e come le consegne restano sicure.
 translated_from: webhooks.md
-source_checksum: a71e28a8a49b
+source_checksum: aaa02eac6971
 ---
 
 # Webhook e API

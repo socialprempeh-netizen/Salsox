@@ -2,7 +2,7 @@
 title: Firme elettroniche
 description: Il motore di firma di Salsox, dal caricamento al PDF sigillato, con Sign & Pay, Quick Send e fatturazione onesta.
 translated_from: esign.md
-source_checksum: 7325fc17636c
+source_checksum: c7159ab6b089
 ---
 
 # Firme elettroniche (Salsox)

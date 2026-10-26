@@ -2,7 +2,7 @@
 title: SEO
 description: Come il sito pubblico è costruito per essere trovato, come aggiungere pagine senza creare duplicati e come collegare Search Console, Bing e gli analytics.
 translated_from: seo.md
-source_checksum: 02eb42f949d7
+source_checksum: 39e0fd31eed6
 ---
 
 # SEO
