@@ -18,9 +18,10 @@
  *   TikTok and YouTube are never posted either (there is no video yet): their
  *   caption, title and description are edited and copied by hand. All three
  *   are marked posted by hand (markPosted) once they are out.
- *   X and Facebook drafts also get hashtag suggestions from the post's own
- *   words plus the niche's evergreen set (hashtags.ts), tapped on and off,
- *   and an image slot that says plainly it is not set up yet (images.ts:
+ *   Every draft but Reddit's also gets hashtag suggestions from the post's
+ *   own words plus the platform's evergreen set (hashtags.ts), tapped on and
+ *   off: in the post on X, LinkedIn, Facebook and TikTok, in the description
+ *   on YouTube. (Was X and Facebook only.) X and Facebook also get an image slot that says plainly it is not set up yet (images.ts:
  *   no image API has been chosen).
  * - PostCalendar: a month calendar of scheduled and past posts on wider
  *   screens, a day-by-day agenda on a phone, and the list of every post with
@@ -47,7 +48,7 @@ import { Chip, Empty, type Tone } from "@/components/admin/admin-ui"
 import { SegmentMeter } from "@/components/admin/segment-meter"
 import { discardPost, draftPosts, markPosted, publishPostNow, savePost, schedulePost, type OutreachAgentResult } from "@/app/actions/outreach-agent"
 import { dayKey, monthGrid, shiftMonth } from "@/lib/admin/calendar"
-import { hashtagsIn, suggestHashtags, toggleHashtag } from "@/lib/outreach-agent/hashtags"
+import { hashtagsIn, isHashtagPlatform, suggestHashtags, toggleHashtag, type HashtagPlatform } from "@/lib/outreach-agent/hashtags"
 import { ALL_PLATFORMS, DESCRIPTION_LIMITS, isAutoPlatform, LIMITS, PLATFORM_LABEL, REDDIT_URL_BODY_MAX, redditSubmitUrl, TITLE_LIMITS } from "@/lib/outreach-agent/social"
 import { cn } from "@/lib/utils"
 
@@ -299,11 +300,12 @@ function When({ post }: { post: StudioPost }) {
 
 /** X, LinkedIn, Facebook: edit, publish now or schedule through the existing actions. */
 /**
- * Hashtags for an X or Facebook draft: the post's own topics, then the
- * evergreen set. A tag in the post shows as chosen; tapping toggles it in the
- * text. The hint says how many the platform reads best with.
+ * Hashtags for a draft: the post's own topics, then the platform's evergreen
+ * set. A tag in the text shows as chosen; tapping toggles it there. The hint
+ * says how many the platform reads best with. `body` is whichever field
+ * carries the tags (YouTube's description).
  */
-function HashtagPicker({ platform, body, onChange }: { platform: "X" | "FACEBOOK"; body: string; onChange: (next: string) => void }) {
+function HashtagPicker({ platform, body, onChange }: { platform: HashtagPlatform; body: string; onChange: (next: string) => void }) {
   const t = useTranslations("admin.socialStudio")
   const reduce = useReducedMotion()
   // Suggestions follow the words, not the tags, so choosing one does not reshuffle the list.
@@ -383,7 +385,8 @@ function AutoSquare({ post, connected, imagesAvailable }: { post: StudioPost; co
         <p className="whitespace-pre-line text-sm leading-relaxed">{post.body}</p>
       )}
       {editable && <LengthMeter value={body} limit={limit} label={t("length")} />}
-      {editable && (post.platform === "X" || post.platform === "FACEBOOK") && <HashtagPicker platform={post.platform} body={body} onChange={setBody} />}
+      {/* Was X and Facebook only: (post.platform === "X" || post.platform === "FACEBOOK") */}
+      {editable && isHashtagPlatform(post.platform) && <HashtagPicker platform={post.platform} body={body} onChange={setBody} />}
       {editable && (post.platform === "X" || post.platform === "FACEBOOK") && <ImageSlot available={imagesAvailable} />}
       {post.status === "FAILED" && post.error && <p className="break-words border-l-2 border-destructive pl-3 text-sm text-destructive">{post.error}</p>}
       {editable && (
@@ -508,7 +511,9 @@ function VideoSquare({ post }: { post: StudioPost }) {
       <When post={post} />
       {field("vt", t("fieldTitle"), title, setTitle, titleLimit)}
       {field("vc", t("caption"), body, setBody, LIMITS[post.platform], 3)}
+      {!posted && post.platform === "TIKTOK" && <HashtagPicker platform="TIKTOK" body={body} onChange={setBody} />}
       {field("vd", t("description"), description, setDescription, descriptionLimit, 6)}
+      {!posted && post.platform === "YOUTUBE" && <HashtagPicker platform="YOUTUBE" body={description} onChange={setDescription} />}
       {!posted && (
         <div className="mt-auto flex flex-wrap gap-2 pt-1">
           {dirty && (

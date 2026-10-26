@@ -34,7 +34,8 @@ import { searchReddit, redditConfigured } from "./reddit"
 import { isAllowed } from "./robots"
 import { rejection, sourceKey } from "./signals"
 import { redditVoiceProblems } from "./reddit-voice"
-import { DESCRIPTION_LIMITS, draftProblems, isAutoPlatform, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
+import { DESCRIPTION_LIMITS, draftProblems, isAutoPlatform, LIMITS, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
+import { autoHashtags, isHashtagPlatform } from "./hashtags"
 import { COMPETITORS, competitorIn, redditQueries, reviewPages, type LeadSource } from "./sources"
 import * as store from "./store"
 import { classifyReply, extractFromPost, extractFromReviews, hasWriterKey, writeEmail, writeFollowUp, writeSocialPosts, type ExtractedSignal, type ReplyCategory } from "./writer"
@@ -510,6 +511,16 @@ export async function draftSocialPosts(site: OutreachAdapter, { platforms, theme
         batchId,
         model,
       }))
+      // The hashtag set (hashtags.ts), within each field's limit: YouTube's in
+      // the description, where it shows them; the post itself everywhere else.
+      .map((p) => {
+        if (!isHashtagPlatform(p.platform)) return p
+        if (p.platform === "YOUTUBE" && p.description !== null) {
+          return { ...p, description: autoHashtags("YOUTUBE", p.description, DESCRIPTION_LIMITS.YOUTUBE!, `${p.title ?? ""}\n${p.body}\n${p.description}`) }
+        }
+        if (p.platform === "YOUTUBE") return p
+        return { ...p, body: autoHashtags(p.platform, p.body, LIMITS[p.platform]) }
+      })
     const count = await store.createPosts(usable)
     site.revalidate([PAGE, SOCIAL_PAGE])
     return { ok: count > 0, message: count ? `Drafted ${count} post${count === 1 ? "" : "s"}.` : "No post came back within the platforms' length limits; try again." }

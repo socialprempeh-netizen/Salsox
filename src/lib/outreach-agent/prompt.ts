@@ -151,12 +151,16 @@ export function socialSystemPrompt(siteName: string): string {
     // Reddit is written separately now, by redditSystemPrompt below, with no
     // product facts at all. Was:
     // "- Reddit: a text post a person will submit by hand to a relevant community. Title up to 200 characters, phrased as a genuine question or useful finding, never an advert. Body 300 to 1,500 characters: share something useful first, mention the product at most once and say plainly that you work on it. No hashtags.",
-    "- TikTok: for a short video made separately. Caption up to 300 characters with a hook in the first line and up to four hashtags; title up to 80 characters; description 200 to 800 characters saying what the video shows, as a brief for whoever makes it.",
+    // Hashtags are added after writing now (autoHashtags, hashtags.ts), from
+    // a vetted set, rather than invented per post. Was:
+    // "- TikTok: for a short video made separately. Caption up to 300 characters with a hook in the first line and up to four hashtags; title up to 80 characters; description 200 to 800 characters saying what the video shows, as a brief for whoever makes it.",
+    "- TikTok: for a short video made separately. Caption up to 300 characters with a hook in the first line; title up to 80 characters; description 200 to 800 characters saying what the video shows, as a brief for whoever makes it.",
     "- YouTube: for a video made separately. Title up to 90 characters, specific and searchable; caption one line up to 150 characters; description 300 to 1,500 characters: what the viewer learns, in short paragraphs.",
     // Was "only for Reddit, TikTok and YouTube (Reddit has no description)".
     "- title and description are only for TikTok and YouTube; return an empty string for them on every other platform.",
     "- Each post makes one useful point about signing documents, grounded only in the facts given. No invented statistics, customers, quotes or prices.",
-    "- At most two hashtags per post, none on X if the post reads better without. No links; they are added by hand when needed.",
+    // Was: "- At most two hashtags per post, none on X if the post reads better without. No links; they are added by hand when needed.",
+    "- No hashtags: a vetted set is added to each post afterwards. No links; they are added by hand when needed.",
     "- Plain, confident, friendly. No hype words such as 'revolutionary' or 'game-changer'.",
   ].join("\n")
 }
