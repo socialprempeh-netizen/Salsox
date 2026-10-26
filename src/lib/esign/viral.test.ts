@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest"
 import { classifyChannel } from "@/lib/seo/attribution"
-import { signedViaHref } from "./viral"
+import { signedViaHomeHref, signedViaHref } from "./viral"
 
 describe("signedViaHref", () => {
   it("keeps the Quick Send destination and adds the campaign tags", () => {
@@ -34,5 +34,15 @@ describe("signedViaHref", () => {
     }
     expect(classifyChannel({ ref: null, utm: utmOf(signedViaHref("completed_email")) })).toBe("email")
     expect(classifyChannel({ ref: null, utm: utmOf(signedViaHref("signing_page")) })).toBe("campaign")
+  })
+})
+
+describe("signedViaHomeHref", () => {
+  it("links the badge to the home page with the same tags", () => {
+    const url = new URL(signedViaHomeHref("completed_email", "https://app.example.com"))
+    expect(url.origin + url.pathname).toBe("https://app.example.com/")
+    expect(url.searchParams.get("utm_source")).toBe("completed_email")
+    expect(url.searchParams.get("utm_medium")).toBe("email")
+    expect(url.searchParams.get("utm_campaign")).toBe("signed_via")
   })
 })

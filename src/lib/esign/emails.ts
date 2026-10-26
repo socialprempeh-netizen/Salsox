@@ -15,7 +15,7 @@ import { routing } from "@/i18n/routing"
 import { siteConfig } from "@/config/site"
 import { baseTemplate, escapeHtml } from "@/lib/email"
 import { deliver } from "@/lib/email-delivery"
-import { signedViaHref } from "./viral"
+import { signedViaHomeHref, signedViaHref } from "./viral"
 
 function esignEmailStrings() {
   return getTranslations({ locale: routing.defaultLocale, namespace: "esignEmail" })
@@ -143,7 +143,10 @@ export async function sendDocumentCompleted(args: {
   const t = await esignEmailStrings()
   // The branded footer: this email carries the signed copy and its audit
   // trail, so it is the one most often kept and forwarded.
-  const brand = t("brandFooter", { site: bold(escapeHtml(siteConfig.name)) })
+  // The site's name is the badge: a link to the home page in every copy,
+  // the sender's included. Was plain bold text:
+  // const brand = t("brandFooter", { site: bold(escapeHtml(siteConfig.name)) })
+  const brand = t("brandFooter", { site: `<a href="${signedViaHomeHref("completed_email", siteConfig.url)}">${bold(escapeHtml(siteConfig.name))}</a>` })
   const offer = args.toSigner
     ? ` <a href="${signedViaHref("completed_email", siteConfig.url)}">${t("brandFooterCta", { site: escapeHtml(siteConfig.name) })}</a>`
     : ""
