@@ -268,3 +268,29 @@ export function engineErrorStatus(code: string): number {
   if (code === "emailNotConfirmed" || code === "dailyLimit") return 403
   return 422
 }
+
+/** Which file GET /api/v1/documents/{id}/pdf serves. */
+export type PdfVersion = "signed" | "original"
+
+/**
+ * The file a PDF request gets, from `?version=` and the document's storage
+ * keys. No version: the signed PDF once the document is sealed, the original
+ * until then, so "the latest PDF" is one call. `signed` before sealing is a
+ * 409, not the original in disguise: an integration that files signed copies
+ * must not file an unsigned one.
+ */
+export function pickPdfVersion(
+  requested: string | null,
+  keys: { originalKey: string; sealedKey: string | null }
+): { ok: true; version: PdfVersion; key: string } | { ok: false; status: number; problem: ApiProblem } {
+  const wanted = requested?.trim().toLowerCase() || null
+  if (wanted !== null && wanted !== "signed" && wanted !== "original") {
+    return { ok: false, status: 400, problem: { code: "invalid_input", message: "`version` must be `signed` or `original`." } }
+  }
+  if (wanted === "original") return { ok: true, version: "original", key: keys.originalKey }
+  if (keys.sealedKey) return { ok: true, version: "signed", key: keys.sealedKey }
+  if (wanted === "signed") {
+    return { ok: false, status: 409, problem: { code: "not_signed", message: "This document is not completed yet, so there is no signed PDF. Leave out `version` to get the original." } }
+  }
+  return { ok: true, version: "original", key: keys.originalKey }
+}

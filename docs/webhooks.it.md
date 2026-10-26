@@ -61,6 +61,7 @@ Autenticazione con `Authorization: Bearer ak_…`, 120 richieste al minuto per c
 | `POST /api/v1/documents` | Crea e invia un documento, da un PDF o da un modello. |
 | `GET /api/v1/documents` | Cerca documenti: `status`, `recipient`, `title`, `created_after`, `created_before`, `limit` (fino a 100), `cursor`. |
 | `GET /api/v1/documents/{id}` | Un documento. |
+| `GET /api/v1/documents/{id}/pdf` | Il PDF: la copia firmata, con il suo certificato, una volta completato; l'originale fino ad allora. `?version=signed` o `?version=original` per scegliere; `signed` prima del completamento è un `409 not_signed`. L'header di risposta `X-Document-Version` dice quale si è ricevuto. |
 | `GET /api/v1/templates` | I modelli della libreria (ruoli e campi da compilare) e quelli salvati dall'account. |
 
 I documenti tornano nella forma del payload dei webhook (`documentResource` in `payload.ts`): i campi del documento con un array `recipients`. Una sola forma per ciò che consegna un webhook e ciò che trova una ricerca, così un'integrazione li mappa una volta sola.

@@ -5,7 +5,7 @@
  * list query's filters.
  */
 import { describe, expect, it } from "vitest"
-import { assignTemplateRoles, engineErrorStatus, parseListQuery, parseSendInput, type ApiRecipient } from "./documents"
+import { assignTemplateRoles, engineErrorStatus, parseListQuery, parseSendInput, pickPdfVersion, type ApiRecipient } from "./documents"
 
 const one = [{ email: "Ama@Example.com", name: "Ama" }]
 
@@ -122,5 +122,27 @@ describe("engineErrorStatus", () => {
     expect(engineErrorStatus("templateNotFound")).toBe(404)
     expect(engineErrorStatus("rateLimited")).toBe(429)
     expect(engineErrorStatus("signerWithoutFields")).toBe(422)
+  })
+})
+
+describe("pickPdfVersion", () => {
+  const draft = { originalKey: "u/d/original.pdf", sealedKey: null }
+  const sealed = { originalKey: "u/d/original.pdf", sealedKey: "u/d/sealed-abc.pdf" }
+
+  it("serves the signed PDF once sealed, the original until then", () => {
+    expect(pickPdfVersion(null, sealed)).toEqual({ ok: true, version: "signed", key: "u/d/sealed-abc.pdf" })
+    expect(pickPdfVersion(null, draft)).toEqual({ ok: true, version: "original", key: "u/d/original.pdf" })
+  })
+
+  it("serves the original on request, even when sealed", () => {
+    expect(pickPdfVersion("Original", sealed)).toEqual({ ok: true, version: "original", key: "u/d/original.pdf" })
+  })
+
+  it("refuses a signed PDF that does not exist yet instead of sending the original", () => {
+    expect(pickPdfVersion("signed", draft)).toMatchObject({ ok: false, status: 409, problem: { code: "not_signed" } })
+  })
+
+  it("refuses an unknown version", () => {
+    expect(pickPdfVersion("final", sealed)).toMatchObject({ ok: false, status: 400, problem: { code: "invalid_input" } })
   })
 })

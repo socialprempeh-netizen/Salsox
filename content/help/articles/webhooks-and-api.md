@@ -123,6 +123,7 @@ Integrations subscribe to events, send documents and find them with an **API key
 | `POST /api/v1/documents` | Creates a document and sends it for signing. |
 | `GET /api/v1/documents` | Finds documents, newest first. |
 | `GET /api/v1/documents/{id}` | One document. |
+| `GET /api/v1/documents/{id}/pdf` | The PDF: the signed copy, with its certificate, once completed; the original until then. `?version=signed` or `?version=original` to choose; `signed` before completion is a `409 not_signed`. The `X-Document-Version` response header says which one you got. |
 | `GET /api/v1/templates` | The templates you can send from, with their roles and blanks, and your saved ones. |
 
 Errors come back as `{ "error": { "code": "…", "message": "…" } }` with a 4xx status. A key can make 120 requests a minute.

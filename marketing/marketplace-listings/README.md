@@ -21,7 +21,7 @@ The shared blocker was "no public API, no webhooks". Salsox now has the foundati
 
 - ~~An API to create and send documents.~~ Exists since the second update on 2026-10-25 (`POST /api/v1/documents`).
 - **OAuth.** HubSpot and AppExchange require it; Zapier accepts API keys, which is why it is first. The two need different things. HubSpot: Salsox as an OAuth *client* of HubSpot. AppExchange: Salsox as an OAuth *server* for the package. Each draft scopes its flow; neither is built.
-- **The signed PDF through the API** (`GET /api/v1/documents/{id}/pdf`). The HubSpot and AppExchange features "attach the signed PDF" and Zapier's "save to Google Drive" template need it.
+- ~~**The signed PDF through the API** (`GET /api/v1/documents/{id}/pdf`).~~ Exists since 2026-10-26: the signed PDF once completed, the original until then, `?version=` to choose. The HubSpot and AppExchange features "attach the signed PDF" and Zapier's "save to Google Drive" template can use it.
 - **The integrations themselves**, built on each platform, tested with real accounts, with screenshots taken from them.
 
 Recommended order is unchanged: Zapier first (a full first version, triggers, actions and search, is possible now), then HubSpot (after OAuth), then AppExchange. Do not submit or publish any draft before its integration exists.

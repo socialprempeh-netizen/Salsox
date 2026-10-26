@@ -54,6 +54,7 @@ Authenticated with `Authorization: Bearer ak_…`, 120 requests a minute per key
 | `POST /api/v1/documents` | Creates and sends a document, from a PDF or a template. |
 | `GET /api/v1/documents` | Finds documents: `status`, `recipient`, `title`, `created_after`, `created_before`, `limit` (up to 100), `cursor`. |
 | `GET /api/v1/documents/{id}` | One document. |
+| `GET /api/v1/documents/{id}/pdf` | The PDF: the signed copy, with its certificate, once completed; the original until then. `?version=signed` or `?version=original` to choose; `signed` before completion is a `409 not_signed`. The `X-Document-Version` response header says which one you got. |
 | `GET /api/v1/templates` | The library's templates (roles and blanks) and the account's saved ones. |
 
 Documents come back in the webhook payload's shape (`documentResource` in `payload.ts`): the document's fields with a `recipients` array. One shape for what a webhook delivers and what a search finds, so an integration maps them once.

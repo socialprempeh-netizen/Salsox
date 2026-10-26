@@ -18,6 +18,9 @@ const eslintConfig = defineConfig([
     // Third-party builds shipped inside the browser extensions as they are
     // (pdf.js, minified): not our code to lint.
     "extensions/*/vendor/**",
+    // The packaged extensions (scripts/package-salsox-signing.mjs, git-ignored):
+    // a copy of the above, vendor builds included.
+    "dist/**",
   ]),
 ]);
 
