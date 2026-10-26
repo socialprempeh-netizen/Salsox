@@ -6,12 +6,12 @@ lede: "Your colleagues and many of your clients answer Slack before email. You c
 primaryKeyword: "slack esignature"
 aliases: ["esign in slack", "slack document signing", "slack signed document notification", "send contract for signature slack"]
 published: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-26
 breadcrumb: "Slack"
 integration: { name: "Slack", status: "works-today", url: "https://slack.com" }
 faq:
   - q: "Is there a {site} app for Slack?"
-    a: "No. What works today is sharing signing links in Slack messages and, with Zapier or Make, posting completed documents to a channel from {site}'s emails."
+    a: "No. What works today is sharing signing links in Slack messages and, with a Make scenario fed by {site}'s webhooks, posting to a channel as documents are viewed, signed or completed."
   - q: "Can I post a signing link in a channel?"
     a: "Do not. Each link belongs to one signer, and anyone who has it can open that signer's copy. Send it in a direct message to that person only."
   - q: "Will Slack show a preview of the document?"
@@ -34,7 +34,8 @@ Keep each link to its own person. A signing link is how {site} knows who is sign
 Many teams keep a channel such as #contracts or #deals where finished paperwork is announced. Without a Slack app, two routes work today:
 
 - **By hand.** When the completion email arrives, forward it to the channel's email address (in Slack, open the channel settings and choose **Integrations > Send emails to this channel**, available on paid workspaces). The message appears in the channel with the title and the download button.
-- **Automatically.** A [Zapier](/integrations/zapier) Zap or a [Make](/integrations/make) scenario can watch for {site}'s *is signed by everyone* email and post a message to the channel, with the document title and a link to the dashboard rather than the PDF.
+- **Automatically, from webhooks.** A [Make](/integrations/make) scenario that starts from **Webhooks > Custom webhook**, with its address added under Dashboard → Developers, receives every event as it happens: *document.viewed*, *document.signed*, *document.completed*, *document.declined*. A **Slack > Create a Message** module then posts the document title and who acted to the channel. Link the message to the dashboard rather than the PDF, so the file stays with people who can sign in.
+- **Automatically, from email.** Where you cannot add a webhook, a [Zapier](/integrations/zapier) Zap or a Make scenario can watch for {site}'s *is signed by everyone* email instead. It only sees completions, and only what the email says.
 
 ## Internal approvals
 

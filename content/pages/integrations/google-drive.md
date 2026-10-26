@@ -6,7 +6,7 @@ lede: "Your contracts already live in Google Drive. You can send any PDF from Dr
 primaryKeyword: "google drive esignature"
 aliases: ["sign pdf from google drive", "google drive document signing", "save signed pdf to google drive", "google docs esignature"]
 published: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-26
 breadcrumb: "Google Drive"
 integration: { name: "Google Drive", status: "works-today", url: "https://drive.google.com" }
 faq:
@@ -15,7 +15,7 @@ faq:
   - q: "Can I send a Google Doc, not a PDF?"
     a: "Download it as a PDF first, from File, Download, PDF document in Google Docs. {site} signs PDFs, which keeps the layout exactly as your recipient will see it."
   - q: "Will the signed PDF save itself back to Drive?"
-    a: "Not automatically: there is no Drive connection that writes files. Download the signed copy from the completion email or the dashboard, then upload it to the folder you want, as described on this page."
+    a: "Not on its own: there is no built-in Drive connection that writes files. A Make scenario can do it today, from the document.completed webhook and the API's PDF endpoint, as this page shows. Without one, download the signed copy and upload it to the folder you want."
 related: ["/sign-pdf", "/send-documents-for-signature", "/integrations/gmail", "/templates", "/esignature-for/remote-teams"]
 ---
 
@@ -37,10 +37,20 @@ When everyone has signed, each person receives an email with a button to downloa
 
 On the Business plan, the signed PDF carries a certificate page listing each signer, the time and the device, so the copy in Drive holds its own evidence and does not depend on anyone keeping an account.
 
+## Filing signed copies automatically, with Make
+
+A [Make](/integrations/make) scenario can put every signed PDF into a Drive folder the moment the last person signs, with no manual step:
+
+1. **Webhooks > Custom webhook** as the first module, its address added under Dashboard → Developers with the *document.completed* event ticked.
+2. **HTTP > Make a request**: method GET, address `/api/v1/documents/{id}/pdf?version=signed` on {site}'s own address, with the document's `id` from the webhook in place of `{id}`, a header `Authorization: Bearer` followed by an API key from Dashboard → Developers, and **Parse response** off so the PDF comes through as a file.
+3. **Google Drive > Upload a file**, into the folder of your choice, named from the webhook's document title.
+
+Asking for `version=signed` means the scenario never files an unsigned copy by mistake: before completion that request is refused. The [webhooks and API reference](/resources/help/webhooks-and-api) lists every field.
+
 ## Shared drives and teams
 
 Teams that keep contracts in a shared drive can follow the same routine: one person sends from {site}, and the finished PDF goes into the shared folder for everyone. Drive's version history then shows who added the signed copy and when.
 
 ## What is not available
 
-There is no button inside Google Drive that sends a file to {site}, and no automatic filing of signed copies into a Drive folder. If either would save your team real time, say so on the contact page. Meanwhile the steps above take under a minute, and the [templates](/templates) library avoids the round trip for common documents altogether.
+There is no button inside Google Drive that sends a file to {site}, and filing signed copies automatically takes a Make scenario like the one above rather than a built-in setting. If a native Drive connection would save your team real time, say so on the contact page. Meanwhile the steps above take under a minute, and the [templates](/templates) library avoids the round trip for common documents altogether.

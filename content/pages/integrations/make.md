@@ -15,7 +15,7 @@ faq:
   - q: "Which is better, a webhook or an email trigger?"
     a: "The webhook. It fires on every event, not only completion, carries the signer list and timestamps as fields, and does not depend on the wording of an email. Use email only where you cannot add an endpoint."
   - q: "Can a scenario read who signed?"
-    a: "Yes, from a webhook: each delivery lists every recipient with their name, email, status and the time they viewed and signed. The signed PDF itself is not attached yet; the payload links to the document."
+    a: "Yes, from a webhook: each delivery lists every recipient with their name, email, status and the time they viewed and signed. The signed PDF is not attached to the delivery; an HTTP module fetches it from the API with the document's id (GET /api/v1/documents/{id}/pdf)."
 related: ["/integrations/zapier", "/integrations/gmail", "/esignature-api", "/document-workflows", "/esignature-audit-trail"]
 ---
 

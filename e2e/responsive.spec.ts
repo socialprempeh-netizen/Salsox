@@ -81,6 +81,8 @@ for (const width of WIDTHS) {
       "/integrations/zapier",
       "/integrations/google-drive",
       "/integrations/make",
+      "/integrations/gmail",
+      "/integrations/slack",
       // Where the API stands: rewritten when the send API shipped.
       "/esignature-api",
       // The e-signature law hub (the SEO agent's law pages are added from
