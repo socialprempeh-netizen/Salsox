@@ -6,7 +6,7 @@
 import { getFormatter, getTranslations } from "next-intl/server"
 import { requireUser } from "@/lib/auth"
 import { referralSummary } from "@/lib/referrals-store"
-import { REFERRAL_MAX_MONTHS_AHEAD, REFERRAL_REWARD_MONTHS, referralLink } from "@/lib/referrals"
+import { REFERRAL_COOKIE_DAYS, REFERRAL_MAX_MONTHS_AHEAD, REFERRAL_REWARD_MONTHS, referralLink } from "@/lib/referrals"
 import { siteConfig } from "@/config/site"
 import { ReferralPanel } from "@/components/dashboard/referral-panel"
 
@@ -38,6 +38,8 @@ export default async function ReferralsPage() {
         daysLeft={daysLeft}
         capDays={REFERRAL_MAX_MONTHS_AHEAD * 30}
         rewardMonths={REFERRAL_REWARD_MONTHS}
+        cookieDays={REFERRAL_COOKIE_DAYS}
+        capMonths={REFERRAL_MAX_MONTHS_AHEAD}
         invited={summary.invited.map((i) => ({
           id: i.id,
           name: i.name,

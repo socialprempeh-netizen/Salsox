@@ -13,6 +13,8 @@ import { isKitSite } from "@/config/kit"
 import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 import { shouldShowTwoFactorNudge } from "@/lib/two-factor-nudge"
 import { TwoFactorNudge } from "@/components/dashboard/two-factor-nudge"
+import { InviteNotice } from "@/components/auth/invite-notice"
+import { inviteePending, REFERRAL_REWARD_MONTHS } from "@/lib/referrals"
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard.home")
@@ -27,7 +29,7 @@ export default async function DashboardPage() {
     prisma.document.groupBy({ by: ["status"], where: { userId: user.id }, _count: { _all: true } }),
     prisma.user.findUnique({
       where: { id: user.id },
-      select: { name: true, onboardingDismissedAt: true, stripeCustomerId: true },
+      select: { name: true, onboardingDismissedAt: true, stripeCustomerId: true, referredById: true, referralRewardFor: { select: { id: true } } },
     }),
     shouldShowTwoFactorNudge(user.id),
   ])
@@ -60,6 +62,11 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {/* Joined through an invite and sent nothing yet: what makes the invite count. */}
+      {userRow && inviteePending({ referredById: userRow.referredById, rewarded: userRow.referralRewardFor !== null }) && (
+        <InviteNotice variant="dashboard" months={REFERRAL_REWARD_MONTHS} />
+      )}
 
       {/* Someone who can be paid out is told once that 2FA protects it. */}
       {twoFactorNudge && <TwoFactorNudge />}

@@ -3,7 +3,8 @@
 /**
  * The interactive part of the referrals page (/dashboard/referrals): the
  * invite link with copy and share buttons, the free Pro time banked so far
- * as a bar against the cap, and the people who joined through the link.
+ * as a bar against the cap, what counts as an active invite (and what does
+ * not), and the people who joined through the link.
  *
  * Shows what the server decided and nothing more: rewards are granted by
  * rewardReferrer (src/lib/referrals-store.ts) when an invited account sends
@@ -16,7 +17,7 @@
 import { useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import { useTranslations } from "next-intl"
-import { Check, Copy, Mail, Send, UserCheck, UserPlus, Gift } from "lucide-react"
+import { Check, CircleCheck, CircleX, Copy, Mail, Send, UserCheck, UserPlus, Gift } from "lucide-react"
 import { toast } from "@/components/ui/sonner"
 import { Button } from "@/components/ui/button"
 
@@ -29,6 +30,9 @@ export function ReferralPanel(props: {
   daysLeft: number
   capDays: number
   rewardMonths: number
+  /** How long an invite link is remembered, and how far ahead free time may reach. */
+  cookieDays: number
+  capMonths: number
   invited: Invited[]
 }) {
   const t = useTranslations("dashboard.referrals")
@@ -127,6 +131,39 @@ export function ReferralPanel(props: {
           ))}
         </ol>
         <p className="mt-4 text-xs text-muted-foreground">{t("fineprint")}</p>
+      </section>
+
+      <section aria-labelledby="referral-active-title" className="border bg-card p-4 sm:p-6">
+        <h2 id="referral-active-title" className="text-sm font-semibold">{t("activeTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("activeLead", { months: props.rewardMonths })}</p>
+        <div className="mt-4 grid gap-px border bg-border sm:grid-cols-2">
+          {(
+            [
+              { title: "activeCountsTitle", icon: CircleCheck, tone: "text-primary", items: [t("activeCount1", { days: props.cookieDays }), t("activeCount2")] },
+              { title: "activeNotTitle", icon: CircleX, tone: "text-muted-foreground", items: [t("activeNot1"), t("activeNot2"), t("activeNot3")] },
+            ] as const
+          ).map(({ title, icon: Icon, tone, items }, col) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: reduceMotion ? 0 : 0.3, delay: reduceMotion ? 0 : col * 0.08 }}
+              className="bg-card p-4"
+            >
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(title)}</h3>
+              <ul className="mt-2 space-y-2">
+                {items.map((text) => (
+                  <li key={text} className="flex gap-2 text-sm">
+                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${tone}`} aria-hidden="true" />
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">{t("activeCap", { cap: props.capMonths })}</p>
       </section>
 
       <section aria-labelledby="referral-list-title" className="border bg-card">

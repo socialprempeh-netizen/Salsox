@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { addMonthsUtc, canonicalEmail, extendReferralPro, generateReferralCode, mayRefer, normalizeReferralCode, referralLink, referralStatus } from "./referrals"
+import { addMonthsUtc, canonicalEmail, extendReferralPro, generateReferralCode, inviteePending, mayRefer, normalizeReferralCode, referralLink, referralStatus } from "./referrals"
 
 const at = (iso: string) => new Date(iso)
 
@@ -57,5 +57,13 @@ describe("who may refer whom", () => {
   it("calls an invited person active once their reward is granted", () => {
     expect(referralStatus({ rewarded: false })).toBe("joined")
     expect(referralStatus({ rewarded: true })).toBe("active")
+  })
+})
+
+describe("inviteePending", () => {
+  it("is true only for an invited account that has not sent a document yet", () => {
+    expect(inviteePending({ referredById: "u1", rewarded: false })).toBe(true)
+    expect(inviteePending({ referredById: "u1", rewarded: true })).toBe(false)
+    expect(inviteePending({ referredById: null, rewarded: false })).toBe(false)
   })
 })

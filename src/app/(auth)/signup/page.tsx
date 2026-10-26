@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
 import { safeNext } from "@/lib/safe-next"
 import { prefillEmail } from "@/lib/signup-prefill"
+import { cookies } from "next/headers"
+import { normalizeReferralCode, REFERRAL_COOKIE, REFERRAL_REWARD_MONTHS } from "@/lib/referrals"
+import { InviteNotice } from "@/components/auth/invite-notice"
 import type { Metadata } from "next"
 
 // Its own title in the tab and in any result that slips through; the
@@ -49,6 +52,10 @@ export default async function SignupPage({
   // document. Hidden without credentials (unlike sign-in, where the button
   // stays and reports the missing setup): a new visitor has the form below.
   const showGoogle = !isDemo && isOAuthProviderConfigured("google", process.env)
+  // Arrived through an invite link (src/app/invite/[code]): the visitor is
+  // told what makes the invite count. A well-formed code is enough; it is
+  // not looked up, so the page says the same for every code.
+  const invited = normalizeReferralCode((await cookies()).get(REFERRAL_COOKIE)?.value) !== null
 
   return (
     <div className="flex flex-col gap-4">
@@ -64,6 +71,8 @@ export default async function SignupPage({
             {hasEmailService ? t("subtitleVerified") : t("subtitlePassword")}
           </p>
         </div>
+
+        {invited && <InviteNotice variant="signup" months={REFERRAL_REWARD_MONTHS} />}
 
         {isDemo && (
           <AuthNotice>

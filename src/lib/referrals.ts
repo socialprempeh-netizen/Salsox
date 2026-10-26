@@ -85,6 +85,15 @@ export function mayRefer(referrer: { id: string; email: string }, referee: { id:
   return referrer.id !== referee.id && canonicalEmail(referrer.email) !== canonicalEmail(referee.email)
 }
 
+/**
+ * Whether the invited person is told, on their dashboard, that their first
+ * document is what makes the invite count: they joined through one, and have
+ * not sent anything yet (no reward exists for them).
+ */
+export function inviteePending(user: { referredById: string | null; rewarded: boolean }): boolean {
+  return user.referredById !== null && !user.rewarded
+}
+
 /** An invited person, as their inviter sees them: "joined" until they send a first document. */
 export function referralStatus(invited: { rewarded: boolean }): "joined" | "active" {
   return invited.rewarded ? "active" : "joined"

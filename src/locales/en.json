@@ -120,6 +120,12 @@
       "backupLost": "Lost your phone and these codes? There is no way to reset this yourself: ask whoever runs this site to remove the second factor from your account."
     }
   },
+  "referralInvite": {
+    "title": "You were invited",
+    "signupBody": "Signing up is free. When you send your first document for signature, the person who invited you gets {months} months of Pro, at no cost to you.",
+    "dashboardBody": "Your invite counts once you send your first document for signature: then the person who invited you gets {months} months of Pro. Signing up alone does not count.",
+    "dashboardCta": "Send a document"
+  },
   "dashboard": {
     "adminVerify": {
       "metaTitle": "Confirm it's you",
@@ -231,11 +237,21 @@
       "step2": "They sign up through it, free.",
       "step3": "When they send their first document, you get {months} months of Pro. Rewards add up.",
       "fineprint": "Pro unlocks everything in the Business plan. Free months never change a paid subscription; they run alongside it. Inviting your own accounts does not count.",
+      "activeTitle": "What counts as an active invite",
+      "activeLead": "An invite becomes active the moment the person you invited sends their first document for signature. That is when your {months} months are added.",
+      "activeCountsTitle": "Counts",
+      "activeCount1": "They sign up through your link within {days} days of opening it.",
+      "activeCount2": "They send a document to at least one signer, from the dashboard, Quick Send or the API.",
+      "activeNotTitle": "Does not count",
+      "activeNot1": "Signing up without sending anything.",
+      "activeNot2": "An account that existed before they opened your link.",
+      "activeNot3": "Inviting yourself, including another address that reaches the same inbox.",
+      "activeCap": "Free time adds up to at most {cap} months ahead of today. They are told the same when they sign up.",
       "listTitle": "People you invited",
       "listEmpty": "Nobody has joined with your link yet. Share it above.",
       "unnamed": "New member",
       "joinedOn": "Joined {date}",
-      "statusJoined": "Joined",
+      "statusJoined": "Joined, nothing sent yet",
       "statusActive": "Active, +{months} months",
       "billingNote": "Pro is free until {date}, earned by inviting people. It runs alongside any plan below.",
       "billingLink": "See your invites"

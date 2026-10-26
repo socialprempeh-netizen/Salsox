@@ -56,7 +56,9 @@ export const CLIENT_MESSAGES = {
     // every public page, about 3 KB of payload the homepage never used. They
     // have their own area below, wrapped around the tool on tool pages only.
   ],
-  app: [...SHELL, "admin", "billing", "dashboard", "esign", "contactDialog"],
+  // `referralInvite`: the invited person's notice (components/auth/invite-notice.tsx),
+  // on the signup page and the dashboard home.
+  app: [...SHELL, "admin", "billing", "dashboard", "esign", "contactDialog", "referralInvite"],
   sign: [...SHELL, "esign.sign", "esign.signature", "esign.viewer"],
   // The free PDF tools (src/components/tools) and the signing pieces they
   // reuse (the signature pad, the PDF viewer). Mounted around the tool itself
