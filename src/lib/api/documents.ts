@@ -71,6 +71,9 @@ const sendSchema = z.object({
   values: z.record(z.string().max(80), z.preprocess((v) => (typeof v === "number" ? String(v) : v), z.string().max(2000))).default({}),
   recipients: z.array(recipientSchema).min(1).max(MAX_RECIPIENTS),
   fields: z.array(fieldSchema).max(500).optional(),
+  // The Salesforce record the document is sent from; completion and refusal
+  // are written back to it (src/lib/integrations/salesforce-store.ts).
+  salesforce_record_id: z.preprocess(blankToUndefined, z.string().trim().regex(/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/, "a Salesforce record id: 15 or 18 letters and digits").optional()),
 })
 
 export type ApiRecipient = { email: string; name?: string; role: "SIGNER" | "APPROVER" | "VIEWER" | "CC"; order: number; templateRole?: string }
@@ -92,6 +95,8 @@ export type ApiSendInput = {
   recipients: ApiRecipient[]
   /** null when none were given: the engine places them, or asks for them. */
   fields: ApiField[] | null
+  /** The Salesforce record it is sent from, for the write-back. */
+  salesforceRecordId: string | null
 }
 
 /** "recipients.0.email" from a zod issue path, so the integration can point at the input. */
@@ -152,7 +157,7 @@ export function parseSendInput(body: unknown, { hasUpload = false }: { hasUpload
     }
   }
 
-  return { ok: true, input: { title: b.title, message: b.message, expiresInDays: b.expires_in_days, signingOrder: b.signing_order, source, recipients, fields } }
+  return { ok: true, input: { title: b.title, message: b.message, expiresInDays: b.expires_in_days, signingOrder: b.signing_order, source, recipients, fields, salesforceRecordId: b.salesforce_record_id ?? null } }
 }
 
 /**

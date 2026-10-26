@@ -3,6 +3,7 @@ import { expireSweep, recoverStuckFinalizations, reminderSweep } from "@/lib/esi
 import { renewalNoticeSweep } from "@/lib/esign/renewal"
 import { reconcilePayments, recoverProcessorFees } from "@/lib/esign/payments/reconcile"
 import { deliverDue } from "@/lib/webhooks/store"
+import { runSalesforceJobs } from "@/lib/integrations/salesforce-store"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -24,6 +25,8 @@ export const maxDuration = 300
  *  - renewals: subscriptions renewing soon get an advance notice, because
  *              Salsox never renews silently.
  *  - webhooks: deliveries to integrations that failed and are due a retry.
+ *  - integrations: Salesforce write-backs (the signed PDF filed on the
+ *              record, a task logged) that failed and are due a retry.
  *
  * Each step is independent and idempotent, so one failing does not stop the
  * others, and a re-run the same day does nothing twice. Requires CRON_SECRET,
@@ -47,7 +50,7 @@ export async function GET(request: Request) {
   // due again (src/lib/webhooks/retry.ts). Last, so the other steps' own
   // events (an expiry, a completion) are queued before it runs.
   // const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), fees: () => recoverProcessorFees(), renewals: renewalNoticeSweep }
-  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), fees: () => recoverProcessorFees(), renewals: renewalNoticeSweep, webhooks: async () => (await deliverDue()).attempted }
+  const steps = { expire: expireSweep, remind: reminderSweep, finalize: () => recoverStuckFinalizations(), payments: () => reconcilePayments(), fees: () => recoverProcessorFees(), renewals: renewalNoticeSweep, webhooks: async () => (await deliverDue()).attempted, integrations: () => runSalesforceJobs() }
   const results: Record<string, number | string> = {}
   for (const [name, run] of Object.entries(steps)) {
     try {

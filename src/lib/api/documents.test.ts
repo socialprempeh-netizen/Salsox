@@ -146,3 +146,14 @@ describe("pickPdfVersion", () => {
     expect(pickPdfVersion("final", sealed)).toMatchObject({ ok: false, status: 400, problem: { code: "invalid_input" } })
   })
 })
+
+describe("salesforce_record_id", () => {
+  const base = { file_url: "https://example.com/a.pdf", recipients: one }
+  it("keeps a record id the document is sent from, and refuses anything else", () => {
+    const ok = parseSendInput({ ...base, salesforce_record_id: " 0065g00000XyZaBAAV " })
+    expect(ok.ok && ok.input.salesforceRecordId).toBe("0065g00000XyZaBAAV")
+    const none = parseSendInput(base)
+    expect(none.ok && none.input.salesforceRecordId).toBeNull()
+    expect(parseSendInput({ ...base, salesforce_record_id: "006; DROP TABLE" }).ok).toBe(false)
+  })
+})

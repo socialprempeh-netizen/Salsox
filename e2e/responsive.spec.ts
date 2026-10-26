@@ -46,6 +46,9 @@ for (const width of WIDTHS) {
     await check("/invite/abcd2345", "signup-invited")
     await expect(page.getByText("You were invited")).toBeVisible()
     await ctx.clearCookies({ name: "sx_ref" })
+    // The OAuth consent page, with a client this deployment does not know:
+    // the explanation card, which never redirects.
+    await check("/oauth/authorize?client_id=unknown&response_type=code", "oauth-invalid")
     // "Check your email": after a sign-in link, and after sign-up now that an
     // address must be confirmed before the account can be used.
     await check("/verify-request", "verify-request")

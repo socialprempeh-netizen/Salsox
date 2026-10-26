@@ -16,7 +16,7 @@
 import { NextResponse } from "next/server"
 import { getTranslations } from "next-intl/server"
 import { routing } from "@/i18n/routing"
-import { apiError, jsonBody, withApiKey } from "@/lib/api/v1"
+import { apiError, jsonBody, withScope } from "@/lib/api/v1"
 import { assignTemplateRoles, engineErrorStatus, parseListQuery, parseSendInput, type ApiSendInput } from "@/lib/api/documents"
 import { getApiDocument, listApiDocuments } from "@/lib/api/documents-store"
 import { fetchPdf } from "@/lib/api/fetch-file"
@@ -26,6 +26,7 @@ import { MAX_PDF_BYTES, MAX_PDF_MB } from "@/lib/esign/limits"
 import { MAX_RECIPIENTS, TITLE_MAX } from "@/lib/esign/schemas"
 import { FREE_DOCUMENTS_PER_MONTH } from "@/lib/esign/plans"
 import { sendFromApi, type ApiSendArgs } from "@/lib/esign/api-send"
+import { linkDocumentToRecord } from "@/lib/integrations/salesforce-store"
 import { getSavedTemplate } from "@/lib/esign/templates"
 import { findLibraryTemplate } from "@/lib/seo-agent/published-pages"
 import type { ApiCaller } from "@/lib/api-keys-store"
@@ -139,16 +140,18 @@ async function send(caller: ApiCaller, request: Request): Promise<Response> {
 
   const sent = await sendFromApi(args)
   if (!sent.ok) return engineError(sent.error)
+  // Sent from a Salesforce record: kept, so its completion is written back there.
+  if (input.salesforceRecordId) await linkDocumentToRecord(caller.userId, sent.documentId, input.salesforceRecordId)
   const document = await getApiDocument(caller.userId, sent.documentId)
   return NextResponse.json({ ...document, undelivered: sent.undelivered, not_emailed: sent.notEmailed }, { status: 201 })
 }
 
 export async function POST(request: Request) {
-  return withApiKey(request, (caller) => send(caller, request))
+  return withScope("documents:send", request, (caller) => send(caller, request))
 }
 
 export async function GET(request: Request) {
-  return withApiKey(request, async (caller) => {
+  return withScope("documents:read", request, async (caller) => {
     const parsed = parseListQuery(new URL(request.url).searchParams)
     if (!parsed.ok) return apiError(422, parsed.problem.code, parsed.problem.message)
     const { data, nextCursor } = await listApiDocuments(caller.userId, parsed.query)

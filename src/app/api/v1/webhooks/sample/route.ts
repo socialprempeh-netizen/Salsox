@@ -7,14 +7,14 @@
  */
 import { NextResponse } from "next/server"
 import { siteConfig } from "@/config/site"
-import { apiError, withApiKey } from "@/lib/api/v1"
+import { apiError, withScope } from "@/lib/api/v1"
 import { isWebhookEvent } from "@/lib/webhooks/events"
 import { samplePayload } from "@/lib/webhooks/payload"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
-  return withApiKey(request, async () => {
+  return withScope("webhooks:manage", request, async () => {
     const event = new URL(request.url).searchParams.get("event") ?? "document.completed"
     if (!isWebhookEvent(event)) return apiError(422, "events", "Unknown event. Use one of: document.sent, document.viewed, document.signed, document.completed, payment.sent, document.declined, document.expired.")
     return NextResponse.json([samplePayload(event, siteConfig.url)])

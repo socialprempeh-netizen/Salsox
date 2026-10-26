@@ -6,6 +6,9 @@
  *   endpoint's latest deliveries (src/lib/webhooks).
  * - API keys: for an integration such as Zapier or Make to subscribe to
  *   those events on this account's behalf (/api/v1, src/lib/api/v1.ts).
+ * - Integrations: HubSpot and Salesforce connections where the deployment
+ *   offers them, and the apps this account allowed in through OAuth
+ *   (src/lib/integrations, src/lib/oauth-server).
  * - How to check a delivery's signature, in a few lines, and a link to the
  *   full reference in the Help Center.
  *
@@ -13,13 +16,21 @@
  */
 import Link from "next/link"
 import { getTranslations } from "next-intl/server"
-import { BookOpen, KeySquare, Webhook } from "lucide-react"
+import { BookOpen, KeySquare, Plug, Webhook } from "lucide-react"
 import { requireUser } from "@/lib/auth"
 import { siteConfig } from "@/config/site"
 import { listEndpoints, MAX_ENDPOINTS } from "@/lib/webhooks/store"
 import { listApiKeys } from "@/lib/api-keys-store"
 import { WebhookEndpoints } from "@/components/developers/webhook-endpoints"
 import { ApiKeysPanel } from "@/components/developers/api-keys-panel"
+import { IntegrationsPanel } from "@/components/developers/integrations-panel"
+import { getFormatter } from "next-intl/server"
+import { hubspotConfig } from "@/lib/integrations/hubspot"
+import { hubSpotStatus } from "@/lib/integrations/hubspot-store"
+import { salesforceConfig } from "@/lib/integrations/salesforce"
+import { salesforceStatus } from "@/lib/integrations/salesforce-store"
+import { oauthClients } from "@/lib/oauth-server/rules"
+import { listGrants } from "@/lib/oauth-server/store"
 
 // The public reference: content/help/articles/webhooks-and-api.md.
 const WEBHOOK_DOCS_PATH = "/resources/help/webhooks-and-api"
@@ -44,7 +55,10 @@ function verify(secret, header, body) {
 export default async function DevelopersPage() {
   const user = await requireUser()
   const t = await getTranslations("dashboard.developers")
-  const [endpoints, keys] = await Promise.all([listEndpoints(user.id), listApiKeys(user.id)])
+  const format = await getFormatter()
+  const [endpoints, keys, hubspot, salesforce, grants] = await Promise.all([listEndpoints(user.id), listApiKeys(user.id), hubSpotStatus(user.id), salesforceStatus(user.id), listGrants(user.id)])
+  const day = (d: Date) => format.dateTime(d, { dateStyle: "medium" })
+  const clientName = (id: string) => oauthClients().find((c) => c.id === id)?.name ?? id
 
   return (
     <div className="space-y-10">
@@ -95,6 +109,23 @@ export default async function DevelopersPage() {
           </div>
         </div>
         <ApiKeysPanel keys={keys.map((k) => ({ id: k.id, name: k.name, prefix: k.prefix, createdAt: k.createdAt.toISOString(), lastUsedAt: k.lastUsedAt?.toISOString() ?? null }))} />
+      </section>
+
+      <section id="integrations" aria-labelledby="integrations-title" className="scroll-mt-24 space-y-4">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center bg-primary text-primary-foreground" aria-hidden="true">
+            <Plug className="h-5 w-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <h2 id="integrations-title" className="text-lg font-semibold">{t("integrationsTitle")}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">{t("integrationsBody")}</p>
+          </div>
+        </div>
+        <IntegrationsPanel
+          hubspot={{ offered: hubspotConfig() !== null || hubspot !== null, connected: hubspot ? { hubId: hubspot.hubId, hubDomain: hubspot.hubDomain, since: day(hubspot.connectedAt) } : null }}
+          salesforce={{ offered: salesforceConfig() !== null || salesforce !== null, connected: salesforce ? { orgId: salesforce.orgId, username: salesforce.username, sandbox: salesforce.sandbox, since: day(salesforce.connectedAt), failedJobs: salesforce.failedJobs } : null }}
+          apps={grants.map((g) => ({ id: g.id, name: clientName(g.clientId), scopes: g.scopes, since: day(g.createdAt), lastUsed: g.lastUsedAt ? day(g.lastUsedAt) : null }))}
+        />
       </section>
 
       <section aria-labelledby="verify-title" className="space-y-3">

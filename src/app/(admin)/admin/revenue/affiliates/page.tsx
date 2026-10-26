@@ -62,7 +62,8 @@ export default async function AffiliatePayoutsPage() {
                   <tr key={`${row.affiliateId}-${row.currency}`}>
                     <td>
                       <p className="font-mono text-xs">/go/{row.code}</p>
-                      <p className="max-w-[16rem] truncate text-xs text-muted-foreground">{row.name ? `${row.name} · ${row.email}` : row.email}</p>
+                      {row.name && <p className="max-w-[16rem] truncate text-sm">{row.name}</p>}
+                      <p className="max-w-[16rem] truncate text-xs text-muted-foreground">{row.email}</p>
                     </td>
                     <td className="text-right font-semibold tabular-nums">{amount}</td>
                     <td className="text-right tabular-nums">{row.rows}</td>

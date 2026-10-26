@@ -151,7 +151,7 @@ export function ReferralPanel(props: {
               transition={{ duration: reduceMotion ? 0 : 0.3, delay: reduceMotion ? 0 : col * 0.08 }}
               className="bg-card p-4"
             >
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(title)}</h3>
+              <h3 className="text-sm font-semibold">{t(title)}</h3>
               <ul className="mt-2 space-y-2">
                 {items.map((text) => (
                   <li key={text} className="flex gap-2 text-sm">

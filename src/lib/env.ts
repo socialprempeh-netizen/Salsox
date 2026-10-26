@@ -121,6 +121,18 @@ export const envSchema = z
     // (src/lib/extension-connect.ts), comma-separated. Optional: unset, no
     // extension can connect outside development.
     SIGNING_EXTENSION_IDS: optional,
+    // Integrations (docs/integrations.md). Each is offered only when set:
+    // HubSpot and Salesforce with Salsox as their OAuth client, and Salsox's
+    // own OAuth server for the Salesforce package (src/lib/oauth-server).
+    HUBSPOT_CLIENT_ID: optional,
+    HUBSPOT_CLIENT_SECRET: optional,
+    HUBSPOT_SCOPES: optional,
+    SALESFORCE_CLIENT_ID: optional,
+    SALESFORCE_CLIENT_SECRET: optional,
+    OAUTH_CLIENT_ID: optional,
+    OAUTH_CLIENT_SECRET: blankAsUnset(z.string().min(32, "at least 32 characters: it is the package's password").optional()),
+    OAUTH_REDIRECT_URIS: blankAsUnset(z.string().regex(/^https:\/\/\S+(\s*,\s*https:\/\/\S+)*$/, "one or more https addresses, comma-separated").optional()),
+    OAUTH_CLIENT_NAME: optional,
     // Search and analytics (docs/seo.md). All optional: verification tokens
     // for Search Console and Bing Webmaster Tools (DNS verification needs
     // neither), and a GA4 measurement id, which also opens the CSP to Google.
@@ -167,6 +179,12 @@ export const envSchema = z
     requireTogether("GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "the Google sign-in button would break")
     requireTogether("GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "the GitHub sign-in button would break")
     requireTogether("GITHUB_CLIENT_SECRET", "GITHUB_CLIENT_ID", "the GitHub sign-in button would break")
+    requireTogether("HUBSPOT_CLIENT_ID", "HUBSPOT_CLIENT_SECRET", "connecting HubSpot would fail at the token exchange")
+    requireTogether("HUBSPOT_CLIENT_SECRET", "HUBSPOT_CLIENT_ID", "connecting HubSpot would fail at the token exchange")
+    requireTogether("SALESFORCE_CLIENT_ID", "SALESFORCE_CLIENT_SECRET", "connecting Salesforce would fail at the token exchange")
+    requireTogether("SALESFORCE_CLIENT_SECRET", "SALESFORCE_CLIENT_ID", "connecting Salesforce would fail at the token exchange")
+    requireTogether("OAUTH_CLIENT_ID", "OAUTH_CLIENT_SECRET", "the OAuth client could not authenticate")
+    requireTogether("OAUTH_CLIENT_ID", "OAUTH_REDIRECT_URIS", "the consent page would refuse every request")
 
     // A sender that cannot reach real recipients (Resend's test sender, the
     // .env.example placeholder): Resend accepts each request, the app says

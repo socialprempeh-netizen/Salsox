@@ -6,14 +6,14 @@
  * and recipients a chosen template asks for.
  */
 import { NextResponse } from "next/server"
-import { withApiKey } from "@/lib/api/v1"
+import { withScope } from "@/lib/api/v1"
 import { libraryTemplates } from "@/lib/seo-agent/published-pages"
 import { listSavedTemplates } from "@/lib/esign/templates"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
-  return withApiKey(request, async (caller) => {
+  return withScope("templates:read", request, async (caller) => {
     const [library, saved] = await Promise.all([libraryTemplates(), listSavedTemplates(caller.userId)])
     return NextResponse.json({
       data: library.map((t) => ({

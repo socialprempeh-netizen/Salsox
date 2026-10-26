@@ -12,7 +12,7 @@
  * page beside the ones made there, under the same rules (src/lib/webhooks).
  */
 import { NextResponse } from "next/server"
-import { apiError, jsonBody, withApiKey } from "@/lib/api/v1"
+import { apiError, jsonBody, withScope } from "@/lib/api/v1"
 import { createEndpoint, listEndpoints, type EndpointError } from "@/lib/webhooks/store"
 
 export const dynamic = "force-dynamic"
@@ -30,7 +30,7 @@ const MESSAGES: Record<EndpointError, string> = {
 }
 
 export async function GET(request: Request) {
-  return withApiKey(request, async (caller) => {
+  return withScope("webhooks:manage", request, async (caller) => {
     const endpoints = await listEndpoints(caller.userId)
     return NextResponse.json({
       data: endpoints.map((e) => ({ id: e.id, url: e.url, events: e.events, enabled: e.enabled, source: e.source, created_at: e.createdAt.toISOString() })),
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  return withApiKey(request, async (caller) => {
+  return withScope("webhooks:manage", request, async (caller) => {
     const body = await jsonBody(request)
     if (!body) return apiError(400, "invalid_json", "Send a JSON object.")
     const url = typeof body.url === "string" ? body.url : typeof body.target_url === "string" ? body.target_url : ""

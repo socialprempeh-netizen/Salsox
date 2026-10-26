@@ -11,7 +11,7 @@
  * feature, as on the dashboard (src/app/api/documents/[id]/[variant]).
  */
 import { NextResponse } from "next/server"
-import { apiError, withApiKey } from "@/lib/api/v1"
+import { apiError, withScope } from "@/lib/api/v1"
 import { pickPdfVersion } from "@/lib/api/documents"
 import { prisma } from "@/lib/prisma"
 import { getFile } from "@/lib/esign/storage"
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  return withApiKey(request, async (caller) => {
+  return withScope("documents:read", request, async (caller) => {
     const document = await prisma.document.findFirst({
       where: { id, userId: caller.userId },
       select: { title: true, originalKey: true, sealedKey: true },

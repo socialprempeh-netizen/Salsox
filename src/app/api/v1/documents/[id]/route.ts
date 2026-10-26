@@ -5,14 +5,14 @@
  * webhook named. Another account's id is a 404, like an unknown one.
  */
 import { NextResponse } from "next/server"
-import { apiError, withApiKey } from "@/lib/api/v1"
+import { apiError, withScope } from "@/lib/api/v1"
 import { getApiDocument } from "@/lib/api/documents-store"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  return withApiKey(request, async (caller) => {
+  return withScope("documents:read", request, async (caller) => {
     const document = await getApiDocument(caller.userId, id)
     if (!document) return apiError(404, "not_found", "No document with that id on this account.")
     return NextResponse.json(document)

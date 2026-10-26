@@ -96,6 +96,10 @@ model User {
   passkeys              Passkey[]
   webhookEndpoints      WebhookEndpoint[]
   apiKeys               ApiKey[]
+  // Integrations (src/lib/integrations, src/lib/oauth-server).
+  hubSpotConnection     HubSpotConnection?
+  salesforceConnection  SalesforceConnection?
+  oauthGrants           OAuthGrant[]
   subscription          Subscription?
   purchases             Purchase[]
   documents             Document[]
@@ -587,6 +591,11 @@ model Document {
   fields          Field[]
   auditEvents     AuditEvent[]
   payments        Payment[]
+  // The Salesforce record this document was sent from, when the Salesforce
+  // package sent it through the API (`salesforce_record_id`). Completion and
+  // refusal are written back to that record (src/lib/integrations/salesforce-store.ts).
+  salesforceRecordId String?
+  integrationJobs IntegrationJob[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -1181,3 +1190,133 @@ model OutreachAgentSettings {
 
   @@map("outreach_agent_settings")
 }
+
+// ── Integrations ──────────────────────────────────────────────────────────
+// Salsox as an OAuth client of other products (src/lib/integrations): one
+// connection per account and product. Tokens are sealed at rest with the
+// webhook secret box (AES-256-GCM under a key derived from AUTH_SECRET), so a
+// copy of the database alone cannot act on anyone's HubSpot or Salesforce.
+
+model HubSpotConnection {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  // The HubSpot account (portal) connected, and its domain for display.
+  hubId        String
+  hubDomain    String?
+  scopes       String[]
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([hubId])
+}
+
+model SalesforceConnection {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  orgId        String
+  // The org's own API host, from the token response; every call goes there.
+  instanceUrl  String
+  sandbox      Boolean  @default(false)
+  username     String?
+  accessToken  String
+  refreshToken String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+enum IntegrationJobStatus {
+  PENDING
+  DONE
+  FAILED
+}
+
+// Work an integration does after a document event, retried until done: for
+// Salesforce, filing the signed PDF on the record and logging a task. One
+// job per document, provider and event (the unique key), so a repeated
+// event cannot write back twice. `progress` records the steps already done,
+// so a retry never repeats one (the PDF is not uploaded a second time).
+model IntegrationJob {
+  id            String               @id @default(cuid())
+  documentId    String
+  provider      String
+  event         String
+  status        IntegrationJobStatus @default(PENDING)
+  attempts      Int                  @default(0)
+  nextAttemptAt DateTime             @default(now())
+  progress      Json                 @default("{}")
+  lastError     String?
+  doneAt        DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  document      Document             @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, provider, event])
+  @@index([status, nextAttemptAt])
+}
+
+// Salsox as an OAuth 2.0 authorization server (src/lib/oauth-server), for
+// integrations that cannot hold an API key the way their platform expects
+// (the Salesforce package's Named Credential). A grant is one person's
+// consent to one client; its tokens and codes are stored as SHA-256 hashes
+// only, like API keys.
+
+model OAuthGrant {
+  id         String       @id @default(cuid())
+  userId     String
+  clientId   String
+  scopes     String[]
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime     @default(now())
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens     OAuthToken[]
+
+  @@index([userId])
+  @@index([clientId, userId])
+}
+
+// A one-time authorization code: ten minutes, PKCE-bound, used once. A code
+// presented twice revokes the grant it produced (RFC 6749 §4.1.2).
+model OAuthCode {
+  id            String    @id @default(cuid())
+  hash          String    @unique
+  userId        String
+  clientId      String
+  redirectUri   String
+  scopes        String[]
+  codeChallenge String
+  grantId       String?
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+enum OAuthTokenKind {
+  ACCESS
+  REFRESH
+}
+
+// Access tokens (an hour) and refresh tokens (rotated on every use). A
+// refresh token used after it was rotated means a copy exists: the whole
+// grant is revoked.
+model OAuthToken {
+  id        String         @id @default(cuid())
+  grantId   String
+  kind      OAuthTokenKind
+  hash      String         @unique
+  expiresAt DateTime
+  rotatedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime       @default(now())
+  grant     OAuthGrant     @relation(fields: [grantId], references: [id], onDelete: Cascade)
+
+  @@index([grantId])
+}
+

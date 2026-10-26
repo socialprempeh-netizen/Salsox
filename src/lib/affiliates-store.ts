@@ -296,15 +296,16 @@ export async function affiliatePayoutQueue(now = new Date()): Promise<PayoutQueu
 /**
  * Records that an affiliate's cleared balance in one currency has been sent:
  * every cleared, unpaid, unreversed row up to `now`'s cutoff gets paidOutAt.
- * The sum is read and the rows marked in one transaction, so what is
- * reported is exactly what was marked; a second click finds nothing left.
+ * One UPDATE … RETURNING, so what is reported is exactly the rows this call
+ * marked: of two presses at once, one records the payout and the other
+ * finds nothing left.
+ *
+ * Was a findMany then updateMany in a transaction: under concurrent presses
+ * both read the rows before either marked them, so the rows were marked once
+ * but the payout was reported twice (found by affiliates-payouts.db.test.ts).
  */
 export async function recordAffiliatePayout(affiliateId: string, currency: string, now = new Date()): Promise<{ rows: number; amount: number }> {
   const where = { affiliateId, currency, reversedAt: null, paidOutAt: null, paidAt: { lte: clearedCutoff(now) } }
-  return prisma.$transaction(async (tx) => {
-    const rows = await tx.affiliateCommission.findMany({ where, select: { id: true, commission: true } })
-    if (rows.length === 0) return { rows: 0, amount: 0 }
-    await tx.affiliateCommission.updateMany({ where: { id: { in: rows.map((r) => r.id) }, paidOutAt: null }, data: { paidOutAt: now } })
-    return { rows: rows.length, amount: rows.reduce((sum, r) => sum + r.commission, 0) }
-  })
+  const marked = await prisma.affiliateCommission.updateManyAndReturn({ where, data: { paidOutAt: now }, select: { commission: true } })
+  return { rows: marked.length, amount: marked.reduce((sum, r) => sum + r.commission, 0) }
 }

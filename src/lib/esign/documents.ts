@@ -685,6 +685,10 @@ async function finalizeOnce(documentId: string): Promise<"done" | "nothing" | "t
   if (completedEvent) {
     const { queueWebhookEvent } = await import("@/lib/webhooks/store")
     await queueWebhookEvent({ documentId, auditType: AUDIT.COMPLETED })
+    // And to the Salesforce record it was sent from, if any: the signed PDF
+    // filed there, a task logged (src/lib/integrations; never throws).
+    const { queueSalesforceWriteBack } = await import("@/lib/integrations/salesforce-store")
+    await queueSalesforceWriteBack({ documentId, event: "document.completed" })
   }
 
   // Only the run that committed gets here, so everyone is emailed once.

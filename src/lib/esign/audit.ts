@@ -91,5 +91,9 @@ export async function recordAudit(
   if (db === prisma && webhookEventFor(event.type)) {
     const { queueWebhookEvent } = await import("@/lib/webhooks/store")
     await queueWebhookEvent({ documentId: event.documentId, auditType: event.type, recipientId: event.recipientId })
+    // The same event written back to the Salesforce record the document came
+    // from, when it has one (src/lib/integrations; never throws).
+    const { queueSalesforceWriteBack } = await import("@/lib/integrations/salesforce-store")
+    await queueSalesforceWriteBack({ documentId: event.documentId, event: webhookEventFor(event.type)! })
   }
 }

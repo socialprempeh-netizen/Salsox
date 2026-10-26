@@ -9,14 +9,14 @@
  * trigger. Built by recentEvents (src/lib/webhooks/store.ts).
  */
 import { NextResponse } from "next/server"
-import { apiError, withApiKey } from "@/lib/api/v1"
+import { apiError, withScope } from "@/lib/api/v1"
 import { isWebhookEvent } from "@/lib/webhooks/events"
 import { recentEvents, RECENT_EVENTS_MAX } from "@/lib/webhooks/store"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
-  return withApiKey(request, async (caller) => {
+  return withScope("webhooks:manage", request, async (caller) => {
     const params = new URL(request.url).searchParams
     const event = params.get("event") ?? ""
     if (!isWebhookEvent(event)) return apiError(422, "events", "Give `event`, one of: document.sent, document.viewed, document.signed, document.completed, payment.sent, document.declined, document.expired.")
