@@ -56,6 +56,35 @@ describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD !== "1")("Sign & Pay 
   }, 60_000)
 })
 
+/** Pays a Stripe Checkout page with the 4242 test card in a headless browser. */
+async function payCheckout(url: string, card = "4242424242424242") {
+  const { chromium } = await import("@playwright/test")
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage()
+    await page.goto(url)
+    // Where Stripe offers more than one method (in GBP: card, Pay by Bank,
+    // Revolut Pay) the card form is folded behind a "Card" option. Wait for
+    // whichever appears, rather than checking before the page has loaded.
+    // The option's own button is a hidden overlay; the visible row is what
+    // a person clicks.
+    const cardRow = page.locator('[data-testid="card-accordion-item"]')
+    await page.locator('#cardNumber, [data-testid="card-accordion-item"]').first().waitFor({ timeout: 30_000 })
+    if (await cardRow.isVisible()) await cardRow.click()
+    await page.locator("#cardNumber").fill(card)
+    await page.locator("#cardExpiry").fill("12 / 34")
+    await page.locator("#cardCvc").fill("123")
+    await page.locator("#billingName").fill("Test Signer")
+    const postal = page.locator("#billingPostalCode")
+    if (await postal.isVisible().catch(() => false)) await postal.fill("EC1A 1BB")
+    await page.locator('[data-testid="hosted-payment-submit-button"], button[type="submit"]').first().click()
+    await page.waitForURL(/example\.com/, { timeout: 60_000 })
+  } finally {
+    await browser.close()
+  }
+}
+
+
 // Skipped in onboarding mode: there is no finished sender to pay yet.
 describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD === "1")("Sign & Pay on Stripe test mode (end to end)", () => {
   let stripe: Stripe
@@ -67,6 +96,9 @@ describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD === "1")("Sign & Pay 
   const existing = process.env.STRIPE_E2E_ACCOUNT?.trim()
 
   beforeAll(async () => {
+    // A test key now defaults to direct charges (charge-mode.ts); this block
+    // is about destination charges, so it asks for them.
+    process.env.STRIPE_SIGN_AND_PAY_CHARGES = "destination"
     stripe = (await import("@/lib/stripe")).stripe
     adapter = (await import("./stripe")).stripeSignAndPay
     if (existing) {
@@ -110,34 +142,6 @@ describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD === "1")("Sign & Pay 
     // owner's, finished by hand, and is kept for the next run.
     if (accountId && !existing) await stripe.accounts.del(accountId).catch(() => {})
   })
-
-  /** Pays a Stripe Checkout page with the 4242 test card in a headless browser. */
-  async function payInBrowser(url: string, card = "4242424242424242") {
-    const { chromium } = await import("@playwright/test")
-    const browser = await chromium.launch()
-    try {
-      const page = await browser.newPage()
-      await page.goto(url)
-      // Where Stripe offers more than one method (in GBP: card, Pay by Bank,
-      // Revolut Pay) the card form is folded behind a "Card" option. Wait for
-      // whichever appears, rather than checking before the page has loaded.
-      // The option's own button is a hidden overlay; the visible row is what
-      // a person clicks.
-      const cardRow = page.locator('[data-testid="card-accordion-item"]')
-      await page.locator('#cardNumber, [data-testid="card-accordion-item"]').first().waitFor({ timeout: 30_000 })
-      if (await cardRow.isVisible()) await cardRow.click()
-      await page.locator("#cardNumber").fill(card)
-      await page.locator("#cardExpiry").fill("12 / 34")
-      await page.locator("#cardCvc").fill("123")
-      await page.locator("#billingName").fill("Test Signer")
-      const postal = page.locator("#billingPostalCode")
-      if (await postal.isVisible().catch(() => false)) await postal.fill("EC1A 1BB")
-      await page.locator('[data-testid="hosted-payment-submit-button"], button[type="submit"]').first().click()
-      await page.waitForURL(/example\.com/, { timeout: 60_000 })
-    } finally {
-      await browser.close()
-    }
-  }
 
   /** What each side ended with, read from their balance transactions. */
   async function balances(sessionId: string) {
@@ -204,7 +208,7 @@ describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD === "1")("Sign & Pay 
       successUrl: "https://example.com/paid",
       cancelUrl: "https://example.com/cancelled",
     })
-    await payInBrowser(session.url, card)
+    await payCheckout(session.url, card)
     let verified = await adapter.verify(session.providerRef)
     for (let i = 0; i < 20 && verified.status !== "PAID"; i++) {
       await new Promise((r) => setTimeout(r, 1500))
@@ -285,5 +289,153 @@ describe.skipIf(!enabled || process.env.STRIPE_E2E_ONBOARD === "1")("Sign & Pay 
     expect(after.senderNet.amount).toBe(0)
     // What the platform still carries is the dispute fee, the shortfall.
     expect((first as { shortfall: number }).shortfall).toBe(-disputeNet - (10_000 - result.stripeFee.amount))
+  }, 240_000)
+})
+
+/**
+ * Direct charges (charge-mode.ts), the switch that took Sign & Pay off
+ * destination charges: the checkout is made on the sender's own account, so
+ * the charge, Stripe's fee, a refund and a dispute are all the sender's, and
+ * the platform's share arrives as an application fee. Nothing carries
+ * on_behalf_of or a transfer any more: the sender is the merchant outright.
+ *
+ * Needs STRIPE_E2E_DIRECT_ACCOUNT: a sender account as createSenderAccount
+ * makes them (full dashboard, its own fees, Stripe collecting its losses),
+ * with its sign-up finished by hand. It is used as it is and kept.
+ */
+const directAccount = process.env.STRIPE_E2E_DIRECT_ACCOUNT?.trim()
+
+describe.skipIf(!enabled || !directAccount || process.env.STRIPE_E2E_ONBOARD === "1")("Sign & Pay direct charges on Stripe test mode (end to end)", () => {
+  let stripe: Stripe
+  let adapter: typeof import("./stripe").stripeSignAndPay
+  const runId = `e2e-direct-${Date.now()}`
+  const report: Record<string, unknown>[] = []
+  const onSender = () => ({ stripeAccount: directAccount! })
+
+  beforeAll(async () => {
+    process.env.STRIPE_SIGN_AND_PAY_CHARGES = "direct"
+    stripe = (await import("@/lib/stripe")).stripe
+    adapter = (await import("./stripe")).stripeSignAndPay
+    expect(await adapter.isPayoutReady(directAccount!)).toBe(true)
+  }, 60_000)
+
+  afterAll(async () => {
+    if (process.env.STRIPE_E2E_DIRECT_REPORT) (await import("node:fs")).writeFileSync(process.env.STRIPE_E2E_DIRECT_REPORT, JSON.stringify(report, null, 2))
+  })
+
+  /** A checkout made by the real createCheckout, paid in a browser, confirmed by verify. */
+  async function pay(label: string, amount: number, currency: string, feeBps: string | undefined, card?: string) {
+    if (feeBps === undefined) delete process.env.SIGN_AND_PAY_FEE_BPS
+    else process.env.SIGN_AND_PAY_FEE_BPS = feeBps
+    const paymentId = `${runId}-${label.replace(/\W+/g, "-")}`
+    const session = await adapter.createCheckout({
+      paymentId,
+      documentId: runId,
+      description: `Sign & Pay direct e2e (${label})`,
+      amount,
+      currency,
+      payerEmail: "signer-e2e@example.com",
+      payoutAccountId: directAccount!,
+      reference: paymentId,
+      successUrl: "https://example.com/paid",
+      cancelUrl: "https://example.com/cancelled",
+    })
+    // The reference records the account, so later calls act on it.
+    expect(session.providerRef.startsWith(`direct:${directAccount}:cs_test_`)).toBe(true)
+    await payCheckout(session.url, card)
+    let verified = await adapter.verify(session.providerRef)
+    for (let i = 0; i < 20 && verified.status !== "PAID"; i++) {
+      await new Promise((r) => setTimeout(r, 1500))
+      verified = await adapter.verify(session.providerRef)
+    }
+    expect(verified).toMatchObject({ status: "PAID", amount, currency })
+    return { providerRef: session.providerRef, sessionId: session.providerRef.split(":").at(-1)!, paymentId }
+  }
+
+  /** Where the money and the fees landed, read from Stripe on both sides. */
+  async function facts(sessionId: string) {
+    const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["payment_intent.latest_charge.balance_transaction"] }, onSender())
+    const intent = session.payment_intent as Stripe.PaymentIntent
+    const charge = intent.latest_charge as Stripe.Charge
+    const bt = charge.balance_transaction as Stripe.BalanceTransaction
+    // The platform cannot see the charge at all: it is not the platform's.
+    const onPlatform = await stripe.charges.retrieve(charge.id).then(
+      () => true,
+      () => false
+    )
+    const feeId = typeof charge.application_fee === "string" ? charge.application_fee : charge.application_fee?.id
+    const appFee = feeId ? await stripe.applicationFees.retrieve(feeId) : null
+    const stripeFee = bt.fee_details.filter((f) => f.type === "stripe_fee").reduce((sum, f) => sum + f.amount, 0)
+    return {
+      chargeId: charge.id,
+      onBehalfOf: intent.on_behalf_of,
+      transferData: intent.transfer_data,
+      applicationFeeAmount: intent.application_fee_amount,
+      chargeOnPlatform: onPlatform,
+      senderStripeFee: stripeFee,
+      senderNet: bt.net,
+      applicationFee: appFee ? { amount: appFee.amount, refunded: appFee.amount_refunded, account: typeof appFee.account === "string" ? appFee.account : appFee.account.id } : null,
+      refunded: charge.amount_refunded,
+    }
+  }
+
+  it("no platform fee: the charge and Stripe's fee are the sender's, and the platform takes nothing", async () => {
+    const paid = await pay("GBP, no platform fee", 10_000, "GBP", undefined)
+    const result = await facts(paid.sessionId)
+    report.push({ label: "no platform fee", ...result })
+    expect(result.onBehalfOf).toBeNull()
+    expect(result.transferData).toBeNull()
+    expect(result.applicationFeeAmount).toBeNull()
+    expect(result.applicationFee).toBeNull()
+    expect(result.chargeOnPlatform).toBe(false)
+    // Stripe charged its fee to the sender's account, so there is nothing to pass through.
+    expect(result.senderStripeFee).toBeGreaterThan(0)
+    expect(result.senderNet).toBe(10_000 - result.senderStripeFee)
+    expect(await adapter.recoverProcessorFee!({ providerRef: paid.providerRef, paymentId: paid.paymentId })).toEqual({ status: "notApplicable" })
+  }, 180_000)
+
+  it("with a platform fee: an application fee is all the platform receives, and a refund returns it", async () => {
+    const paid = await pay("GBP, 1.5% platform fee", 10_000, "GBP", "150")
+    const result = await facts(paid.sessionId)
+    report.push({ label: "1.5% platform fee", ...result })
+    expect(result.onBehalfOf).toBeNull()
+    expect(result.applicationFeeAmount).toBe(150)
+    expect(result.applicationFee).toMatchObject({ amount: 150, refunded: 0, account: directAccount })
+    expect(result.senderNet).toBe(10_000 - 150 - result.senderStripeFee)
+
+    // The refund is made on the sender's account and gives the platform's fee back.
+    const first = await adapter.refund!({ providerRef: paid.providerRef, paymentId: paid.paymentId })
+    const second = await adapter.refund!({ providerRef: paid.providerRef, paymentId: paid.paymentId })
+    const after = await facts(paid.sessionId)
+    report.push({ label: "1.5% platform fee, refunded", first, second, ...after })
+    expect(after.refunded).toBe(10_000)
+    expect(after.applicationFee).toMatchObject({ amount: 150, refunded: 150 })
+    // Asked twice, refunded once.
+    expect(second.refundId === first.refundId || second.refundId.startsWith("already:")).toBe(true)
+  }, 180_000)
+
+  /**
+   * The reason for the switch: Stripe's dispute test card opens a dispute as
+   * soon as it is paid. On a direct charge the dispute, and its loss, are on
+   * the sender's account; the platform has no dispute to carry.
+   */
+  it("a lost dispute is debited from the sender's account, not the platform's", async () => {
+    const paid = await pay("GBP, lost dispute", 10_000, "GBP", undefined, "4000000000000259")
+    const { chargeId } = await facts(paid.sessionId)
+    let dispute: Stripe.Dispute | undefined
+    for (let i = 0; i < 20 && !dispute; i++) {
+      dispute = (await stripe.disputes.list({ charge: chargeId, limit: 1 }, onSender())).data[0]
+      if (!dispute) await new Promise((r) => setTimeout(r, 1500))
+    }
+    expect(dispute).toBeDefined()
+    await stripe.disputes.close(dispute!.id, undefined, onSender())
+    const closed = await stripe.disputes.retrieve(dispute!.id, undefined, onSender())
+    const senderLoss = closed.balance_transactions.reduce((sum, b) => sum + b.net, 0)
+    const platformDisputes = await stripe.disputes.list({ limit: 100, created: { gte: Math.floor(Date.now() / 1000) - 3600 } })
+    report.push({ label: "lost dispute", status: closed.status, senderLoss, platformDisputesForCharge: platformDisputes.data.filter((d) => d.charge === chargeId).length })
+    expect(closed.status).toBe("lost")
+    // The amount and Stripe's dispute fee, both from the sender's balance.
+    expect(senderLoss).toBeLessThan(-10_000)
+    expect(platformDisputes.data.filter((d) => d.charge === chargeId)).toHaveLength(0)
   }, 240_000)
 })
