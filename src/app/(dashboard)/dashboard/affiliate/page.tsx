@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { siteConfig } from "@/config/site"
 import { affiliateDashboard } from "@/lib/affiliates-store"
-import { AFFILIATE_COMMISSION, AFFILIATE_COOKIE_DAYS, AFFILIATE_DESTINATIONS, claimableAffiliateCode } from "@/lib/affiliates"
+import { AFFILIATE_COMMISSION, AFFILIATE_COOKIE_DAYS, AFFILIATE_DESTINATIONS, AFFILIATE_PAYOUT, claimableAffiliateCode, payoutMinimum } from "@/lib/affiliates"
 import { AffiliateJoin } from "@/components/dashboard/affiliate-join"
 import { AffiliateDashboardView } from "@/components/dashboard/affiliate-dashboard"
 
@@ -60,7 +60,17 @@ export default async function AffiliatePage() {
         totals={{ ...dashboard.totals, conversionLabel: pct(dashboard.totals.conversion) }}
         allTime={dashboard.allTime}
         terms={{ months: AFFILIATE_COMMISSION.months, base: AFFILIATE_COMMISSION.basePercent, tiers: AFFILIATE_COMMISSION.tiers.map((tier) => ({ percent: tier.percent, over: usd(tier.over) })) }}
-        earnings={dashboard.earnings.map((e) => ({ currency: e.currency, earned: money(e.earned, e.currency), unpaid: money(e.unpaid, e.currency) }))}
+        // Was { currency, earned, unpaid }: unpaid is split by the payout schedule now.
+        earnings={dashboard.earnings.map((e) => ({
+          currency: e.currency,
+          earned: money(e.earned, e.currency),
+          pending: money(e.pending, e.currency),
+          cleared: money(e.cleared, e.currency),
+          paidOut: money(e.paidOut, e.currency),
+          due: e.due,
+          minimum: payoutMinimum(e.currency) > 0 ? money(payoutMinimum(e.currency), e.currency) : null,
+        }))}
+        payout={{ holdDays: AFFILIATE_PAYOUT.holdDays, day: AFFILIATE_PAYOUT.dayOfMonth, next: format.dateTime(dashboard.nextPayout, { dateStyle: "long", timeZone: "UTC" }) }}
         series={dashboard.series}
         recent={dashboard.recent.map((r) => ({ id: r.id, name: r.name, joined: format.dateTime(r.joinedAt, { dateStyle: "medium" }), paying: r.paying }))}
         contactEmail={siteConfig.contactEmail}

@@ -69,6 +69,7 @@ export const ADMIN_NAV: AdminSection[] = [
     tabs: [
       { href: "/admin/revenue", key: "revenueSummary" },
       { href: "/admin/revenue/reconciliation", key: "reconciliation" },
+      { href: "/admin/revenue/affiliates", key: "affiliatePayouts" },
     ],
   },
   { id: "subscriptions", href: "/admin/subscriptions", tabs: [{ href: "/admin/subscriptions", key: "subscriptions" }] },

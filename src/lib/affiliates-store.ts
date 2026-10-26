@@ -7,6 +7,9 @@
  * - `recordAffiliateCommission` runs on every payment the Stripe webhook sees,
  *   and `reverseAffiliateCommission` on a full refund.
  * - `affiliateDashboard` feeds /dashboard/affiliate.
+ * - `affiliatePayoutQueue` and `recordAffiliatePayout` feed the admin's
+ *   payouts tab (/admin/revenue/affiliates): what has cleared, and marking
+ *   it paid once the money is sent.
  *
  * Recording clicks and signups never throws: tracking is a bonus, and it must
  * never break a redirect or a signup. Commission recording does throw, so the
@@ -18,7 +21,7 @@ import { prisma } from "@/lib/prisma"
 import { readCookie } from "@/lib/seo/attribution"
 import { CHECKOUT_BLOCKING_STATUSES } from "@/lib/billing"
 import { mayRefer } from "./referrals"
-import { AFFILIATE_COMMISSION, AFFILIATE_COOKIE, AFFILIATE_DASHBOARD_DAYS, claimableAffiliateCode, commissionFor, commissionMonth, conversionRate, dailySeries, monthRange, normalizeAffiliateCode, rerateMonth, type DailyCount } from "./affiliates"
+import { AFFILIATE_COMMISSION, AFFILIATE_COOKIE, AFFILIATE_DASHBOARD_DAYS, claimableAffiliateCode, clearedCutoff, nextPayoutDate, payoutDue, commissionFor, commissionMonth, conversionRate, dailySeries, monthRange, normalizeAffiliateCode, rerateMonth, type DailyCount } from "./affiliates"
 
 export type JoinResult = { ok: true; code: string } | { ok: false; error: "invalid" | "taken" | "already" }
 
@@ -166,8 +169,14 @@ export type AffiliateDashboard = {
   days: number
   totals: { clicks: number; visitors: number; signups: number; paying: number; conversion: number | null }
   allTime: { signups: number; paying: number }
-  /** Commission per currency, in minor units: earned (not reversed), and the part not yet paid out. */
-  earnings: { currency: string; earned: number; unpaid: number }[]
+  /**
+   * Commission per currency, in minor units: earned (not reversed); not paid
+   * out yet, split into pending (inside the refund hold) and cleared; paid
+   * out. `due`: the cleared part is paid on `nextPayout`. Was
+   * { currency, earned, unpaid }, before payouts had a schedule.
+   */
+  earnings: { currency: string; earned: number; pending: number; cleared: number; paidOut: number; due: boolean }[]
+  nextPayout: Date
   series: DailyCount[]
   recent: { id: string; name: string; joinedAt: Date; paying: boolean }[]
 }
@@ -186,15 +195,22 @@ export async function affiliateDashboard(userId: string, now = new Date()): Prom
       { purchases: { some: { status: "COMPLETED" } } },
     ],
   }
-  const [clicks, signups, allSignups, allPaying, recent, earned, unpaid] = await Promise.all([
+  const cutoff = clearedCutoff(now)
+  const live = { affiliateId: affiliate.id, reversedAt: null }
+  const sumBy = (where: Prisma.AffiliateCommissionWhereInput) => prisma.affiliateCommission.groupBy({ by: ["currency"], where, _sum: { commission: true } })
+  const [clicks, signups, allSignups, allPaying, recent, earned, pending, cleared, paidOut] = await Promise.all([
     prisma.affiliateClick.findMany({ where: { affiliateId: affiliate.id, createdAt: { gte: since } }, select: { createdAt: true, unique: true }, take: 100_000 }),
     prisma.user.findMany({ where: { affiliateId: affiliate.id, createdAt: { gte: since } }, select: { createdAt: true, ...payingSelect() }, take: 100_000 }),
     prisma.user.count({ where: { affiliateId: affiliate.id } }),
     prisma.user.count({ where: { affiliateId: affiliate.id, ...payingWhere } }),
     prisma.user.findMany({ where: { affiliateId: affiliate.id }, orderBy: { createdAt: "desc" }, take: 20, select: { id: true, name: true, createdAt: true, ...payingSelect() } }),
-    prisma.affiliateCommission.groupBy({ by: ["currency"], where: { affiliateId: affiliate.id, reversedAt: null }, _sum: { commission: true } }),
-    prisma.affiliateCommission.groupBy({ by: ["currency"], where: { affiliateId: affiliate.id, reversedAt: null, paidOutAt: null }, _sum: { commission: true } }),
+    sumBy(live),
+    // Was one "unpaid" sum: { affiliateId, reversedAt: null, paidOutAt: null }.
+    sumBy({ ...live, paidOutAt: null, paidAt: { gt: cutoff } }),
+    sumBy({ ...live, paidOutAt: null, paidAt: { lte: cutoff } }),
+    sumBy({ ...live, paidOutAt: { not: null } }),
   ])
+  const sumOf = (rows: { currency: string; _sum: { commission: number | null } }[], currency: string) => rows.find((r) => r.currency === currency)?._sum.commission ?? 0
   const visitors = clicks.filter((c) => c.unique).length
   return {
     code: affiliate.code,
@@ -211,8 +227,12 @@ export async function affiliateDashboard(userId: string, now = new Date()): Prom
     earnings: earned.map((row) => ({
       currency: row.currency,
       earned: row._sum.commission ?? 0,
-      unpaid: unpaid.find((u) => u.currency === row.currency)?._sum.commission ?? 0,
+      pending: sumOf(pending, row.currency),
+      cleared: sumOf(cleared, row.currency),
+      paidOut: sumOf(paidOut, row.currency),
+      due: payoutDue(sumOf(cleared, row.currency), row.currency),
     })),
+    nextPayout: nextPayoutDate(now),
     series: dailySeries(clicks.map((c) => c.createdAt), signups.map((s) => s.createdAt), days, now),
     recent: recent.map((u) => ({
       id: u.id,
@@ -234,4 +254,57 @@ function payingSelect() {
 
 function isPaying(u: { subscription: { status: string } | null; purchases: { id: string }[] }): boolean {
   return u.purchases.length > 0 || (u.subscription !== null && (CHECKOUT_BLOCKING_STATUSES as readonly string[]).includes(u.subscription.status))
+}
+
+export type PayoutQueueRow = {
+  affiliateId: string
+  code: string
+  email: string
+  name: string
+  currency: string
+  /** Cleared, not reversed, not paid out: what a payout would send now, in minor units. */
+  cleared: number
+  rows: number
+  /** At or over the currency's minimum, so it is paid on the next payout day. */
+  due: boolean
+}
+
+/** Every affiliate's cleared balance per currency, largest first. */
+export async function affiliatePayoutQueue(now = new Date()): Promise<PayoutQueueRow[]> {
+  const grouped = await prisma.affiliateCommission.groupBy({
+    by: ["affiliateId", "currency"],
+    where: { reversedAt: null, paidOutAt: null, paidAt: { lte: clearedCutoff(now) } },
+    _sum: { commission: true },
+    _count: { _all: true },
+  })
+  const owed = grouped.filter((g) => (g._sum.commission ?? 0) > 0)
+  if (owed.length === 0) return []
+  const affiliates = await prisma.affiliate.findMany({
+    where: { id: { in: [...new Set(owed.map((g) => g.affiliateId))] } },
+    select: { id: true, code: true, user: { select: { email: true, name: true } } },
+  })
+  const byId = new Map(affiliates.map((a) => [a.id, a]))
+  return owed
+    .map((g) => {
+      const a = byId.get(g.affiliateId)
+      const cleared = g._sum.commission ?? 0
+      return { affiliateId: g.affiliateId, code: a?.code ?? "", email: a?.user.email ?? "", name: a?.user.name ?? "", currency: g.currency, cleared, rows: g._count._all, due: payoutDue(cleared, g.currency) }
+    })
+    .sort((x, y) => y.cleared - x.cleared)
+}
+
+/**
+ * Records that an affiliate's cleared balance in one currency has been sent:
+ * every cleared, unpaid, unreversed row up to `now`'s cutoff gets paidOutAt.
+ * The sum is read and the rows marked in one transaction, so what is
+ * reported is exactly what was marked; a second click finds nothing left.
+ */
+export async function recordAffiliatePayout(affiliateId: string, currency: string, now = new Date()): Promise<{ rows: number; amount: number }> {
+  const where = { affiliateId, currency, reversedAt: null, paidOutAt: null, paidAt: { lte: clearedCutoff(now) } }
+  return prisma.$transaction(async (tx) => {
+    const rows = await tx.affiliateCommission.findMany({ where, select: { id: true, commission: true } })
+    if (rows.length === 0) return { rows: 0, amount: 0 }
+    await tx.affiliateCommission.updateMany({ where: { id: { in: rows.map((r) => r.id) }, paidOutAt: null }, data: { paidOutAt: now } })
+    return { rows: rows.length, amount: rows.reduce((sum, r) => sum + r.commission, 0) }
+  })
 }

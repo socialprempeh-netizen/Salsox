@@ -17,7 +17,12 @@
  *   of that customer's net revenue in its calendar month (UTC): the base
  *   rate, or a higher tier once the month passes a threshold. The Stripe
  *   webhook writes one ledger row per payment and re-rates the month's rows
- *   (affiliates-store.ts); payouts are settled by hand from that ledger.
+ *   (affiliates-store.ts).
+ * - Payouts (AFFILIATE_PAYOUT): a commission clears once the payment it came
+ *   from is past the refund window, and cleared commission is paid monthly,
+ *   once it reaches the currency's minimum. /admin/revenue/affiliates lists
+ *   what is due and records a payout; sending the money is still done by
+ *   hand (bank transfer or PayPal) until a payout provider is chosen.
  *
  * The database side is in affiliates-store.ts.
  */
@@ -201,4 +206,49 @@ export function dailySeries(clicks: Date[], signups: Date[], days: number, now: 
 export function conversionRate(signups: number, visitors: number): number | null {
   if (visitors <= 0) return null
   return Math.round((signups / visitors) * 1000) / 10
+}
+
+/**
+ * When and how commission is paid out. A payment can be refunded for a while
+ * after it is made, and a refund reverses its commission
+ * (reverseAffiliateCommission), so commission waits `holdDays` before it
+ * counts as cleared. Cleared commission is paid on `dayOfMonth` (UTC) of each
+ * month, per currency, once it reaches that currency's minimum (minor
+ * units); a currency without one has no minimum.
+ *
+ * TODO: the transfer itself. Today an admin sends the money by hand and
+ * records it on /admin/revenue/affiliates; a payout provider (Stripe Connect
+ * Express, PayPal Payouts or Wise) would replace the "by hand" step and call
+ * the same record function.
+ */
+export const AFFILIATE_PAYOUT = {
+  holdDays: 30,
+  dayOfMonth: 15,
+  minimum: { usd: 5_000 } as Record<string, number>,
+} as const
+
+/** The instant a commission earned on a payment at `paidAt` clears. */
+export function commissionClearsAt(paidAt: Date): Date {
+  return new Date(paidAt.getTime() + AFFILIATE_PAYOUT.holdDays * 86_400_000)
+}
+
+/** Payments made at or before this instant have cleared by `now`. */
+export function clearedCutoff(now: Date): Date {
+  return new Date(now.getTime() - AFFILIATE_PAYOUT.holdDays * 86_400_000)
+}
+
+/** The next payout day at or after `now`'s date: this month's, or next month's once it has passed. */
+export function nextPayoutDate(now: Date): Date {
+  const thisMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), AFFILIATE_PAYOUT.dayOfMonth))
+  return now.getUTCDate() <= AFFILIATE_PAYOUT.dayOfMonth ? thisMonth : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, AFFILIATE_PAYOUT.dayOfMonth))
+}
+
+/** The minimum cleared balance paid out in a currency, in minor units. */
+export function payoutMinimum(currency: string): number {
+  return AFFILIATE_PAYOUT.minimum[currency.toLowerCase()] ?? 0
+}
+
+/** Whether a cleared balance is paid on the next payout day. */
+export function payoutDue(cleared: number, currency: string): boolean {
+  return cleared > 0 && cleared >= payoutMinimum(currency)
 }

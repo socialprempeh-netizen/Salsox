@@ -20,7 +20,7 @@ import { useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import { useFormatter, useTranslations } from "next-intl"
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { Check, Copy, PauseCircle, Wallet } from "lucide-react"
+import { CalendarClock, Check, Copy, PauseCircle, Wallet } from "lucide-react"
 import { toast } from "@/components/ui/sonner"
 import { Button } from "@/components/ui/button"
 import { affiliateLink } from "@/lib/affiliates"
@@ -35,8 +35,14 @@ type Props = {
   allTime: { signups: number; paying: number }
   /** The tiered rates, thresholds already formatted (src/lib/affiliates.ts). */
   terms: { months: number; base: number; tiers: { percent: number; over: string }[] }
-  /** Already formatted for the viewer's locale, one row per currency earned in. */
-  earnings: { currency: string; earned: string; unpaid: string }[]
+  /**
+   * Already formatted for the viewer's locale, one row per currency earned
+   * in. Was { currency, earned, unpaid }: unpaid is now pending (in the
+   * refund hold) and cleared (ready for the next payout).
+   */
+  earnings: { currency: string; earned: string; pending: string; cleared: string; paidOut: string; due: boolean; minimum: string | null }[]
+  /** The payout schedule (AFFILIATE_PAYOUT), the date already formatted. */
+  payout: { holdDays: number; day: number; next: string }
   series: DailyCount[]
   recent: { id: string; name: string; joined: string; paying: boolean }[]
   contactEmail: string
@@ -143,21 +149,42 @@ export function AffiliateDashboardView(props: Props) {
         {props.earnings.length === 0 ? (
           <p className="mt-3 pl-8 text-sm text-muted-foreground">{t("earningsEmpty")}</p>
         ) : (
-          <dl className="mt-4 grid grid-cols-2 gap-px border bg-border">
-            {props.earnings.map((row) => (
-              <div key={row.currency} className="contents">
-                <div className="bg-card p-4">
-                  <dt className="text-xs text-muted-foreground">{t("earningsEarned")}</dt>
-                  <dd className="mt-1 break-words text-xl font-semibold tabular-nums sm:text-2xl">{row.earned}</dd>
-                </div>
-                <div className="bg-card p-4">
-                  <dt className="text-xs text-muted-foreground">{t("earningsUnpaid")}</dt>
-                  <dd className="mt-1 break-words text-xl font-semibold tabular-nums sm:text-2xl">{row.unpaid}</dd>
-                </div>
+          // Was two tiles a currency, Earned and Awaiting payout.
+          <div className="mt-4 space-y-3">
+            {props.earnings.map((row, n) => (
+              <div key={row.currency}>
+                <dl className="grid grid-cols-2 gap-px border bg-border sm:grid-cols-4">
+                  {[
+                    { key: "earningsEarned", value: row.earned },
+                    { key: "earningsPending", value: row.pending },
+                    { key: "earningsCleared", value: row.cleared, strong: row.due },
+                    { key: "earningsPaidOut", value: row.paidOut },
+                  ].map((tile, i) => (
+                    <motion.div
+                      key={tile.key}
+                      initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: reduceMotion ? 0 : (n * 4 + i) * 0.04 }}
+                      className={tile.strong ? "bg-primary/5 p-4" : "bg-card p-4"}
+                    >
+                      <dt className="text-xs text-muted-foreground">{t(tile.key, { days: props.payout.holdDays })}</dt>
+                      <dd className={tile.strong ? "mt-1 break-words text-xl font-semibold tabular-nums text-primary sm:text-2xl" : "mt-1 break-words text-xl font-semibold tabular-nums sm:text-2xl"}>{tile.value}</dd>
+                    </motion.div>
+                  ))}
+                </dl>
+                <p className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
+                  <CalendarClock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span>
+                    {row.due || row.minimum === null
+                      ? t("nextPayoutDue", { date: props.payout.next })
+                      : t("nextPayoutHeld", { date: props.payout.next, minimum: row.minimum })}
+                  </span>
+                </p>
               </div>
             ))}
-          </dl>
+          </div>
         )}
+        <p className="mt-3 text-xs text-muted-foreground">{t("payoutTerms", { days: props.payout.holdDays, day: props.payout.day })}</p>
       </motion.section>
 
       <dl className="grid grid-cols-2 gap-px border bg-border md:grid-cols-4">        {tiles.map((tile, i) => (

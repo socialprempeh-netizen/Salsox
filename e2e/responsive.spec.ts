@@ -41,6 +41,11 @@ for (const width of WIDTHS) {
     await check("/terms", "terms")
     await check("/cookies", "cookies")
     await check("/login", "login")
+    // Sign-up through an invite link, with the invited person's notice. The
+    // cookie is cleared after, so the account made below is not an invitee.
+    await check("/invite/abcd2345", "signup-invited")
+    await expect(page.getByText("You were invited")).toBeVisible()
+    await ctx.clearCookies({ name: "sx_ref" })
     // "Check your email": after a sign-in link, and after sign-up now that an
     // address must be confirmed before the account can be used.
     await check("/verify-request", "verify-request")

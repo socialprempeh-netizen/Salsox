@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { AFFILIATE_COMMISSION, affiliateDestination, affiliateLink, claimableAffiliateCode, commissionAt, commissionFor, commissionMonth, commissionWindowEnd, conversionRate, dailySeries, inCommissionWindow, isBot, monthRange, normalizeAffiliateCode, rerateMonth, tierPercent, type MonthRow } from "./affiliates"
+import { AFFILIATE_COMMISSION, AFFILIATE_PAYOUT, affiliateDestination, clearedCutoff, commissionClearsAt, nextPayoutDate, payoutDue, payoutMinimum, affiliateLink, claimableAffiliateCode, commissionAt, commissionFor, commissionMonth, commissionWindowEnd, conversionRate, dailySeries, inCommissionWindow, isBot, monthRange, normalizeAffiliateCode, rerateMonth, tierPercent, type MonthRow } from "./affiliates"
 
 describe("affiliate codes", () => {
   it("are 3 to 24 lower-case letters, digits and inner single hyphens", () => {
@@ -140,5 +140,32 @@ describe("rerateMonth", () => {
 
   it("never changes a row already paid out", () => {
     expect(rerateMonth([row("a", 6000, { paidOut: true }), row("b", 6000)])).toEqual([{ id: "b", percent: 35, commission: 2100 }])
+  })
+})
+
+describe("payouts", () => {
+  it("clears a commission once its payment is past the hold", () => {
+    const paidAt = new Date("2026-10-01T12:00:00Z")
+    expect(commissionClearsAt(paidAt).toISOString()).toBe("2026-10-31T12:00:00.000Z")
+    const now = new Date("2026-10-31T12:00:00Z")
+    expect(paidAt.getTime() <= clearedCutoff(now).getTime()).toBe(true)
+    expect(paidAt.getTime() <= clearedCutoff(new Date("2026-10-31T11:59:59Z")).getTime()).toBe(false)
+    expect(AFFILIATE_PAYOUT.holdDays).toBe(30)
+  })
+
+  it("pays on this month's payout day until it passes, then next month's", () => {
+    expect(nextPayoutDate(new Date("2026-10-03T08:00:00Z")).toISOString()).toBe("2026-10-15T00:00:00.000Z")
+    expect(nextPayoutDate(new Date("2026-10-15T23:00:00Z")).toISOString()).toBe("2026-10-15T00:00:00.000Z")
+    expect(nextPayoutDate(new Date("2026-10-16T00:00:00Z")).toISOString()).toBe("2026-11-15T00:00:00.000Z")
+    expect(nextPayoutDate(new Date("2026-12-20T00:00:00Z")).toISOString()).toBe("2027-01-15T00:00:00.000Z")
+  })
+
+  it("holds a balance under the currency's minimum, and has none for other currencies", () => {
+    expect(payoutMinimum("USD")).toBe(5_000)
+    expect(payoutDue(4_999, "usd")).toBe(false)
+    expect(payoutDue(5_000, "usd")).toBe(true)
+    expect(payoutMinimum("ghs")).toBe(0)
+    expect(payoutDue(1, "ghs")).toBe(true)
+    expect(payoutDue(0, "ghs")).toBe(false)
   })
 })
