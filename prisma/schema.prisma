@@ -105,6 +105,8 @@ model User {
   documents             Document[]
   payoutAccounts        PayoutAccount[]
   savedTemplates        SavedTemplate[]
+  // AppSumo lifetime licenses redeemed by this account (src/lib/appsumo.ts).
+  appSumoLicenses       AppSumoLicense[]
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
@@ -1320,3 +1322,39 @@ model OAuthToken {
   @@index([grantId])
 }
 
+
+enum AppSumoLicenseStatus {
+  INACTIVE
+  ACTIVE
+  DEACTIVATED
+}
+
+// An AppSumo license key (AppSumo Licensing API v2), as its webhooks last
+// described it (src/lib/appsumo.ts, src/lib/appsumo-store.ts). One row per
+// key: an upgrade or downgrade issues a new key and deactivates the old one,
+// and the new row inherits the old row's account through `prevLicenseKey`.
+// A row keeps its `userId` after deactivation, so a refund leaves a record of
+// whose plan it was, and a reactivation finds the account again.
+model AppSumoLicense {
+  id                 String               @id @default(cuid())
+  licenseKey         String               @unique
+  prevLicenseKey     String?
+  // AppSumo's tier number: 1 is Personal, 2 and above is Business.
+  tier               Int
+  status             AppSumoLicenseStatus @default(INACTIVE)
+  userId             String?
+  user               User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // The last webhook applied, and its `event_timestamp` (milliseconds), so
+  // an older event delivered late cannot undo a newer one.
+  lastEvent          String
+  lastEventAt        BigInt
+  // `extra.reason` of the event that deactivated it ("Refunded", "Upgraded by
+  // the customer", ...), for support.
+  deactivatedReason  String?
+  redeemedAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([userId])
+  @@index([prevLicenseKey])
+}

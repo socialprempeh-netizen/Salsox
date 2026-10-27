@@ -101,7 +101,9 @@ describe("the real content", () => {
       for (const target of post.related) expect(all.has(target), `${post.slug} -> ${target}`).toBe(true)
       expect(post.content).not.toContain("{site}")
     }
-  })
+    // Reads every page, template, guide and post from disk: past the 5s
+    // default when the full suite runs its workers in parallel.
+  }, 30_000)
 
   // A post written for a phrase a page already targets would compete with
   // that page in search, usually leaving both weaker. Each post's `keyword`

@@ -62,7 +62,9 @@ export const CLIENT_MESSAGES = {
   // `adminConsole.affiliatePayouts`: the payout tab's "Mark paid" button
   // (components/admin/affiliate-payout-button.tsx); the rest of adminConsole
   // is read on the server only.
-  app: [...SHELL, "admin", "billing", "dashboard", "esign", "contactDialog", "referralInvite", "adminConsole.affiliatePayouts", "oauthConsent"],
+  // `appsumo`: the license redemption panel (components/appsumo/redeem-panel.tsx),
+  // on /redeem and /dashboard/redeem.
+  app: [...SHELL, "admin", "billing", "dashboard", "esign", "contactDialog", "referralInvite", "adminConsole.affiliatePayouts", "oauthConsent", "appsumo"],
   sign: [...SHELL, "esign.sign", "esign.signature", "esign.viewer"],
   // The free PDF tools (src/components/tools) and the signing pieces they
   // reuse (the signature pad, the PDF viewer). Mounted around the tool itself

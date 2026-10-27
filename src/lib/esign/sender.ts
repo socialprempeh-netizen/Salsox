@@ -13,7 +13,8 @@
  */
 import { prisma } from "@/lib/prisma"
 import { getEntitlement } from "@/lib/billing"
-import { documentsLeft, hasFeature, monthStartUtc, requestToolUsesLeft, tierForEntitlement, withReferralPro, type PlanTier } from "./plans"
+import { licenseTierForUser } from "@/lib/appsumo-store"
+import { documentsLeft, hasFeature, higherTier, monthStartUtc, requestToolUsesLeft, tierForEntitlement, withReferralPro, type PlanTier } from "./plans"
 import {
   dailyWindowStart,
   emailConfirmationRequired,
@@ -52,17 +53,23 @@ export async function senderBlocker(
 }
 
 /**
- * The tier an account has now: what billing grants, raised to Business while
+ * The tier an account has now: what billing grants, or an active AppSumo
+ * license if that is higher (src/lib/appsumo.ts), raised to Business while
  * free Pro months earned by inviting people run (src/lib/referrals.ts). Every
- * plan gate reads the tier through here, so the two sources never disagree.
+ * plan gate reads the tier through here, so the sources never disagree, and
+ * a refunded license stops counting the moment its deactivation lands.
  */
 export async function accountTier(userId: string, now = new Date()): Promise<PlanTier> {
-  const [entitlement, user] = await Promise.all([
+  const [entitlement, user, licenseTier] = await Promise.all([
     getEntitlement(userId),
     prisma.user.findUnique({ where: { id: userId }, select: { referralProUntil: true } }),
+    licenseTierForUser(userId),
   ])
-  return withReferralPro(tierForEntitlement(entitlement), user?.referralProUntil, now)
+  return withReferralPro(higherTier(tierForEntitlement(entitlement), licenseTier), user?.referralProUntil, now)
 }
+// Billing and referrals only, before AppSumo licenses. Was:
+//   const [entitlement, user] = await Promise.all([getEntitlement(userId), prisma.user.findUnique(...)])
+//   return withReferralPro(tierForEntitlement(entitlement), user?.referralProUntil, now)
 
 /**
  * The sender's plan, for the gates in plans.ts: their tier, and how many

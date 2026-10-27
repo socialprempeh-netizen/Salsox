@@ -133,6 +133,13 @@ export const envSchema = z
     OAUTH_CLIENT_SECRET: blankAsUnset(z.string().min(32, "at least 32 characters: it is the package's password").optional()),
     OAUTH_REDIRECT_URIS: blankAsUnset(z.string().regex(/^https:\/\/\S+(\s*,\s*https:\/\/\S+)*$/, "one or more https addresses, comma-separated").optional()),
     OAUTH_CLIENT_NAME: optional,
+    // AppSumo lifetime deals (src/lib/appsumo.ts, docs/appsumo.md). The API key
+    // signs AppSumo's webhooks and authorises license lookups; without it
+    // redemption is off. The OAuth client is optional: with it, a buyer
+    // arriving from AppSumo has their key read for them instead of pasting it.
+    APPSUMO_API_KEY: optional,
+    APPSUMO_CLIENT_ID: optional,
+    APPSUMO_CLIENT_SECRET: optional,
     // Search and analytics (docs/seo.md). All optional: verification tokens
     // for Search Console and Bing Webmaster Tools (DNS verification needs
     // neither), and a GA4 measurement id, which also opens the CSP to Google.
@@ -185,6 +192,9 @@ export const envSchema = z
     requireTogether("SALESFORCE_CLIENT_SECRET", "SALESFORCE_CLIENT_ID", "connecting Salesforce would fail at the token exchange")
     requireTogether("OAUTH_CLIENT_ID", "OAUTH_CLIENT_SECRET", "the OAuth client could not authenticate")
     requireTogether("OAUTH_CLIENT_ID", "OAUTH_REDIRECT_URIS", "the consent page would refuse every request")
+    requireTogether("APPSUMO_CLIENT_ID", "APPSUMO_CLIENT_SECRET", "reading a buyer's license from AppSumo would fail at the token exchange")
+    requireTogether("APPSUMO_CLIENT_SECRET", "APPSUMO_CLIENT_ID", "reading a buyer's license from AppSumo would fail at the token exchange")
+    requireTogether("APPSUMO_CLIENT_ID", "APPSUMO_API_KEY", "redemption stays off without the API key, so the OAuth client would never be used")
 
     // A sender that cannot reach real recipients (Resend's test sender, the
     // .env.example placeholder): Resend accepts each request, the app says

@@ -18,6 +18,8 @@ import { EXPORT_DOCUMENTS_PER_PART, exportPartCount } from "@/lib/esign/zip-stre
 import { listReceipts } from "@/lib/billing-receipts"
 import { formatAmount, receiptHref } from "@/lib/receipts"
 import { PaymentHistory, type PaymentHistoryRow } from "@/components/billing/payment-history"
+import { currentAppSumoLicense } from "@/lib/appsumo-store"
+import { appSumoConfig, tierForLicense } from "@/lib/appsumo"
 
 // Invoice statuses come from Stripe as stable codes, like subscription ones;
 // their labels live in the message files under `dashboard.billing.invoiceStatus`.
@@ -60,14 +62,19 @@ export default async function BillingPage() {
   // Independent reads, fetched together: each one waited for the last, and
   // against the production database every wait is a network round trip.
   // Was: user, then entitlement, then the document count, one after another.
-  const [user, entitlement, documentCount] = await Promise.all([
+  const [user, entitlement, documentCount, appSumoLicense] = await Promise.all([
     prisma.user.findUnique({
       where: { id: currentUser.id },
       select: { stripeCustomerId: true, referralProUntil: true, subscription: { select: { id: true } } },
     }),
     getEntitlement(currentUser.id),
     prisma.document.count({ where: { userId: currentUser.id } }),
+    currentAppSumoLicense(currentUser.id),
   ])
+  // An active AppSumo license is a lifetime plan of its own (src/lib/appsumo.ts):
+  // said above the plan card, which only knows about Stripe, and the
+  // subscription plans are not offered next to it.
+  const appSumoActive = appSumoLicense?.status === "ACTIVE"
   // Large accounts export in parts (src/app/api/export/route.ts).
   const exportParts = exportPartCount(documentCount)
   const purchase = entitlement.kind === "lifetime" ? entitlement.purchase : null
@@ -88,7 +95,7 @@ export default async function BillingPage() {
     getInvoices(user?.stripeCustomerId ?? null),
     getDiscounts(!purchase && subscription ? subscription.stripeSubscriptionId : null),
     listReceipts(currentUser.id),
-    entitlement.kind === "free"
+    entitlement.kind === "free" && !appSumoActive
       ? prisma.plan.findMany({
         where: {
           isActive: true,
@@ -188,6 +195,7 @@ export default async function BillingPage() {
   // a billing object, so the plan card below does not know about them: said
   // here instead, so a "Free" card does not contradict an unlocked editor.
   const tReferrals = await getTranslations("dashboard.referrals")
+  const tAppSumo = await getTranslations("appsumo")
   const referralPro = user?.referralProUntil && user.referralProUntil > new Date() ? longDate(user.referralProUntil) : null
 
   return (
@@ -197,6 +205,15 @@ export default async function BillingPage() {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {appSumoActive && appSumoLicense && (
+        <div className="flex flex-col gap-2 border border-l-4 border-primary/30 border-l-primary bg-primary/5 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <p>{tAppSumo("billingActive", { plan: tAppSumo(`plan.${tierForLicense(appSumoLicense.tier)}`) })}</p>
+          <Link href="/dashboard/redeem" className="shrink-0 font-medium text-primary underline-offset-4 hover:underline">
+            {tAppSumo("billingLink")}
+          </Link>
+        </div>
+      )}
 
       {referralPro && (
         <div className="flex flex-col gap-2 border border-l-4 border-primary/30 border-l-primary bg-primary/5 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
@@ -279,6 +296,13 @@ export default async function BillingPage() {
           )}
         </CardContent>
       </Card>
+
+      {!appSumoActive && appSumoConfig() && (
+        <p className="text-sm text-muted-foreground">
+          {tAppSumo("billingRedeem")}{" "}
+          <Link href="/dashboard/redeem" className="font-medium text-primary underline-offset-4 hover:underline">{tAppSumo("billingRedeemLink")}</Link>
+        </p>
+      )}
 
       {entitlement.kind === "free" && plans.length > 0 && (
         <div className="space-y-4">

@@ -46,7 +46,9 @@ describe("the template library", () => {
   it("gives every industry and team page at least three templates", () => {
     for (const industry of INDUSTRY_IDS) expect(templatesFor({ industry }).length, industry).toBeGreaterThanOrEqual(3)
     for (const team of TEAM_IDS) expect(templatesFor({ team }).length, team).toBeGreaterThanOrEqual(3)
-  })
+    // Loads the whole template library from disk once per page: past the 5s
+    // default when the full suite runs its workers in parallel.
+  }, 30_000)
 
   it("fills in the product name", () => {
     expect(templates.some((t) => JSON.stringify(t).includes("{site}"))).toBe(false)

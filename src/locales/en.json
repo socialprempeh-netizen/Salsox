@@ -3987,5 +3987,69 @@
       "readGuides": "Read the {category} guides",
       "videoLabel": "{title}, video"
     }
+  },
+  "appsumo": {
+    "publicTitle": "Redeem your AppSumo license",
+    "publicLead": "Link your AppSumo license to a {site} account to unlock your lifetime plan.",
+    "step1": "Buy the deal on AppSumo and activate your license there.",
+    "step2": "Enter your license key here, or arrive from AppSumo and it is read for you.",
+    "step3": "Create an account or log in, and your lifetime plan is applied.",
+    "signedInAs": "Signed in as {email}. <link>See this account's license</link>",
+    "unavailable": "AppSumo licenses cannot be redeemed on this site yet.",
+    "exchanging": "Reading your license from AppSumo…",
+    "resuming": "Redeeming your AppSumo license…",
+    "keyLabel": "License key",
+    "keyHint": "Shown with your purchase in your AppSumo account: five groups of letters and digits, separated by dashes.",
+    "keyInvalid": "Enter the license key exactly as AppSumo shows it, for example d8bfa201-d8c0-4bc8-a27c-b1c12efa4a5a.",
+    "submit": "Redeem license",
+    "submitSignedOut": "Continue",
+    "submitting": "Redeeming…",
+    "savedTitle": "License key saved",
+    "savedBody": "Create an account or log in, and it is redeemed as soon as you are in.",
+    "createAccount": "Create account",
+    "logIn": "Log in",
+    "redeemedEyebrow": "Lifetime plan unlocked",
+    "redeemedBody": "No subscription and no renewal. This account keeps {plan} for as long as the license stays active.",
+    "stoppedSubscription": "Your subscription now ends with the period you already paid for, so you will not be charged again.",
+    "startUsing": "Go to your dashboard",
+    "plan": {
+      "personal": "Personal",
+      "business": "Business"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Not activated",
+      "DEACTIVATED": "Deactivated"
+    },
+    "dashTitle": "AppSumo license",
+    "dashLead": "Bought {site} on AppSumo? Redeem the license here to unlock your lifetime plan on this account.",
+    "redeemedNotice": "Your AppSumo license is redeemed: {plan} is unlocked for life.",
+    "lifetimePlan": "Lifetime {plan}",
+    "redeemedOn": "Redeemed on {date}",
+    "keyEnding": "License key ending in {suffix}",
+    "activeBody": "Everything in {plan} is unlocked, with no recurring billing.",
+    "deactivatedBody": "AppSumo deactivated this license ({reason}), so its plan no longer applies. Your documents are kept, and the free plan's limits apply again.",
+    "noReason": "no reason given",
+    "changeTierHint": "To move between Personal and Business, upgrade or downgrade on AppSumo. The change reaches this account on its own.",
+    "redeemTitle": "Redeem a license",
+    "redeemLead": "One license per account. Personal is AppSumo's tier 1, Business is tier 2.",
+    "backToBilling": "Back to billing",
+    "billingActive": "Lifetime {plan} plan from AppSumo is active on this account.",
+    "billingLink": "View license",
+    "billingRedeem": "Bought on AppSumo?",
+    "billingRedeemLink": "Redeem your license",
+    "errors": {
+      "rate": "Too many attempts. Wait a minute and try again.",
+      "codeFailed": "AppSumo did not hand over your license this time. Enter the license key from your AppSumo account instead.",
+      "codes": {
+        "invalidKey": "That is not a license key. Copy it from your AppSumo account: five groups of letters and digits, separated by dashes.",
+        "notFound": "AppSumo does not know this license key. Check it against your AppSumo account.",
+        "deactivated": "This license was deactivated on AppSumo, for example after a refund, so it cannot be redeemed.",
+        "notActivated": "This license is not activated yet. Activate it in your AppSumo account, then try again.",
+        "takenByOther": "This license is already redeemed by another account.",
+        "alreadyRedeemed": "This account already has an active AppSumo license. To change plan, upgrade or downgrade it on AppSumo.",
+        "unavailable": "AppSumo could not be reached. Try again in a few minutes."
+      }
+    }
   }
 }

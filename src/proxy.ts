@@ -59,6 +59,10 @@ const UNLOCALIZED = [
   // The OAuth consent page (/oauth/authorize, src/lib/oauth-server): an
   // integration platform opens it at exactly that address.
   "/oauth/",
+  // Where AppSumo sends a buyer after activating a license (/redeem,
+  // src/lib/appsumo.ts): registered with AppSumo at exactly that address, and
+  // AppSumo's check of it refuses a redirect, so no locale prefix.
+  "/redeem",
   // Root level metadata routes.
   "/sitemap.xml",
   "/robots.txt",

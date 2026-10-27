@@ -5,10 +5,12 @@ import {
   FREE_DOCUMENTS_PER_MONTH,
   FREE_REQUEST_TOOL_USES,
   hasFeature,
+  higherTier,
   monthStartUtc,
   planErrorCode,
   requestToolUsesLeft,
   setupBlocker,
+  tierCovers,
   tierForEntitlement,
   tierForPlanSlug,
   withReferralPro,
@@ -129,5 +131,18 @@ describe("withReferralPro", () => {
     expect(withReferralPro("personal", new Date("2027-01-24T00:00:00Z"), now)).toBe("business")
     expect(withReferralPro("free", new Date("2026-10-23T00:00:00Z"), now)).toBe("free")
     expect(withReferralPro("personal", null, now)).toBe("personal")
+  })
+})
+
+describe("higherTier and tierCovers", () => {
+  it("takes the better of two sources, and ignores a missing one", () => {
+    expect(higherTier("free", "personal")).toBe("personal")
+    expect(higherTier("business", "personal")).toBe("business")
+    expect(higherTier("personal", null)).toBe("personal")
+  })
+  it("a tier covers itself and every tier below it", () => {
+    expect(tierCovers("business", "personal")).toBe(true)
+    expect(tierCovers("personal", "personal")).toBe(true)
+    expect(tierCovers("personal", "business")).toBe(false)
   })
 })

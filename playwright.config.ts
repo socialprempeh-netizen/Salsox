@@ -61,6 +61,11 @@ export default defineConfig({
           // Blank makes the kit sign the user straight in, which is the path
           // these tests are about.
           RESEND_API_KEY: "",
+          // A test-only key, so e2e/appsumo.spec.ts can sign AppSumo webhooks
+          // the way AppSumo does. No request reaches AppSumo with it.
+          APPSUMO_API_KEY: process.env.E2E_APPSUMO_API_KEY ?? "e2e-appsumo-api-key",
+          APPSUMO_CLIENT_ID: "",
+          APPSUMO_CLIENT_SECRET: "",
         },
       },
 })

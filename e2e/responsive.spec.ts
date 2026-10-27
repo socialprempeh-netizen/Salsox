@@ -41,6 +41,9 @@ for (const width of WIDTHS) {
     await check("/terms", "terms")
     await check("/cookies", "cookies")
     await check("/login", "login")
+    // Where AppSumo sends a buyer after activation (e2e/appsumo.spec.ts covers
+    // the redeemed states).
+    await check("/redeem", "redeem")
     // Sign-up through an invite link, with the invited person's notice. The
     // cookie is cleared after, so the account made below is not an invitee.
     await check("/invite/abcd2345", "signup-invited")
@@ -121,6 +124,7 @@ for (const width of WIDTHS) {
     await check("/dashboard/documents/new", "new-document")
     await check(`/dashboard/documents/${documentId}`, "document-detail")
     await check("/dashboard/billing", "billing")
+    await check("/dashboard/redeem", "redeem-license")
     await check("/dashboard/payouts", "payouts")
     await check("/dashboard/referrals", "referrals")
     await check("/dashboard/affiliate", "affiliate")

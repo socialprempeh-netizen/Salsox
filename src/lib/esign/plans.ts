@@ -66,6 +66,20 @@ export function hasFeature(tier: PlanTier, feature: PlanFeature): boolean {
 }
 
 /**
+ * The better of two tiers, for an account with more than one source of a
+ * plan: billing, and an AppSumo license (src/lib/appsumo.ts). Null counts as
+ * no plan from that source.
+ */
+export function higherTier(a: PlanTier, b: PlanTier | null): PlanTier {
+  return b && RANK[b] > RANK[a] ? b : a
+}
+
+/** Whether `tier` includes everything `other` does. */
+export function tierCovers(tier: PlanTier, other: PlanTier): boolean {
+  return RANK[tier] >= RANK[other]
+}
+
+/**
  * The tier a plan row grants, by slug. Personal is `starter-*`, Business is
  * `pro-*`, and Lifetime is sold as "Everything in Business". A paid plan this
  * does not recognise grants Personal: someone paying is never treated as
