@@ -7,8 +7,6 @@ import { canonicalHostRedirect } from "@/lib/app-url"
 import { safeNext } from "@/lib/safe-next"
 import { deployPingId, INDEXNOW_KEY_PATH, isKeyFilePath, resolveIndexNowKey } from "@/lib/indexnow"
 import { isLocalizedMetadataImagePath } from "@/lib/metadata-image-path"
-import { OAUTH_RESUME_COOKIE } from "@/lib/oauth-server/resume"
-import { resumablePath } from "@/lib/oauth-server/rules"
 
 /**
  * Locale handling for the public surface only.
@@ -166,15 +164,15 @@ export default async function proxy(req: NextRequest, event: NextFetchEvent) {
   // visitor who is already signed in would otherwise land on the dashboard
   // home and lose the page they asked for. Was:
   //   return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
-  // Back to the OAuth consent page after signing in, once: sign-in always
-  // lands on /dashboard, and /api/oauth/resume kept where the visitor was
-  // (src/app/api/oauth/resume/route.ts). Only that page can be kept.
-  const resume = isLoggedIn && pathname === "/dashboard" ? resumablePath(req.cookies.get(OAUTH_RESUME_COOKIE)?.value) : null
-  if (resume) {
-    const res = NextResponse.redirect(new URL(resume, req.nextUrl))
-    res.cookies.delete(OAUTH_RESUME_COOKIE)
-    return res
-  }
+  // Moved to the dashboard layout: a sign-in action's redirect to /dashboard
+  // is rendered in the same response and never reaches the proxy, so this
+  // only worked for full-page sign-ins (Google, magic links). Was:
+  // const resume = isLoggedIn && pathname === "/dashboard" ? resumablePath(req.cookies.get(OAUTH_RESUME_COOKIE)?.value) : null
+  // if (resume) {
+  //   const res = NextResponse.redirect(new URL(resume, req.nextUrl))
+  //   res.cookies.delete(OAUTH_RESUME_COOKIE)
+  //   return res
+  // }
 
   if (isAuthRoute && isLoggedIn) {
     return NextResponse.redirect(new URL(safeNext(req.nextUrl.searchParams.get("next")), req.nextUrl))

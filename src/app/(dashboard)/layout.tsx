@@ -1,4 +1,8 @@
 import { ClientMessagesProvider } from "@/i18n/client-provider"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { OAUTH_RESUME_COOKIE } from "@/lib/oauth-server/resume"
+import { resumablePath } from "@/lib/oauth-server/rules"
 import { requireUser } from "@/lib/auth"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -22,6 +26,10 @@ const NEW_ACCOUNT_MS = 15 * 60 * 1000
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser()
+  // Signed in on the way to the OAuth consent page: back to it, once. Here
+  // rather than in the proxy, because a sign-in action's redirect to
+  // /dashboard is rendered in the same response and never reaches the proxy.
+  if (resumablePath((await cookies()).get(OAUTH_RESUME_COOKIE)?.value)) redirect("/api/oauth/resume?continue=1")
   // For the analytics `sign_up` conversion (signup-event.tsx): one indexed
   // lookup, and the event only renders for an account minutes old.
   // Also what the sign-in policy needs (src/lib/security-policy.ts): whether
