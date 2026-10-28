@@ -1,0 +1,32 @@
+{
+  "uid": "salsox_app",
+  "type": "app",
+  "config": {
+    "description": "Connect your HubSpot account to Salsox e-signatures, so documents sent for signature can be linked to your contacts and deals.",
+    "name": "Salsox",
+    "distribution": "marketplace",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "https://salsox.com/api/integrations/hubspot/callback"
+      ],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.deals.read"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "contact@salsox.com",
+      "documentationUrl": "https://salsox.com/resources/help/webhooks-and-api",
+      "supportUrl": "https://salsox.com/contact"
+    }
+  }
+}
