@@ -101,28 +101,75 @@ async function lookUpLicense(apiKey: string, licenseKey: string) {
   return license && license.licenseKey === licenseKey ? license : null
 }
 
-/** The one-time OAuth code from /redeem, exchanged for the buyer's key. Null when AppSumo refuses it. */
+/** AppSumo's `error` field from an answer body, for the log: a short code such as "invalid_grant", never a credential. */
+async function errorCodeOf(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as Record<string, unknown>
+    return typeof body?.error === "string" && body.error ? body.error.slice(0, 60) : "none"
+  } catch {
+    return "unreadable body"
+  }
+}
+
+/**
+ * The one-time OAuth code from /redeem, exchanged for the buyer's key. Null
+ * when AppSumo refuses it. Every way this can fail is logged by step and
+ * status, never with the code, the token or the client values: each of them
+ * used to return null silently, which left nothing to diagnose from.
+ */
 export async function exchangeAppSumoCode(code: string): Promise<string | null> {
   const config = appSumoConfig()
-  if (!config?.oauth || !/^[A-Za-z0-9._~-]{8,200}$/.test(code)) return null
+  if (!config?.oauth) {
+    console.error("[appsumo] code arrived, but the OAuth client is not configured")
+    return null
+  }
+  // Any printable code within reason: AppSumo documents no format for it, and
+  // the earlier check (8 to 200 of [A-Za-z0-9._~-]) refused codes silently.
+  if (!/^[\x21-\x7e]{4,512}$/.test(code)) {
+    console.error(`[appsumo] code refused before the exchange: ${code.length} characters, not printable ASCII`)
+    return null
+  }
   const tokenRes = await fetch(APPSUMO_TOKEN_URL, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify(appSumoTokenBody({ ...config.oauth, code, redirectUri: appSumoRedirectUrl(siteConfig.url) })),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   })
   if (!tokenRes.ok) {
-    console.error(`[appsumo] code exchange answered ${tokenRes.status}`)
+    console.error(`[appsumo] code exchange answered ${tokenRes.status}, error: ${await errorCodeOf(tokenRes)}`)
     return null
   }
-  const accessToken = readAppSumoAccessToken(await tokenRes.json())
-  if (!accessToken) return null
-  const licenseRes = await fetch(appSumoLicenseKeyUrl(accessToken), { signal: AbortSignal.timeout(TIMEOUT_MS) })
+  let tokenBody: unknown = null
+  try {
+    tokenBody = await tokenRes.json()
+  } catch {
+    console.error("[appsumo] code exchange answered 200 with a body that is not JSON")
+    return null
+  }
+  const accessToken = readAppSumoAccessToken(tokenBody)
+  if (!accessToken) {
+    const err = tokenBody && typeof tokenBody === "object" ? (tokenBody as Record<string, unknown>).error : undefined
+    console.error(`[appsumo] code exchange answered 200 without an access token, error: ${typeof err === "string" && err ? err.slice(0, 60) : "none"}`)
+    return null
+  }
+  console.info("[appsumo] code exchanged for an access token")
+  const licenseRes = await fetch(appSumoLicenseKeyUrl(accessToken), { headers: { accept: "application/json" }, signal: AbortSignal.timeout(TIMEOUT_MS) })
   if (!licenseRes.ok) {
-    console.error(`[appsumo] license read answered ${licenseRes.status}`)
+    console.error(`[appsumo] license read answered ${licenseRes.status}, error: ${await errorCodeOf(licenseRes)}`)
     return null
   }
-  return readAppSumoLicense(await licenseRes.json())?.licenseKey ?? null
+  let license = null
+  try {
+    license = readAppSumoLicense(await licenseRes.json())
+  } catch {
+    // Read below as "not a license answer".
+  }
+  if (!license) {
+    console.error("[appsumo] license read answered 200 without a license key and status this app recognises")
+    return null
+  }
+  console.info(`[appsumo] license read: status ${license.status}`)
+  return license.licenseKey
 }
 
 export type RedeemResult =

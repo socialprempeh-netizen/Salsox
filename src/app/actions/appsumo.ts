@@ -19,7 +19,7 @@ import { getTranslations } from "next-intl/server"
 import { getCurrentUser } from "@/lib/auth"
 import { checkRateLimit, rateLimitKeyFromIp } from "@/lib/rate-limit"
 import { APPSUMO_PENDING_COOKIE, APPSUMO_PENDING_MINUTES, normalizeLicenseKey } from "@/lib/appsumo"
-import { exchangeAppSumoCode, redeemAppSumoLicense } from "@/lib/appsumo-store"
+import { redeemAppSumoLicense } from "@/lib/appsumo-store"
 
 export type RedeemActionState =
   | { status: "redeemed"; tier: "personal" | "business"; stoppedSubscription: boolean }
@@ -86,16 +86,20 @@ export async function resumePendingRedemptionAction(): Promise<string> {
   }
 }
 
-/** The one-time `code` AppSumo adds to /redeem after the buyer activates their license. */
-export async function exchangeCodeAction(code: string): Promise<RedeemActionState> {
-  const t = await getTranslations("appsumo.errors")
-  if (!(await checkRateLimit(await rateLimitKeyFromIp("appsumo-code"), 20))) return { status: "error", message: t("rate") }
-  let licenseKey: string | null = null
-  try {
-    licenseKey = typeof code === "string" ? await exchangeAppSumoCode(code) : null
-  } catch (error) {
-    console.error("[appsumo] code exchange failed", error instanceof Error ? error.message : "unknown error")
-  }
-  if (!licenseKey) return { status: "error", message: t("codeFailed") }
-  return redeemOrKeep(licenseKey)
-}
+// The one-time `code` AppSumo adds to /redeem, once exchanged by the panel
+// after the page loaded. Replaced by the exchange in /redeem itself, on the
+// server during that request: this one only ran in a browser that ran the
+// page's script, and AppSumo's OAuth test, which fetches the URL from its
+// server, never saw the code swapped for a token. Was:
+// export async function exchangeCodeAction(code: string): Promise<RedeemActionState> {
+//   const t = await getTranslations("appsumo.errors")
+//   if (!(await checkRateLimit(await rateLimitKeyFromIp("appsumo-code"), 20))) return { status: "error", message: t("rate") }
+//   let licenseKey: string | null = null
+//   try {
+//     licenseKey = typeof code === "string" ? await exchangeAppSumoCode(code) : null
+//   } catch (error) {
+//     console.error("[appsumo] code exchange failed", error instanceof Error ? error.message : "unknown error")
+//   }
+//   if (!licenseKey) return { status: "error", message: t("codeFailed") }
+//   return redeemOrKeep(licenseKey)
+// }

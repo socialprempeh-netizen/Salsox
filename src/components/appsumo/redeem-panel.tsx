@@ -4,8 +4,11 @@
  * Redeeming an AppSumo license, shared by the public /redeem page (where
  * AppSumo sends a buyer after activation) and /dashboard/redeem.
  *
- * - With `code` (AppSumo's OAuth redirect), the key is read from AppSumo at
- *   once, with no typing.
+ * - Arriving from AppSumo, /redeem has already exchanged the OAuth code on the
+ *   server: `initial` is the outcome (redeemed, or why not), or `pendingKey`
+ *   is the key read for a signed-out buyer, kept for after sign-in by the
+ *   action below. No typing either way. (The panel used to exchange the code
+ *   itself, after loading; see /redeem for why that moved.)
  * - Otherwise a one-field form takes the key, checked as a UUID in the browser
  *   (react-hook-form with zod) and again by the server action.
  * - Signed out, the key is kept until sign-up or log-in, and the panel says
@@ -26,30 +29,42 @@ import { BadgeCheck, KeyRound, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { exchangeCodeAction, redeemLicenseAction, type RedeemActionState } from "@/app/actions/appsumo"
+import { redeemLicenseAction, type RedeemActionState } from "@/app/actions/appsumo"
 
 const KEY = /^\s*[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\s*$/
 
-export function RedeemPanel({ code, signedIn, initialKey }: { code?: string; signedIn: boolean; initialKey?: string }) {
+export function RedeemPanel({ signedIn, initialKey, initial, pendingKey }: { signedIn: boolean; initialKey?: string; initial?: RedeemActionState; pendingKey?: string }) {
   const t = useTranslations("appsumo")
   const reduceMotion = useReducedMotion()
-  const [state, setState] = useState<RedeemActionState | null>(null)
-  const [exchanging, setExchanging] = useState(Boolean(code))
+  const [state, setState] = useState<RedeemActionState | null>(initial ?? null)
+  const [exchanging, setExchanging] = useState(Boolean(pendingKey))
   const [pending, startTransition] = useTransition()
   const started = useRef(false)
 
   const schema = z.object({ licenseKey: z.string().regex(KEY, t("keyInvalid")) })
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { licenseKey: initialKey ?? "" } })
 
-  // AppSumo's one-time code: exchanged once, even under React's double effects.
+  // A key /redeem read from AppSumo for a signed-out buyer: kept for after
+  // sign-in, once, even under React's double effects.
   useEffect(() => {
-    if (!code || started.current) return
+    if (!pendingKey || started.current) return
     started.current = true
-    exchangeCodeAction(code).then((result) => {
+    redeemLicenseAction({ licenseKey: pendingKey }).then((result) => {
       setState(result)
       setExchanging(false)
     })
-  }, [code])
+  }, [pendingKey])
+
+  // Was, when the panel exchanged AppSumo's code itself (moved to the server,
+  // see /redeem):
+  // useEffect(() => {
+  //   if (!code || started.current) return
+  //   started.current = true
+  //   exchangeCodeAction(code).then((result) => {
+  //     setState(result)
+  //     setExchanging(false)
+  //   })
+  // }, [code])
 
   const onSubmit = form.handleSubmit(({ licenseKey }) =>
     startTransition(async () => {
@@ -115,7 +130,7 @@ export function RedeemPanel({ code, signedIn, initialKey }: { code?: string; sig
         </motion.div>
       ) : (
         <motion.div key="form" {...fade} className="space-y-4">
-          {state?.status === "error" && code && !form.formState.errors.licenseKey && (
+          {state?.status === "error" && (initial || pendingKey) && !form.formState.errors.licenseKey && (
             <p role="alert" className="border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{state.message}</p>
           )}
           <Form {...form}>
