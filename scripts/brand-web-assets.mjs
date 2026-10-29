@@ -141,6 +141,13 @@ for (const name of ["facebook", "linkedin", "reddit", "tiktok"]) {
   const trimmed = await sharp(file).extract(await bounds(file, visible)).png().toBuffer()
   await (await square(trimmed, 256)).png().toFile(out("logo-mark.png"))
   report.push("logo-mark.png")
+  // public/brand/mark.png, the path NEXT_PUBLIC_BRAND_MARK and outside
+  // listings point at, is built from the same plain-S source at 512px. It
+  // was a hand-supplied S-with-tick variant (as was public/brand/logo.png,
+  // removed), so a deployment or directory using that path showed a mark
+  // that is not the brand's.
+  await (await square(trimmed, 512)).png().toFile(src("mark.png"))
+  report.push("../mark.png")
 }
 
 // Instagram left the footer, so its icon is no longer built. Was:

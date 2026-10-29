@@ -47,9 +47,12 @@ inspected.
 - Lucide icons used consistently
 
 ## Logo
-Salsox logo: public/brand/logo.png - green rounded-square mark with a
-white "S" flowing into a checkmark "V". Use this as the brand mark
-across the site (nav, favicon, app icon, email headers).
+Salsox logo: public/brand/logo-mark.png - green rounded-square mark with a
+plain white "S", nothing else. Use this as the brand mark across the site
+(nav, favicon, app icon, email headers). Its web copies, including
+public/brand/mark.png, are built from it by scripts/brand-web-assets.mjs.
+(This brief first named public/brand/logo.png, an "S" flowing into a
+checkmark "V". That variant was replaced by the plain S and the file removed.)
 
 ## CRITICAL constraint
 Do NOT change Salsox's existing page arrangement, positioning,
