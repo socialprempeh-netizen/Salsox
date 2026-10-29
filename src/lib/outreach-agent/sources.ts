@@ -3,7 +3,7 @@
  * competitor on G2, Capterra and Trustpilot (low ratings are picked out after
  * the page is read), and the Reddit searches, in chosen communities, for
  * posts and comments about a tool's pricing, limits or support, or about
- * leaving it, and the same on Hacker News (hackernews.ts). Public complaints about a named tool only: never people
+ * leaving it, and the same on Hacker News (hackernews.ts) and X (x.ts). Public complaints about a named tool only: never people
  * directories or profile pages.
  *
  * Review URLs are the sites' own public listing pages, as of October 2026. A
@@ -13,7 +13,9 @@
 
 export const REVIEW_SOURCES = ["g2", "capterra", "trustpilot"] as const
 export type ReviewSource = (typeof REVIEW_SOURCES)[number]
-export type LeadSource = ReviewSource | "reddit" | "hackernews"
+export type LeadSource = ReviewSource | "reddit" | "hackernews" | "x"
+/** The sources whose leads come from a post or comment rather than a review page. */
+export type ForumSource = Exclude<LeadSource, ReviewSource>
 
 export type Competitor = {
   id: string
@@ -132,6 +134,6 @@ export function painIn(text: string): PainTopic[] {
 /** Which competitor a piece of text is about, by name; null when it names none or several. */
 export function competitorIn(text: string, competitors: Competitor[] = COMPETITORS): Competitor | null {
   const lower = text.toLowerCase()
-  const named = competitors.filter((c) => lower.includes(c.name.toLowerCase()) || (c.id === "dropbox-sign" && lower.includes("hellosign")) || (c.id === "adobe-sign" && /adobe sign|acrobat sign/.test(lower)))
+  const named = competitors.filter((c) => lower.includes(c.name.toLowerCase()) || (c.id === "dropbox-sign" && /hellosign|dropboxsign/.test(lower)) || (c.id === "adobe-sign" && /adobe sign|acrobat sign/.test(lower)))
   return named.length === 1 ? named[0] : null
 }

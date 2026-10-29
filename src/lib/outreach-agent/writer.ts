@@ -35,7 +35,7 @@ import {
   type FollowUpBrief,
 } from "./prompt"
 import type { Fix } from "./fixes"
-import type { LeadSource } from "./sources"
+import type { ForumSource, LeadSource } from "./sources"
 
 export const DEFAULT_MODEL = "claude-opus-5-5"
 export const DEFAULT_FAST_MODEL = "claude-haiku-5-5"
@@ -99,7 +99,7 @@ export async function extractFromReviews(input: { competitor: string; source: Le
   return data.signals
 }
 
-export async function extractFromPost(input: { competitor: string; title: string; text: string; url: string; kind?: "post" | "comment"; source?: "reddit" | "hackernews" }): Promise<ExtractedSignal[]> {
+export async function extractFromPost(input: { competitor: string; title: string; text: string; url: string; kind?: "post" | "comment"; source?: ForumSource }): Promise<ExtractedSignal[]> {
   const { data } = await structured({ model: fastModel(), system: extractSystemPrompt(), user: extractPostPrompt(input), schema: extractSchema, maxTokens: 2_000, effort: "low" })
   return data.signals
 }

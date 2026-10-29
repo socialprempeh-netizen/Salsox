@@ -67,7 +67,7 @@ type MessageStatus = "DRAFT" | "SENT" | "DISCARDED" | "FAILED"
 type ReplyCategory = "INTERESTED" | "QUESTION" | "NOT_NOW" | "NOT_INTERESTED" | "UNSUBSCRIBE" | "OUT_OF_OFFICE" | "OTHER"
 type Platform = "FACEBOOK" | "LINKEDIN" | "X"
 type PostStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "FAILED"
-type Source = "g2" | "capterra" | "trustpilot" | "reddit" | "hackernews"
+type Source = "g2" | "capterra" | "trustpilot" | "reddit" | "hackernews" | "x"
 
 export type MessageRow = { id: string; kind: "INITIAL" | "FOLLOW_UP"; status: MessageStatus; subject: string; body: string; error: string | null; sentAt: string | null; autoSent: boolean; createdAt: string }
 export type ReplyRow = { id: string; category: ReplyCategory; summary: string; text: string; receivedAt: string; source: string }
@@ -91,7 +91,7 @@ export type LeadRow = {
 }
 export type PostRow = { id: string; platform: Platform; body: string; status: PostStatus; scheduledFor: string | null; publishedAt: string | null; error: string | null }
 
-const SOURCE_NAME: Record<Source, string> = { g2: "G2", capterra: "Capterra", trustpilot: "Trustpilot", reddit: "Reddit", hackernews: "Hacker News" }
+const SOURCE_NAME: Record<Source, string> = { g2: "G2", capterra: "Capterra", trustpilot: "Trustpilot", reddit: "Reddit", hackernews: "Hacker News", x: "X" }
 const LEAD_TONE: Record<LeadStatus, Tone> = { NEEDS_CONTACT: "warn", READY: "info", CONTACTED: "accent", REPLIED: "good", SKIPPED: "default", UNSUBSCRIBED: "bad" }
 const MESSAGE_TONE: Record<MessageStatus, Tone> = { DRAFT: "warn", SENT: "good", DISCARDED: "default", FAILED: "bad" }
 const REPLY_TONE: Record<ReplyCategory, Tone> = { INTERESTED: "good", QUESTION: "info", NOT_NOW: "default", NOT_INTERESTED: "default", UNSUBSCRIBE: "bad", OUT_OF_OFFICE: "default", OTHER: "default" }

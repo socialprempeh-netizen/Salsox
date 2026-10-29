@@ -55,6 +55,7 @@ describe("competitorIn", () => {
   it("finds the one competitor named", () => {
     expect(competitorIn("Looking to leave DocuSign, any ideas?")?.id).toBe("docusign")
     expect(competitorIn("hellosign got pricey")?.id).toBe("dropbox-sign")
+    expect(competitorIn("@DropboxSign doubled our plan")?.id).toBe("dropbox-sign")
     expect(competitorIn("adobe sign is clunky")?.id).toBe("adobe-sign")
   })
 

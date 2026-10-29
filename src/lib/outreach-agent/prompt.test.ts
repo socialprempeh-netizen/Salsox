@@ -33,6 +33,12 @@ describe("data boundaries", () => {
     expect(extractPostPrompt({ competitor: "DocuSign", title: "T", text: "B", url: "u", kind: "comment", source: "hackernews" })).toMatch(/^Product: DocuSign\n\nHacker News comment \(u\)/)
     expect(extractPostPrompt({ competitor: "DocuSign", title: "T", text: "B", url: "u" })).toMatch(/Reddit post \(u\)/)
   })
+
+  it("shows no title line for an X post", () => {
+    const p = extractPostPrompt({ competitor: "DocuSign", title: "", text: "B", url: "u", source: "x" })
+    expect(p).toMatch(/X post \(u\)/)
+    expect(p).toMatch(/<source>\nB\n<\/source>/)
+  })
 })
 
 describe("Hunter", () => {

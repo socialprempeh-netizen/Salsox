@@ -5,7 +5,8 @@
  *    and Trustpilot through Crawl4AI, and Reddit posts and comments about a
  *    tool's pricing, limits or support, or about leaving it, in chosen
  *    communities through Reddit's API, and the same on Hacker News through its
- *    public search API; keep each complaint whose quote is
+ *    public search API, and on X through its recent search when switched on
+ *    (OUTREACH_X); keep each complaint whose quote is
  *    real and which the product has a fix for, as a lead. Pages a site's
  *    robots.txt disallows are skipped, never fetched.
  *  - runOutreach (Marco, Oscar): write the first email for every lead an
@@ -34,6 +35,7 @@ import { checkEmail } from "./message"
 import { followUpCutoff, remainingToday, shouldAutoSend } from "./policy"
 import { forumCandidates, type ForumItem } from "./forum"
 import { searchHackerNews } from "./hackernews"
+import { searchX, xConfigured } from "./x"
 import { sourceName } from "./prompt"
 import { redditConfigured, redditReader, type RedditPost } from "./reddit"
 import { isAllowed } from "./robots"
@@ -41,7 +43,7 @@ import { rejection, sourceKey } from "./signals"
 import { redditVoiceProblems } from "./reddit-voice"
 import { DESCRIPTION_LIMITS, draftProblems, isAutoPlatform, LIMITS, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
 import { autoHashtags, isHashtagPlatform } from "./hashtags"
-import { COMPETITORS, REDDIT_SUBREDDITS, redditQueries, reviewPages, type Competitor, type LeadSource } from "./sources"
+import { COMPETITORS, REDDIT_SUBREDDITS, redditQueries, reviewPages, type Competitor, type ForumSource, type LeadSource } from "./sources"
 import * as store from "./store"
 import { classifyReply, extractFromPost, extractFromReviews, hasWriterKey, writeEmail, writeFollowUp, writeSocialPosts, type ExtractedSignal, type ReplyCategory } from "./writer"
 
@@ -115,14 +117,18 @@ export function missingForSending(site: OutreachAdapter, env: Record<string, str
   return missing
 }
 
-/** Which lead sources can run. Hacker News needs no key, so it runs unless OUTREACH_HACKERNEWS is "off". */
-export function huntSources(env: Record<string, string | undefined> = process.env): { reviews: boolean; reddit: boolean; hackernews: boolean } {
-  return { reviews: crawlerConfigured(env), reddit: redditConfigured(env), hackernews: env.OUTREACH_HACKERNEWS?.trim().toLowerCase() !== "off" }
+/**
+ * Which lead sources can run. Hacker News needs no key, so it runs unless
+ * OUTREACH_HACKERNEWS is "off"; X bills every read, so it runs only when
+ * OUTREACH_X is "on" (and its keys are set).
+ */
+export function huntSources(env: Record<string, string | undefined> = process.env): { reviews: boolean; reddit: boolean; hackernews: boolean; x: boolean } {
+  return { reviews: crawlerConfigured(env), reddit: redditConfigured(env), hackernews: env.OUTREACH_HACKERNEWS?.trim().toLowerCase() !== "off", x: xConfigured(env) }
 }
 
 // ── Hunter ────────────────────────────────────────────────────────────────
 
-type HuntTally = { pages: number; posts: number; comments: number; hn: number; added: number; known: number; blocked: string[]; failed: string[]; rejected: Record<"rating" | "quote" | "noFix", number> }
+type HuntTally = { pages: number; posts: number; comments: number; hn: number; x: number; added: number; known: number; blocked: string[]; failed: string[]; rejected: Record<"rating" | "quote" | "noFix", number> }
 
 async function robotsFor(origin: string, userAgent: string): Promise<string | null> {
   try {
@@ -145,7 +151,7 @@ async function keepSignals(site: OutreachAdapter, tally: HuntTally, signals: Ext
       continue
     }
     const added = await store.addLead({
-      // A forum lead (Reddit, Hacker News) is keyed by its post or comment, never by an id the model returned.
+      // A forum lead (Reddit, Hacker News, X) is keyed by its post or comment, never by an id the model returned.
       sourceKey: sourceKey(ctx.source, ctx.competitor.id, ctx.fallbackId !== undefined ? ctx.fallbackId : (s.reviewId ?? null), s.quote),
       source: ctx.source,
       competitor: ctx.competitor.name,
@@ -168,7 +174,7 @@ async function keepSignals(site: OutreachAdapter, tally: HuntTally, signals: Ext
  * comment's quote is checked against the comment alone, never its thread's
  * title.
  */
-async function readForum(site: OutreachAdapter, tally: HuntTally, source: "reddit" | "hackernews", items: ForumItem[], { pain, count, reviewer }: { pain: "comments" | "all"; count: (item: ForumItem) => void; reviewer: (item: ForumItem) => string }) {
+async function readForum(site: OutreachAdapter, tally: HuntTally, source: ForumSource, items: ForumItem[], { pain, count, reviewer }: { pain: "comments" | "all"; count: (item: ForumItem) => void; reviewer: (item: ForumItem) => string }) {
   const keyOf = (competitor: Competitor, item: ForumItem) => sourceKey(source, competitor.id, item.id, "")
   const known = await store.knownSourceKeys(forumCandidates(items, { max: Infinity, pain }).map(({ item, competitor }) => keyOf(competitor, item)))
   await pool(forumCandidates(items, { max: MAX_POSTS, pain, known: (c, i) => known.has(keyOf(c, i)) }), CONCURRENCY, async ({ item, competitor }) => {
@@ -186,7 +192,7 @@ async function readForum(site: OutreachAdapter, tally: HuntTally, source: "reddi
 
 function huntMessage(t: HuntTally): string {
   const read =
-    [t.pages ? `${t.pages} review page${t.pages === 1 ? "" : "s"}` : null, t.posts ? `${t.posts} Reddit post${t.posts === 1 ? "" : "s"}` : null, t.comments ? `${t.comments} Reddit comment${t.comments === 1 ? "" : "s"}` : null, t.hn ? `${t.hn} Hacker News stor${t.hn === 1 ? "y or comment" : "ies and comments"}` : null].filter(Boolean).join(", ").replace(/, ([^,]*)$/, " and $1") || "nothing"
+    [t.pages ? `${t.pages} review page${t.pages === 1 ? "" : "s"}` : null, t.posts ? `${t.posts} Reddit post${t.posts === 1 ? "" : "s"}` : null, t.comments ? `${t.comments} Reddit comment${t.comments === 1 ? "" : "s"}` : null, t.hn ? `${t.hn} Hacker News stor${t.hn === 1 ? "y or comment" : "ies and comments"}` : null, t.x ? `${t.x} X post${t.x === 1 ? "" : "s"}` : null].filter(Boolean).join(", ").replace(/, ([^,]*)$/, " and $1") || "nothing"
   const setAside = t.rejected.rating + t.rejected.quote + t.rejected.noFix
   const parts = [`Read ${read}: ${t.added} new lead${t.added === 1 ? "" : "s"}${t.known ? `, ${t.known} already known` : ""}${setAside ? `, ${setAside} set aside (${t.rejected.rating} above 2 stars, ${t.rejected.quote} quote not found on the page, ${t.rejected.noFix} with no matching fix)` : ""}.`]
   if (t.blocked.length) parts.push(`Skipped by robots.txt: ${t.blocked.join(", ")}.`)
@@ -204,9 +210,9 @@ export async function runHunt(site: OutreachAdapter, trigger: store.RunTrigger):
   }
   if (!hasWriterKey()) return finish("skipped", "Not configured: set ANTHROPIC_API_KEY.")
   const sources = huntSources()
-  if (!sources.reviews && !sources.reddit && !sources.hackernews) return finish("skipped", "Not configured: set CRAWL4AI_URL for review sites, or REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET for Reddit, or leave OUTREACH_HACKERNEWS unset for Hacker News.")
+  if (!sources.reviews && !sources.reddit && !sources.hackernews && !sources.x) return finish("skipped", "Not configured: set CRAWL4AI_URL for review sites, or REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET for Reddit, or OUTREACH_X to on for X, or leave OUTREACH_HACKERNEWS unset for Hacker News.")
 
-  const tally: HuntTally = { pages: 0, posts: 0, comments: 0, hn: 0, added: 0, known: 0, blocked: [], failed: [], rejected: { rating: 0, quote: 0, noFix: 0 } }
+  const tally: HuntTally = { pages: 0, posts: 0, comments: 0, hn: 0, x: 0, added: 0, known: 0, blocked: [], failed: [], rejected: { rating: 0, quote: 0, noFix: 0 } }
   try {
     // 1. Review sites, through Crawl4AI, robots.txt first.
     if (sources.reviews) {
@@ -280,10 +286,21 @@ export async function runHunt(site: OutreachAdapter, trigger: store.RunTrigger):
         tally.failed.push(`Hacker News (${errorText(error)})`)
       }
     }
+
+    // 4. X, through its recent search (read-only, billed per post). Its
+    // query already carries the pain words, but they are checked again here.
+    if (sources.x) {
+      try {
+        const items = await searchX()
+        await readForum(site, tally, "x", items, { pain: "all", count: () => tally.x++, reviewer: (item) => `@${item.author}` })
+      } catch (error) {
+        tally.failed.push(`X (${errorText(error)})`)
+      }
+    }
   } catch (error) {
     return finish("failed", `The hunt stopped: ${errorText(error)}. ${huntMessage(tally)}`, tally.added)
   }
-  const nothingRead = tally.pages + tally.posts + tally.comments + tally.hn === 0
+  const nothingRead = tally.pages + tally.posts + tally.comments + tally.hn + tally.x === 0
   return finish(nothingRead && tally.failed.length ? "failed" : "ok", huntMessage(tally), tally.added)
 }
 
