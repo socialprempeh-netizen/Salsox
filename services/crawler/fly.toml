@@ -1,0 +1,39 @@
+# Fly.io app for the Hunter's crawler (services/crawler). Deploy from this
+# directory with `fly deploy`; secrets are set with `fly secrets set`, never
+# written here (README.md).
+#
+# Always on: the Hunter runs from a Vercel cron, and a machine that has to
+# wake (and start Chromium) on the first request is how a scheduled run fails
+# for no visible reason. So no auto-stop, and one machine kept running.
+# iad sits next to Vercel's default function region (iad1).
+app = "salsox-crawler"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # One crawl at a time is the service's own rule (app.py); these keep the
+  # proxy from piling requests onto a machine that is already rendering.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 4
+    hard_limit = 8
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+
+# Chromium needs the memory: 2 GB holds three pages rendering at once.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "2gb"
