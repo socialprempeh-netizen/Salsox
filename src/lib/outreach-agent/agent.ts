@@ -26,7 +26,7 @@
  * are recorded, never thrown to a cron, and no message ever contains a secret.
  */
 import type { SocialPlatform } from "@prisma/client"
-import { composeEmail, readUnsubscribeToken, sendingDomainProblem, sentViaLine, unsubscribeSecret, unsubscribeToken } from "./compliance"
+import { composeEmail, readUnsubscribeToken, replyRoute, sendingDomainProblem, sentViaLine, unsubscribeSecret, unsubscribeToken } from "./compliance"
 import { crawlPages, crawlerConfigured } from "./crawl4ai"
 import { fixFor, isComplaint, type Fix } from "./fixes"
 import { addressOf } from "./inbound"
@@ -101,7 +101,8 @@ async function pool<T, R>(items: T[], limit: number, work: (item: T) => Promise<
 
 // ── Settings check ────────────────────────────────────────────────────────
 
-export type MissingSetting = "ANTHROPIC_API_KEY" | "RESEND_API_KEY" | "OUTREACH_EMAIL_FROM" | "OUTREACH_EMAIL_FROM_DOMAIN" | "OUTREACH_POSTAL_ADDRESS" | "OUTREACH_SENDER_NAME" | "CRON_SECRET"
+// OUTREACH_REPLY_TO was added: set, but not an address.
+export type MissingSetting = "ANTHROPIC_API_KEY" | "RESEND_API_KEY" | "OUTREACH_EMAIL_FROM" | "OUTREACH_EMAIL_FROM_DOMAIN" | "OUTREACH_REPLY_TO" | "OUTREACH_POSTAL_ADDRESS" | "OUTREACH_SENDER_NAME" | "CRON_SECRET"
 
 /** What sending needs that is not set, as setting names (never their values). */
 export function missingForSending(site: OutreachAdapter, env: Record<string, string | undefined> = process.env): MissingSetting[] {
@@ -111,6 +112,7 @@ export function missingForSending(site: OutreachAdapter, env: Record<string, str
   const domain = sendingDomainProblem(outreachFrom(env), site.mainEmailFrom)
   if (domain === "missing") missing.push("OUTREACH_EMAIL_FROM")
   if (domain === "sameDomain") missing.push("OUTREACH_EMAIL_FROM_DOMAIN")
+  if (replyRoute(env.OUTREACH_REPLY_TO, outreachFrom(env)) === "invalid") missing.push("OUTREACH_REPLY_TO")
   if (!site.postalAddress?.trim()) missing.push("OUTREACH_POSTAL_ADDRESS")
   if (!site.sender.name?.trim()) missing.push("OUTREACH_SENDER_NAME")
   if (!unsubscribeSecret(env)) missing.push("CRON_SECRET")

@@ -20,7 +20,7 @@ import { getFormatter, getTranslations } from "next-intl/server"
 import { Crosshair, DatabaseZap, Inbox, Megaphone, MessageSquareReply, ScrollText, Send, Settings2, ShieldCheck, Sparkles, Users } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { connectedPlatforms, huntSources, missingForSending } from "@/lib/outreach-agent/agent"
-import { domainOf } from "@/lib/outreach-agent/compliance"
+import { domainOf, replyRoute, suggestedSendingDomain } from "@/lib/outreach-agent/compliance"
 import { fixFor, isComplaint } from "@/lib/outreach-agent/fixes"
 import { outreachFrom } from "@/lib/outreach-agent/mailer"
 import { MAX_DAILY_CAP, REVIEW_FIRST, remainingToday } from "@/lib/outreach-agent/policy"
@@ -59,6 +59,7 @@ export default async function OutreachAgentPage() {
   const sources = huntSources()
   const connected = connectedPlatforms()
   const fromDomain = domainOf(outreachFrom())
+  const replies = replyRoute(process.env.OUTREACH_REPLY_TO, outreachFrom())
   const last = data.ok ? data.runs[0] : undefined
   const runStatus = (status: string) => t(`runStatus.${status as "ok" | "skipped" | "failed" | "running"}`)
   const runKind = (kind: string) => t(`runKind.${kind as "hunt" | "outreach" | "social" | "inbound"}`)
@@ -99,6 +100,8 @@ export default async function OutreachAgentPage() {
 
       <StatusBanner tone={last ? (RUN_TONE[last.status] ?? "info") : "info"} icon={last ? undefined : Megaphone} title={last ? t("statusLast", { kind: runKind(last.kind), status: runStatus(last.status), time: when(last.startedAt) }) : t("statusNever")}>
         {fromDomain && !missing.includes("OUTREACH_EMAIL_FROM_DOMAIN") ? t("sendingFrom", { domain: fromDomain }) : t("sendingNotSet")}
+        {/* Where replies go: the outreach domain's inbound address, or the main inbox (then logged by hand). */}
+        {replies && replies !== "invalid" && !missing.includes("OUTREACH_EMAIL_FROM_DOMAIN") && <> {t(replies.inbound ? "repliesInbound" : "repliesElsewhere", { address: replies.address })}</>}
       </StatusBanner>
 
       {data.ok && (
@@ -116,7 +119,7 @@ export default async function OutreachAgentPage() {
             {missing.map((key) => (
               <li key={key} className="flex gap-2.5">
                 <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 bg-amber-500" />
-                <span className="min-w-0 break-words">{t(`setup.${key}`)}</span>
+                <span className="min-w-0 break-words">{t(`setup.${key}`, { suggestion: suggestedSendingDomain(salsoxOutreach.mainEmailFrom) ?? "hello.example.com" })}</span>
               </li>
             ))}
             {!sources.reviews && (

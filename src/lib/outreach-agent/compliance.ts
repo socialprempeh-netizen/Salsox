@@ -34,6 +34,31 @@ export function sendingDomainProblem(outreachFrom: string | undefined, mainFrom:
   return null
 }
 
+/**
+ * The subdomain the setup guidance suggests for outreach: "hello." on the
+ * product's own email domain (EMAIL_FROM), so the example matches the
+ * deployment without naming any brand here. Null when EMAIL_FROM is unset.
+ */
+export function suggestedSendingDomain(mainFrom: string | undefined): string | null {
+  const main = domainOf(mainFrom)
+  return main ? `hello.${main}` : null
+}
+
+/**
+ * Where replies to outreach go: OUTREACH_REPLY_TO when set (it may be the
+ * main inbox on the product's own domain: receiving mail there does not
+ * touch sending reputation), else the sender. "invalid" when it is set but is
+ * not an address. `inbound` says whether replies land on the outreach domain,
+ * where the inbound webhook can label them; otherwise they are logged by hand.
+ */
+export function replyRoute(replyTo: string | undefined, outreachFrom: string | undefined): { address: string; inbound: boolean } | "invalid" | null {
+  const set = replyTo?.trim()
+  if (set && !domainOf(set)) return "invalid"
+  const address = set || outreachFrom?.trim()
+  if (!address) return null
+  return { address: (/<([^>]+)>/.exec(address)?.[1] ?? address).trim(), inbound: domainOf(address) === domainOf(outreachFrom) }
+}
+
 export function unsubscribeSecret(env: Record<string, string | undefined> = process.env): string | null {
   const explicit = env.OUTREACH_UNSUBSCRIBE_SECRET?.trim()
   if (explicit) return explicit
