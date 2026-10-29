@@ -5,7 +5,8 @@
  * The page around them is a server component that loads the data; these
  * call the server actions (src/app/actions/outreach-agent.ts) and refresh.
  *
- * - AgentRunButtons: hunt for leads now, run the outreach now.
+ * - AgentRunButtons: hunt for leads now, run the outreach now, and check
+ *   that the crawler answers (one neutral page, no review site).
  * - SendingSettings: the trust gate (auto-send after the first batch, or
  *   review every email) with its progress squares, the daily limit, pause,
  *   and the "sent via" line for a standalone release, off by default.
@@ -29,7 +30,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { AtSign, CalendarClock, Check, ChevronDown, Crosshair, ExternalLink, Minus, PenLine, Plus, Send, Sparkles, Star, UserPlus } from "lucide-react"
+import { AtSign, CalendarClock, Check, ChevronDown, Crosshair, ExternalLink, Minus, PenLine, PlugZap, Plus, Send, Sparkles, Star, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -39,6 +40,7 @@ import { Chip, Empty, type Tone } from "@/components/admin/admin-ui"
 import { SegmentMeter } from "@/components/admin/segment-meter"
 import {
   addLeadToCustomers,
+  checkCrawlerNow,
   discardDraft,
   discardPost,
   draftPosts,
@@ -166,11 +168,17 @@ function Reveal({ open, children }: { open: boolean; children: React.ReactNode }
 
 // ── Run buttons ───────────────────────────────────────────────────────────
 
-export function AgentRunButtons({ canHunt, canSend }: { canHunt: boolean; canSend: boolean }) {
+export function AgentRunButtons({ canHunt, canSend, canCheckCrawler }: { canHunt: boolean; canSend: boolean; canCheckCrawler: boolean }) {
   const t = useTranslations("admin.outreachAgent")
   const { run, pending, busy } = useAction()
   return (
     <div className="flex shrink-0 flex-wrap gap-2">
+      {canCheckCrawler && (
+        <Button size="sm" variant="ghost" loading={pending && busy === "crawler"} disabled={pending} onClick={() => run("crawler", checkCrawlerNow, t("crawlerOk"))}>
+          <PlugZap aria-hidden className="h-4 w-4" />
+          {pending && busy === "crawler" ? t("checkingCrawler") : t("checkCrawler")}
+        </Button>
+      )}
       <Button size="sm" variant="outline" loading={pending && busy === "hunt"} disabled={pending || !canHunt} onClick={() => run("hunt", huntNow, t("huntDone"))}>
         <Crosshair aria-hidden className="h-4 w-4" />
         {pending && busy === "hunt" ? t("hunting") : t("huntNow")}

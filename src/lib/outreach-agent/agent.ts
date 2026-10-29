@@ -2,8 +2,9 @@
  * The outreach agent's jobs, end to end:
  *
  *  - runHunt (Hunter): read competitors' low-rated reviews on G2, Capterra
- *    and Trustpilot through Crawl4AI, and Reddit posts asking for an
- *    alternative through Reddit's API; keep each complaint whose quote is
+ *    and Trustpilot through Crawl4AI, and Reddit posts and comments about a
+ *    tool's pricing, limits or support, or about leaving it, in chosen
+ *    communities through Reddit's API; keep each complaint whose quote is
  *    real and which the product has a fix for, as a lead. Pages a site's
  *    robots.txt disallows are skipped, never fetched.
  *  - runOutreach (Marco, Oscar): write the first email for every lead an
@@ -30,13 +31,13 @@ import { addressOf } from "./inbound"
 import { getInboundEmail, outreachFrom, sendOutreachEmail } from "./mailer"
 import { checkEmail } from "./message"
 import { followUpCutoff, remainingToday, shouldAutoSend } from "./policy"
-import { searchReddit, redditConfigured } from "./reddit"
+import { redditCandidates, redditConfigured, redditReader, type RedditPost } from "./reddit"
 import { isAllowed } from "./robots"
 import { rejection, sourceKey } from "./signals"
 import { redditVoiceProblems } from "./reddit-voice"
 import { DESCRIPTION_LIMITS, draftProblems, isAutoPlatform, LIMITS, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
 import { autoHashtags, isHashtagPlatform } from "./hashtags"
-import { COMPETITORS, competitorIn, redditQueries, reviewPages, type LeadSource } from "./sources"
+import { COMPETITORS, REDDIT_SUBREDDITS, redditQueries, reviewPages, type Competitor, type LeadSource } from "./sources"
 import * as store from "./store"
 import { classifyReply, extractFromPost, extractFromReviews, hasWriterKey, writeEmail, writeFollowUp, writeSocialPosts, type ExtractedSignal, type ReplyCategory } from "./writer"
 
@@ -71,8 +72,10 @@ const PAGE = "/admin/outreach/agent"
 const SOCIAL_PAGE = "/admin/outreach/social"
 /** First emails written per run while every email waits for review: a queue, not a flood. */
 const REVIEW_QUEUE = 10
-/** Reddit posts read per hunt, newest first. */
-const MAX_POSTS = 30
+/** Reddit posts and comments read per hunt, newest first: each one is a model call. Was 30 posts. */
+const MAX_POSTS = 40
+/** Posts whose comment threads are opened per hunt, newest first. */
+const THREADS_OPENED = 8
 /** Model calls made at once while reading pages. */
 const CONCURRENCY = 4
 
@@ -115,7 +118,7 @@ export function huntSources(env: Record<string, string | undefined> = process.en
 
 // ── Hunter ────────────────────────────────────────────────────────────────
 
-type HuntTally = { pages: number; posts: number; added: number; known: number; blocked: string[]; failed: string[]; rejected: Record<"rating" | "quote" | "noFix", number> }
+type HuntTally = { pages: number; posts: number; comments: number; added: number; known: number; blocked: string[]; failed: string[]; rejected: Record<"rating" | "quote" | "noFix", number> }
 
 async function robotsFor(origin: string, userAgent: string): Promise<string | null> {
   try {
@@ -156,7 +159,8 @@ async function keepSignals(site: OutreachAdapter, tally: HuntTally, signals: Ext
 }
 
 function huntMessage(t: HuntTally): string {
-  const read = [t.pages ? `${t.pages} review page${t.pages === 1 ? "" : "s"}` : null, t.posts ? `${t.posts} Reddit post${t.posts === 1 ? "" : "s"}` : null].filter(Boolean).join(" and ") || "nothing"
+  const read =
+    [t.pages ? `${t.pages} review page${t.pages === 1 ? "" : "s"}` : null, t.posts ? `${t.posts} Reddit post${t.posts === 1 ? "" : "s"}` : null, t.comments ? `${t.comments} Reddit comment${t.comments === 1 ? "" : "s"}` : null].filter(Boolean).join(", ").replace(/, ([^,]*)$/, " and $1") || "nothing"
   const setAside = t.rejected.rating + t.rejected.quote + t.rejected.noFix
   const parts = [`Read ${read}: ${t.added} new lead${t.added === 1 ? "" : "s"}${t.known ? `, ${t.known} already known` : ""}${setAside ? `, ${setAside} set aside (${t.rejected.rating} above 2 stars, ${t.rejected.quote} quote not found on the page, ${t.rejected.noFix} with no matching fix)` : ""}.`]
   if (t.blocked.length) parts.push(`Skipped by robots.txt: ${t.blocked.join(", ")}.`)
@@ -176,7 +180,7 @@ export async function runHunt(site: OutreachAdapter, trigger: store.RunTrigger):
   const sources = huntSources()
   if (!sources.reviews && !sources.reddit) return finish("skipped", "Not configured: set CRAWL4AI_URL for review sites, or REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET for Reddit.")
 
-  const tally: HuntTally = { pages: 0, posts: 0, added: 0, known: 0, blocked: [], failed: [], rejected: { rating: 0, quote: 0, noFix: 0 } }
+  const tally: HuntTally = { pages: 0, posts: 0, comments: 0, added: 0, known: 0, blocked: [], failed: [], rejected: { rating: 0, quote: 0, noFix: 0 } }
   try {
     // 1. Review sites, through Crawl4AI, robots.txt first.
     if (sources.reviews) {
@@ -214,31 +218,42 @@ export async function runHunt(site: OutreachAdapter, trigger: store.RunTrigger):
       }
     }
 
-    // 2. Reddit, through its API.
+    // 2. Reddit, through its API: posts in the chosen communities, the newest
+    // comments there, and the comments under the posts found.
     if (sources.reddit) {
       try {
-        const posts = (await searchReddit(redditQueries().map((q) => q.query), { userAgent: site.userAgent })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, MAX_POSTS)
-        const named = posts.flatMap((post) => {
-          const competitor = competitorIn(`${post.title}\n${post.text}`)
-          return competitor ? [{ post, competitor }] : []
-        })
-        // A post already stored is not read again.
-        const known = await store.knownSourceKeys(named.map(({ post, competitor }) => sourceKey("reddit", competitor.id, post.id, "")))
-        await pool(
-          named.filter(({ post, competitor }) => !known.has(sourceKey("reddit", competitor.id, post.id, ""))),
-          CONCURRENCY,
-          async ({ post, competitor }) => {
-            tally.posts++
-            try {
-              const page = `${post.title}\n\n${post.text}`
-              const signals = await extractFromPost({ competitor: competitor.name, title: post.title, text: post.text, url: post.url })
-              // One lead per post, under the post's own id.
-              await keepSignals(site, tally, signals.slice(0, 1), { source: "reddit", competitor, url: post.url, page, fallbackId: post.id, reviewer: `u/${post.author}` })
-            } catch (error) {
-              tally.failed.push(`a Reddit post (${errorText(error)})`)
-            }
+        const reddit = await redditReader({ userAgent: site.userAgent })
+        const posts = await reddit.search(redditQueries().map((q) => q.query), REDDIT_SUBREDDITS)
+        const comments: RedditPost[] = []
+        try {
+          comments.push(...(await reddit.recentComments(REDDIT_SUBREDDITS)))
+        } catch (error) {
+          tally.failed.push(`Reddit comments (${errorText(error)})`)
+        }
+        for (const { item } of redditCandidates(posts, { max: THREADS_OPENED })) {
+          try {
+            comments.push(...(await reddit.thread(item)))
+          } catch (error) {
+            tally.failed.push(`a Reddit thread (${errorText(error)})`)
           }
-        )
+        }
+        const items = [...posts, ...comments]
+        const keyOf = (competitor: Competitor, item: RedditPost) => sourceKey("reddit", competitor.id, item.id, "")
+        // A post or comment already stored is not read again.
+        const known = await store.knownSourceKeys(redditCandidates(items, { max: Infinity }).map(({ item, competitor }) => keyOf(competitor, item)))
+        await pool(redditCandidates(items, { max: MAX_POSTS, known: (c, i) => known.has(keyOf(c, i)) }), CONCURRENCY, async ({ item, competitor }) => {
+          if (item.kind === "post") tally.posts++
+          else tally.comments++
+          try {
+            // A comment's quote is checked against the comment alone, never its thread's title.
+            const page = item.kind === "post" ? `${item.title}\n\n${item.text}` : item.text
+            const signals = await extractFromPost({ competitor: competitor.name, title: item.title, text: item.text, url: item.url, kind: item.kind })
+            // One lead per post or comment, under its own id.
+            await keepSignals(site, tally, signals.slice(0, 1), { source: "reddit", competitor, url: item.url, page, fallbackId: item.id, reviewer: `u/${item.author}` })
+          } catch (error) {
+            tally.failed.push(`a Reddit ${item.kind} (${errorText(error)})`)
+          }
+        })
         tally.known += known.size
       } catch (error) {
         tally.failed.push(`Reddit (${errorText(error)})`)
@@ -247,7 +262,7 @@ export async function runHunt(site: OutreachAdapter, trigger: store.RunTrigger):
   } catch (error) {
     return finish("failed", `The hunt stopped: ${errorText(error)}. ${huntMessage(tally)}`, tally.added)
   }
-  const nothingRead = tally.pages + tally.posts === 0
+  const nothingRead = tally.pages + tally.posts + tally.comments === 0
   return finish(nothingRead && tally.failed.length ? "failed" : "ok", huntMessage(tally), tally.added)
 }
 

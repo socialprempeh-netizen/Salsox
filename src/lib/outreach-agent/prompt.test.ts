@@ -22,6 +22,12 @@ describe("data boundaries", () => {
     expect(extractReviewsPrompt({ competitor: "DocuSign", source: "trustpilot", url: "u", markdown: "PAGE" })).toMatch(/<source>\nPAGE\n<\/source>/)
     expect(extractPostPrompt({ competitor: "DocuSign", title: "T", text: "B", url: "u" })).toMatch(/<source>\nTitle: T\n\nB\n<\/source>/)
   })
+
+  it("keeps a comment's thread title inside the source tags, and quotes the comment only", () => {
+    const p = extractPostPrompt({ competitor: "DocuSign", title: "T", text: "B", url: "u", kind: "comment" })
+    expect(p).toMatch(/<source>\nThread title: T\n\nComment:\nB\n<\/source>/)
+    expect(p).toMatch(/never the thread title/)
+  })
 })
 
 describe("Hunter", () => {

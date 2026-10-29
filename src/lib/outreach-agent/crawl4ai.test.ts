@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest"
-import { MAX_MARKDOWN, crawlerConfigured, parseCrawlResponse } from "./crawl4ai"
+import { MAX_MARKDOWN, crawlerCheckOutcome, crawlerConfigured, parseCrawlResponse } from "./crawl4ai"
+
+describe("crawlerCheckOutcome", () => {
+  const page = { url: "https://example.com/", ok: true, status: 200, markdown: "# Example Domain", error: null }
+
+  it("reports a page read as success", () => {
+    expect(crawlerCheckOutcome([page], 3)).toEqual({ ok: true, message: "The crawler read the test page in 3s (16 characters)." })
+  })
+
+  it("separates an unreachable server from a page it could not read", () => {
+    expect(crawlerCheckOutcome(new Error("the Crawl4AI server answered HTTP 401"), 1).message).toMatch(/could not be reached: the Crawl4AI server answered HTTP 401/)
+    expect(crawlerCheckOutcome([{ ...page, ok: false, error: "HTTP 403" }], 1)).toEqual({ ok: false, message: "The crawler answered, but could not read the test page (HTTP 403)." })
+    expect(crawlerCheckOutcome([], 1).ok).toBe(false)
+  })
+})
 
 describe("parseCrawlResponse", () => {
   it("reads markdown given as a string", () => {

@@ -2,7 +2,7 @@
 
 /**
  * Server actions behind the Outreach agent tab (/admin/outreach/agent): run
- * the hunt or the outreach now, give a lead its address or skip it, approve,
+ * the hunt or the outreach now, check the crawler connection, give a lead its address or skip it, approve,
  * edit, discard or retry an email, log a reply by hand, add a lead to the
  * Outreach tracker, change the sending settings, and draft, schedule and
  * publish social posts (from the social studio, /admin/outreach/social:
@@ -18,6 +18,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { getAdminUser } from "@/lib/auth"
 import { addToCustomers, draftSocialPosts, logReplyByHand, publishPost, runHunt, runOutreach, sendMessage } from "@/lib/outreach-agent/agent"
+import { checkCrawler } from "@/lib/outreach-agent/crawl4ai"
 import { clampCap } from "@/lib/outreach-agent/policy"
 import { draftProblems, isAutoPlatform } from "@/lib/outreach-agent/social"
 import { salsoxOutreach } from "@/lib/outreach-agent/site"
@@ -48,6 +49,14 @@ export async function huntNow(): Promise<OutreachAgentResult> {
   await requireAdmin()
   const result = await runHunt(salsoxOutreach, "manual")
   return done(result.status !== "failed", result.message)
+}
+
+/** Asks the crawler for one neutral page, to prove CRAWL4AI_URL and its token work. */
+export async function checkCrawlerNow(): Promise<OutreachAgentResult> {
+  await requireAdmin()
+  const result = await checkCrawler({ userAgent: salsoxOutreach.userAgent })
+  console.info("[outreach-agent] crawler check:", result.message)
+  return result.ok ? { ok: true, message: result.message } : { ok: false, error: "failed", message: result.message }
 }
 
 export async function runOutreachNow(): Promise<OutreachAgentResult> {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { COMPETITORS, competitorIn, redditQueries, reviewPages } from "./sources"
+import { COMPETITORS, PAIN_TOPICS, REDDIT_COMPETITORS, competitorIn, painIn, redditQueries, reviewPages } from "./sources"
 
 describe("reviewPages", () => {
   it("builds one page per competitor and source it is listed on", () => {
@@ -25,10 +25,29 @@ describe("reviewPages", () => {
 })
 
 describe("redditQueries", () => {
-  it("asks two questions per competitor", () => {
+  it("asks once per pain topic, for DocuSign, PandaDoc and Dropbox Sign only", () => {
     const queries = redditQueries()
-    expect(queries).toHaveLength(COMPETITORS.length * 2)
-    expect(queries[0].query).toBe('"DocuSign" alternative')
+    expect(REDDIT_COMPETITORS.map((c) => c.id)).toEqual(["docusign", "pandadoc", "dropbox-sign"])
+    expect(queries).toHaveLength(REDDIT_COMPETITORS.length * Object.keys(PAIN_TOPICS).length)
+    expect(queries.map((q) => q.topic)).toContain("support")
+  })
+
+  it("quotes the tool and multi-word phrases", () => {
+    const pricing = redditQueries().find((q) => q.competitor.id === "docusign" && q.topic === "pricing")
+    expect(pricing?.query).toMatch(/^"DocuSign" \(expensive OR pricing OR "price increase" OR /)
+  })
+})
+
+describe("painIn", () => {
+  it("finds the topics a text touches", () => {
+    expect(painIn("DocuSign hit us with a price increase and support never answered")).toEqual(["pricing", "support"])
+    expect(painIn("We ran out of envelopes in March")).toEqual(["limits"])
+  })
+
+  it("matches whole words, with their endings", () => {
+    // "capable" does not mean a cap, "costume" is not a cost.
+    expect(painIn("a capable tool, nice costume")).toEqual([])
+    expect(painIn("we cancelled after the limits changed")).toEqual(["pricing", "limits"])
   })
 })
 

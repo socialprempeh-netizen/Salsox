@@ -94,7 +94,7 @@ export default async function OutreachAgentPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={Megaphone}>
-        {data.ok && <AgentRunButtons canHunt={sources.reviews || sources.reddit} canSend={missing.length === 0} />}
+        {data.ok && <AgentRunButtons canHunt={sources.reviews || sources.reddit} canSend={missing.length === 0} canCheckCrawler={sources.reviews} />}
       </AdminPageHeader>
 
       <StatusBanner tone={last ? (RUN_TONE[last.status] ?? "info") : "info"} icon={last ? undefined : Megaphone} title={last ? t("statusLast", { kind: runKind(last.kind), status: runStatus(last.status), time: when(last.startedAt) }) : t("statusNever")}>

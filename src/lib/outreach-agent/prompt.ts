@@ -47,7 +47,17 @@ export function extractReviewsPrompt({ competitor, source, url, markdown }: { co
   return `Product: ${competitor}\nSite: ${sourceName(source)} (${url})\n\nThe page, as Markdown:\n<source>\n${markdown}\n</source>`
 }
 
-export function extractPostPrompt({ competitor, title, text, url }: { competitor: string; title: string; text: string; url: string }): string {
+export function extractPostPrompt({ competitor, title, text, url, kind = "post" }: { competitor: string; title: string; text: string; url: string; kind?: "post" | "comment" }): string {
+  if (kind === "comment") {
+    // The thread title is context only (and someone else's words, so inside
+    // the source tags): the quote must come from the comment itself, and the
+    // Hunter checks it against the comment alone.
+    return [
+      `Product: ${competitor}`,
+      `Reddit comment (${url}). Keep it only if the commenter is unhappy with ${competitor} (its pricing, limits, or anything else) or wants to replace it. Quote only the comment's own words, never the thread title. The rating is always null for a comment.`,
+      `<source>\nThread title: ${title}\n\nComment:\n${text}\n</source>`,
+    ].join("\n\n")
+  }
   return [
     `Product: ${competitor}`,
     `Reddit post (${url}). Keep it only if the author is unhappy with ${competitor} or is asking for something to replace it. The rating is always null for a post.`,
