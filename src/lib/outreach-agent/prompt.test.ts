@@ -28,6 +28,11 @@ describe("data boundaries", () => {
     expect(p).toMatch(/<source>\nThread title: T\n\nComment:\nB\n<\/source>/)
     expect(p).toMatch(/never the thread title/)
   })
+
+  it("names the site a post or comment came from", () => {
+    expect(extractPostPrompt({ competitor: "DocuSign", title: "T", text: "B", url: "u", kind: "comment", source: "hackernews" })).toMatch(/^Product: DocuSign\n\nHacker News comment \(u\)/)
+    expect(extractPostPrompt({ competitor: "DocuSign", title: "T", text: "B", url: "u" })).toMatch(/Reddit post \(u\)/)
+  })
 })
 
 describe("Hunter", () => {
@@ -35,6 +40,7 @@ describe("Hunter", () => {
     const p = extractSystemPrompt()
     expect(p).toMatch(/exactly as written/)
     expect(p).toMatch(/1 or 2 stars/)
+    expect(p).toMatch(/promoting, announcing or selling their own product/)
     expect(p).toMatch(/Never guess/)
   })
 })

@@ -3,7 +3,7 @@
  * competitor on G2, Capterra and Trustpilot (low ratings are picked out after
  * the page is read), and the Reddit searches, in chosen communities, for
  * posts and comments about a tool's pricing, limits or support, or about
- * leaving it. Public complaints about a named tool only: never people
+ * leaving it, and the same on Hacker News (hackernews.ts). Public complaints about a named tool only: never people
  * directories or profile pages.
  *
  * Review URLs are the sites' own public listing pages, as of October 2026. A
@@ -13,7 +13,7 @@
 
 export const REVIEW_SOURCES = ["g2", "capterra", "trustpilot"] as const
 export type ReviewSource = (typeof REVIEW_SOURCES)[number]
-export type LeadSource = ReviewSource | "reddit"
+export type LeadSource = ReviewSource | "reddit" | "hackernews"
 
 export type Competitor = {
   id: string
@@ -69,8 +69,10 @@ export function reviewPages(competitors: Competitor[] = COMPETITORS, sources: re
 //   ])
 // }
 
-/** The tools searched for on Reddit: the three whose users most often ask for a way out. */
-export const REDDIT_COMPETITORS: Competitor[] = COMPETITORS.filter((c) => ["docusign", "pandadoc", "dropbox-sign"].includes(c.id))
+/** The tools searched for on Reddit and Hacker News: the three whose users most often ask for a way out. */
+export const FORUM_COMPETITORS: Competitor[] = COMPETITORS.filter((c) => ["docusign", "pandadoc", "dropbox-sign"].includes(c.id))
+/** The same list, under the name the Reddit searches were written with. */
+export const REDDIT_COMPETITORS = FORUM_COMPETITORS
 
 /**
  * Where people who send contracts, quotes and agreements talk shop: small

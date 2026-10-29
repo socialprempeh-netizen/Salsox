@@ -99,7 +99,7 @@ export async function extractFromReviews(input: { competitor: string; source: Le
   return data.signals
 }
 
-export async function extractFromPost(input: { competitor: string; title: string; text: string; url: string; kind?: "post" | "comment" }): Promise<ExtractedSignal[]> {
+export async function extractFromPost(input: { competitor: string; title: string; text: string; url: string; kind?: "post" | "comment"; source?: "reddit" | "hackernews" }): Promise<ExtractedSignal[]> {
   const { data } = await structured({ model: fastModel(), system: extractSystemPrompt(), user: extractPostPrompt(input), schema: extractSchema, maxTokens: 2_000, effort: "low" })
   return data.signals
 }

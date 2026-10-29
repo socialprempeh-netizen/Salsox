@@ -94,7 +94,7 @@ export default async function OutreachAgentPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={Megaphone}>
-        {data.ok && <AgentRunButtons canHunt={sources.reviews || sources.reddit} canSend={missing.length === 0} canCheckCrawler={sources.reviews} />}
+        {data.ok && <AgentRunButtons canHunt={sources.reviews || sources.reddit || sources.hackernews} canSend={missing.length === 0} canCheckCrawler={sources.reviews} />}
       </AdminPageHeader>
 
       <StatusBanner tone={last ? (RUN_TONE[last.status] ?? "info") : "info"} icon={last ? undefined : Megaphone} title={last ? t("statusLast", { kind: runKind(last.kind), status: runStatus(last.status), time: when(last.startedAt) }) : t("statusNever")}>
@@ -110,7 +110,7 @@ export default async function OutreachAgentPage() {
         </StatGrid>
       )}
 
-      {(missing.length > 0 || (!sources.reviews && !sources.reddit)) && (
+      {(missing.length > 0 || (!sources.reviews && !sources.reddit && !sources.hackernews)) && (
         <Panel title={t("setupTitle")} hint={t("setupHint")} index={3} icon={Settings2} iconTone="warn">
           <ul className="space-y-2.5 text-sm">
             {missing.map((key) => (

@@ -19,7 +19,7 @@ import { COMPLAINTS, type Fix } from "./fixes"
 import type { LeadSource } from "./sources"
 import { WORDS } from "./message"
 
-const SOURCE_NAME: Record<LeadSource, string> = { g2: "G2", capterra: "Capterra", trustpilot: "Trustpilot", reddit: "Reddit" }
+const SOURCE_NAME: Record<LeadSource, string> = { g2: "G2", capterra: "Capterra", trustpilot: "Trustpilot", reddit: "Reddit", hackernews: "Hacker News" }
 
 export function sourceName(source: LeadSource): string {
   return SOURCE_NAME[source]
@@ -36,6 +36,7 @@ export function extractSystemPrompt(): string {
     "Rules:",
     "- Copy each quote exactly as written, one to three consecutive sentences, without fixing spelling or adding or removing words. Never paraphrase.",
     "- Only include complaints about the named product, by someone who uses or used it.",
+    "- Leave out anyone promoting, announcing or selling their own product or service, even when they complain about the named one.",
     "- For a review page, include only reviews rated 1 or 2 stars, with the rating as shown. If no rating is shown for a review, leave it out.",
     "- Copy the reviewer's name, job title and company only when the page shows them; otherwise null. Never guess them.",
     `- complaint is one of: ${COMPLAINTS.join(", ")}. Use "other" when it fits none, for example a complaint only about customer support.`,
@@ -47,20 +48,21 @@ export function extractReviewsPrompt({ competitor, source, url, markdown }: { co
   return `Product: ${competitor}\nSite: ${sourceName(source)} (${url})\n\nThe page, as Markdown:\n<source>\n${markdown}\n</source>`
 }
 
-export function extractPostPrompt({ competitor, title, text, url, kind = "post" }: { competitor: string; title: string; text: string; url: string; kind?: "post" | "comment" }): string {
+export function extractPostPrompt({ competitor, title, text, url, kind = "post", source = "reddit" }: { competitor: string; title: string; text: string; url: string; kind?: "post" | "comment"; source?: "reddit" | "hackernews" }): string {
+  const site = sourceName(source)
   if (kind === "comment") {
     // The thread title is context only (and someone else's words, so inside
     // the source tags): the quote must come from the comment itself, and the
     // Hunter checks it against the comment alone.
     return [
       `Product: ${competitor}`,
-      `Reddit comment (${url}). Keep it only if the commenter is unhappy with ${competitor} (its pricing, limits, or anything else) or wants to replace it. Quote only the comment's own words, never the thread title. The rating is always null for a comment.`,
+      `${site} comment (${url}). Keep it only if the commenter is unhappy with ${competitor} (its pricing, limits, or anything else) or wants to replace it. Quote only the comment's own words, never the thread title. The rating is always null for a comment.`,
       `<source>\nThread title: ${title}\n\nComment:\n${text}\n</source>`,
     ].join("\n\n")
   }
   return [
     `Product: ${competitor}`,
-    `Reddit post (${url}). Keep it only if the author is unhappy with ${competitor} or is asking for something to replace it. The rating is always null for a post.`,
+    `${site} post (${url}). Keep it only if the author is unhappy with ${competitor} or is asking for something to replace it. The rating is always null for a post.`,
     `<source>\nTitle: ${title}\n\n${text}\n</source>`,
   ].join("\n\n")
 }

@@ -20,19 +20,10 @@
  * one for the comment feed and one per thread opened, well inside Reddit's
  * 100 requests a minute. The parsers are pure and tested (reddit.test.ts).
  */
-import { REDDIT_COMPETITORS, competitorIn, painIn, type Competitor } from "./sources"
+import type { ForumItem } from "./forum"
 
-export type RedditPost = {
-  kind: "post" | "comment"
-  /** The post's id; a comment's is its fullname ("t1_…"), so the two never collide in a lead's key. */
-  id: string
-  /** The thread's title (for a comment, the post it was left under). */
-  title: string
-  text: string
-  author: string
-  url: string
-  createdAt: Date
-}
+/** A post's id is Reddit's own; a comment's is its fullname ("t1_…"), so the two never collide in a lead's key. */
+export type RedditPost = ForumItem
 
 /** Longest text kept per post or comment. */
 const MAX_TEXT = 4_000
@@ -96,21 +87,7 @@ export function parseThread(json: unknown, threadTitle: string): RedditPost[] {
   return Array.isArray(json) ? parseComments(json[1], threadTitle) : []
 }
 
-/**
- * What is worth a model call, newest first, at most `max`: a post that names
- * exactly one of the tools, or a comment that touches a pain point and names
- * one (itself, or failing that its thread's title, as in "their pricing is
- * absurd" under "Anyone else leaving DocuSign?"). Anything already known
- * (`known`, by competitor and id) is left out.
- */
-export function redditCandidates(items: RedditPost[], { competitors = REDDIT_COMPETITORS, known = () => false, max }: { competitors?: Competitor[]; known?: (competitor: Competitor, item: RedditPost) => boolean; max: number }): { item: RedditPost; competitor: Competitor }[] {
-  const picked = new Map<string, { item: RedditPost; competitor: Competitor }>()
-  for (const item of items) {
-    const competitor = item.kind === "post" ? competitorIn(`${item.title}\n${item.text}`, competitors) : painIn(item.text).length ? (competitorIn(item.text, competitors) ?? competitorIn(item.title, competitors)) : null
-    if (competitor && !known(competitor, item)) picked.set(item.id, { item, competitor })
-  }
-  return [...picked.values()].sort((a, b) => b.item.createdAt.getTime() - a.item.createdAt.getTime()).slice(0, max)
-}
+// redditCandidates moved to forum.ts as forumCandidates, shared with Hacker News.
 
 /** "a+b+c", the multireddit path that searches several communities in one request. */
 export function multireddit(subreddits: readonly string[]): string {

@@ -52,6 +52,7 @@ describe("rejection", () => {
 
   it("does not need a rating for Reddit", () => {
     expect(rejection({ rating: null, quote, complaint: "pricing" }, { ...ctx, source: "reddit" })).toBeNull()
+    expect(rejection({ rating: null, quote, complaint: "pricing" }, { ...ctx, source: "hackernews" })).toBeNull()
   })
 
   it("rejects an invented quote and a complaint with no fix", () => {

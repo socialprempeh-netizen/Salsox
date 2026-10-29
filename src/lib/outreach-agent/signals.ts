@@ -4,7 +4,8 @@
  *
  *  - the quote must appear, word for word, in the page it came from, so a
  *    lead never carries a sentence the reviewer did not write;
- *  - a review must be rated 1 or 2 stars (Reddit posts have no rating);
+ *  - a review must be rated 1 or 2 stars (forum posts and comments, from
+ *    Reddit or Hacker News, have no rating);
  *  - the complaint must have a fix in the catalogue (fixes.ts).
  *
  * `sourceKey` names a complaint for good, so the same review found again next
@@ -13,7 +14,7 @@
 import { createHash } from "node:crypto"
 import type { Complaint, Fix } from "./fixes"
 import { fixFor } from "./fixes"
-import type { LeadSource } from "./sources"
+import { REVIEW_SOURCES, type LeadSource } from "./sources"
 
 /** Shortest quote kept: anything shorter is too thin to write an email around. */
 export const MIN_QUOTE = 25
@@ -51,7 +52,8 @@ export type CandidateSignal = { rating: number | null; quote: string; complaint:
 
 /** Why a candidate is not kept, or null when it is. */
 export function rejection(signal: CandidateSignal, { source, page, catalogue }: { source: LeadSource; page: string; catalogue: Fix[] }): "rating" | "quote" | "noFix" | null {
-  if (source !== "reddit" && !(signal.rating === 1 || signal.rating === 2)) return "rating"
+  // Was source !== "reddit": every source but the review sites is unrated, Hacker News included.
+  if ((REVIEW_SOURCES as readonly string[]).includes(source) && !(signal.rating === 1 || signal.rating === 2)) return "rating"
   if (signal.quote.length > MAX_QUOTE || !quoteAppearsIn(signal.quote, page)) return "quote"
   if (!fixFor(signal.complaint, catalogue)) return "noFix"
   return null
