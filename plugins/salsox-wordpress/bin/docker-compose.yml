@@ -1,0 +1,41 @@
+# A throwaway WordPress for checking the plugin locally: the official
+# Plugin Check (wp plugin check) and the Playwright mobile checks in
+# e2e/wordpress-plugin.spec.ts. The plugin folder is mounted read-only as
+# wp-content/plugins/salsox, the slug it ships under. Started and set up
+# by bin/check.sh; nothing here is part of the plugin zip.
+name: salsox-wp
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: local-only
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: local-only
+  wordpress:
+    image: wordpress:latest
+    depends_on: [db]
+    ports: ["8089:80"]
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: local-only
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp:/var/www/html
+      - ..:/var/www/html/wp-content/plugins/salsox:ro
+  cli:
+    image: wordpress:cli
+    depends_on: [wordpress]
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: local-only
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp:/var/www/html
+      - ..:/var/www/html/wp-content/plugins/salsox:ro
+    entrypoint: ["sleep", "infinity"]
+volumes:
+  wp:

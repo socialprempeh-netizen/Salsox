@@ -1,0 +1,330 @@
+/*
+ * The "Request a signature" form, as visitors see it. It lives inside other
+ * people's themes, so it takes the theme's typeface and text size and brings
+ * only Salsox's teal, square corners and its own spacing. Every rule is
+ * scoped under .salsox-sign so it neither leaks into the theme nor depends
+ * on it.
+ *
+ * The one distinctive element is the signing line: the button sits under a
+ * dashed rule, the way a paper form marks where to sign. Phone first:
+ * fields stack and the button fills the width; from 34rem of container
+ * width the fields sit side by side. Motion only answers the
+ * visitor (the confirmation appearing) and is off under reduced motion.
+ */
+.salsox-sign {
+	--salsox-teal: #0f766e;
+	--salsox-teal-deep: #0b5a54;
+	--salsox-wash: #edf6f4;
+	--salsox-ink: #1d2725;
+	--salsox-muted: #56625f;
+	--salsox-line: #cfdcd8;
+	--salsox-paper: #fff;
+	--salsox-bad: #b42318;
+	container-type: inline-size;
+	color: var(--salsox-ink);
+	margin-block: 1.5em;
+	max-width: 44rem;
+}
+
+.salsox-sign *,
+.salsox-sign *::before,
+.salsox-sign *::after {
+	box-sizing: border-box;
+	border-radius: 0;
+}
+
+.salsox-sign [hidden] {
+	display: none !important;
+}
+
+.salsox-sign__panel {
+	background: var(--salsox-paper);
+	border: 1px solid var(--salsox-line);
+	border-top: 4px solid var(--salsox-teal);
+	padding: 1.25rem 1rem 1rem;
+}
+
+.salsox-sign__heading {
+	margin: 0 0 0.35em;
+	font-size: 1.35em;
+	line-height: 1.2;
+	letter-spacing: -0.01em;
+	color: var(--salsox-ink);
+}
+
+.salsox-sign__intro {
+	margin: 0 0 1.1em;
+	color: var(--salsox-muted);
+	line-height: 1.5;
+	max-width: 36em;
+}
+
+.salsox-sign__form {
+	margin: 0;
+}
+
+.salsox-sign__fields {
+	display: grid;
+	gap: 0.9rem;
+}
+
+.salsox-sign__field {
+	margin: 0;
+	display: grid;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+.salsox-sign__field label {
+	font-size: 0.875em;
+	font-weight: 600;
+	color: var(--salsox-ink);
+}
+
+.salsox-sign__field input {
+	width: 100%;
+	min-height: 2.875rem;
+	margin: 0;
+	padding: 0.6rem 0.75rem;
+	font: inherit;
+	font-size: max(1rem, 16px); /* 16px or more stops phones zooming into the field. */
+	color: var(--salsox-ink);
+	background: var(--salsox-paper);
+	border: 1px solid var(--salsox-line);
+	border-bottom: 2px solid var(--salsox-ink);
+	box-shadow: none;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.salsox-sign__field input:hover {
+	border-color: var(--salsox-muted);
+}
+
+.salsox-sign__field input:focus {
+	outline: 2px solid var(--salsox-teal);
+	outline-offset: 1px;
+	border-bottom-color: var(--salsox-teal);
+	background: var(--salsox-wash);
+}
+
+.salsox-sign__field input[aria-invalid="true"] {
+	border-bottom-color: var(--salsox-bad);
+}
+
+/* Out of sight, and out of the way of assistive technology. */
+.salsox-sign__trap {
+	position: absolute !important;
+	left: -10000px !important;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.salsox-sign__line {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0.6rem;
+	margin-top: 1.25rem;
+	padding-top: 1rem;
+	border-top: 2px dashed var(--salsox-line);
+	position: relative;
+}
+
+.salsox-sign__button,
+.salsox-sign__again {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5em;
+	min-height: 2.875rem;
+	margin: 0;
+	padding: 0.7rem 1.4rem;
+	font: inherit;
+	font-weight: 600;
+	line-height: 1.2;
+	color: #fff;
+	background: var(--salsox-teal);
+	border: 1px solid var(--salsox-teal);
+	box-shadow: none;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.salsox-sign__button:hover,
+.salsox-sign__again:hover {
+	background: var(--salsox-teal-deep);
+	border-color: var(--salsox-teal-deep);
+	color: #fff;
+}
+
+.salsox-sign__button:active {
+	transform: translateY(1px);
+}
+
+.salsox-sign__button:focus-visible,
+.salsox-sign__again:focus-visible,
+.salsox-sign a:focus-visible {
+	outline: 2px solid var(--salsox-teal);
+	outline-offset: 3px;
+}
+
+.salsox-sign__button[aria-busy="true"] {
+	cursor: progress;
+	opacity: 0.8;
+}
+
+.salsox-sign__button[aria-busy="true"]::before {
+	content: "";
+	width: 0.9em;
+	height: 0.9em;
+	border: 2px solid rgba(255, 255, 255, 0.45);
+	border-top-color: #fff;
+	animation: salsox-spin 0.7s linear infinite;
+}
+
+.salsox-sign__again {
+	color: var(--salsox-teal);
+	background: transparent;
+	margin-top: 0.4rem;
+	padding-inline: 0;
+	border-color: transparent;
+	min-height: 2.75rem;
+}
+
+.salsox-sign__again:hover {
+	color: var(--salsox-teal-deep);
+	background: transparent;
+	border-color: transparent;
+	text-decoration: underline;
+}
+
+.salsox-sign__error {
+	margin: 0.75rem 0 0;
+	padding: 0.6rem 0.75rem;
+	color: var(--salsox-bad);
+	background: #fdf0ee;
+	border-left: 3px solid var(--salsox-bad);
+	font-size: 0.925em;
+	line-height: 1.45;
+}
+
+.salsox-sign__notice {
+	margin: 0 0 1rem;
+	padding: 0.6rem 0.75rem;
+	background: #fff7e6;
+	border-left: 3px solid #b7791f;
+	font-size: 0.925em;
+	line-height: 1.45;
+}
+
+.salsox-sign__notice--ok {
+	background: var(--salsox-wash);
+	border-left-color: var(--salsox-teal);
+}
+
+.salsox-sign__notice--bad {
+	background: #fdf0ee;
+	border-left-color: var(--salsox-bad);
+	color: var(--salsox-bad);
+}
+
+.salsox-sign__notice a,
+.salsox-sign__fine a {
+	color: var(--salsox-teal);
+	text-decoration: underline;
+}
+
+.salsox-sign__fine {
+	margin: 0.9rem 0 0;
+	font-size: 0.8em;
+	color: var(--salsox-muted);
+	line-height: 1.5;
+}
+
+.salsox-sign__done {
+	text-align: left;
+}
+
+.salsox-sign__done:focus {
+	outline: none;
+}
+
+.salsox-sign__check {
+	display: block;
+	width: 2.5rem;
+	height: 2.5rem;
+	margin-bottom: 0.9rem;
+	color: var(--salsox-teal);
+}
+
+.salsox-sign__done .salsox-sign__intro strong {
+	color: var(--salsox-ink);
+	overflow-wrap: anywhere;
+}
+
+/* The confirmation arrives: a short rise, and the check draws itself. */
+.salsox-sign__done.is-entering {
+	animation: salsox-rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.salsox-sign__done.is-entering .salsox-sign__check path {
+	stroke-dasharray: 40;
+	stroke-dashoffset: 40;
+	animation: salsox-draw 0.4s 0.15s ease-out forwards;
+}
+
+@keyframes salsox-rise {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes salsox-draw {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes salsox-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Wider containers: fields side by side, the button on the signing line. */
+@container (min-width: 34rem) {
+	.salsox-sign__panel {
+		padding: 1.75rem 1.75rem 1.5rem;
+	}
+
+	.salsox-sign__fields {
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+	}
+
+	.salsox-sign__line {
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+	.salsox-sign *,
+	.salsox-sign *::before,
+	.salsox-sign *::after {
+		animation: none !important;
+		transition: none !important;
+	}
+
+	.salsox-sign__done.is-entering .salsox-sign__check path {
+		stroke-dashoffset: 0;
+	}
+}

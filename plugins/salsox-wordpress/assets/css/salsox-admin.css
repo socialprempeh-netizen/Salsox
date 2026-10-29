@@ -1,0 +1,446 @@
+/*
+ * Settings > Salsox. Sits inside wp-admin, so it keeps the admin's typeface
+ * and sizes and adds Salsox's teal, square corners and a two-column layout
+ * that collapses to one on a phone (the admin is used from phones too).
+ * Scoped under .salsox-admin; the only motion is the source rows opening
+ * when a different document type is chosen, off under reduced motion.
+ */
+.salsox-admin {
+	--salsox-teal: #0f766e;
+	--salsox-teal-deep: #0b5a54;
+	--salsox-wash: #edf6f4;
+	--salsox-ink: #1d2725;
+	--salsox-muted: #56625f;
+	--salsox-line: #dcdcde;
+	--salsox-bad: #b42318;
+	max-width: 1100px;
+}
+
+.salsox-admin *,
+.salsox-admin *::before,
+.salsox-admin *::after {
+	box-sizing: border-box;
+}
+
+.salsox-admin [hidden] {
+	display: none !important;
+}
+
+/* Radio buttons stay round: squared, they read as checkboxes. */
+.salsox-admin input:not([type="radio"]),
+.salsox-admin select,
+.salsox-admin textarea,
+.salsox-admin .button,
+.salsox-admin .notice {
+	border-radius: 0;
+}
+
+.salsox-admin__head {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin: 16px 0 20px;
+}
+
+.salsox-admin__head img {
+	flex: none;
+	display: block;
+}
+
+.salsox-admin__head h1 {
+	margin: 0;
+	padding: 0;
+	font-size: 23px;
+	line-height: 1.2;
+}
+
+.salsox-admin__head p {
+	margin: 2px 0 0;
+	color: var(--salsox-muted);
+}
+
+.salsox-admin__flash {
+	margin: 0 0 16px;
+	padding: 10px 14px;
+	background: #fff;
+	border-left: 4px solid var(--salsox-teal);
+}
+
+.salsox-admin__flash p {
+	margin: 0;
+}
+
+.salsox-admin__flash--bad {
+	border-left-color: var(--salsox-bad);
+}
+
+.salsox-admin__flash--warn {
+	border-left-color: #b7791f;
+}
+
+.salsox-admin__grid {
+	display: grid;
+	gap: 16px;
+	align-items: start;
+}
+
+.salsox-admin__main,
+.salsox-admin__side {
+	display: grid;
+	gap: 16px;
+	min-width: 0;
+}
+
+.salsox-card {
+	background: #fff;
+	border: 1px solid var(--salsox-line);
+	padding: 16px;
+	min-width: 0;
+}
+
+.salsox-card h2 {
+	margin: 0 0 12px;
+	font-size: 15px;
+	line-height: 1.3;
+}
+
+.salsox-field {
+	display: grid;
+	gap: 6px;
+	margin: 14px 0 0;
+}
+
+.salsox-field label,
+.salsox-label {
+	font-weight: 600;
+	color: var(--salsox-ink);
+}
+
+.salsox-field input[type="password"],
+.salsox-field input[type="text"],
+.salsox-field input[type="number"],
+.salsox-field select,
+.salsox-field textarea {
+	width: 100%;
+	max-width: 100%;
+	min-height: 40px;
+}
+
+.salsox-optional {
+	font-weight: 400;
+	color: var(--salsox-muted);
+}
+
+.salsox-help {
+	display: block;
+	margin: 0;
+	color: var(--salsox-muted);
+	line-height: 1.5;
+}
+
+.salsox-help--bad {
+	color: var(--salsox-bad);
+}
+
+.salsox-check {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+	margin: 14px 0 0;
+}
+
+.salsox-check input {
+	margin-top: 2px;
+}
+
+.salsox-pair {
+	display: grid;
+	gap: 0 16px;
+}
+
+.salsox-sources {
+	display: grid;
+	gap: 8px;
+	margin: 14px 0 0;
+	padding: 0;
+	border: 0;
+}
+
+.salsox-source {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid var(--salsox-line);
+	cursor: pointer;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.salsox-source:hover {
+	border-color: var(--salsox-muted);
+}
+
+.salsox-source:has(input:checked) {
+	border-color: var(--salsox-teal);
+	background: var(--salsox-wash);
+	box-shadow: inset 3px 0 0 var(--salsox-teal);
+}
+
+.salsox-source input {
+	margin: 0;
+}
+
+[data-salsox-source].is-open {
+	animation: salsox-admin-open 0.2s ease-out;
+}
+
+@keyframes salsox-admin-open {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.salsox-pdf {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	padding: 10px 12px;
+	border: 1px dashed var(--salsox-line);
+}
+
+.salsox-pdf span {
+	flex: 1 1 12em;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.salsox-status {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin: 0 0 4px;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.salsox-status span {
+	flex: none;
+	width: 10px;
+	height: 10px;
+	margin-top: 5px;
+	background: #a7aaad;
+}
+
+.salsox-status--ok span {
+	background: var(--salsox-teal);
+}
+
+.salsox-status--warn span {
+	background: #b7791f;
+}
+
+.salsox-status--bad {
+	color: var(--salsox-bad);
+}
+
+.salsox-status--bad span {
+	background: var(--salsox-bad);
+}
+
+.salsox-admin .button.salsox-button,
+.salsox-admin .button-primary.salsox-button {
+	min-height: 40px;
+	padding: 0 18px;
+	background: var(--salsox-teal);
+	border-color: var(--salsox-teal);
+	color: #fff;
+	font-weight: 600;
+}
+
+.salsox-admin .button-primary.salsox-button:hover,
+.salsox-admin .button-primary.salsox-button:focus {
+	background: var(--salsox-teal-deep);
+	border-color: var(--salsox-teal-deep);
+	color: #fff;
+}
+
+.salsox-admin .button.salsox-button-secondary {
+	color: var(--salsox-teal);
+	border-color: var(--salsox-teal);
+	min-height: 36px;
+}
+
+.salsox-admin .button.salsox-button-quiet {
+	color: var(--salsox-bad);
+	border-color: var(--salsox-line);
+	min-height: 36px;
+}
+
+.salsox-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.salsox-actions form {
+	margin: 0;
+}
+
+.salsox-admin__save {
+	display: flex;
+	justify-content: flex-start;
+}
+
+.salsox-code {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 10px 0 14px;
+	padding: 10px 12px;
+	background: var(--salsox-wash);
+	border-left: 3px solid var(--salsox-teal);
+}
+
+.salsox-code code {
+	background: none;
+	padding: 0;
+	font-size: 14px;
+}
+
+.salsox-examples {
+	margin: 8px 0 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 6px;
+}
+
+.salsox-examples code {
+	display: block;
+	padding: 6px 8px;
+	overflow-wrap: anywhere;
+	white-space: normal;
+}
+
+.salsox-requests {
+	margin-top: 16px;
+}
+
+.salsox-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.salsox-table th {
+	display: none;
+	text-align: left;
+	font-weight: 600;
+	color: var(--salsox-muted);
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--salsox-line);
+}
+
+.salsox-table tr {
+	display: block;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--salsox-line);
+}
+
+.salsox-table td {
+	display: grid;
+	grid-template-columns: 7.5em 1fr;
+	gap: 8px;
+	padding: 3px 0;
+	overflow-wrap: anywhere;
+}
+
+.salsox-table td::before {
+	content: attr(data-label);
+	font-weight: 600;
+	color: var(--salsox-muted);
+}
+
+.salsox-muted {
+	color: var(--salsox-muted);
+}
+
+.salsox-pill {
+	display: inline-block;
+	justify-self: start;
+	padding: 2px 8px;
+	font-size: 12px;
+	font-weight: 600;
+	background: #f0f0f1;
+	color: var(--salsox-ink);
+}
+
+.salsox-pill--completed {
+	background: var(--salsox-teal);
+	color: #fff;
+}
+
+.salsox-pill--pending {
+	background: var(--salsox-wash);
+	color: var(--salsox-teal-deep);
+}
+
+.salsox-pill--rejected,
+.salsox-pill--expired,
+.salsox-pill--cancelled {
+	background: #fdf0ee;
+	color: var(--salsox-bad);
+}
+
+@media (min-width: 600px) {
+	.salsox-pair {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.salsox-card {
+		padding: 20px 22px;
+	}
+}
+
+@media (min-width: 783px) {
+	.salsox-table th {
+		display: table-cell;
+	}
+
+	.salsox-table tr {
+		display: table-row;
+		padding: 0;
+	}
+
+	.salsox-table td {
+		display: table-cell;
+		padding: 10px;
+		border-bottom: 1px solid var(--salsox-line);
+		vertical-align: top;
+	}
+
+	.salsox-table td::before {
+		content: none;
+	}
+}
+
+@media (min-width: 1100px) {
+	.salsox-admin__grid {
+		grid-template-columns: minmax(0, 1fr) 340px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.salsox-admin *,
+	.salsox-admin *::before,
+	.salsox-admin *::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}

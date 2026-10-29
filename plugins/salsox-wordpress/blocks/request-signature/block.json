@@ -1,0 +1,31 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "salsox/request-signature",
+	"title": "Request a signature",
+	"category": "widgets",
+	"description": "A form where visitors enter their name and email and receive your document to sign with Salsox.",
+	"keywords": [ "salsox", "signature", "esign", "sign", "contract" ],
+	"textdomain": "salsox",
+	"version": "1.0.0",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"spacing": { "margin": true }
+	},
+	"attributes": {
+		"source": { "type": "string", "default": "default" },
+		"template": { "type": "string", "default": "" },
+		"savedTemplate": { "type": "string", "default": "" },
+		"pdfId": { "type": "number", "default": 0 },
+		"pdfName": { "type": "string", "default": "" },
+		"documentTitle": { "type": "string", "default": "" },
+		"message": { "type": "string", "default": "" },
+		"values": { "type": "string", "default": "" },
+		"heading": { "type": "string", "default": "" },
+		"description": { "type": "string", "default": "" },
+		"buttonLabel": { "type": "string", "default": "" }
+	},
+	"editorScript": "salsox-block-editor",
+	"style": "salsox-form"
+}
