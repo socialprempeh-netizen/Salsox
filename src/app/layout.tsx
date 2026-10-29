@@ -8,6 +8,7 @@ import { Fraunces, Geist_Mono, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { siteConfig } from "@/config/site"
+import { siteVerification } from "@/lib/seo/verification"
 import { brandOverrideCss, landingPaletteCss } from "@/config/brand"
 import { getLocale } from "next-intl/server"
 import { routing } from "@/i18n/routing"
@@ -57,10 +58,13 @@ export const metadata: Metadata = {
   // Ownership proofs for Google Search Console and Bing Webmaster Tools, as
   // meta tags, when the tokens are set (docs/seo.md). Either can also be
   // verified by DNS instead, which needs nothing here.
-  verification: {
-    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
-    ...(process.env.BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } } : {}),
-  },
+  // Was the raw variables; siteVerification also accepts the whole pasted
+  // meta tag, which used to render as a broken tag.
+  // verification: {
+  //   ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+  //   ...(process.env.BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } } : {}),
+  // },
+  verification: siteVerification(),
 }
 
 // Applies the stored/system theme before first paint — inline and blocking
