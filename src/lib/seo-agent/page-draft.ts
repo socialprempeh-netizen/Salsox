@@ -15,7 +15,8 @@
 import { z } from "zod"
 import { fillSite, frontmatterSchema, pagePath, validatePages, type PageKind, type SitePage } from "@/lib/seo/pages"
 import { fieldTokens, templatePath, templateSchema, validateTemplates, type Template } from "@/lib/templates"
-import type { ComplianceCandidate, CompetitorCandidate, PageCandidate, PageCandidateKind, Source, TemplateCandidate } from "./page-queue"
+import { STAT_IDS } from "@/lib/seo/stats"
+import type { ComplianceCandidate, CompetitorCandidate, PageCandidate, PageCandidateKind, Source, TemplateCandidate, UseCaseCandidate } from "./page-queue"
 
 // ─── What Claude returns ─────────────────────────────────────────────────────
 
@@ -57,17 +58,26 @@ export const pageDraftSchema = z.object({
 })
 export type PageDraft = z.infer<typeof pageDraftSchema>
 
-export type AnyDraft = TemplateDraft | PageDraft
+/**
+ * An industry, role or market page (page-matrix.ts): a registry page plus
+ * its use-case blocks, one per document the audience signs. The stats bar
+ * is not the model's: the page carries every stat id (src/lib/seo/stats.ts).
+ */
+export const useCaseDraftSchema = pageDraftSchema.extend({ useCases: z.array(titled) })
+export type UseCaseDraft = z.infer<typeof useCaseDraftSchema>
+
+export type AnyDraft = TemplateDraft | PageDraft | UseCaseDraft
 
 // ─── Kinds ───────────────────────────────────────────────────────────────────
 
-export type StoredKind = "TEMPLATE" | "COMPARISON" | "ALTERNATIVE" | "COMPLIANCE"
+// USE_CASE was added for the page matrix's industry, role and market pages.
+export type StoredKind = "TEMPLATE" | "COMPARISON" | "ALTERNATIVE" | "COMPLIANCE" | "USE_CASE"
 
-export const STORED_KIND: Record<PageCandidateKind, StoredKind> = { template: "TEMPLATE", comparison: "COMPARISON", alternative: "ALTERNATIVE", compliance: "COMPLIANCE" }
-export const CANDIDATE_KIND: Record<StoredKind, PageCandidateKind> = { TEMPLATE: "template", COMPARISON: "comparison", ALTERNATIVE: "alternative", COMPLIANCE: "compliance" }
+export const STORED_KIND: Record<PageCandidateKind, StoredKind> = { template: "TEMPLATE", comparison: "COMPARISON", alternative: "ALTERNATIVE", compliance: "COMPLIANCE", "use-case": "USE_CASE" }
+export const CANDIDATE_KIND: Record<StoredKind, PageCandidateKind> = { TEMPLATE: "template", COMPARISON: "comparison", ALTERNATIVE: "alternative", COMPLIANCE: "compliance", USE_CASE: "use-case" }
 
 /** The registry kind a stored page renders as; templates are not registry pages. */
-export const REGISTRY_KIND: Record<Exclude<StoredKind, "TEMPLATE">, PageKind> = { COMPARISON: "comparison", ALTERNATIVE: "alternative", COMPLIANCE: "compliance" }
+export const REGISTRY_KIND: Record<Exclude<StoredKind, "TEMPLATE">, PageKind> = { COMPARISON: "comparison", ALTERNATIVE: "alternative", COMPLIANCE: "compliance", USE_CASE: "use-case" }
 
 export function storedPath(kind: StoredKind, slug: string): string {
   return kind === "TEMPLATE" ? templatePath(slug) : pagePath(REGISTRY_KIND[kind], slug)
@@ -102,7 +112,10 @@ export function templateData(c: TemplateCandidate, d: TemplateDraft, today: stri
   }
 }
 
-export function registryData(c: CompetitorCandidate | ComplianceCandidate, d: PageDraft, { today, sources }: { today: string; sources: Source[] }): StoredPage {
+export function registryData(c: CompetitorCandidate | ComplianceCandidate | UseCaseCandidate, d: PageDraft | UseCaseDraft, { today, sources }: { today: string; sources: Source[] }): StoredPage {
+  // A market page cites its country's law the way a law page does; an
+  // industry or role page has no outside facts to date.
+  const checked = c.kind === "compliance" ? c.verified : c.kind === "use-case" ? c.market?.law.verified : today
   return {
     title: d.title.trim(),
     body: d.body.trim(),
@@ -116,11 +129,16 @@ export function registryData(c: CompetitorCandidate | ComplianceCandidate, d: Pa
       published: today,
       updated: today,
       breadcrumb: d.breadcrumb.trim(),
-      ...(c.kind === "compliance" ? {} : { competitor: c.competitor }),
+      ...(c.kind === "comparison" || c.kind === "alternative" ? { competitor: c.competitor } : {}),
+      ...(c.kind !== "compliance" && c.kind !== "use-case" && c.rival ? { rivals: [{ name: c.rival.name, url: c.rival.url }] } : {}),
       // A comparison's facts were fetched today; a law page's were verified on the day the facts were read.
-      checked: c.kind === "compliance" ? c.verified : today,
+      // Was: checked: c.kind === "compliance" ? c.verified : today,
+      ...(checked ? { checked } : {}),
       sources,
       benefits: d.benefits.map((b) => ({ title: b.title.trim(), body: b.body.trim() })),
+      ...(c.kind === "use-case" && "useCases" in d
+        ? { stats: [...STAT_IDS], useCases: d.useCases.map((u) => ({ title: u.title.trim(), body: u.body.trim() })), ...(c.templates ? { templates: { industry: c.templates } } : {}) }
+        : {}),
       faq: d.faq.map((f) => ({ q: f.q.trim(), a: f.a.trim() })),
       related: [...new Set(d.related)],
     },
@@ -232,7 +250,10 @@ export function unknownStatutes(markdown: string, statutes: string[]): string[] 
  * at least five provisions so it is a page about the law and not about the
  * topic. It must also say it is not legal advice. Returns the problems.
  */
-export function citationProblems(markdown: string, c: ComplianceCandidate): string[] {
+// `minProvisions` was added for market pages (an industry in one country),
+// which cite the law where it bears on the industry's documents rather than
+// walking through the statute; law pages keep the default of five.
+export function citationProblems(markdown: string, c: ComplianceCandidate, minProvisions = 5): string[] {
   const problems: string[] = []
   // Was: Ghana's statutes by number ("Act 772"); law pages now name their
   // statutes, and cite sections, articles and paragraphs (§) as each country does.
@@ -243,7 +264,7 @@ export function citationProblems(markdown: string, c: ComplianceCandidate): stri
   const unknownRefs = [...new Set(cited.filter((r) => !allowed.has(r)))]
   if (unknownRefs.length) problems.push(`cites provisions that are not in its verified facts: ${unknownRefs.join(", ")}`)
   const distinct = new Set(cited).size
-  if (distinct < 5) problems.push(`cites ${distinct} provisions of the law, needs at least 5`)
+  if (distinct < minProvisions) problems.push(`cites ${distinct} provisions of the law, needs at least ${minProvisions}`)
   if (!/not legal advice/i.test(markdown)) problems.push("does not say it is general information, not legal advice")
   return problems
 }
@@ -255,6 +276,7 @@ export function introOf(draft: { lede: string; about?: string; body?: string }):
 }
 
 /** The candidate's family, for picking which pages are its siblings. */
-export function familyOf(c: PageCandidate): "template" | "compare" | "law" {
-  return c.kind === "template" ? "template" : c.kind === "compliance" ? "law" : "compare"
+// "industry" was added for the page matrix's use-case pages.
+export function familyOf(c: PageCandidate): "template" | "compare" | "law" | "industry" {
+  return c.kind === "template" ? "template" : c.kind === "compliance" ? "law" : c.kind === "use-case" ? "industry" : "compare"
 }

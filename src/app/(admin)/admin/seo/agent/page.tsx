@@ -27,7 +27,9 @@ import { searchConsoleSite } from "@/lib/seo-agent/site"
 import { countArticles, countWrittenPages, getSettings, lastFinishedRun, listOrphans, pageStates, recentPages, recentRuns, recentTargets } from "@/lib/seo-agent/store"
 import { missingPageSettings } from "@/lib/seo-agent/page-agent"
 import { CANDIDATE_KIND, storedPath } from "@/lib/seo-agent/page-draft"
-import { ALL_CANDIDATES, MAX_PAGE_ATTEMPTS } from "@/lib/seo-agent/page-queue"
+// Was ALL_CANDIDATES: the queue now includes the page matrix.
+import { MAX_PAGE_ATTEMPTS } from "@/lib/seo-agent/page-queue"
+import { PAGE_QUEUE } from "@/lib/seo-agent/page-matrix"
 import { DUPLICATE_THRESHOLD, type QualityReport } from "@/lib/seo-agent/quality"
 import { fillSite } from "@/lib/seo/pages"
 // The property line is part of the StatusBanner now.
@@ -56,7 +58,7 @@ async function load() {
     ])
     // Candidates with nothing saved yet, or a failure with a retry left.
     const saved = new Map(states.map((s) => [`${CANDIDATE_KIND[s.kind]}:${s.slug}`, s]))
-    const queueLeft = ALL_CANDIDATES.filter((c) => {
+    const queueLeft = PAGE_QUEUE.filter((c) => {
       const s = saved.get(`${c.kind}:${c.slug}`)
       return !s || (s.status === "FAILED" && s.attempts < MAX_PAGE_ATTEMPTS)
     }).length

@@ -948,11 +948,14 @@ model SeoAgentSettings {
 // comparison and alternative pages, and e-signature law pages. `data` is the
 // page's full frontmatter, re-validated with the same schema as the file
 // pages whenever it is read; `report` is what each quality gate found.
+// USE_CASE was added for the industry, role and industry-in-a-country pages
+// under /esignature-for that the page matrix (page-matrix.ts) generates.
 enum SeoAgentPageKind {
   TEMPLATE
   COMPARISON
   ALTERNATIVE
   COMPLIANCE
+  USE_CASE
 }
 
 // FLAGGED: too close to an existing page. Never published automatically; if

@@ -35,6 +35,7 @@ import matter from "gray-matter"
 import { z } from "zod"
 import { siteConfig } from "@/config/site"
 import { routing } from "@/i18n/routing"
+import { STAT_IDS } from "./stats"
 
 // "compliance" was added for the e-signature law pages (one per country,
 // under /esignature-law), which the SEO agent writes from verified statutes.
@@ -104,10 +105,17 @@ export const frontmatterSchema = z
     breadcrumb: z.string().min(2).max(40),
     tool: z.enum(TOOL_IDS).optional(),
     competitor: z.object({ name: z.string(), url: z.url() }).optional(),
+    // A three-way comparison ("{site} vs A vs B") names B here; `competitor`
+    // stays A, so everything that reads one competitor keeps working.
+    rivals: z.array(z.object({ name: z.string(), url: z.url() })).max(1).default([]),
     checked: isoDate.optional(),
     sources: z.array(z.object({ label: z.string(), url: z.url() })).default([]),
     howItWorks: z.array(titled).default([]),
     benefits: z.array(titled).default([]),
+    // An industry page's stats bar (ids from src/lib/seo/stats.ts, never
+    // numbers) and its use-case blocks: the documents that industry signs.
+    stats: z.array(z.enum(STAT_IDS)).default([]),
+    useCases: z.array(titled).default([]),
     faq: z.array(z.object({ q: z.string().min(10), a: z.string().min(30) })).default([]),
     related: z.array(z.string().startsWith("/")).default([]),
     // An industry or team page lists that industry's or team's templates

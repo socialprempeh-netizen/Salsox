@@ -11,7 +11,8 @@
  * paths it may link to, so it joins the site's hubs instead of floating.
  */
 import type { SitePath } from "./prompt"
-import { OWN_PLAN_FACTS, type ComplianceCandidate, type CompetitorCandidate, type TemplateCandidate } from "./page-queue"
+import { OWN_PLAN_FACTS, type ComplianceCandidate, type CompetitorCandidate, type TemplateCandidate, type UseCaseCandidate } from "./page-queue"
+import { DIFFERENTIATOR_ROWS } from "./page-matrix"
 import type { FetchedSource } from "./source-fetch"
 
 const TRUTH = `Truthfulness:
@@ -100,10 +101,16 @@ function feedbackBlock(feedback?: string[]) {
 
 export function comparisonUserPrompt(input: { candidate: CompetitorCandidate; productSummary: string; sources: FetchedSource[]; paths: SitePath[]; siblingIntros: string[]; reference: { title: string; markdown: string } | null; today: string; feedback?: string[] }): string {
   const c = input.candidate
+  // Was the first two cases only; the page matrix (page-matrix.ts) added
+  // three-way comparisons and comparisons read through one industry.
   const what =
-    c.kind === "comparison"
-      ? `Write the comparison page "{site} vs ${c.competitor.name}".`
-      : `Write the page "${c.competitor.name} alternatives": the realistic alternatives, sorted by why someone leaves ${c.competitor.name}, with {site} as one option among them, not the only one.`
+    c.kind === "alternative"
+      ? `Write the page "${c.competitor.name} alternatives": the realistic alternatives, sorted by why someone leaves ${c.competitor.name}, with {site} as one option among them, not the only one.`
+      : c.rival
+        ? `Write the three-way comparison page "{site} vs ${c.competitor.name} vs ${c.rival.name}". The reader is choosing between ${c.competitor.name} and ${c.rival.name}; compare those two fairly with each other first, then show where {site} fits. The At a glance table has three product columns ({site}, ${c.competitor.name}, ${c.rival.name}). Facts about each company come only from that company's own sources.${matrixRules(c)}`
+        : c.industry
+          ? `Write the comparison page "{site} vs ${c.competitor.name} for ${c.industry.name}", read through the documents ${c.industry.name} sign: ${c.industry.documents.join("; ")}. Every section ties a difference to one of those documents. Link to ${c.industry.path} in the body and list it under related.${matrixRules(c)}`
+          : `Write the comparison page "{site} vs ${c.competitor.name}".`
   return `<product_facts>
 ${input.productSummary.trim()}
 </product_facts>
@@ -123,6 +130,15 @@ ${input.siblingIntros.map((i) => `- ${i}`).join("\n")}
 </neighbouring_intros>
 ${input.reference ? `\n<style_reference title="${input.reference.title.replace(/"/g, "'")}">\n${input.reference.markdown.trim()}\n</style_reference>\n` : ""}
 ${what} The sources were fetched on ${input.today}; say so where you give prices. The angle: ${c.angle}${feedbackBlock(input.feedback)}`
+}
+
+/** What every matrix comparison must carry: the rows that matter for this product, and the three FAQs readers ask before switching. */
+function matrixRules(c: CompetitorCandidate): string {
+  const names = [c.competitor.name, ...(c.rival ? [c.rival.name] : [])].join(" and ")
+  return `
+
+The At a glance table must include these rows, in this order, plus any others that matter: ${DIFFERENTIATOR_ROWS.join("; ")}. Where a source does not state a row, the cell says "Not listed on their pricing page".
+The FAQ must include: whether signatures made with {site} are legally enforceable (answered generally, naming the US ESIGN Act and the EU's eIDAS Regulation, without claiming advanced or qualified signatures); what {site}'s free plan allows and its limits; and how to move from ${names} to {site} (finished documents stay where they are; upload any PDF to send).`
 }
 
 export function complianceSystemPrompt(): string {
@@ -172,4 +188,61 @@ ${input.siblingIntros.map((i) => `- ${i}`).join("\n")}
 </neighbouring_intros>
 
 Write the e-signature law page for ${c.country}. The angle: ${c.angle}${feedbackBlock(input.feedback)}`
+}
+
+// ─── Industry, role and market pages (page-matrix.ts) ───────────────────────
+
+export function industrySystemPrompt(): string {
+  return `You write industry pages for {site}, an e-signature service: one audience per page (an industry, a role within one, or an industry in one country), about the documents they actually sign and how signing them electronically changes the work. The page follows the pattern of the best industry pages in this market: a short answer, benefit blocks, then one block per real job the audience signs documents for, then a call to sign up.
+
+Structure of the body (Markdown, no H1, no FAQ section):
+- Open with one paragraph on what is particular about this audience's paperwork: who signs, in what order, under what time pressure, with what money attached.
+- "## " sections: how the documents move (who sends, who signs, in what order); what goes wrong with them today and what fixes it, as a bulleted list tied to product facts; where the law or the industry asks for more than an electronic signature (ink, witnesses, a notary, a regulator's own form), said plainly; a setup that suits this audience, naming the plan from the plan facts.
+- 550 to 950 words. Specific to this audience: a sentence that would be true of any industry does not belong.
+
+The page:
+- title 25 to 60 characters; description 70 to 160; h1 5 to 90; breadcrumb 2 to 40 (the audience, short).
+- lede: 40 to 320 characters. See the intro rule below.
+- aliases: 2 to 6 other phrasings people search for this same page, lower case.
+- benefits: exactly three blocks, each a benefit for this audience tied to a product fact.
+- useCases: one block per document you are given (title: the document; body: two to three sentences on how it is signed with {site}: who signs, signing order, payment at signing where it fits, what the record shows).
+- faq: 3 to 5 questions this audience asks, with two-to-four-sentence answers from the facts.
+- related: 3 to 5 paths from the list you are given; when a parent page is named, it must be one of them.
+- Links in the body point only to paths from that list, as root-relative Markdown links.
+
+${INTRO}
+
+${TRUTH}`
+}
+
+export function industryUserPrompt(input: { candidate: UseCaseCandidate; productSummary: string; paths: SitePath[]; siblingIntros: string[]; reference: { title: string; markdown: string } | null; feedback?: string[] }): string {
+  const c = input.candidate
+  const law = c.market?.law
+  const facts = law ? law.facts.map((f) => `<fact id="${f.id}" cite="${f.cite}">${f.text}</fact>`).join("\n") : ""
+  const marketRules = law
+    ? `
+
+This page is about ${c.audience} in ${c.market!.label}. Its "where the law asks for more" section states ${law.country}'s law, citing only the verified facts above in the form each gives its citation (at least two provisions), naming no other statute, and says in italics near the top that the page is general information, not legal advice, checked on ${law.verified}.`
+    : ""
+  return `<product_facts>
+${input.productSummary.trim()}
+</product_facts>
+
+<plan_facts>
+${OWN_PLAN_FACTS.map((f) => `- ${f}`).join("\n")}
+</plan_facts>
+${law ? `\n<verified_facts country="${law.country}" checked="${law.verified}">\n${facts}\n</verified_facts>\n` : ""}
+<documents>
+${c.documents.map((d) => `- ${d}`).join("\n")}
+</documents>
+
+<site_paths>
+${pathList(input.paths)}
+</site_paths>
+
+<neighbouring_intros>
+${input.siblingIntros.map((i) => `- ${i}`).join("\n")}
+</neighbouring_intros>
+${input.reference ? `\n<style_reference title="${input.reference.title.replace(/"/g, "'")}">\n${input.reference.markdown.trim()}\n</style_reference>\n` : ""}
+Write the page "e-signatures for ${c.audience}${c.market ? ` in ${c.market.label}` : ""}".${c.parent ? ` Its parent page is ${c.parent}: link to it, and say what is particular to ${c.audience} rather than repeating it.` : ""} The angle: ${c.angle}${marketRules}${feedbackBlock(input.feedback)}`
 }

@@ -30,7 +30,7 @@ import { Chip, Empty, type Tone } from "@/components/admin/admin-ui"
 import { useAction } from "@/components/admin/seo-agent-console"
 import { cn } from "@/lib/utils"
 
-export type PageKind = "TEMPLATE" | "COMPARISON" | "ALTERNATIVE" | "COMPLIANCE"
+export type PageKind = "TEMPLATE" | "COMPARISON" | "ALTERNATIVE" | "COMPLIANCE" | "USE_CASE"
 export type PageStatus = "DRAFT" | "FLAGGED" | "PUBLISHED" | "DISCARDED" | "FAILED"
 export type GateRow = { id: "required" | "intro" | "duplicate" | "links" | "facts"; ok: boolean; detail: string }
 

@@ -20,7 +20,10 @@
  */
 import type { TemplateCategory, TemplateIndustry, TemplateTeam, TemplateType } from "@/lib/templates-taxonomy"
 
-export type PageCandidateKind = "template" | "comparison" | "alternative" | "compliance"
+// "use-case" was added for the page matrix (page-matrix.ts): industry, role
+// and industry-in-a-market pages under /esignature-for.
+// Was: "template" | "comparison" | "alternative" | "compliance"
+export type PageCandidateKind = "template" | "comparison" | "alternative" | "compliance" | "use-case"
 
 /**
  * A page facts come from. `format` says how to read it when it is not an
@@ -53,6 +56,29 @@ export type CompetitorCandidate = {
   /** Published pages the facts must come from. Fetched on the day; a page whose sources cannot be read is not written. */
   sources: Source[]
   angle: string
+  /** A three-way comparison's second product ("{site} vs A vs B"), with its own sources; each side needs one readable. */
+  rival?: { name: string; url: string; sources: Source[] }
+  /** A comparison read through one industry: its documents, and its page, which must exist first. */
+  industry?: { name: string; documents: string[]; path: string }
+}
+
+/**
+ * An industry, role or industry-in-a-market page (page-matrix.ts). The
+ * documents are what the page is written from; a role or market page sits
+ * under its industry's page (`parent`), which must exist before it is
+ * written, and a market page may state only its country's verified law.
+ */
+export type UseCaseCandidate = {
+  kind: "use-case"
+  slug: string
+  keyword: string
+  /** Who the page is for, as it reads after "e-signatures for". */
+  audience: string
+  documents: string[]
+  parent?: string
+  market?: { label: string; law: ComplianceCandidate }
+  templates?: TemplateIndustry
+  angle: string
 }
 
 /**
@@ -83,7 +109,7 @@ export type ComplianceCandidate = {
   angle: string
 }
 
-export type PageCandidate = TemplateCandidate | CompetitorCandidate | ComplianceCandidate
+export type PageCandidate = TemplateCandidate | CompetitorCandidate | ComplianceCandidate | UseCaseCandidate
 
 /** The product's own plans, as the existing comparison pages state them. Change them together. */
 export const OWN_PLAN_FACTS = [
@@ -489,6 +515,8 @@ export function candidatePath(c: PageCandidate): string {
       return `/alternatives/${c.slug}`
     case "compliance":
       return `/esignature-law/${c.slug}`
+    case "use-case":
+      return `/esignature-for/${c.slug}`
   }
 }
 
@@ -499,9 +527,11 @@ export function candidateSubject(c: PageCandidate): string[] {
       return [c.keyword.replace(/\s+template$/i, ""), ...c.slug.split("-").filter((w) => w.length > 3)]
     case "comparison":
     case "alternative":
-      return [c.competitor.name, c.slug.replace(/-/g, " ")]
+      return [c.competitor.name, ...(c.rival ? [c.rival.name] : []), ...(c.industry ? [c.industry.name] : []), c.slug.replace(/-/g, " ")]
     case "compliance":
       return [c.country]
+    case "use-case":
+      return [c.audience, ...(c.market ? [c.market.label, c.market.law.country] : []), c.slug.replace(/-/g, " ")]
   }
 }
 
@@ -511,27 +541,112 @@ export type CandidateState = { kind: PageCandidateKind; slug: string; status: st
 export const MAX_PAGE_ATTEMPTS = 2
 
 /**
- * The next candidate to write, or null: the first law page not yet written
- * (there are few, and each is worth more than another template), then
- * whichever of templates and competitor pages has fewer written so far, so
- * the two grow together. A candidate is available when nothing has been
- * saved for it, or it failed with a retry left, and the site does not
- * already cover it (`covered`, by slug or keyword).
+ * Which family a candidate grows. The curated queue has templates and
+ * competitor pages; the page matrix (page-matrix.ts) adds industry, role,
+ * market, three-way and industry-comparison pages, each its own family so
+ * a day's pages are spread across them instead of exhausting one first.
  */
-export function pickCandidate(candidates: PageCandidate[], state: CandidateState[], covered: (c: PageCandidate) => boolean): PageCandidate | null {
+export type CandidateFamily = "template" | "compare" | "industry" | "role" | "three-way" | "market" | "industry-comparison"
+
+/** Tie-break order when families have written the same number of pages. */
+export const FAMILY_ORDER: CandidateFamily[] = ["template", "compare", "industry", "role", "three-way", "market", "industry-comparison"]
+
+export function candidateFamily(c: PageCandidate): CandidateFamily | null {
+  switch (c.kind) {
+    case "template":
+      return "template"
+    case "compliance":
+      return null
+    case "use-case":
+      return c.market ? "market" : c.parent ? "role" : "industry"
+    default:
+      return c.rival ? "three-way" : c.industry ? "industry-comparison" : "compare"
+  }
+}
+
+/** The page a candidate sits under and links up to, which must exist before it is written. */
+export function candidateParent(c: PageCandidate): string | null {
+  if (c.kind === "use-case") return c.parent ?? null
+  if (c.kind === "comparison" || c.kind === "alternative") return c.industry?.path ?? null
+  return null
+}
+
+// Was: the first law page, then whichever of templates and competitor pages
+// had fewer written. The page matrix added five families; the same rule now
+// balances all of them, and a page whose parent does not exist yet waits.
+// export function pickCandidate(candidates: PageCandidate[], state: CandidateState[], covered: (c: PageCandidate) => boolean): PageCandidate | null {
+//   const key = (kind: string, slug: string) => `${kind}:${slug}`
+//   const byKey = new Map(state.map((s) => [key(s.kind, s.slug), s]))
+//   const available = candidates.filter((c) => {
+//     const s = byKey.get(key(c.kind, c.slug))
+//     if (s && !(s.status === "FAILED" && s.attempts < MAX_PAGE_ATTEMPTS)) return false
+//     return !covered(c)
+//   })
+//   const law = available.find((c) => c.kind === "compliance")
+//   if (law) return law
+//   const written = (kinds: PageCandidateKind[]) => state.filter((s) => kinds.includes(s.kind) && s.status !== "FAILED").length
+//   const templates = available.filter((c) => c.kind === "template")
+//   const competitors = available.filter((c) => c.kind === "comparison" || c.kind === "alternative")
+//   if (templates.length === 0) return competitors[0] ?? null
+//   if (competitors.length === 0) return templates[0]
+//   return written(["template"]) <= written(["comparison", "alternative"]) ? templates[0] : competitors[0]
+// }
+
+/**
+ * The next candidate to write, or null: the first law page not yet written
+ * (there are few, and each is worth more than another page), then the first
+ * available candidate of whichever family has the fewest pages written so
+ * far (ties in FAMILY_ORDER), so every family grows together. A candidate is
+ * available when nothing has been saved for it, or it failed with a retry
+ * left; the site does not already cover it (`covered`, by path or keyword);
+ * and its parent page, if it has one, exists (`exists`).
+ */
+export function pickCandidate(candidates: PageCandidate[], state: CandidateState[], covered: (c: PageCandidate) => boolean, exists: (path: string) => boolean = () => true): PageCandidate | null {
   const key = (kind: string, slug: string) => `${kind}:${slug}`
   const byKey = new Map(state.map((s) => [key(s.kind, s.slug), s]))
   const available = candidates.filter((c) => {
     const s = byKey.get(key(c.kind, c.slug))
     if (s && !(s.status === "FAILED" && s.attempts < MAX_PAGE_ATTEMPTS)) return false
+    const parent = candidateParent(c)
+    if (parent && !exists(parent)) return false
     return !covered(c)
   })
   const law = available.find((c) => c.kind === "compliance")
   if (law) return law
-  const written = (kinds: PageCandidateKind[]) => state.filter((s) => kinds.includes(s.kind) && s.status !== "FAILED").length
-  const templates = available.filter((c) => c.kind === "template")
-  const competitors = available.filter((c) => c.kind === "comparison" || c.kind === "alternative")
-  if (templates.length === 0) return competitors[0] ?? null
-  if (competitors.length === 0) return templates[0]
-  return written(["template"]) <= written(["comparison", "alternative"]) ? templates[0] : competitors[0]
+  const familyOf = new Map(candidates.map((c) => [key(c.kind, c.slug), candidateFamily(c)]))
+  const written = new Map<CandidateFamily, number>()
+  for (const s of state) {
+    // A page no longer in the queue still counts, by its kind.
+    const family = familyOf.has(key(s.kind, s.slug)) ? familyOf.get(key(s.kind, s.slug)) : ({ template: "template", comparison: "compare", alternative: "compare", "use-case": "industry", compliance: null } as const)[s.kind]
+    if (family && s.status !== "FAILED") written.set(family, (written.get(family) ?? 0) + 1)
+  }
+  let best: PageCandidate | null = null
+  let bestCount = Infinity
+  for (const family of FAMILY_ORDER) {
+    const first = available.find((c) => candidateFamily(c) === family)
+    const count = written.get(family) ?? 0
+    if (first && count < bestCount) {
+      best = first
+      bestCount = count
+    }
+  }
+  return best
+}
+
+/**
+ * The next `count` candidates, picked one at a time as if each earlier pick
+ * were already written, so a batch spreads across families the way a run of
+ * single-page days would. Pure.
+ */
+export function pickBatch(candidates: PageCandidate[], states: CandidateState[], covered: (c: PageCandidate) => boolean, exists: (path: string) => boolean, count: number): PageCandidate[] {
+  const picked: PageCandidate[] = []
+  const taken = new Set<string>()
+  for (let i = 0; i < count; i++) {
+    const pending = picked.map((p) => ({ kind: p.kind, slug: p.slug, status: "DRAFT", attempts: 1 }))
+    const next = pickCandidate(candidates, [...states, ...pending], (c) => taken.has(candidatePath(c)) || covered(c), exists)
+    if (!next) break
+    picked.push(next)
+    taken.add(candidatePath(next))
+  }
+  return picked
 }

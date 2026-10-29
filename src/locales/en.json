@@ -1590,14 +1590,15 @@
       "runsCount": "{count, plural, one {# run} other {# runs}}",
       "orphansOpen": "{count} open",
       "pagesTitle": "Pages",
-      "pagesHint": "One page per run, newest first: templates, comparisons and e-signature law pages. Drafts and flagged pages are not on the site until you publish them.",
+      "pagesHint": "A few pages per run, newest first: templates, comparisons, industry pages and e-signature law pages. Drafts and flagged pages are not on the site until you publish them.",
       "pagesCount": "{count, plural, one {# page} other {# pages}}",
       "noPages": "No pages yet. The first one is written on the next daily run, or press Run now.",
       "pageKind": {
         "TEMPLATE": "Template",
         "COMPARISON": "Comparison",
         "ALTERNATIVE": "Alternatives",
-        "COMPLIANCE": "E-signature law"
+        "COMPLIANCE": "E-signature law",
+        "USE_CASE": "Industry"
       },
       "pageStatus": {
         "DRAFT": "Draft",
@@ -1612,7 +1613,8 @@
         "intro": "Specific intro",
         "duplicate": "Not a duplicate",
         "links": "Linked into its hub",
-        "facts": "Verified law only"
+        "facts": "Verified law only",
+        "parent": "Links to its parent page"
       },
       "gatePassed": "passed",
       "gateFailed": "failed",
@@ -3404,11 +3406,23 @@
     "faq": "Frequently asked questions",
     "related": "Keep exploring",
     "checked": "Facts about {competitor} were checked on {date} against:",
+    "checkedTwo": "Facts about {competitor} and {rival} were checked on {date} against:",
     "checkedLaw": "The law on this page was checked on {date} against:",
     "siblingsCompare": "More comparisons",
     "siblingsCompareAll": "All comparisons and alternatives",
     "siblingsLaw": "E-signature law in other countries",
     "siblingsLawAll": "All e-signature law pages",
+    "siblingsUseCase": "More industries and roles",
+    "siblingsUseCaseAll": "All industries",
+    "useCasesTitle": "The documents, and how each is signed",
+    "midCtaTitle": "Try it on your own document",
+    "midCtaBody": "Upload any PDF and send it for signature. Signers need no account, and the free plan needs no card.",
+    "stats": {
+      "freeDocuments": "documents a month on the free plan",
+      "signerAccounts": "accounts or apps a signer needs",
+      "sendChannels": "ways to send: email, WhatsApp or SMS",
+      "payAtSigning": "ways to pay while signing: card or mobile money"
+    },
     "hubEmpty": "Country pages are on their way. Until then, the guides below explain where electronic signatures are valid and what makes them hold up.",
     "hubGuides": "Guides on e-signature law",
     "updated": "Last updated {date}",

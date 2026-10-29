@@ -32,4 +32,5 @@ export const MIGRATIONS = [
   "20261025180000_webhooks_api_keys",
   "20261026220000_integrations_oauth",
   "20261027090000_appsumo_licenses",
+  "20261029120000_seo_agent_use_case_pages",
 ] as const

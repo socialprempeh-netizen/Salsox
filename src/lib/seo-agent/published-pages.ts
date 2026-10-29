@@ -27,7 +27,8 @@ import { siblingRing } from "./quality"
 import { publishedPage, publishedPages, type PublishedPageRow } from "./store"
 
 /** The stored kind behind each registry kind the agent writes. */
-const STORED: Partial<Record<PageKind, Exclude<StoredKind, "TEMPLATE">>> = { comparison: "COMPARISON", alternative: "ALTERNATIVE", compliance: "COMPLIANCE" }
+// "use-case" was added for the page matrix's industry, role and market pages.
+const STORED: Partial<Record<PageKind, Exclude<StoredKind, "TEMPLATE">>> = { comparison: "COMPARISON", alternative: "ALTERNATIVE", compliance: "COMPLIANCE", "use-case": "USE_CASE" }
 
 const sortTemplates = (list: Template[]) =>
   list.sort((a, b) => (a.category === b.category ? a.title.localeCompare(b.title) : TEMPLATE_CATEGORIES.indexOf(a.category) - TEMPLATE_CATEGORIES.indexOf(b.category)))
@@ -104,6 +105,7 @@ export const FAMILIES: Partial<Record<PageKind, PageKind[]>> = {
   comparison: ["comparison", "alternative"],
   alternative: ["comparison", "alternative"],
   compliance: ["compliance"],
+  "use-case": ["use-case"],
 }
 
 /**
@@ -118,7 +120,13 @@ export async function siblingLinks(page: SitePage, count = 4): Promise<SitePage[
   const all = (await registryPages(family)).sort((a, b) => a.path.localeCompare(b.path))
   const index = all.findIndex((p) => p.path === page.path)
   const listed = new Set(page.related)
-  return siblingRing(all, index, count + listed.size).filter((p) => !listed.has(p.path)).slice(0, count)
+  // A comparison links first to the other comparisons that name the same
+  // companies (the matrix writes many: "A vs B", "A vs C", "A for real estate"),
+  // then to its neighbours in the hub.
+  const names = [page.competitor?.name, ...page.rivals.map((r) => r.name)].filter((n): n is string => Boolean(n))
+  const sharing = names.length ? all.filter((p) => p.path !== page.path && !listed.has(p.path) && [p.competitor?.name, ...p.rivals.map((r) => r.name)].some((n) => n && names.includes(n))) : []
+  const ring = siblingRing(all, index, count + listed.size + sharing.length).filter((p) => !listed.has(p.path))
+  return [...new Map([...sharing, ...ring].map((p) => [p.path, p])).values()].slice(0, count)
 }
 
 /**
@@ -127,7 +135,8 @@ export async function siblingLinks(page: SitePage, count = 4): Promise<SitePage[
  * files), so a link to a generated page renders like any other.
  */
 export async function generatedLinkLabels(): Promise<Record<string, { name: string; description: string }>> {
-  const pages = await registryPages(["comparison", "alternative", "compliance"])
+  // Was comparison, alternative and compliance; the agent now writes use-case pages too.
+  const pages = await registryPages(["comparison", "alternative", "compliance", "use-case"])
   return Object.fromEntries(pages.map((p) => [p.path, { name: p.breadcrumb, description: p.description }]))
 }
 

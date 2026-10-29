@@ -171,6 +171,8 @@ export const salsoxPageSite: PageSite = {
       revalidatePath("/dashboard/templates", "layout")
     } else if (kind === "COMPLIANCE") {
       revalidatePath("/[locale]/esignature-law", "layout")
+    } else if (kind === "USE_CASE") {
+      revalidatePath("/[locale]/esignature-for", "layout")
     } else {
       revalidatePublic("/compare")
       revalidatePath("/[locale]/vs/[slug]", "page")

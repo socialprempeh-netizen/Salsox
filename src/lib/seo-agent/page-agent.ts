@@ -37,12 +37,16 @@ import {
   templateProblems,
   pageDraftSchema,
   toTemplate,
+  useCaseDraftSchema,
   type PageDraft,
   type StoredPage,
   type TemplateDraft,
+  type UseCaseDraft,
 } from "./page-draft"
-import { complianceSystemPrompt, complianceUserPrompt, comparisonSystemPrompt, comparisonUserPrompt, templateSystemPrompt, templateUserPrompt } from "./page-prompt"
-import { ALL_CANDIDATES, OFF_MARKET_PATHS, candidatePath, candidateSubject, pickCandidate, type CompetitorCandidate, type ComplianceCandidate, type PageCandidate, type TemplateCandidate } from "./page-queue"
+import { complianceSystemPrompt, complianceUserPrompt, comparisonSystemPrompt, comparisonUserPrompt, templateSystemPrompt, templateUserPrompt, industrySystemPrompt, industryUserPrompt } from "./page-prompt"
+// Was ALL_CANDIDATES, the curated queue only; PAGE_QUEUE adds the page matrix (page-matrix.ts).
+import { OFF_MARKET_PATHS, candidatePath, candidateSubject, pickBatch, type CompetitorCandidate, type ComplianceCandidate, type PageCandidate, type TemplateCandidate, type UseCaseCandidate } from "./page-queue"
+import { PAGE_QUEUE } from "./page-matrix"
 import { shouldAutoPublish } from "./policy"
 import type { SitePath } from "./prompt"
 import { DUPLICATE_THRESHOLD, duplicateGate, failures, introGate, linksGate, requiredGate, verdict, type CorpusEntry, type Gate, type IntroInput, type QualityReport } from "./quality"
@@ -102,12 +106,13 @@ function report(gates: Gate[], dup: { score: number; closest: string | null }, i
 
 // ── Templates ──────────────────────────────────────────────────────────────
 
-async function writeTemplate(site: PageSite, c: TemplateCandidate, feedback?: string[]): Promise<Attempt> {
+async function writeTemplate(site: PageSite, c: TemplateCandidate, feedback?: string[], signal?: AbortSignal): Promise<Attempt> {
   const library = await site.templates()
   const sameCategory = library.filter((t) => t.category === c.category)
   const siblings = sameCategory.length >= 3 ? sameCategory : library.filter((t) => t.type === c.type)
   const reference = library.find((t) => t.type === c.type && t.category === c.category) ?? library.find((t) => t.type === c.type) ?? null
   const { draft, model } = await writePageDraft({
+    signal,
     system: templateSystemPrompt(),
     user: templateUserPrompt({
       candidate: c,
@@ -142,12 +147,13 @@ async function writeTemplate(site: PageSite, c: TemplateCandidate, feedback?: st
 
 // ── Comparisons and alternatives ──────────────────────────────────────────
 
-async function writeCompetitorPage(site: PageSite, c: CompetitorCandidate, fetched: FetchedSource[], feedback?: string[]): Promise<Attempt> {
+async function writeCompetitorPage(site: PageSite, c: CompetitorCandidate, fetched: FetchedSource[], feedback?: string[], signal?: AbortSignal): Promise<Attempt> {
   const readable = fetched.filter((s) => s.ok)
   const family = await site.registry(["comparison", "alternative"])
   const reference = family.find((p) => p.kind === c.kind) ?? null
   const paths = await site.sitePaths()
   const { draft, model } = await writePageDraft({
+    signal,
     system: comparisonSystemPrompt(),
     user: comparisonUserPrompt({
       candidate: c,
@@ -168,12 +174,13 @@ async function writeCompetitorPage(site: PageSite, c: CompetitorCandidate, fetch
 
 const isLawPost = (p: BlogEntry) => /legal|law/i.test(p.category) || /\b(legal|law|laws|binding)\b/i.test(p.title)
 
-async function writeCompliancePage(site: PageSite, c: ComplianceCandidate, feedback?: string[]): Promise<Attempt> {
+async function writeCompliancePage(site: PageSite, c: ComplianceCandidate, feedback?: string[], signal?: AbortSignal): Promise<Attempt> {
   const family = await site.registry(["compliance"])
   // Pages about markets that are not targets are never offered as links.
   const paths = (await site.sitePaths()).filter((p) => !OFF_MARKET_PATHS.has(p.path))
   const lawPosts = (await site.blogPosts()).filter((p) => isLawPost(p) && !OFF_MARKET_PATHS.has(p.path))
   const { draft, model } = await writePageDraft({
+    signal,
     system: complianceSystemPrompt(),
     user: complianceUserPrompt({
       candidate: c,
@@ -187,11 +194,36 @@ async function writeCompliancePage(site: PageSite, c: ComplianceCandidate, feedb
   return gateRegistryPage(site, c, draft as PageDraft, { sources: c.sources, family, paths, model, lawPosts })
 }
 
-/** The gates for a comparison, alternative or law page, which share the registry's rules. */
+// ── Industry, role and market pages (page-matrix.ts) ──────────────────────
+
+async function writeUseCasePage(site: PageSite, c: UseCaseCandidate, feedback?: string[], signal?: AbortSignal): Promise<Attempt> {
+  const family = await site.registry(["use-case"])
+  const paths = (await site.sitePaths()).filter((p) => !OFF_MARKET_PATHS.has(p.path))
+  // The parent's own text is the style reference, so a role or market page builds on it rather than restating it.
+  const reference = family.find((p) => p.path === c.parent) ?? family.find((p) => p.templates?.industry && p.templates.industry === c.templates) ?? family[0] ?? null
+  const { draft, model } = await writePageDraft({
+    signal,
+    system: industrySystemPrompt(),
+    user: industryUserPrompt({
+      candidate: c,
+      productSummary: site.productSummary,
+      paths,
+      siblingIntros: family.slice(0, 12).map((p) => p.lede),
+      reference: reference ? { title: reference.h1, markdown: reference.body } : null,
+      feedback,
+    }),
+    schema: useCaseDraftSchema,
+  })
+  return gateRegistryPage(site, c, draft as UseCaseDraft, { sources: c.market?.law.sources.map(({ label, url }) => ({ label, url })) ?? [], family, paths, model })
+}
+
+// Was "comparison, alternative or law page"; industry, role and market pages
+// (use-case) share the same rules.
+/** The gates for a comparison, alternative, law or use-case page, which share the registry's rules. */
 async function gateRegistryPage(
   site: PageSite,
-  c: CompetitorCandidate | ComplianceCandidate,
-  draft: PageDraft,
+  c: CompetitorCandidate | ComplianceCandidate | UseCaseCandidate,
+  draft: PageDraft | UseCaseDraft,
   ctx: { sources: { label: string; url: string }[]; family: SitePage[]; paths: SitePath[]; model: string; lawPosts?: BlogEntry[] }
 ): Promise<Attempt> {
   const kind = REGISTRY_KIND[STORED_KIND[c.kind] as Exclude<store.NewPage["kind"], "TEMPLATE">]
@@ -221,6 +253,14 @@ async function gateRegistryPage(
     const problems = citationProblems(stored.body, c)
     gates.push({ id: "facts", ok: problems.length === 0, detail: problems.length ? problems.join("; ") : "cites only verified statutes and sections" })
   }
+  // A market page states its country's law only from the verified facts, like a law page, with fewer citations.
+  if (c.kind === "use-case" && c.market) {
+    const problems = citationProblems(stored.body, c.market.law, 2)
+    gates.push({ id: "facts", ok: problems.length === 0, detail: problems.length ? problems.join("; ") : "cites only verified statutes and sections" })
+  }
+  // A role, market or industry comparison links up to the page it sits under.
+  const parent = c.kind === "use-case" ? c.parent : c.kind === "compliance" ? undefined : c.industry?.path
+  if (parent && !draft.related.includes(parent)) gates.push({ id: "parent", ok: false, detail: `does not list its parent page ${parent} under related` })
   return { stored, gates, report: report(gates, dup, intro), model: ctx.model }
 }
 
@@ -228,15 +268,17 @@ async function gateRegistryPage(
 
 export type PageRunResult = { status: store.RunStatus; message: string; pageId?: string; published?: boolean }
 
-async function attempt(site: PageSite, c: PageCandidate, fetched: FetchedSource[], feedback?: string[]): Promise<Attempt> {
+async function attempt(site: PageSite, c: PageCandidate, fetched: FetchedSource[], feedback?: string[], signal?: AbortSignal): Promise<Attempt> {
   switch (c.kind) {
     case "template":
-      return writeTemplate(site, c, feedback)
+      return writeTemplate(site, c, feedback, signal)
     case "comparison":
     case "alternative":
-      return writeCompetitorPage(site, c, fetched, feedback)
+      return writeCompetitorPage(site, c, fetched, feedback, signal)
     case "compliance":
-      return writeCompliancePage(site, c, feedback)
+      return writeCompliancePage(site, c, feedback, signal)
+    case "use-case":
+      return writeUseCasePage(site, c, feedback, signal)
   }
 }
 
@@ -248,12 +290,21 @@ async function attempt(site: PageSite, c: PageCandidate, fetched: FetchedSource[
  * law cannot be verified, so the page is never written on unchecked facts.
  */
 async function gatherFacts(site: PageSite, c: PageCandidate): Promise<FetchedSource[]> {
-  if (c.kind === "compliance") {
-    const problems = await verifyLaw(c, (source) => site.readFullText(source))
+  if (c.kind === "compliance" || (c.kind === "use-case" && c.market)) {
+    const law = c.kind === "compliance" ? c : c.market!.law
+    const problems = await verifyLaw(law, (source) => site.readFullText(source))
     if (problems.length) throw new MissingData(`the source law could not be verified: ${problems.join("; ")}`)
     return []
   }
   if (c.kind !== "comparison" && c.kind !== "alternative") return []
+  // A three-way comparison stands on each company's own pages: one readable page for each side.
+  if (c.rival) {
+    const [mine, theirs] = await Promise.all([Promise.all(c.sources.map((s) => site.fetchSource(s))), Promise.all(c.rival.sources.map((s) => site.fetchSource(s)))])
+    for (const [name, list] of [[c.competitor.name, mine], [c.rival.name, theirs]] as const) {
+      if (!list.some((s) => s.ok)) throw new MissingData(`no readable source for ${name}: ${list.map((s) => `${s.url} (${s.reason})`).join(", ")}`)
+    }
+    return [...mine, ...theirs]
+  }
   const fetched = await Promise.all(c.sources.map((s) => site.fetchSource(s)))
   const readable = fetched.filter((s) => s.ok)
   // A comparison stands on the competitor's own page; a round-up on at least two of its alternatives'.
@@ -264,50 +315,58 @@ async function gatherFacts(site: PageSite, c: PageCandidate): Promise<FetchedSou
   return fetched
 }
 
-export async function runPageGeneration(site: PageSite, trigger: store.RunTrigger): Promise<PageRunResult> {
-  const runId = await store.startRun("pages", trigger)
-  if (!runId) return { status: "skipped", message: "Another page run is in progress." }
-  const finish = async (result: PageRunResult & { candidates?: number }) => {
-    await store.finishRun(runId, { status: result.status === "running" ? "failed" : result.status, message: result.message, candidates: result.candidates })
-    return result
-  }
+/**
+ * How many pages one run writes. Was one page a run; the page matrix gave
+ * the queue hundreds of candidates, so each run now writes a small batch in
+ * parallel (SEO_AGENT_PAGES_PER_RUN, default 3, at most 6), within the
+ * function's time limit.
+ */
+export const DEFAULT_PAGES_PER_RUN = 3
+export const MAX_PAGES_PER_RUN = 6
 
-  const missing = missingPageSettings()
-  if (missing.length) return finish({ status: "skipped", message: `Not configured: set ${missing.join(" and ")}.` })
+export function pagesPerRun(env: Record<string, string | undefined> = process.env): number {
+  const n = Number.parseInt(env.SEO_AGENT_PAGES_PER_RUN?.trim() ?? "", 10)
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, MAX_PAGES_PER_RUN) : DEFAULT_PAGES_PER_RUN
+}
 
-  // 1. The next candidate nothing covers yet.
-  const states = (await store.pageStates()).map((s) => ({ kind: CANDIDATE_KIND[s.kind], slug: s.slug, status: s.status, attempts: s.attempts }))
-  const phrases = await site.coveredPhrases()
-  const existingPaths = new Set([...(await site.templates()).map((t) => t.path), ...(await site.allRegistry()).map((p) => p.path)])
-  const covered = (c: PageCandidate) => existingPaths.has(candidatePath(c)) || phrases.some((p) => covers(p, c.keyword))
-  const candidate = pickCandidate(ALL_CANDIDATES, states, covered)
-  if (!candidate) return finish({ status: "skipped", message: "Every page in the queue is written, set aside after failing twice, or already covered by the site. Add candidates in page-queue.ts." })
+/**
+ * The time a run may spend writing, inside the cron's 300-second limit
+ * (maxDuration in the route): every call to Claude is cut off at this
+ * deadline, so a page that runs long is recorded as failed (and tried again
+ * on a later run) instead of being lost when the platform stops the function.
+ * A failed first draft is retried only when the retry can start before
+ * RETRY_CUTOFF_MS; otherwise it waits for the next run.
+ */
+export const RUN_BUDGET_MS = 270_000
+export const RETRY_CUTOFF_MS = 140_000
 
+/** One page, start to finish: facts, the draft, the gates (with one retry when time allows), then saved and maybe published. */
+async function writeOne(site: PageSite, candidate: PageCandidate, { started, deadline }: { started: number; deadline: number }): Promise<PageRunResult> {
   const kind = STORED_KIND[candidate.kind]
   const path = candidatePath(candidate)
   const label = `${candidate.kind} page ${path}`
-  site.revalidateFor(kind, "/admin/seo/agent")
+  const signal = () => AbortSignal.timeout(Math.max(1_000, deadline - Date.now()))
 
-  // 2. Facts, then the page, with one retry when a fixable gate fails.
+  // 1. Facts, then the page, with one retry when a fixable gate fails.
   let result: Attempt
   try {
     const fetched = await gatherFacts(site, candidate)
-    result = await attempt(site, candidate, fetched)
-    if (verdict(result.report.gates) === "fail") result = await attempt(site, candidate, fetched, failures(result.report.gates))
+    result = await attempt(site, candidate, fetched, undefined, signal())
+    if (verdict(result.report.gates) === "fail" && Date.now() - started < RETRY_CUTOFF_MS) result = await attempt(site, candidate, fetched, failures(result.report.gates), signal())
   } catch (error) {
-    const why = error instanceof MissingData ? `missing data, ${error.message}` : errorText(error)
+    const why = error instanceof MissingData ? `missing data, ${error.message}` : Date.now() >= deadline ? "ran out of time in this run" : errorText(error)
     await store.recordPageFailure({ kind, slug: candidate.slug, title: candidate.keyword, error: why })
-    return finish({ status: "failed", candidates: 1, message: `The ${label} was not generated: ${why}` })
+    return { status: "failed", message: `The ${label} was not generated: ${why}` }
   }
 
   const outcome = verdict(result.report.gates)
   if (outcome === "fail") {
     const why = failures(result.report.gates).join(" | ")
     await store.recordPageFailure({ kind, slug: candidate.slug, title: result.stored.title || candidate.keyword, error: why, report: result.report })
-    return finish({ status: "failed", candidates: 1, message: `The ${label} failed its quality gates twice and was not generated: ${why}` })
+    return { status: "failed", message: `The ${label} failed its quality gates and was not generated: ${why}` }
   }
 
-  // 3. Saved: flagged and noindexed when too close to an existing page, otherwise a draft.
+  // 2. Saved: flagged and noindexed when too close to an existing page, otherwise a draft.
   const writtenBefore = await store.countWrittenPages()
   const pageId = await store.savePage({
     kind,
@@ -324,18 +383,56 @@ export async function runPageGeneration(site: PageSite, trigger: store.RunTrigge
   })
   if (outcome === "flag") {
     site.revalidateFor(kind, "/admin/seo/agent")
-    return finish({ status: "ok", candidates: 1, pageId, published: false, message: `Wrote "${result.stored.title}" (${path}), but it is ${(result.report.similarity * 100).toFixed(0)}% alike to ${result.report.similarTo}: flagged and noindexed, not published.` })
+    return { status: "ok", pageId, published: false, message: `Wrote "${result.stored.title}" (${path}), but it is ${(result.report.similarity * 100).toFixed(0)}% alike to ${result.report.similarTo}: flagged and noindexed, not published.` }
   }
 
-  // 4. Draft, or straight to the site under the review rule.
+  // 3. Draft, or straight to the site under the review rule.
   const { draftFirst } = await store.getSettings()
   if (shouldAutoPublish({ writtenBefore, draftFirst })) {
     const published = await publishGeneratedPage(site, pageId, { auto: true })
-    return finish({ status: "ok", candidates: 1, pageId, published: published.ok, message: `Wrote and published "${result.stored.title}" at ${path}. ${published.message}` })
+    return { status: "ok", pageId, published: published.ok, message: `Wrote and published "${result.stored.title}" at ${path}. ${published.message}` }
   }
   site.revalidateFor(kind, "/admin/seo/agent")
-  return finish({ status: "ok", candidates: 1, pageId, published: false, message: `Wrote a draft, "${result.stored.title}" (${path}). It is waiting for review.` })
+  return { status: "ok", pageId, published: false, message: `Wrote a draft, "${result.stored.title}" (${path}). It is waiting for review.` }
 }
+
+// Was one page per run: pick a candidate, then the steps now in writeOne.
+// The steps are unchanged; the run now picks a batch and writes it in parallel.
+export async function runPageGeneration(site: PageSite, trigger: store.RunTrigger, { count = pagesPerRun() }: { count?: number } = {}): Promise<PageRunResult> {
+  const started = Date.now()
+  const deadline = started + RUN_BUDGET_MS
+  const runId = await store.startRun("pages", trigger)
+  if (!runId) return { status: "skipped", message: "Another page run is in progress." }
+  const finish = async (result: PageRunResult & { candidates?: number }) => {
+    await store.finishRun(runId, { status: result.status === "running" ? "failed" : result.status, message: result.message, candidates: result.candidates })
+    return result
+  }
+
+  const missing = missingPageSettings()
+  if (missing.length) return finish({ status: "skipped", message: `Not configured: set ${missing.join(" and ")}.` })
+
+  // 1. The next candidates nothing covers yet, whose parent pages exist.
+  const states = (await store.pageStates()).map((s) => ({ kind: CANDIDATE_KIND[s.kind], slug: s.slug, status: s.status, attempts: s.attempts }))
+  const phrases = await site.coveredPhrases()
+  const existingPaths = new Set([...(await site.templates()).map((t) => t.path), ...(await site.allRegistry()).map((p) => p.path)])
+  const covered = (c: PageCandidate) => existingPaths.has(candidatePath(c)) || phrases.some((p) => covers(p, c.keyword))
+  const batch = pickBatch(PAGE_QUEUE, states, covered, (path) => existingPaths.has(path), count)
+  if (batch.length === 0) return finish({ status: "skipped", message: "Every page in the queue is written, set aside after failing twice, waiting for its parent page, or already covered by the site. Add candidates in page-queue.ts or page-matrix.ts." })
+  site.revalidateFor(STORED_KIND[batch[0].kind], "/admin/seo/agent")
+
+  // 2. Written in parallel; each page succeeds or fails on its own.
+  const results = await Promise.all(batch.map((c) => writeOne(site, c, { started, deadline }).catch((error): PageRunResult => ({ status: "failed", message: `The ${c.kind} page ${candidatePath(c)} was not generated: ${errorText(error)}` }))))
+  const ok = results.filter((r) => r.status === "ok")
+  const message = batch.length === 1 ? results[0].message : `Wrote ${ok.length} of ${batch.length} pages. ${results.map((r) => r.message).join(" ")}`
+  return finish({
+    status: ok.length ? "ok" : "failed",
+    candidates: batch.length,
+    message,
+    pageId: ok[0]?.pageId,
+    published: ok.some((r) => r.published),
+  })
+}
+
 
 // ── What the admin buttons do ─────────────────────────────────────────────
 

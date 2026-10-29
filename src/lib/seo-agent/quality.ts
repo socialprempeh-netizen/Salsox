@@ -26,7 +26,9 @@
  */
 import { similarity } from "@/lib/seo/pages"
 
-export type GateId = "required" | "intro" | "duplicate" | "links" | "facts"
+// "parent" was added for the page matrix: a role, market or industry
+// comparison page must link up to the page it sits under.
+export type GateId = "required" | "intro" | "duplicate" | "links" | "facts" | "parent"
 export type Gate = { id: GateId; ok: boolean; detail: string }
 
 export type QualityReport = {

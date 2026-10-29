@@ -109,6 +109,14 @@ for (const width of WIDTHS) {
     ]) {
       await check(path, path.slice(1).replaceAll("/", "-"))
     }
+    // The SEO agent's page matrix (src/lib/seo-agent/page-matrix.ts): an
+    // industry page with its stats bar and use-case blocks, and a three-way
+    // comparison with a three-column table. They live in the database, so
+    // each is checked where it has been written and skipped where it 404s.
+    for (const path of ["/esignature-for/insurance", "/vs/docusign-vs-pandadoc"]) {
+      const response = await page.request.get(path)
+      if (response.status() === 200) await check(path, path.slice(1).replaceAll("/", "-"))
+    }
     // Public document verification: the empty form, and an answer for a code
     // that matches nothing (the result card has to fit too).
     await check("/verify", "verify")

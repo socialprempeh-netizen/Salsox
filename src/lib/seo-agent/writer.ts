@@ -33,7 +33,8 @@ let client: Anthropic | null = null
 const anthropic = () => (client ??= new Anthropic())
 
 /** One structured call: the system prompt is cached, the reply is parsed against `schema`. */
-async function structured<T extends z.ZodType>({ system, user, schema, maxTokens, effort }: { system: string; user: string; schema: T; maxTokens: number; effort: "medium" | "high" }): Promise<{ data: z.infer<T>; model: string }> {
+// `signal` was added so the page mode can cut a call off at its run deadline.
+async function structured<T extends z.ZodType>({ system, user, schema, maxTokens, effort, signal }: { system: string; user: string; schema: T; maxTokens: number; effort: "medium" | "high"; signal?: AbortSignal }): Promise<{ data: z.infer<T>; model: string }> {
   const stream = anthropic().beta.messages.stream({
     model: writerModel(),
     max_tokens: maxTokens,
@@ -43,7 +44,7 @@ async function structured<T extends z.ZodType>({ system, user, schema, maxTokens
     output_config: { effort, format: betaZodOutputFormat(schema) },
     system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: user }],
-  })
+  }, { signal })
   const message = await stream.finalMessage()
   if (message.stop_reason === "refusal") throw new Error(`Claude declined to write this${message.stop_details?.category ? ` (${message.stop_details.category})` : ""}`)
   if (message.stop_reason === "max_tokens") throw new Error("Claude ran out of room before finishing")
@@ -92,7 +93,7 @@ export async function writeLinkSentences(input: { siteName: string; article: { t
  * (page-draft.ts), through the same structured, streamed, re-checked call
  * the articles use.
  */
-export async function writePageDraft<T extends z.ZodType>({ system, user, schema }: { system: string; user: string; schema: T }): Promise<{ draft: z.infer<T>; model: string }> {
-  const { data, model } = await structured({ system, user, schema, maxTokens: 32_000, effort: "high" })
+export async function writePageDraft<T extends z.ZodType>({ system, user, schema, signal }: { system: string; user: string; schema: T; signal?: AbortSignal }): Promise<{ draft: z.infer<T>; model: string }> {
+  const { data, model } = await structured({ system, user, schema, maxTokens: 32_000, effort: "high", signal })
   return { draft: data, model }
 }

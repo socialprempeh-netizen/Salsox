@@ -1,6 +1,6 @@
 import { getFormatter, getTranslations } from "next-intl/server"
 import Link from "next/link"
-import { ArrowRight, Check, ExternalLink, ShieldCheck, CheckCircle2, Clock } from "lucide-react"
+import { ArrowRight, Check, ExternalLink, ShieldCheck, CheckCircle2, Clock, FileSignature } from "lucide-react"
 import { BreadcrumbTrail } from "@/components/ui/breadcrumb"
 import { FadeUp } from "@/components/motion/fade-up"
 import { Reveal } from "@/components/landing/reveal"
@@ -13,6 +13,7 @@ import { pageGraph, pageTrail } from "@/lib/seo/page-graph"
 import { resolveLinks } from "@/lib/seo/links"
 import { fixedLinkLabels } from "@/components/seo/fixed-links"
 import type { SitePage } from "@/lib/seo/pages"
+import { statValue } from "@/lib/seo/stats"
 import { templateCards, templatesFor, TEMPLATES_PATH } from "@/lib/templates"
 import { generatedLinkLabels, libraryTemplates, siblingLinks } from "@/lib/seo-agent/published-pages"
 import { TEMPLATE_CATEGORIES } from "@/lib/templates-taxonomy"
@@ -58,6 +59,9 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
   const siblings = await siblingLinks(page)
   const isTool = page.kind === "tool"
   const isLaw = page.kind === "compliance"
+  const isUseCase = page.kind === "use-case"
+  // Comparison and industry pages repeat the signup offer mid-page, where a reader who has seen enough decides.
+  const midCta = page.kind === "comparison" || isUseCase
   // Industry and team pages show their templates from the library.
   // Was templatesFor(page.templates): the library includes generated templates.
   const pageTemplates = page.templates ? templatesFor(page.templates, await libraryTemplates()) : []
@@ -143,11 +147,31 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
             </FadeUp>
           )}
 
-          {/* Was comparisons only; a law page cites its statutes the same way. */}
-          {(page.kind === "comparison" || page.kind === "compliance") && page.checked && (
+          {/* The stats bar on industry pages: product facts only, from
+              src/lib/seo/stats.ts, never figures a page wrote itself. Two
+              columns on a phone, four from sm up; square cells in one grid. */}
+          {page.stats.length > 0 && (
+            <dl className="mt-8 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
+              {page.stats.map((id, i) => (
+                <FadeUp key={id} delay={0.05 * i} className="bg-background p-4">
+                  <dt className="sr-only">{t(`stats.${id}`)}</dt>
+                  <dd className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{statValue(id)}</dd>
+                  <dd className="mt-1 text-xs leading-snug text-muted-foreground sm:text-sm">{t(`stats.${id}`)}</dd>
+                </FadeUp>
+              ))}
+            </dl>
+          )}
+
+          {/* Was comparisons only; a law page cites its statutes the same way,
+              and so does a market page (an industry in one country). */}
+          {(page.kind === "comparison" || page.kind === "compliance" || (isUseCase && page.sources.length > 0)) && page.checked && (
             <div className="mt-6 border border-border bg-card p-4 text-sm">
               <p className="text-muted-foreground">
-                {page.kind === "compliance" ? t("checkedLaw", { date: longDate(page.checked) }) : t("checked", { competitor: page.competitor?.name ?? "", date: longDate(page.checked) })}
+                {page.kind !== "comparison"
+                  ? t("checkedLaw", { date: longDate(page.checked) })
+                  : page.rivals.length
+                    ? t("checkedTwo", { competitor: page.competitor?.name ?? "", rival: page.rivals[0].name, date: longDate(page.checked) })
+                    : t("checked", { competitor: page.competitor?.name ?? "", date: longDate(page.checked) })}
               </p>
               <ul className="mt-2 space-y-1">
                 {page.sources.map((source) => (
@@ -198,7 +222,39 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
           </Reveal>
         )}
 
+        {/* An industry page's use-case blocks: one per document the audience signs. */}
+        {page.useCases.length > 0 && (
+          <Reveal as="section">
+            <h2 className="text-2xl font-bold tracking-tight">{t("useCasesTitle")}</h2>
+            <ul className="mt-5 grid gap-px border border-border bg-border sm:grid-cols-2">
+              {page.useCases.map((u) => (
+                <li key={u.title} className="flex gap-3 bg-background p-5">
+                  <FileSignature className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <h3 className="font-semibold">{u.title}</h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground">{u.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        )}
+
         <MarkdownBody source={body} />
+
+        {midCta && (
+          <Reveal as="section">
+            <div className="flex flex-col gap-4 border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold tracking-tight">{t("midCtaTitle")}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{t("midCtaBody")}</p>
+              </div>
+              <TrackedLink href="/signup" location={`mid:${page.path}`} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+                {t("ctaButton")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </TrackedLink>
+            </div>
+          </Reveal>
+        )}
 
         {pageTemplates.length > 0 && (
           <Reveal as="section">
@@ -251,7 +307,7 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
 
         {siblings.length > 0 && (
           <Reveal as="section">
-            <h2 className="text-2xl font-bold tracking-tight">{t(isLaw ? "siblingsLaw" : "siblingsCompare")}</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t(isLaw ? "siblingsLaw" : isUseCase ? "siblingsUseCase" : "siblingsCompare")}</h2>
             <ul className="mt-5 divide-y divide-border border border-border">
               {siblings.map((p) => (
                 <li key={p.path}>
@@ -265,8 +321,8 @@ export async function SeoPageView({ page, tool }: { page: SitePage; tool?: React
                 </li>
               ))}
             </ul>
-            <Link href={isLaw ? "/esignature-law" : "/compare"} className="mt-4 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline">
-              {t(isLaw ? "siblingsLawAll" : "siblingsCompareAll")}
+            <Link href={isLaw ? "/esignature-law" : isUseCase ? "/esignature-for" : "/compare"} className="mt-4 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline">
+              {t(isLaw ? "siblingsLawAll" : isUseCase ? "siblingsUseCaseAll" : "siblingsCompareAll")}
             </Link>
           </Reveal>
         )}
