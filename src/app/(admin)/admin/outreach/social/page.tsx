@@ -24,6 +24,7 @@ import { hasWriterKey } from "@/lib/outreach-agent/writer"
 import { imageGeneration } from "@/lib/outreach-agent/images"
 import { AdminPageHeader, Chip, Empty, Panel, StatGrid, StatTile, StatusBanner } from "@/components/admin/admin-ui"
 import { IdeaComposer, PlatformSquares, PostCalendar, type Platform, type PostStatus, type StudioPost } from "@/components/admin/social-studio"
+import { PublishAllDrafts } from "@/components/admin/publish-all-drafts"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -80,7 +81,10 @@ export default async function SocialStudioPage({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={Megaphone} />
+      {/* "Publish all pending drafts": shows its plan first, publishes only on confirm. */}
+      <AdminPageHeader title={t("title")} subtitle={t("subtitle")} icon={Megaphone}>
+        {data.ok && <PublishAllDrafts />}
+      </AdminPageHeader>
 
       <StatusBanner tone={failed ? "bad" : next ? "info" : "default"} icon={failed ? CircleAlert : CalendarClock} title={next ? t("nextPost", { platform: PLATFORM_LABEL[next.platform], when: format.dateTime(new Date(next.scheduledFor!), { dateStyle: "medium", timeStyle: "short" }) }) : t("nothingScheduled")}>
         {t("connectedLine", { count: connected.length })}

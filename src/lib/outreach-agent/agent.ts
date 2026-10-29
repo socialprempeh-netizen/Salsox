@@ -41,7 +41,7 @@ import { redditConfigured, redditReader, type RedditPost } from "./reddit"
 import { isAllowed } from "./robots"
 import { rejection, sourceKey } from "./signals"
 import { redditVoiceProblems } from "./reddit-voice"
-import { DESCRIPTION_LIMITS, draftProblems, isAutoPlatform, LIMITS, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
+import { DESCRIPTION_LIMITS, draftProblems, failingPlatforms, isAutoPlatform, LIMITS, PlatformAccountError, platformConfigured, postProblem, publish, PLATFORMS, TITLE_LIMITS } from "./social"
 import { autoHashtags, isHashtagPlatform } from "./hashtags"
 import { COMPETITORS, REDDIT_SUBREDDITS, redditQueries, reviewPages, type Competitor, type ForumSource, type LeadSource } from "./sources"
 import * as store from "./store"
@@ -582,7 +582,8 @@ export async function draftSocialPosts(site: OutreachAdapter, { platforms, theme
   }
 }
 
-export async function publishPost(site: OutreachAdapter, postId: string): Promise<{ ok: boolean; message: string }> {
+// Was { ok, message }: `account` was added so "Publish all" can stop using a platform the moment it reports an account problem.
+export async function publishPost(site: OutreachAdapter, postId: string): Promise<{ ok: boolean; message: string; account?: boolean }> {
   const post = await store.getPost(postId)
   if (!post) return { ok: false, message: "That post no longer exists." }
   // Reddit, TikTok and YouTube are posted by a person, never from here.
@@ -597,16 +598,82 @@ export async function publishPost(site: OutreachAdapter, postId: string): Promis
     site.revalidate([PAGE, SOCIAL_PAGE])
     return { ok: true, message: `Published to ${post.platform}.` }
   } catch (error) {
+    // An account problem (no API credit, a missing permission) is not the
+    // post's fault: it goes back to waiting as it was, with the reason shown.
+    if (error instanceof PlatformAccountError) {
+      await store.postBlocked(postId, post.status === "SCHEDULED" ? "SCHEDULED" : "DRAFT", error.message)
+      site.revalidate([PAGE, SOCIAL_PAGE])
+      return { ok: false, account: true, message: error.message }
+    }
     await store.postFailed(postId, errorText(error))
     site.revalidate([PAGE, SOCIAL_PAGE])
     return { ok: false, message: `Publishing failed: ${errorText(error)}` }
   }
 }
 
+/** The API platforms known to be failing right now, with the reason (see failingPlatforms). */
+export async function platformHealth(): Promise<Map<SocialPlatform, string>> {
+  return failingPlatforms(await store.lastAttempts())
+}
+
+export type PublishAllItem = { id: string; platform: SocialPlatform; excerpt: string; action: "publish" | "skip"; reason?: string }
+
+/**
+ * What "Publish all pending drafts" would do, without doing it: every draft
+ * on X, LinkedIn or Facebook, oldest first, each either to publish or to
+ * skip with the reason (the platform is not connected, is known to be
+ * failing, or the draft is incomplete).
+ */
+export async function planPublishAll(): Promise<PublishAllItem[]> {
+  const [drafts, failing] = await Promise.all([store.pendingDrafts(), platformHealth()])
+  return drafts.map((d) => {
+    const item = { id: d.id, platform: d.platform, excerpt: d.body.trim().slice(0, 90) }
+    if (!platformConfigured(d.platform)) return { ...item, action: "skip" as const, reason: `${d.platform} is not connected.` }
+    const down = failing.get(d.platform)
+    if (down) return { ...item, action: "skip" as const, reason: down }
+    const problem = postProblem(d.platform, d.body)
+    if (problem) return { ...item, action: "skip" as const, reason: problem === "empty" ? "The post is empty." : "The post is too long for this platform." }
+    return { ...item, action: "publish" as const }
+  })
+}
+
+/** The pause between two posts in "Publish all", so a burst never looks like spam to a platform. */
+export const PUBLISH_ALL_DELAY_MS = 4_000
+
+/**
+ * Publishes every draft the plan marks to publish, one at a time with a
+ * short pause, and reports each one. A platform that reports an account
+ * problem mid-way is skipped for the rest of the run.
+ */
+export async function publishAllDrafts(site: OutreachAdapter, { delayMs = PUBLISH_ALL_DELAY_MS }: { delayMs?: number } = {}): Promise<{ results: (PublishAllItem & { ok: boolean; message: string })[]; message: string }> {
+  const plan = await planPublishAll()
+  const stopped = new Map<SocialPlatform, string>()
+  const results: (PublishAllItem & { ok: boolean; message: string })[] = []
+  let first = true
+  for (const item of plan) {
+    const halted = stopped.get(item.platform)
+    if (item.action === "skip" || halted) {
+      results.push({ ...item, action: "skip", ok: false, message: item.reason ?? halted! })
+      continue
+    }
+    if (!first) await new Promise((resolve) => setTimeout(resolve, delayMs))
+    first = false
+    const outcome = await publishPost(site, item.id)
+    if (outcome.account) stopped.set(item.platform, outcome.message)
+    results.push({ ...item, ok: outcome.ok, message: outcome.message })
+  }
+  const posted = results.filter((r) => r.ok).length
+  const skipped = results.filter((r) => r.action === "skip").length
+  const failed = results.length - posted - skipped
+  return { results, message: `Published ${posted} of ${results.length} draft${results.length === 1 ? "" : "s"}: ${skipped} skipped, ${failed} failed.` }
+}
+
 /** Publishes every scheduled post whose time has come. */
 export async function runSocialDue(site: OutreachAdapter, trigger: store.RunTrigger): Promise<{ status: store.RunStatus; message: string }> {
-  const due = await store.duePosts(new Date())
-  if (due.length === 0) return { status: "skipped", message: "No post is due." }
+  // Was every due post: one on a platform known to be failing waits instead of being refused again.
+  const failing = await platformHealth()
+  const due = (await store.duePosts(new Date())).filter((p) => !failing.has(p.platform))
+  if (due.length === 0) return { status: "skipped", message: failing.size ? `No post is due on a working platform (waiting: ${[...failing.keys()].join(", ")}).` : "No post is due." }
   const runId = await store.startRun("social", trigger)
   if (!runId) return { status: "skipped", message: "Another social run is in progress." }
   const results = []

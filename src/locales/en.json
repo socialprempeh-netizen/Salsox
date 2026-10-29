@@ -1644,6 +1644,23 @@
       "previewNone": "Nothing was saved for this page."
     },
     "socialStudio": {
+      "publishAll": {
+        "button": "Publish all pending drafts",
+        "title": "Publish all pending drafts",
+        "plan": "{publish, plural, =0 {Nothing will be published.} one {# draft will be published} other {# drafts will be published}}{skip, plural, =0 {.} one {, # skipped.} other {, # skipped.}} Posts go out one at a time, a few seconds apart.",
+        "empty": "There are no X, LinkedIn or Facebook drafts waiting.",
+        "confirm": "{count, plural, =0 {Nothing to publish} one {Publish # draft} other {Publish # drafts}}",
+        "cancel": "Cancel",
+        "close": "Close",
+        "planFailed": "Could not check the drafts. Try again.",
+        "runFailed": "Publishing stopped before it finished. Check the list of posts for what went out.",
+        "state": {
+          "ready": "Will publish",
+          "skipped": "Skipped",
+          "published": "Published",
+          "failed": "Failed"
+        }
+      },
       "title": "Social studio",
       "subtitle": "Turn one idea into a post for each platform. X, LinkedIn and Facebook publish through their APIs on schedule; Reddit, TikTok and YouTube you post yourself.",
       "nextPost": "Next post: {platform}, {when}",

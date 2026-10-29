@@ -388,7 +388,10 @@ function AutoSquare({ post, connected, imagesAvailable }: { post: StudioPost; co
       {/* Was X and Facebook only: (post.platform === "X" || post.platform === "FACEBOOK") */}
       {editable && isHashtagPlatform(post.platform) && <HashtagPicker platform={post.platform} body={body} onChange={setBody} />}
       {editable && (post.platform === "X" || post.platform === "FACEBOOK") && <ImageSlot available={imagesAvailable} />}
+      {/* Was FAILED only: a post refused for an account problem (no API credit,
+          a missing permission) waits as a draft or scheduled post, with its reason. */}
       {post.status === "FAILED" && post.error && <p className="break-words border-l-2 border-destructive pl-3 text-sm text-destructive">{post.error}</p>}
+      {(post.status === "DRAFT" || post.status === "SCHEDULED") && post.error && <p className="break-words border-l-2 border-amber-500 pl-3 text-sm text-amber-800 dark:text-amber-300">{post.error}</p>}
       {editable && (
         <div className="mt-auto space-y-2 pt-1">
           <div className="flex flex-wrap gap-2">
@@ -655,6 +658,7 @@ export function PostCalendar({ posts, today }: { posts: StudioPost[]; today: str
                     </div>
                     <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">{p.title ? `${p.title}: ${p.body}` : p.body}</p>
                     {p.status === "FAILED" && p.error && <p className="mt-1 break-words text-xs text-destructive">{p.error}</p>}
+                    {(p.status === "DRAFT" || p.status === "SCHEDULED") && p.error && <p className="mt-1 break-words text-xs text-amber-800 dark:text-amber-300">{p.error}</p>}
                   </div>
                   {p.batchId && (
                     <Link href={`/admin/outreach/social?batch=${p.batchId}`} className="shrink-0 text-xs font-medium text-primary underline-offset-4 hover:underline">

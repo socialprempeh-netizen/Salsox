@@ -11,6 +11,12 @@
  *  - LinkedIn company page: Posts API, POST /rest/posts as the organization
  *    (LINKEDIN_ORGANIZATION_ID, LINKEDIN_ACCESS_TOKEN with w_organization_social;
  *    LINKEDIN_API_VERSION, default 202610; 202510 was retired a year on).
+ *    w_organization_social comes only with LinkedIn's Community Management
+ *    API product, which LinkedIn must approve. Until then LINKEDIN_AUTHOR=person
+ *    posts from the token holder's own profile instead (w_member_social, from
+ *    the self-serve Share on LinkedIn product), as urn:li:person:<id> from
+ *    LINKEDIN_PERSON_ID, or looked up from /v2/userinfo when the token also
+ *    has openid and profile.
  *  - X: API v2, POST /2/tweets, signed with OAuth 1.0a when the app's own
  *    keys are set (X_API_KEY, X_API_KEY_SECRET, X_ACCESS_TOKEN,
  *    X_ACCESS_TOKEN_SECRET; see oauth1.ts), or else with an OAuth 2.0
@@ -105,6 +111,21 @@ export function facebookSettings(env: Env = process.env) {
   }
 }
 
+/** Who LinkedIn posts are from: the company page (the default) or, with LINKEDIN_AUTHOR=person, the token holder's own profile. */
+export function linkedinAuthorMode(env: Env = process.env): "organization" | "person" {
+  return read(env, "LINKEDIN_AUTHOR").toLowerCase() === "person" ? "person" : "organization"
+}
+
+/** The author URN a LinkedIn post carries, or null when the id it needs is not known yet. */
+export function linkedinAuthorUrn(env: Env = process.env): string | null {
+  if (linkedinAuthorMode(env) === "person") {
+    const id = read(env, "LINKEDIN_PERSON_ID")
+    return id ? `urn:li:person:${id}` : null
+  }
+  const org = read(env, "LINKEDIN_ORGANIZATION_ID")
+  return org ? `urn:li:organization:${org}` : null
+}
+
 /** How X requests are authorised: OAuth 1.0a with the app's four keys, an OAuth 2.0 token alone, or not at all. */
 export function xAuth(env: Env = process.env): { kind: "oauth1"; credentials: OAuth1Credentials } | { kind: "bearer"; token: string } | null {
   const consumerKey = read(env, "X_API_KEY")
@@ -124,7 +145,10 @@ export function platformConfigured(platform: SocialPlatform, env: Env = process.
     const fb = facebookSettings(env)
     return Boolean(fb.pageId && fb.token)
   }
-  if (platform === "LINKEDIN") return Boolean(env.LINKEDIN_ORGANIZATION_ID?.trim() && env.LINKEDIN_ACCESS_TOKEN?.trim())
+  // Was LINKEDIN_ORGANIZATION_ID and LINKEDIN_ACCESS_TOKEN only. Posting as a
+  // person needs only the token: the person's id can be looked up with it.
+  // if (platform === "LINKEDIN") return Boolean(env.LINKEDIN_ORGANIZATION_ID?.trim() && env.LINKEDIN_ACCESS_TOKEN?.trim())
+  if (platform === "LINKEDIN") return Boolean(read(env, "LINKEDIN_ACCESS_TOKEN") && (linkedinAuthorMode(env) === "person" || read(env, "LINKEDIN_ORGANIZATION_ID")))
   return xAuth(env) !== null
 }
 
@@ -161,7 +185,8 @@ export function buildRequest(platform: SocialPlatform, body: string, env: Env = 
           "x-restli-protocol-version": "2.0.0",
         },
         body: JSON.stringify({
-          author: `urn:li:organization:${env.LINKEDIN_ORGANIZATION_ID!.trim()}`,
+          // Was always the organization: `urn:li:organization:${env.LINKEDIN_ORGANIZATION_ID!.trim()}`
+          author: linkedinAuthorUrn(env),
           commentary: text,
           visibility: "PUBLIC",
           distribution: { feedDistribution: "MAIN_FEED", targetEntities: [], thirdPartyDistributionChannels: [] },
@@ -206,17 +231,88 @@ export async function refusalReason(response: Response, secrets: string[]): Prom
   return clean ? `: ${clean}` : ""
 }
 
-/** Publishes one post. Throws with the platform's status and reason, never with a token. */
+/**
+ * Refusals that are about the account, not the post: the same post will be
+ * refused again until a person fixes something in the platform's own
+ * dashboard. Each is said in plain words with what to do, and a post refused
+ * this way goes back to waiting (it is not failed), while the platform is
+ * skipped by "Publish all" and the scheduler until a post gets through.
+ */
+export const ACCOUNT_PROBLEMS = {
+  xCredits: "X API credit is empty, add credit in the X Developer Console.",
+  linkedinOrganization:
+    "LinkedIn will not let this app post as the company page: its token lacks the w_organization_social permission, which comes with LinkedIn's Community Management API product. Request that product for the app, or set LINKEDIN_AUTHOR=person to post from your own profile until it is approved.",
+  linkedinPersonId:
+    "LinkedIn needs your member id to post from your profile: set LINKEDIN_PERSON_ID, or re-authorise the token with the openid and profile scopes so it can be looked up.",
+  linkedinToken: "The LinkedIn access token has expired or was revoked. Generate a new one and update LINKEDIN_ACCESS_TOKEN.",
+} as const
+
+export class PlatformAccountError extends Error {}
+
+/** The account problem behind a refusal, in plain words, or null when the refusal is about the post itself. Pure. */
+export function accountProblem(platform: SocialPlatform, status: number, reason: string): string | null {
+  if (platform === "X" && /credits?\s+depleted/i.test(reason)) return ACCOUNT_PROBLEMS.xCredits
+  if (platform === "LINKEDIN") {
+    if (/organization id|organization as author|w_organization_social/i.test(reason)) return ACCOUNT_PROBLEMS.linkedinOrganization
+    if (status === 401) return ACCOUNT_PROBLEMS.linkedinToken
+  }
+  return null
+}
+
+const ACCOUNT_MESSAGES: string[] = Object.values(ACCOUNT_PROBLEMS)
+
+/** Whether a stored error is one of the account problems above. */
+export function isAccountProblem(error: string | null | undefined): boolean {
+  return Boolean(error) && ACCOUNT_MESSAGES.some((m) => error!.includes(m))
+}
+
+/**
+ * The API platforms that are known to be failing: those whose most recent
+ * publishing attempt was refused for an account problem. A LinkedIn
+ * company-page refusal stops counting once LINKEDIN_AUTHOR=person, since
+ * posts no longer go out as the company. A platform comes back as soon as a
+ * post gets through (one published by hand with Publish now or Retry).
+ */
+export function failingPlatforms(lastAttempts: { platform: SocialPlatform; error: string | null; published: boolean }[], env: Env = process.env): Map<SocialPlatform, string> {
+  const failing = new Map<SocialPlatform, string>()
+  for (const a of lastAttempts) {
+    if (a.published || !isAccountProblem(a.error)) continue
+    if (a.platform === "LINKEDIN" && a.error!.includes(ACCOUNT_PROBLEMS.linkedinOrganization) && linkedinAuthorMode(env) === "person") continue
+    failing.set(a.platform, a.error!)
+  }
+  return failing
+}
+
+/** The token holder's member id, from /v2/userinfo; null when the token cannot read it (it needs openid and profile). */
+async function linkedinPersonId(env: Env): Promise<string | null> {
+  const response = await fetch("https://api.linkedin.com/v2/userinfo", { headers: { authorization: `Bearer ${read(env, "LINKEDIN_ACCESS_TOKEN")}` }, signal: AbortSignal.timeout(15_000) }).catch(() => null)
+  if (!response?.ok) return null
+  const json = (await response.json().catch(() => null)) as { sub?: unknown } | null
+  return typeof json?.sub === "string" && json.sub ? json.sub : null
+}
+
+/** Publishes one post. Throws with the platform's status and reason, never with a token; an account problem throws PlatformAccountError. */
 export async function publish(platform: SocialPlatform, body: string, env: Env = process.env): Promise<{ externalId: string | null }> {
   if (!isAutoPlatform(platform)) throw new Error(`${platform} is posted by hand, never by the agent`)
   if (!platformConfigured(platform, env)) throw new Error(`${platform} is not connected`)
   const problem = postProblem(platform, body)
   if (problem) throw new Error(problem === "empty" ? "the post is empty" : `the post is longer than ${LIMITS[platform]} characters`)
+  // Posting as a person with no id set: look it up with the token, once per post.
+  if (platform === "LINKEDIN" && !linkedinAuthorUrn(env)) {
+    const personId = await linkedinPersonId(env)
+    if (!personId) throw new PlatformAccountError(ACCOUNT_PROBLEMS.linkedinPersonId)
+    env = { ...env, LINKEDIN_PERSON_ID: personId }
+  }
   const { url, init } = buildRequest(platform, body, env)
   const auth = platform === "X" ? xAuth(env) : null
   if (auth?.kind === "oauth1") init.headers = { ...(init.headers as Record<string, string>), authorization: await oauth1Header({ method: "POST", url }, auth.credentials) }
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) })
   // Was the status alone: the platform's own reason is what tells a person what to fix.
-  if (!response.ok) throw new Error(`${platform} refused the post (HTTP ${response.status})${await refusalReason(response, secretsOf(platform, env))}`)
+  if (!response.ok) {
+    const reason = await refusalReason(response, secretsOf(platform, env))
+    const account = accountProblem(platform, response.status, reason)
+    if (account) throw new PlatformAccountError(account)
+    throw new Error(`${platform} refused the post (HTTP ${response.status})${reason}`)
+  }
   return { externalId: await readPostId(platform, response) }
 }

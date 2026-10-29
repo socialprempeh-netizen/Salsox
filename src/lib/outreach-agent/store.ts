@@ -259,6 +259,34 @@ export async function postFailed(id: string, error: string): Promise<void> {
   await prisma.socialPost.update({ where: { id }, data: { status: "FAILED", publishedAt: null, error: error.slice(0, 500) } })
 }
 
+/**
+ * A post the platform refused for an account problem (no API credit, a
+ * missing permission): back to waiting as it was, a draft or still
+ * scheduled, with the reason shown, so it is published once the account is
+ * fixed rather than left failed.
+ */
+export async function postBlocked(id: string, status: "DRAFT" | "SCHEDULED", error: string): Promise<void> {
+  await prisma.socialPost.update({ where: { id }, data: { status, publishedAt: null, error: error.slice(0, 500) } })
+}
+
+/** Each API platform's most recent publishing attempt: the newest post that was published or refused. */
+export async function lastAttempts(): Promise<{ platform: SocialPlatform; error: string | null; published: boolean }[]> {
+  const rows = await prisma.socialPost.findMany({
+    where: { platform: { in: ["LINKEDIN", "X", "FACEBOOK"] }, OR: [{ status: "PUBLISHED" }, { error: { not: null } }] },
+    orderBy: { updatedAt: "desc" },
+    take: 200,
+    select: { platform: true, status: true, error: true },
+  })
+  const latest = new Map<SocialPlatform, { platform: SocialPlatform; error: string | null; published: boolean }>()
+  for (const r of rows) if (!latest.has(r.platform)) latest.set(r.platform, { platform: r.platform, error: r.error, published: r.status === "PUBLISHED" })
+  return [...latest.values()]
+}
+
+/** Drafts waiting to go out on the API platforms (failed ones included), oldest first, for "Publish all". */
+export async function pendingDrafts(limit = 25) {
+  return prisma.socialPost.findMany({ where: { status: { in: ["DRAFT", "FAILED"] }, platform: { in: ["LINKEDIN", "X", "FACEBOOK"] } }, orderBy: { createdAt: "asc" }, take: limit })
+}
+
 export async function duePosts(now: Date) {
   // Only the API platforms: a Reddit, TikTok or YouTube post is never
   // published by the cron, even if one were ever left SCHEDULED.

@@ -17,7 +17,7 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { getAdminUser } from "@/lib/auth"
-import { addToCustomers, draftSocialPosts, logReplyByHand, publishPost, runHunt, runOutreach, sendMessage } from "@/lib/outreach-agent/agent"
+import { addToCustomers, draftSocialPosts, logReplyByHand, planPublishAll, publishAllDrafts, publishPost, runHunt, runOutreach, sendMessage, type PublishAllItem } from "@/lib/outreach-agent/agent"
 import { checkCrawler } from "@/lib/outreach-agent/crawl4ai"
 import { clampCap } from "@/lib/outreach-agent/policy"
 import { draftProblems, isAutoPlatform } from "@/lib/outreach-agent/social"
@@ -212,6 +212,33 @@ export async function publishPostNow(postId: string): Promise<OutreachAgentResul
   if (!id.safeParse(postId).success) return { ok: false, error: "invalid" }
   const result = await publishPost(salsoxOutreach, postId)
   return done(result.ok, result.message)
+}
+
+/** What "Publish all pending drafts" would do, without publishing anything: shown for confirmation. */
+export async function previewPublishAll(): Promise<{ ok: true; items: PublishAllItem[] } | { ok: false }> {
+  await requireAdmin()
+  try {
+    return { ok: true, items: await planPublishAll() }
+  } catch (error) {
+    console.error("[outreach-agent] could not plan publish-all:", error instanceof Error ? error.message : error)
+    return { ok: false }
+  }
+}
+
+export type PublishAllResult = { ok: true; message: string; results: (PublishAllItem & { ok: boolean; message: string })[] } | { ok: false; message?: string }
+
+/** Publishes every pending draft on a working platform, one at a time, and reports each. */
+export async function publishAllDraftsNow(): Promise<PublishAllResult> {
+  await requireAdmin()
+  try {
+    const { results, message } = await publishAllDrafts(salsoxOutreach)
+    revalidatePath(PATH)
+    revalidatePath(STUDIO)
+    return { ok: true, message, results }
+  } catch (error) {
+    console.error("[outreach-agent] publish-all failed:", error instanceof Error ? error.message : error)
+    return { ok: false }
+  }
 }
 
 export async function discardPost(postId: string): Promise<OutreachAgentResult> {
