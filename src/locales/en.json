@@ -1616,6 +1616,8 @@
         "facts": "Verified law only",
         "parent": "Links to its parent page"
       },
+      "retry": "Try again on the next run",
+      "retryToast": "Queued: the next run will write this page again.",
       "gatePassed": "passed",
       "gateFailed": "failed",
       "gateFlagged": "flagged",

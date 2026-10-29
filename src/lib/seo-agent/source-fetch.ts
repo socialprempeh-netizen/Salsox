@@ -87,25 +87,74 @@ export type FullText = { ok: boolean; text: string; reason?: string }
  */
 export const MIN_LAW_WORDS = 25
 
-/** A source's whole text (never truncated), as HTML, .doc or .docx by its `format`. */
-export async function fetchFullText(source: { url: string; format?: "html" | "doc" | "docx" }, fetcher: typeof fetch = fetch): Promise<FullText> {
+/**
+ * An HTML page's text in the charset it declares. German statute pages
+ * (gesetze-im-internet.de) are ISO-8859-1; read as UTF-8, as response.text()
+ * always does, every umlaut became a replacement character, so a quoted
+ * passage with an umlaut could never be found. Was: htmlToText(await response.text()).
+ */
+export function decodeHtml(bytes: Uint8Array, contentType: string | null): string {
+  const head = new TextDecoder("latin1").decode(bytes.slice(0, 2048))
+  const declared = /charset=["']?([\w-]+)/i.exec(contentType ?? "")?.[1] ?? /<meta[^>]+charset=["']?([\w-]+)/i.exec(head)?.[1] ?? "utf-8"
+  try {
+    return new TextDecoder(declared.toLowerCase()).decode(bytes)
+  } catch {
+    return new TextDecoder("utf-8").decode(bytes)
+  }
+}
+
+/**
+ * Why a fetch threw, in words a person can act on. Node's fetch reports every
+ * network failure as "fetch failed" and keeps the real reason (a reset
+ * connection, a refused TLS handshake, a DNS miss, a timeout) in `cause`,
+ * which the run log used to drop.
+ */
+export function fetchErrorReason(error: unknown): string {
+  if (!(error instanceof Error)) return "unreadable"
+  const cause = error.cause as { code?: string; message?: string } | undefined
+  const detail = cause?.code ?? cause?.message
+  return (error.name === "TimeoutError" ? "timed out after 30 seconds" : detail && !error.message.includes(detail) ? `${error.message} (${detail})` : error.message).slice(0, 160)
+}
+
+async function fetchFullTextOnce(source: { url: string; format?: "html" | "doc" | "docx" }, fetcher: typeof fetch): Promise<FullText & { retry?: boolean }> {
   try {
     const response = await fetcher(source.url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; content-check; +https://schema.org)" },
       redirect: "follow",
       signal: AbortSignal.timeout(30_000),
     })
-    if (!response.ok) return { ok: false, text: "", reason: `HTTP ${response.status}` }
-    const text =
-      source.format === "doc"
-        ? docText(new Uint8Array(await response.arrayBuffer()))
-        : source.format === "docx"
-          ? await docxText(new Uint8Array(await response.arrayBuffer()))
-          : htmlToText(await response.text())
+    if (!response.ok) return { ok: false, text: "", reason: `HTTP ${response.status}`, retry: response.status === 429 || response.status >= 500 }
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    const text = source.format === "doc" ? docText(bytes) : source.format === "docx" ? await docxText(bytes) : htmlToText(decodeHtml(bytes, response.headers.get("content-type")))
     const words = text.split(/\s+/).filter(Boolean).length
     if (words < MIN_LAW_WORDS) return { ok: false, text, reason: `only ${words} readable words` }
     return { ok: true, text }
   } catch (error) {
-    return { ok: false, text: "", reason: error instanceof Error ? error.message.slice(0, 120) : "unreadable" }
+    return { ok: false, text: "", reason: fetchErrorReason(error), retry: true }
   }
+}
+
+/**
+ * A source's whole text (never truncated), as HTML, .doc or .docx by its
+ * `format`. A network error, a timeout, a 429 or a 5xx is tried once more
+ * after a pause; if the page still cannot be read directly and `viaCrawler`
+ * is given (the site's own Crawl4AI service, which reads from a different
+ * network), the same official page is read through it. The text always comes
+ * from the source's own URL; only the route to it changes.
+ */
+export async function fetchFullText(
+  source: { url: string; format?: "html" | "doc" | "docx" },
+  fetcher: typeof fetch = fetch,
+  { viaCrawler, retryAfterMs = 2_000 }: { viaCrawler?: (url: string) => Promise<string | null>; retryAfterMs?: number } = {}
+): Promise<FullText> {
+  let result = await fetchFullTextOnce(source, fetcher)
+  if (!result.ok && result.retry) {
+    await new Promise((resolve) => setTimeout(resolve, retryAfterMs))
+    result = await fetchFullTextOnce(source, fetcher)
+  }
+  if (result.ok || !viaCrawler || (source.format && source.format !== "html")) return { ok: result.ok, text: result.text, reason: result.reason }
+  const crawled = await viaCrawler(source.url).catch(() => null)
+  const words = crawled?.split(/\s+/).filter(Boolean).length ?? 0
+  if (crawled && words >= MIN_LAW_WORDS) return { ok: true, text: crawled }
+  return { ok: false, text: "", reason: `${result.reason}; through the crawler: ${crawled === null ? "not readable" : `only ${words} readable words`}` }
 }

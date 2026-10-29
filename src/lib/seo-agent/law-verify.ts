@@ -47,6 +47,9 @@ export function unverifiedFacts(facts: LawFact[], texts: Map<number, FullText>):
  */
 export async function verifyLaw(c: ComplianceCandidate, read: (source: ComplianceCandidate["sources"][number]) => Promise<FullText>): Promise<string[]> {
   const used = [...new Set(c.facts.map((f) => f.source))]
-  const texts = new Map(await Promise.all(used.map(async (i) => [i, c.sources[i] ? await read(c.sources[i]) : { ok: false, text: "", reason: "missing source" }] as const)))
+  // Was all sources at once (Promise.all): one after another, so a run never
+  // sends a government site a burst of requests.
+  const texts = new Map<number, FullText>()
+  for (const i of used) texts.set(i, c.sources[i] ? await read(c.sources[i]) : { ok: false, text: "", reason: "missing source" })
   return unverifiedFacts(c.facts, texts).map(({ fact, reason }) => `${fact.cite} (${c.sources[fact.source]?.url ?? "no source"}): ${reason}`)
 }

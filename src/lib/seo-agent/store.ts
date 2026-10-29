@@ -303,6 +303,16 @@ export async function markPageUnpublished(id: string): Promise<boolean> {
   return true
 }
 
+/**
+ * A failed page made available to the next run again, its attempts reset:
+ * for a page set aside after its sources could not be read, once the cause
+ * is fixed. Only a FAILED page.
+ */
+export async function resetPageFailure(id: string): Promise<boolean> {
+  const { count } = await prisma.seoAgentPage.updateMany({ where: { id, status: "FAILED" }, data: { attempts: 0 } })
+  return count > 0
+}
+
 export async function markPageDiscarded(id: string): Promise<boolean> {
   const { count } = await prisma.seoAgentPage.updateMany({ where: { id, status: { in: ["DRAFT", "FLAGGED"] } }, data: { status: "DISCARDED" } })
   return count > 0

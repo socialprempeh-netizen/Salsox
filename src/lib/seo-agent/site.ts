@@ -26,6 +26,7 @@ import { countWords } from "./article"
 import type { PageSite } from "./page-agent"
 import { registryPages, libraryTemplates } from "./published-pages"
 import { fetchFullText, fetchSource } from "./source-fetch"
+import { crawlerConfigured, crawlPages } from "@/lib/outreach-agent/crawl4ai"
 import { PAGE_KINDS } from "@/lib/seo/pages"
 
 export function searchConsoleSite(env: Record<string, string | undefined> = process.env): string {
@@ -151,7 +152,18 @@ export const salsoxPageSite: PageSite = {
 
   fetchSource: (source) => fetchSource(source),
 
-  readFullText: (source) => fetchFullText(source),
+  // Was fetchFullText(source): a statute page this server cannot reach
+  // (gesetze-im-internet.de from the production network) is read through the
+  // site's own Crawl4AI service instead, from the same official URL.
+  readFullText: (source) =>
+    fetchFullText(source, fetch, {
+      viaCrawler: crawlerConfigured()
+        ? async (url) => {
+            const [page] = await crawlPages([url], { userAgent: `${siteConfig.name.replace(/[^A-Za-z0-9]/g, "") || "Site"}LawCheck/1.0 (+${siteConfig.url})` })
+            return page?.ok ? page.markdown : null
+          }
+        : undefined,
+    }),
 
   // Everything a new page appears on: its own URL, its hub, the neighbours
   // whose related cards or sibling links now include it, the sitemap and

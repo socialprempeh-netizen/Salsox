@@ -387,8 +387,11 @@ async function writeOne(site: PageSite, candidate: PageCandidate, { started, dea
   }
 
   // 3. Draft, or straight to the site under the review rule.
+  // A page that states the law (a law page, or an industry page for one
+  // country) is always read by a person before it goes live.
   const { draftFirst } = await store.getSettings()
-  if (shouldAutoPublish({ writtenBefore, draftFirst })) {
+  const statesLaw = candidate.kind === "compliance" || (candidate.kind === "use-case" && Boolean(candidate.market))
+  if (!statesLaw && shouldAutoPublish({ writtenBefore, draftFirst })) {
     const published = await publishGeneratedPage(site, pageId, { auto: true })
     return { status: "ok", pageId, published: published.ok, message: `Wrote and published "${result.stored.title}" at ${path}. ${published.message}` }
   }

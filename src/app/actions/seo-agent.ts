@@ -18,7 +18,7 @@ import { publishArticle, runDaily, runOrphanCrawl, unpublishArticle } from "@/li
 import { discardGeneratedPage, publishGeneratedPage, runPageGeneration, unpublishGeneratedPage } from "@/lib/seo-agent/page-agent"
 import { dailyMode } from "@/lib/seo-agent/policy"
 import { salsoxPageSite, salsoxSite } from "@/lib/seo-agent/site"
-import { getArticle, markDiscarded, setDraftFirst, setOrphanStatus } from "@/lib/seo-agent/store"
+import { getArticle, markDiscarded, resetPageFailure, setDraftFirst, setOrphanStatus } from "@/lib/seo-agent/store"
 
 export type SeoAgentResult = { ok: true; message?: string } | { ok: false; error: "notFound" | "invalid" | "failed"; message?: string }
 
@@ -104,6 +104,15 @@ export async function discardPage(pageId: string): Promise<SeoAgentResult> {
   await requireAdmin()
   if (!id.safeParse(pageId).success) return { ok: false, error: "invalid" }
   if (!(await discardGeneratedPage(salsoxPageSite, pageId))) return { ok: false, error: "notFound" }
+  revalidatePath(PATH)
+  return { ok: true }
+}
+
+/** Lets the next run write a failed page again (its attempts reset). */
+export async function retryPage(pageId: string): Promise<SeoAgentResult> {
+  await requireAdmin()
+  if (!id.safeParse(pageId).success) return { ok: false, error: "invalid" }
+  if (!(await resetPageFailure(pageId))) return { ok: false, error: "notFound" }
   revalidatePath(PATH)
   return { ok: true }
 }

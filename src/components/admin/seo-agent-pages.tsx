@@ -25,7 +25,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useFormatter, useTranslations } from "next-intl"
 import { Check, ExternalLink, FilePlus2, FileText, ShieldCheck, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { discardPage, publishPage, unpublishPage } from "@/app/actions/seo-agent"
+import { discardPage, publishPage, retryPage, unpublishPage } from "@/app/actions/seo-agent"
 import { Chip, Empty, type Tone } from "@/components/admin/admin-ui"
 import { useAction } from "@/components/admin/seo-agent-console"
 import { cn } from "@/lib/utils"
@@ -177,6 +177,14 @@ export function GeneratedPageList({ rows }: { rows: PageRow[] }) {
                 <p className="break-words border-l-2 border-destructive pl-3 text-sm text-destructive">
                   {t("pageFailed", { attempts: row.attempts })} {row.gates.length === 0 && row.error ? row.error : null}
                 </p>
+              )}
+              {/* A failed page is set aside after two attempts; this puts it back in the queue for the next run. */}
+              {row.status === "FAILED" && (
+                <div className="pt-1">
+                  <Button size="sm" variant="outline" disabled={pending} loading={busy === `retry:${row.id}`} onClick={() => run(`retry:${row.id}`, () => retryPage(row.id), t("retryToast"))}>
+                    {t("retry")}
+                  </Button>
+                </div>
               )}
               {row.status === "FLAGGED" && <p className="text-sm text-muted-foreground">{t("flaggedNote")}</p>}
 
