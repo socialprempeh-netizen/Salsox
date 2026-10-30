@@ -1,8 +1,10 @@
 # A throwaway WordPress for checking the plugin locally: the official
 # Plugin Check (wp plugin check) and the Playwright mobile checks in
-# e2e/wordpress-plugin.spec.ts. The plugin folder is mounted read-only as
+# e2e/wordpress-plugin.spec.ts, and a hands-on test send at
+# http://localhost:8089. The plugin folder is mounted read-only as
 # wp-content/plugins/salsox, the slug it ships under. Started and set up
-# by bin/check.sh; nothing here is part of the plugin zip.
+# with the commands under "Checking and building" in ../README.md (there is
+# no setup script); nothing here is part of the plugin zip.
 name: salsox-wp
 services:
   db:
