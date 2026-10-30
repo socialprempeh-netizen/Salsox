@@ -57,7 +57,7 @@ Autenticazione con `Authorization: Bearer ak_…`, 120 richieste al minuto per c
 | `GET /api/v1/me` | L'account della chiave: le integrazioni la chiamano per provare una chiave. |
 | `GET`, `POST /api/v1/webhooks`, `DELETE /api/v1/webhooks/{id}` | Iscrizioni, nello schema "REST hook" che Zapier e Make usano per i trigger istantanei. |
 | `GET /api/v1/webhooks/sample?event=` | Un payload di esempio per un evento. |
-| `GET /api/v1/events?event=&limit=` | Gli ultimi eventi reali di un tipo dell'account (fino a 25), ricostruiti dall'audit trail da `recentEvents` in `store.ts`, nella forma del payload. Il "perform list" di Zapier lo usa, e ripiega sull'esempio quando è vuoto. Gli id sono `evt_a_<id dell'audit>`, stabili tra una chiamata e l'altra; il documento è mostrato com'è adesso. |
+| `GET /api/v1/events?event=&limit=` | Gli ultimi eventi reali di un tipo dell'account (fino a 100, il massimo previsto dalle regole di polling di Zapier), ricostruiti dall'audit trail da `recentEvents` in `store.ts`, nella forma del payload. Il "perform list" di Zapier lo usa, e ripiega sull'esempio quando è vuoto. Gli id sono `evt_a_<id dell'audit>`, stabili tra una chiamata e l'altra; il documento è mostrato com'è adesso. |
 | `POST /api/v1/documents` | Crea e invia un documento, da un PDF o da un modello. |
 | `GET /api/v1/documents` | Cerca documenti: `status`, `recipient`, `title`, `created_after`, `created_before`, `limit` (fino a 100), `cursor`. |
 | `GET /api/v1/documents/{id}` | Un documento. |
@@ -79,6 +79,10 @@ Non è un secondo percorso di invio. `sendFromApi` sceglie uno di quelli che il 
 Se la bozza è stata creata ma l'invio viene rifiutato (email non confermata, regola del piano), la bozza viene eliminata, così una chiamata fallita non lascia nulla nell'account. Le richieste consumano anche i limiti a raffica della dashboard (`esign:send:<user>`, `esign:upload:<user>`), quindi l'API non è un modo per aggirarli. Un rifiuto porta il codice del motore e il messaggio in inglese che la dashboard mostra per quel codice; i limiti di piano sono 402.
 
 **File.** Il limite del PDF è quello della dashboard (4 MB). Una funzione Vercel accetta al massimo 4,5 MB di corpo, quindi un PDF vicino al limite passa come upload multipart o come `file_url`, non in base64. Il `file_url` viene scaricato con le regole dei webhook: solo https, ogni indirizzo risolto controllato alla connessione, fino a tre redirect (i link ai file di Zapier rimandano allo storage), ciascuno ricontrollato, 10 secondi, e il corpo letto solo fino al limite di dimensione.
+
+## L'app per Zapier
+
+`integrations/zapier` è l'app di Salsox sulla Zapier Platform, costruita con la Zapier CLI sugli endpoint qui sopra e su nient'altro: trigger istantanei su sei eventi tramite `/api/v1/webhooks` (dati di prova da `/api/v1/events`, poi l'esempio), "Send Document From Template" e "Send Document From PDF" tramite `POST /api/v1/documents`, "Find Document" tramite `GET /api/v1/documents`, e il PDF firmato di un documento completato da `/api/v1/documents/{id}/pdf`. Come provarla, caricarla e pubblicarla è nel suo `README.md`; i suoi test girano con `npm test`.
 
 ## Configurazione
 

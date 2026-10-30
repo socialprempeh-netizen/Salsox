@@ -22,6 +22,13 @@ const eslintConfig = defineConfig([
     // a copy of the above, vendor builds included.
     "dist/**",
   ]),
+  // The Zapier app (integrations/zapier) is CommonJS: the Zapier runtime
+  // loads it with require(), so require() is how its files import.
+  {
+    files: ["integrations/zapier/**/*.js"],
+    languageOptions: { sourceType: "commonjs" },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 ]);
 
 export default eslintConfig;

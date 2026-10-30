@@ -50,7 +50,7 @@ Authenticated with `Authorization: Bearer ak_…`, 120 requests a minute per key
 | `GET /api/v1/me` | The key's account: integrations call it to test a key. |
 | `GET`, `POST /api/v1/webhooks`, `DELETE /api/v1/webhooks/{id}` | Subscriptions, in the REST-hook pattern Zapier and Make use for instant triggers. |
 | `GET /api/v1/webhooks/sample?event=` | A sample payload for an event. |
-| `GET /api/v1/events?event=&limit=` | The account's latest real events of one kind (up to 25), rebuilt from the audit trail by `recentEvents` in `store.ts`, in the payload shape. Zapier's "perform list" uses it, falling back to the sample when it is empty. Ids are `evt_a_<audit id>`, stable across calls; the document is shown as it stands now. |
+| `GET /api/v1/events?event=&limit=` | The account's latest real events of one kind (up to 100, the most Zapier's polling rules expect), rebuilt from the audit trail by `recentEvents` in `store.ts`, in the payload shape. Zapier's "perform list" uses it, falling back to the sample when it is empty. Ids are `evt_a_<audit id>`, stable across calls; the document is shown as it stands now. |
 | `POST /api/v1/documents` | Creates and sends a document, from a PDF or a template. |
 | `GET /api/v1/documents` | Finds documents: `status`, `recipient`, `title`, `created_after`, `created_before`, `limit` (up to 100), `cursor`. |
 | `GET /api/v1/documents/{id}` | One document. |
@@ -72,6 +72,10 @@ It is not a second send path. `sendFromApi` picks one the product already has, s
 When the draft was made but the send is refused (an unconfirmed email, a plan rule), the draft is deleted, so a failed call leaves nothing behind. Requests also spend the dashboard's own burst buckets (`esign:send:<user>`, `esign:upload:<user>`), so the API is not a way around them. A refusal carries the engine's code and the dashboard's English message for it; plan limits are 402.
 
 **Files.** The PDF limit is the dashboard's (4 MB). A Vercel function takes at most 4.5 MB of body, so a PDF near the limit fits as a multipart upload or a `file_url`, not as base64. `file_url` is fetched under the webhook rules: https only, every resolved address checked at connect time, up to three redirects (Zapier's file links redirect to storage), each hop checked again, 10 seconds, and the body read no further than the size limit.
+
+## The Zapier app
+
+`integrations/zapier` is Salsox's own app on the Zapier Platform, built with the Zapier CLI on the endpoints above and nothing else: instant triggers on six events through `/api/v1/webhooks` (test data from `/api/v1/events`, then the sample), "Send Document From Template" and "Send Document From PDF" through `POST /api/v1/documents`, "Find Document" through `GET /api/v1/documents`, and the signed PDF of a completed document from `/api/v1/documents/{id}/pdf`. How to test, push and publish it is in its `README.md`; its tests run with `npm test`.
 
 ## Configuration
 
