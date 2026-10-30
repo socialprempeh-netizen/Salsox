@@ -1,0 +1,5 @@
+# Installed by `npm install` in this folder, for the Zapier CLI.
+node_modules/
+# What `zapier build` and `zapier push` write.
+build/
+*.zip

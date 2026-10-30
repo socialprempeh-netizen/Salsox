@@ -10,7 +10,7 @@ const recentEvents = vi.fn()
 
 vi.mock("@/lib/api-keys-store", () => ({ authenticateApiRequest: (...a: unknown[]) => authenticate(...a) }))
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: async () => true }))
-vi.mock("@/lib/webhooks/store", () => ({ RECENT_EVENTS_MAX: 25, recentEvents: (...a: unknown[]) => recentEvents(...a) }))
+vi.mock("@/lib/webhooks/store", () => ({ RECENT_EVENTS_MAX: 100, recentEvents: (...a: unknown[]) => recentEvents(...a) }))
 
 const { GET } = await import("./route")
 const get = (query: string) => new Request(`https://app.example.com/api/v1/events${query}`, { headers: { authorization: "Bearer ak_x" } })
@@ -35,13 +35,13 @@ describe("GET /api/v1/events", () => {
 
   it("returns an empty array when nothing has happened yet", async () => {
     recentEvents.mockResolvedValue([])
-    expect(await (await GET(get("?event=payment.sent&limit=25"))).json()).toEqual([])
-    expect(recentEvents).toHaveBeenCalledWith("u1", "payment.sent", 25)
+    expect(await (await GET(get("?event=payment.sent&limit=100"))).json()).toEqual([])
+    expect(recentEvents).toHaveBeenCalledWith("u1", "payment.sent", 100)
   })
 
   it("refuses an unknown event or a bad limit", async () => {
     expect((await GET(get("?event=document.deleted"))).status).toBe(422)
-    expect((await GET(get("?event=document.sent&limit=26"))).status).toBe(422)
+    expect((await GET(get("?event=document.sent&limit=101"))).status).toBe(422)
     expect((await GET(get("?event=document.sent&limit=0"))).status).toBe(422)
     expect(recentEvents).not.toHaveBeenCalled()
   })

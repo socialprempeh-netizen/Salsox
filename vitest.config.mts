@@ -16,7 +16,9 @@ export default defineConfig({
     // scripts/ is in here for the pure helpers the deploy checks are built on:
     // plain ESM, because the scripts that import them run under node with no
     // build step.
-    include: ["src/**/*.test.ts", "scripts/**/*.test.mjs"],
+    // integrations/ for the apps published on other platforms (the Zapier
+    // app): their logic is plain JS loaded the way that platform loads it.
+    include: ["src/**/*.test.ts", "scripts/**/*.test.mjs", "integrations/*/test/**/*.test.mjs"],
     coverage: {
       provider: "v8",
       reporter: ["text-summary", "text", "html"],

@@ -147,8 +147,12 @@ export async function queueWebhookEvent(input: { documentId: string; auditType: 
   }
 }
 
-/** Most events an integration may ask for at once (GET /api/v1/events). */
-export const RECENT_EVENTS_MAX = 25
+/**
+ * Most events an integration may ask for at once (GET /api/v1/events). Was
+ * 25: Zapier asks that the list behind an instant trigger follow its polling
+ * rules, which expect up to 100 items, newest first.
+ */
+export const RECENT_EVENTS_MAX = 100
 
 /**
  * The account's latest real events of one kind, newest first, as webhook

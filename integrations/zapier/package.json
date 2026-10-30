@@ -1,0 +1,20 @@
+{
+  "name": "salsox-zapier",
+  "version": "1.0.0",
+  "description": "Salsox's app on the Zapier Platform: document triggers, send actions and a document search, through the Salsox public API.",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "validate": "zapier-platform validate",
+    "push": "zapier-platform push"
+  },
+  "dependencies": {
+    "zapier-platform-core": "19.2.1"
+  },
+  "devDependencies": {
+    "zapier-platform-cli": "19.2.1"
+  }
+}
